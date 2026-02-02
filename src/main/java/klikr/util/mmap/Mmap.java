@@ -14,9 +14,7 @@ import java.io.*;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -32,17 +30,9 @@ public class Mmap
     private final int piece_size_in_megabytes;
     private final Path cache_folder;
     private final Path main_index_file;
+    private final ArrayBlockingQueue<Boolean> save_queue = new ArrayBlockingQueue<>(1);
 
 
-    private interface Operation{};
-    private record Save_index() implements Operation{};
-    private record Write_file(Path path, boolean and_save) implements Operation{};
-    public record Write_image_as_pixels(String tag, Image image, boolean and_save, Runnable on_end) implements Operation{};
-    public record Write_image_as_file(Path path, int width, int height, boolean and_save, Runnable on_end) implements Operation{};
-
-    private final LinkedBlockingQueue<Operation> operation_queue = new LinkedBlockingQueue<>();
-
-    private final static boolean synchronous = true;
     private final static boolean stats_dbg = false;
     private final static boolean ultra_dbg = false;
 
@@ -75,36 +65,27 @@ public class Mmap
         main_index_file = cache_folder.resolve("main_index");
         load_index();
 
-        if( !synchronous) {
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    for (; ; ) {
-                        try {
-                            logger.log("going to block");
-                            Operation op = operation_queue.poll(3, TimeUnit.SECONDS);
-                            if (op == null) continue;
-                            if (op instanceof Save_index si) {
-                                logger.log("operation is Save_index ");
-                                save_index_internal();
-                            } else if (op instanceof Write_file wf) {
-                                logger.log("operation is Write_file ");
-                                write_file_internal(wf);
-                            } else if (op instanceof Write_image_as_pixels wiap) {
-                                logger.log("operation is Write_image_as_pixels ");
-                                write_image_as_pixels(wiap);
-                            } else if (op instanceof Write_image_as_file wiaf) {
-                                logger.log("operation is Write_image_as_file ");
-                                write_image_as_file(wiaf);
-                            }
-                        } catch (InterruptedException e) {
-                            logger.log("" + e);
+        Runnable save = new Runnable() {
+            @Override
+            public void run() {
+                for(;;) {
+                    try {
+                        Object marker = save_queue.poll(1, TimeUnit.SECONDS);
+                        if (marker != null) {
+                            // Take snapshot to avoid Issue #5
+                            Map<String, Meta> snapshot = Map.copyOf(main_index);
+                            util_save_index(snapshot, main_index_file, logger);
                         }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    } catch (Exception e) {
+                        logger.log("Save failed: " + e.getMessage());
                     }
                 }
-            };
-            Actor_engine.execute(r, "mmap input pump", logger);
-        }
+            }
+        };
+        Actor_engine.execute(save,"mmap save",logger);
 
         if ( stats_dbg) {
             Runnable stats = new Runnable() {
@@ -137,46 +118,78 @@ public class Mmap
 
 
     //**********************************************************
-    public void write_file(Path path, boolean and_save)
+    public void write_bytes(String tag, byte[] bytes, boolean and_save)
     //**********************************************************
     {
-        logger.log("mmap write_file "+path);
-        if ( synchronous )
-        {
-            write_file_internal(new Write_file(path,and_save));
-        }
-        else
-        {
-            operation_queue.add(new Write_file(path,and_save));
-        }
-    }
-    //**********************************************************
-    private void write_file_internal(Write_file wf)
-    //**********************************************************
-    {
-        Simple_metadata meta = find_room_for_file(wf.path());
+        if (ultra_dbg) logger.log("mmap write_bytes "+tag);
+        Simple_metadata meta = find_room_for_bytes(tag,bytes);
         if ( meta == null )
         {
-            logger.log("no room found for "+wf.path());
+            logger.log("no room found for "+tag);
             return;
         }
-        meta.piece().write_file(meta,wf.path());
-        String key = wf.path().toAbsolutePath().toString();
+        meta.piece().write_bytes(meta,tag,bytes);
+        String key = tag;
         record_index(key, meta,meta.piece());
-        logger.log("mmap write_file_internal WROTE: "+key);
-        if (wf.and_save())
+        if (ultra_dbg) logger.log("mmap write_file_internal WROTE: "+key);
+        if (and_save)
         {
             save_index();
         }
     }
+
+
+    //**********************************************************
+    public void write_file(Path path, boolean and_save)
+    //**********************************************************
+    {
+        if (ultra_dbg) logger.log("mmap write_file "+path);
+
+        Simple_metadata meta = find_room_for_file(path);
+        if ( meta == null )
+        {
+            logger.log("no room found for "+path);
+            return;
+        }
+        meta.piece().write_file(meta,path);
+        String key = path.toAbsolutePath().toString();
+        record_index(key, meta,meta.piece());
+        if (ultra_dbg) logger.log("mmap write_file_internal WROTE: "+key);
+        if (and_save)
+        {
+            save_index();
+        }
+    }
+
 
     //**********************************************************
     private void record_index(String key, Meta meta, Piece piece)
     //**********************************************************
     {
         main_index.put(key, meta);
+    }
 
-        //piece.insert(key, meta);
+    //**********************************************************
+    public byte[] read_bytes(String tag)
+    //**********************************************************
+    {
+        Simple_metadata sm = (Simple_metadata) main_index.get(tag);
+        if ( sm == null)
+        {
+            logger.log("read_file failed: no metadata found for "+tag);
+            return null;
+        }
+        Piece piece = sm.piece();
+        if ( piece == null)
+        {
+            logger.log("read_file failed: no piece for "+tag);
+            return null;
+        }
+        if ( stats_dbg)
+        {
+            usage.merge(tag, 1, Integer::sum);;
+        }
+        return piece.read_bytes(sm);
     }
 
     //**********************************************************
@@ -199,77 +212,52 @@ public class Mmap
         {
             usage.merge(p.toAbsolutePath().toString(), 1, Integer::sum);;
         }
-        return piece.read_file(sm);
+        return piece.read_bytes(sm);
     }
+
+
+
+    // for animated gifs, javafx does not have a PixelReader... so we cache the FILE
+
+
+    //**********************************************************
+    public void write_image_as_file(Path path,  boolean and_save, Runnable on_end)
+    //**********************************************************
+    {
+        Image_as_file_metadata meta = find_room_for_image_as_file(path);
+        if ( meta == null ) return;
+        String key = path.toAbsolutePath().toString();
+        meta.piece().write_image_as_file(meta,path);
+        record_index(key, meta, meta.piece());
+        if (ultra_dbg) logger.log("mmap image as file: "+key);
+        if (and_save)
+        {
+            save_index();
+        }
+        if ( on_end != null )
+        {
+            on_end.run();
+        }
+    }
+
 
     // takes more file space but faster to reload
     //**********************************************************
     public void write_image_as_pixels(String tag, Image image, boolean and_save, Runnable on_end)
     //**********************************************************
     {
-        if ( synchronous )
-        {
-            write_image_as_pixels(new Write_image_as_pixels(tag,image,and_save, on_end));
-        }
-        else
-        {
-            operation_queue.offer(new Write_image_as_pixels(tag,image,and_save, on_end));
-        }
-    }
-
-    // for animated gifs, javafx does not have a PixelReader... so we cache the FILE
-    //**********************************************************
-    public void write_image_as_file(Path path, int width, int height, boolean and_save, Runnable on_end)
-    //**********************************************************
-    {
-        Write_image_as_file wiaf = new Write_image_as_file(path,width,height,and_save, on_end);
-        if ( synchronous )
-        {
-            write_image_as_file(wiaf);
-        }
-        else
-        {
-            operation_queue.offer(wiaf);
-        }
-
-    }
-
-    //**********************************************************
-    public void write_image_as_pixels(Write_image_as_pixels wi)
-    //**********************************************************
-    {
-        Image_as_pixel_metadata meta = find_room_for_image_as_pixel(wi.image(), wi.tag());
+        Image_as_pixel_metadata meta = find_room_for_image_as_pixel(image, tag);
         if ( meta == null ) return;
-        meta.piece().write_image_as_pixels(meta.offset(),wi.image());
-        record_index(wi.tag(), meta, meta.piece());
-        logger.log("mmap image as pixel: "+wi.tag());
-        if (wi.and_save())
+        meta.piece().write_image_as_pixels(meta.offset(),image);
+        record_index(tag, meta, meta.piece());
+        if (ultra_dbg) logger.log("mmap image as pixel: "+tag);
+        if (and_save)
         {
             save_index();
         }
-        if ( wi.on_end() != null )
+        if ( on_end != null )
         {
-            wi.on_end().run();
-        }
-    }
-
-    //**********************************************************
-    public void write_image_as_file(Write_image_as_file wi)
-    //**********************************************************
-    {
-        Image_as_file_metadata meta = find_room_for_image_as_file(wi.path());
-        if ( meta == null ) return;
-        String key = wi.path().toAbsolutePath().toString();
-        meta.piece().write_image_as_file(meta,wi.path());
-        record_index(key, meta, meta.piece());
-        logger.log("mmap image as file: "+key);
-        if (wi.and_save())
-        {
-            save_index();
-        }
-        if ( wi.on_end() != null )
-        {
-            wi.on_end().run();
+            on_end.run();
         }
     }
 
@@ -303,12 +291,13 @@ public class Mmap
         return returned;
     }
     //**********************************************************
-    public Image read_image_as_file(String tag)
+    public Image read_image_as_file(Path path)
     //**********************************************************
     {
+        String tag = path.toAbsolutePath().toString();
         Image_as_file_metadata meta = (Image_as_file_metadata) main_index.get(tag);
         if ( meta == null ) return null;
-        logger.log("mmap reading image: "+tag+" is pixels=no");
+        if (ultra_dbg) logger.log("mmap reading image: "+tag+" is pixels=no");
         Piece p = meta.piece();
         if (p == null) return null;
         if ( stats_dbg)
@@ -361,7 +350,7 @@ public class Mmap
                 Meta meta = entry.getValue();
                 if (meta instanceof Simple_metadata simple)
                 {
-                    logger.log("writing Simple_metadata ="+entry.getKey());
+                    if ( ultra_dbg) logger.log("writing Simple_metadata ="+entry.getKey());
 
                     dos.writeInt(simple.piece().who_are_you);
                     dos.write(SIMPLE_META);
@@ -393,7 +382,6 @@ public class Mmap
             }
             dos.flush();
             logger.log("Index saved with " + local.size() + " entries.");
-            return;
         }
         catch (FileNotFoundException e)
         {
@@ -428,7 +416,7 @@ public class Mmap
                     long length = dis.readLong();
                     Meta m = new Simple_metadata(pieces.get(piece_ID),key,offset,length);
                     main_index.put(key,m);
-                    logger.log("cached item reloaded from file: "+key);
+                    if (ultra_dbg) logger.log("cached item reloaded from file: "+key);
                 }
                 else if ( type == IMAGE_PIXEL_META )
                 {
@@ -436,14 +424,14 @@ public class Mmap
                     int height = dis.readInt();
                     Meta m = new Image_as_pixel_metadata(pieces.get(piece_ID),key,offset,width,height);
                     main_index.put(key,m);
-                    logger.log("cached item reloaded from file: "+key);
+                    if (ultra_dbg) logger.log("cached item reloaded from file: "+key);
                 }
                 else if ( type == IMAGE_FILE_META )
                 {
                     long length = dis.readLong();
                     Meta m = new Image_as_file_metadata(pieces.get(piece_ID),key,offset,length);
                     main_index.put(key,m);
-                    logger.log("cached item reloaded from file: "+key);
+                    if (ultra_dbg) logger.log("cached item reloaded from file: "+key);
                 }
             }
             logger.log("Index local with " + main_index.size() + " entries.");
@@ -454,6 +442,14 @@ public class Mmap
         }
         catch (IOException e)
         {
+            // if cache is corrupted, clear the index
+            main_index.clear();
+            pieces.clear();
+            try {
+                Files.deleteIfExists(main_index_file);
+            } catch (IOException ee) {
+                logger.log("Could not delete index file: " + ee.getMessage());
+            }
             logger.log(Stack_trace_getter.get_stack_trace(""+e));
         }
         // we can init only after everything is reloaded
@@ -476,22 +472,7 @@ public class Mmap
     public void save_index()
     //**********************************************************
     {
-        if ( synchronous )
-        {
-            save_index_internal();
-        }
-        else
-        {
-            operation_queue.offer(new Save_index());
-        }
-    }
-
-
-    //**********************************************************
-    private void save_index_internal()
-    //**********************************************************
-    {
-        util_save_index(main_index,main_index_file,logger);
+        save_queue.offer(true );
     }
 
     //**********************************************************
@@ -512,6 +493,20 @@ public class Mmap
         Room room = find_room(length);
         if ( room == null) return null;
         return new Image_as_file_metadata(room.piece(), path.toAbsolutePath().toString(), room.offset(), length);
+    }
+
+    //**********************************************************
+    private Simple_metadata find_room_for_bytes(String tag, byte[] bytes)
+    //**********************************************************
+    {
+        long size = bytes.length;
+        Room room = find_room(size);
+        if ( room == null)
+        {
+            logger.log("find_room_for_file failed for "+tag);
+            return null;
+        }
+        return new Simple_metadata(room.piece(), tag, room.offset(), size);
     }
 
 
@@ -544,106 +539,29 @@ public class Mmap
                 return new Room(piece,offset);
             }
         }
-        // need to create a whole new (empty) Piece
-        int index = pieces.size();
-        Piece piece = new Piece(index,cache_folder,logger);
-        piece.init(new HashMap<>(), piece_size_in_megabytes);
-        pieces.put(index,piece);
-        long offset = piece.has_room(length);
-        if ( offset>= 0 )
+
+
+        int next_index = pieces.size();
+        for(;;)
         {
-            return new Room(piece,offset);
+            Piece piece = pieces.computeIfAbsent(next_index, index -> {
+                Piece p = new Piece(index, cache_folder, logger);
+                p.init(new HashMap<>(), piece_size_in_megabytes);
+                return p;
+            });
+            long offset = piece.has_room(length);
+            if (offset >= 0)
+            {
+                return new Room(piece, offset);
+            }
+            if (length > (long) piece_size_in_megabytes * 1024 * 1024)
+            {
+                logger.log("Item too large for any piece: " + length + " bytes (limit: " + piece_size_in_megabytes + " MB)");
+                return null;
+            }
+            next_index++;
         }
-        return null;
     }
 
-
-
-
-    //**********************************************************
-    public static void main(String[] args)
-    //**********************************************************
-    {
-        Logger logger = new Simple_logger();
-        Mmap mmap = Mmap.get_instance(100, null,logger);
-        {
-            // test#1: file
-            Path p = Path.of("file1.txt");
-            byte[] in = new byte[256];
-            for (int i = 0; i < 255; i++)
-            {
-                in[i] = (byte) i;
-            }
-            try {
-                Files.write(p, in);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            logger.log("File save request for " + p.toAbsolutePath());
-            mmap.write_file(p, true);
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            for ( int z = 0 ;z < 5; z++) {
-                logger.log("Going to try reading "+z);
-                for (int j = 0; j < 3; j++) {
-
-                    logger.log(" try #: " + j);
-
-                    byte[] check = mmap.read_file(p);
-
-                    boolean done = true;
-                    for (int i = 0; i < check.length; i++) {
-                        if (in[i] != check[i]) {
-                            logger.log("FATAL");
-                            done = false;
-                            break;
-                        }
-                    }
-                    if (done) {
-                        logger.log("OK!!!! Retrieved content: " + new String(check));
-                        break;
-                    }
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        {
-            // test#2: image RAW pixels
-            String tag = "image.png";
-            {
-                Image i = new Image(new File(tag).toURI().toString());
-                mmap.write_image_as_pixels(tag, i, true, null);
-            }
-            {
-                Image j = mmap.read_image_as_pixels(tag);
-
-            }
-        }
-        {
-            // test#2: image RAW pixels
-            String tag = "image.png";
-            {
-                Image i = new Image(new File(tag).toURI().toString());
-                mmap.write_image_as_file(Path.of(tag), (int)i.getWidth(),(int)i.getHeight(), true, null);
-            }
-            {
-                Image j = mmap.read_image_as_file(tag);
-
-            }
-        }
-        try {
-            Thread.sleep(60_000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 }

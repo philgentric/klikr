@@ -310,9 +310,11 @@ public class Piece
         MemorySegment segment = get_MemorySegment(meta);
         if (segment == null) return null;
         int width = meta.width();
-        //logger.log("image w = "+width);
+        logger.log("image w = "+width);
+        if ( width <=0)  return null;
         int height = meta.height();
-        //logger.log("image h = "+height);
+        logger.log("image h = "+height);
+        if ( height <=0)  return null;
 
         ByteBuffer a = segment.asByteBuffer();
 
@@ -445,7 +447,7 @@ public class Piece
     public Image read_image_as_file(String tag, Image_as_file_metadata meta)
     //**********************************************************
     {
-        byte[] bytes = get_bytes(meta);
+        byte[] bytes = read_bytes(meta);
         if (bytes == null) return null;
 
         try( ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
@@ -466,14 +468,7 @@ public class Piece
 
 
     //**********************************************************
-    public byte[] read_file(Meta meta)
-    //**********************************************************
-    {
-        return get_bytes(meta);
-    }
-
-    //**********************************************************
-    private byte[] get_bytes(Meta meta)
+    public byte[] read_bytes(Meta meta)
     //**********************************************************
     {
         MemorySegment segment = get_MemorySegment(meta);

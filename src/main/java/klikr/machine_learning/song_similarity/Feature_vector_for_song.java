@@ -14,7 +14,7 @@ public class Feature_vector_for_song implements Feature_vector
     public static final String FINGERPRINT = "FINGERPRINT=";
 
     public final String original_string;
-    private final double[] features;
+    public final double[] features;
     Logger logger;
 
     //**********************************************************
@@ -113,9 +113,9 @@ public class Feature_vector_for_song implements Feature_vector
 
     //**********************************************************
     @Override
-    public double size()
+    public int size()
     //**********************************************************
     {
-        return features.length*Double.SIZE/8.0;
+        return features.length*Double.SIZE/8;
     }
 }

@@ -27,6 +27,7 @@ import klikr.properties.Non_booleans_properties;
 import klikr.properties.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.log.Logger;
+import klikr.util.mmap.Mmap;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -214,6 +215,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     public void shutdown()
     //**********************************************************
     {
+        Mmap.instance.save_index();
         aborter.abort("Browser is closed for "+get_Path_list_provider().get_name());
         if (dbg) logger.log("Browser shutdown " + signature());
 

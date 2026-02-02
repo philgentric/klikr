@@ -21,11 +21,14 @@ import klikr.machine_learning.song_similarity.Feature_vector_for_song;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import klikr.util.mmap.Mmap;
 import klikr.util.perf.Perf;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -40,22 +43,47 @@ public class Feature_vector_cache implements Clearable_RAM_cache
 //**********************************************************
 {
     private final static boolean ultra_dbg = false;
-    byte features_are_double = 0x01;
-    byte feature_vector_is_string = 0x02;
+    //byte features_are_double = 0x01;
     public final static boolean dbg = false;
     protected final Logger logger;
-    //private final Aborter aborter;
     protected final String tag;
     protected final Path folder_path;
     protected final Path cache_file_path;
 
     public record Paths_and_feature_vectors(Feature_vector_cache fv_cache, List<Path> paths) { }
+    // classic RAM cache
     private final Map<String, Feature_vector> the_cache = new ConcurrentHashMap<>();
+
+    //mmap cache: given the tag, will retrieve the FV
+    //private record Feature_vector_mmap_entry(String tag, int size) {}
+    //private final Map<String, Feature_vector_mmap_entry> mmap_index = new ConcurrentHashMap<>();
+
     private final Feature_vector_creation_actor feature_vector_creation_actor;
 
     private final int instance_number;
     private static AtomicInteger instance_number_generator = new AtomicInteger(0);
+    private Mmap mmap;
 
+
+    private static byte[] doubles_to_bytes(double[] doubles) {
+        ByteBuffer buffer = ByteBuffer.allocate(doubles.length * 8);
+        buffer.asDoubleBuffer().put(doubles);
+        return buffer.array();
+    }
+
+    private static double[] bytes_to_doubles(byte[] bytes) {
+        DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes).asDoubleBuffer();
+        double[] doubles = new double[bytes.length / 8];
+        doubleBuffer.get(doubles);
+        return doubles;
+    }
+
+    private Mmap get_mmap() {
+        if (mmap == null) {
+            mmap = Mmap.get_instance(100, null, logger);
+        }
+        return mmap;
+    }
     //**********************************************************
     public Feature_vector_cache(
             String tag,
@@ -87,6 +115,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             returned += fv.size();
         }
         the_cache.clear();
+        //mmap_index.clear();
         if (dbg) logger.log("feature vector cache file cleared");
         return returned;
     }
@@ -109,7 +138,9 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     public Feature_vector get_from_cache_or_make(Path p, Job_termination_reporter tr, boolean wait_if_needed, Window owner, Aborter browser_aborter)
     //**********************************************************
     {
-        Feature_vector feature_vector =  the_cache.get(key_from_path(p));
+        String key = key_from_path(p);
+        // in RAM?
+        Feature_vector feature_vector =  the_cache.get(key);
         if ( feature_vector != null)
         {
             if ( dbg)
@@ -122,10 +153,27 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+browser_aborter.name+"<- reason="+browser_aborter.reason()+ " target path="+p));
             return null;
         }
-        else
-        {
-            //logger.log(instance_number+" OK aborter "+aborter.name+" reason="+aborter.reason);
+
+        // look in mmap
+        byte[] bytes = get_mmap().read_bytes(key);
+        if (bytes != null) {
+            feature_vector = new Feature_vector_double(bytes_to_doubles(bytes));
+            the_cache.put(key, feature_vector);  // Promote to RAM cache
+            if (dbg) logger.log("feature_vector loaded from mmap for " + p);
+            if (tr != null) tr.has_ended("loaded from mmap", null);
+            return feature_vector;
         }
+
+
+        if ( browser_aborter.should_abort())
+        {
+            logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+browser_aborter.name+"<- reason="+browser_aborter.reason()+ " target path="+p));
+            return null;
+        }
+
+
+
+
         //if ( dbg)
             logger.log("going to make feature_vector for "+p);
 
@@ -152,7 +200,22 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     //**********************************************************
     {
         if(dbg) logger.log(tag +" inject "+path+" value="+fv.to_string()+" components");
-        the_cache.put(key_from_path(path), fv);
+
+        String key = key_from_path(path);
+        the_cache.put(key, fv);
+
+        // also to mmap
+
+        if (fv instanceof Feature_vector_double fvd)
+        {
+            byte[] bytes = doubles_to_bytes(fvd.features);
+            get_mmap().write_bytes(key, bytes, true);
+        }
+        else if (fv instanceof Feature_vector_for_song fvfs)
+        {
+            byte[] bytes = doubles_to_bytes(fvfs.features);
+            get_mmap().write_bytes(key, bytes, true);
+        }
     }
 
     //**********************************************************
@@ -162,8 +225,6 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         int reloaded = 0;
         try(DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(cache_file_path.toFile()))))
         {
-            byte type = dis.readByte();
-
             int number_of_vectors = dis.readInt();
             in_flight.set(number_of_vectors);
             for ( int i = 0; i < number_of_vectors; i++)
@@ -173,29 +234,22 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                     logger.log("aborting : Feature_vector_cache::reload_cache_from_disk "+browser_aborter.reason());
                     return;
                 }
-                String path_string = dis.readUTF();
-                Feature_vector fv = null;
-                if ( type == features_are_double)
-                {
-                    int size_of_vector = dis.readInt();
-                    double[] vector = new double[size_of_vector];
-                    for (int j = 0; j < size_of_vector; j++) {
-                        double val = dis.readDouble();
-                        vector[j] = val;
-                    }
-                    fv = new Feature_vector_double(vector);
-                }
+                String key = dis.readUTF();
+                byte[] bytes= get_mmap().read_bytes(key);
+                double[] vector = bytes_to_doubles(bytes);
+                Feature_vector_double fv = new Feature_vector_double(vector);
+                /*
                 if ( type == feature_vector_is_string)
                 {
                     String s = dis.readUTF();
                     fv = new Feature_vector_for_song(s,logger);
-                }
+                }*/
                 if ( fv == null)
                 {
                     logger.log("❌ Fatal, unknown feature vector type in cache file");
                     return;
                 }
-                the_cache.put(path_string, fv);
+                the_cache.put(key, fv);
                 in_flight.decrementAndGet();
                 reloaded++;
                 if ( i%1000==0) logger.log(i+" feature vectors loaded from disk");
@@ -232,6 +286,40 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     public void save_whole_cache_to_disk()
     //**********************************************************
     {
+        // Save the index file (key → mmap location)
+        Path index_path = Path.of(cache_file_path.toString() + ".index");
+        File tmp_file = new File(index_path.toString() + ".tmp");
+
+        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tmp_file))))
+        {
+            dos.writeInt(the_cache.size());
+            for (Map.Entry<String, Feature_vector> e : the_cache.entrySet()) {
+                dos.writeUTF(e.getKey());
+            }
+        }
+        catch (IOException e) {
+            logger.log(Stack_trace_getter.get_stack_trace("" + e));
+            return;
+        }
+
+        try {
+            Files.move(tmp_file.toPath(), index_path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            logger.log(the_cache.size() + " feature vector index entries saved");
+        }
+        catch (IOException e) {
+            logger.log(Stack_trace_getter.get_stack_trace("" + e));
+        }
+
+        // Save mmap index too
+        get_mmap().save_index();
+    }
+
+
+    /*
+    //**********************************************************
+    public void save_whole_cache_to_disk()
+    //**********************************************************
+    {
         int saved = 0;
         File tmp_file = new File(cache_file_path.toString()+".tmp");
         try(DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tmp_file))))
@@ -254,6 +342,8 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                 dos.writeByte(feature_vector_is_string);
             }
             dos.writeInt(the_cache.size());
+
+
             for(Map.Entry<String, Feature_vector> e : the_cache.entrySet())
             {
                 Feature_vector fv = e.getValue();
@@ -272,6 +362,8 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                     saved++;
                     dos.writeUTF(e.getKey());
                     dos.writeInt(fvd.features.length);
+                    dos.writeUTF(e.getValue().mmap_tag());
+
                     for (int i = 0; i < fvd.features.length; i++) {
                         dos.writeDouble(fvd.features[i]);
                     }
@@ -306,7 +398,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         }
        // logger.log("feature vector components min = "+min+" max = "+ max);
     }
-
+*/
     //**********************************************************
     public static Paths_and_feature_vectors preload_all_feature_vector_in_cache(
             Feature_vector_source fvs,

@@ -51,10 +51,10 @@ public class Feature_vector_double implements Feature_vector
 
     //**********************************************************
     @Override
-    public double size()
+    public int size()
     //**********************************************************
     {
-        return features.length*Double.SIZE/8.0;
+        return features.length*Double.SIZE/8;
     }
 
     //**********************************************************

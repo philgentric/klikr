@@ -4,6 +4,7 @@
 package klikr.machine_learning.similarity;
 
 import javafx.stage.Window;
+import klikr.machine_learning.feature_vector.Top_k;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor;
@@ -52,7 +53,8 @@ public class Similarity_cache_warmer_actor implements Actor
         Similarity_cache_warmer_message scwm = (Similarity_cache_warmer_message)m;
         Aborter browser_aborter = scwm.get_aborter();
         Window owner = scwm.get_owner();
-        Feature_vector emb1 = cache.get_from_cache_or_make(scwm.p1,null,true,owner,browser_aborter);
+        Path p1 = scwm.p1;
+        Feature_vector emb1 = cache.get_from_cache_or_make(p1,null,true,owner,browser_aborter);
         if ( emb1 == null)
         {
             emb1 = cache.get_from_cache_or_make(scwm.p1,null,true,owner,browser_aborter);
@@ -62,6 +64,8 @@ public class Similarity_cache_warmer_actor implements Actor
                 return "ERROR";
             }
         }
+
+        Top_k<Path> top_5 = new Top_k<>(5); // Keep top 5
 
         for (Path p2 : paths)
         {
@@ -90,12 +94,17 @@ public class Similarity_cache_warmer_actor implements Actor
             //if ( diff < min_similarity) min_similarity = diff;
             //if ( diff > max_similarity) max_similarity = diff;
 
+            top_5.add(diff, p2);
 
             // to avoid 'OutOfMemoryError: Java heap space'
             // we limit the number of entries
-            if ( diff < SIMILARITY_THRESHOLD) similarities.inject(pp, diff,false);
+            //if ( diff < SIMILARITY_THRESHOLD) similarities.inject(pp, diff,false);
         }
 
+        for (Top_k.Result<Path> res : top_5.get_results())
+        {
+            similarities.inject(Path_pair.build(p1, res.item()), res.score(), false);
+        }
         return "Done";
     }
 

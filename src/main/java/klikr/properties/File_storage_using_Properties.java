@@ -30,7 +30,7 @@ public class File_storage_using_Properties implements File_storage
     private final Logger logger;
     private final String tag;
     private final Path path;
-    private final ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+    private volatile ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
     private final boolean with_age;
     //**********************************************************
     public File_storage_using_Properties(String purpose, String filename, boolean with_age, Window owner, Aborter aborter, Logger logger)
@@ -62,10 +62,48 @@ public class File_storage_using_Properties implements File_storage
     public boolean set_and_save(String key, String value)
     //**********************************************************
     {
+        merge_by_age();
         set(key, value);
         save_to_disk();
         return true;
     }
+
+    //**********************************************************
+    private void merge_by_age()
+    //**********************************************************
+    {
+        Properties fileProps = load();
+        if (fileProps == null) return;
+
+        for (String k : fileProps.stringPropertyNames())
+        {
+            if (k.endsWith(AGE)) continue;  // Skip age keys, handle with their parent
+            String fileAgeStr = fileProps.getProperty(k + AGE);
+            String memAgeStr = map.get(k + AGE);
+            if (memAgeStr == null)
+            {
+                // Key not in memory → take from file
+                map.put(k, fileProps.getProperty(k));
+                if (fileAgeStr != null) map.put(k + AGE, fileAgeStr);
+            }
+            else if (fileAgeStr != null)
+            {
+                // Both have the key → compare ages
+                LocalDateTime fileAge = LocalDateTime.parse(fileAgeStr);
+                LocalDateTime memAge = LocalDateTime.parse(memAgeStr);
+
+                if (fileAge.isAfter(memAge))
+                {
+                    // File is newer → take file's value
+                    map.put(k, fileProps.getProperty(k));
+                    map.put(k + AGE, fileAgeStr);
+                }
+                // else: memory is newer → keep memory's value (do nothing)
+            }
+        }
+    }
+
+
 
     //**********************************************************
     @Override
@@ -118,33 +156,31 @@ public class File_storage_using_Properties implements File_storage
     }
 
     //**********************************************************
-    @Override
-    public void reload_from_disk()
+    private Properties load()
     //**********************************************************
     {
-        Properties local = new Properties();
+        Properties returned = new Properties();
         if (dbg) logger.log("load_properties()");
         FileInputStream fis;
         try
         {
-
             if (Files.exists(path))
             {
                 if (!Files.isReadable(path))
                 {
                     logger.log("cannot read properties from:" + path.toAbsolutePath());
-                    return;
+                    return null;
                 }
                 fis = new FileInputStream(path.toFile());
                 try
                 {
-                    local.load(fis);
+                    returned.load(fis);
                 }
                 catch (IllegalArgumentException ee)
                 {
                     logger.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + ee+ " for path: "+path.toAbsolutePath()));
                     fis.close();
-                    return;
+                    return null;
                 }
                 if (dbg) logger.log("properties loaded from:" + path.toAbsolutePath());
                 fis.close();
@@ -154,20 +190,32 @@ public class File_storage_using_Properties implements File_storage
         {
             logger.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + e+ " for path: "+path.toAbsolutePath()));
         }
-
-        for (String k : local.stringPropertyNames())
-        {
-            map.put(k, local.getProperty(k));
-        }
+        return returned;
     }
 
+    //**********************************************************
+    @Override
+    public void reload_from_disk()
+    //**********************************************************
+    {
+        Properties local = load();
+        ConcurrentHashMap<String, String> local_map = new ConcurrentHashMap<>();
+        for (String k : local.stringPropertyNames())
+        {
+            local_map.put(k, local.getProperty(k));
+        }
+        map = local_map;
+    }
+
+    //**********************************************************
     @Override
     public void save_to_disk()
+    //**********************************************************
     {
         Properties local = new Properties();
-        for (String k : map.keySet())
+        for (Map.Entry<String, String> e : map.entrySet())
         {
-            local.put(k, map.get(k));
+            local.put(e.getKey(), e.getValue());
         }
         if (dbg) logger.log("save_to_disk()");
         try

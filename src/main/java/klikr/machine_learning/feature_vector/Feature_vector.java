@@ -10,5 +10,5 @@ public interface Feature_vector
     String to_string();
     double distance(Feature_vector feature_vector);
 
-    double size(); // in bytes
+    int size(); // in bytes
 }

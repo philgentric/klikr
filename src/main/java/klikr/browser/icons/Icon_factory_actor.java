@@ -218,8 +218,8 @@ public class Icon_factory_actor implements Actor
             }
 
             case gif -> {
-                //return process_image_icons_cached_as_file( destination.get_item_type(), icon_factory_request, destination);
-                return process_image_icons_not_cached(destination.get_item_type(), icon_factory_request, destination);
+                return process_image_icons_cached_as_file( destination.get_item_type(), icon_factory_request, destination);
+                //return process_image_icons_not_cached(destination.get_item_type(), icon_factory_request, destination);
             }
 
 
@@ -438,7 +438,7 @@ public class Icon_factory_actor implements Actor
         Image image_from_cache = null;
         if ( image_as_file)
         {
-            image_from_cache = Mmap.instance.read_image_as_file(cache_key.toAbsolutePath().toString());
+            image_from_cache = Mmap.instance.read_image_as_file(cache_key);
         }
         else
         {
@@ -550,7 +550,7 @@ public class Icon_factory_actor implements Actor
         };
         if ( image_as_file)
         {
-            Mmap.instance.write_image_as_file(cache_key,(int)image_from_cache.getWidth(),(int)image_from_cache.getHeight(),true, on_end);
+            Mmap.instance.write_image_as_file(cache_key,true, on_end);
         }
         else
         {
@@ -580,7 +580,7 @@ public class Icon_factory_actor implements Actor
         Image image_from_cache = null;
         if ( image_as_file)
         {
-            image_from_cache = Mmap.instance.read_image_as_file(cache_key.toAbsolutePath().toString());
+            image_from_cache = Mmap.instance.read_image_as_file(cache_key);
         }
         else
         {
@@ -632,20 +632,13 @@ public class Icon_factory_actor implements Actor
                 return Optional.empty();
             }
             //logger.log("Icon_factory returning image for :" + destination.get_item_path().getFileName());
-            Runnable on_end = () ->
-            {/*
-            try
+            Runnable on_end = null;
+            if (image_as_file)
             {
-                Files.delete(cache_key);
+                Mmap.instance.write_image_as_file(cache_key, true, on_end);
             }
-            catch (IOException e)
+            else
             {
-                logger.log(""+e);
-            }*/
-            };
-            if (image_as_file) {
-                Mmap.instance.write_image_as_file(cache_key,(int) op.get().getWidth(),(int) op.get().getHeight(), true, on_end);
-            } else {
                 Mmap.instance.write_file(cache_key, true);
             }
             logger.log("Icon_factory process_image_icons_cached_as_file, WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
@@ -911,7 +904,7 @@ public class Icon_factory_actor implements Actor
         switch (item_type)
         {
             case gif, video:
-                image_from_cache = Mmap.instance.read_image_as_file(cache_key.toAbsolutePath().toString());
+                image_from_cache = Mmap.instance.read_image_as_file(cache_key);
                 break;
             default:
                 //case pdf, non_javafx_image, javafx_image_not_gif_not_png, png:
@@ -921,7 +914,7 @@ public class Icon_factory_actor implements Actor
                 }
                 else
                 {
-                    image_from_cache = Mmap.instance.read_image_as_file(cache_key.toAbsolutePath().toString());
+                    image_from_cache = Mmap.instance.read_image_as_file(cache_key);
                 }
                 break;
         }
@@ -1092,7 +1085,7 @@ public class Icon_factory_actor implements Actor
         switch (item_type)
         {
             case gif, video:
-                Mmap.instance.write_image_as_file(cache_key,(int)image_from_cache.getWidth(),(int)image_from_cache.getHeight(),true, on_end);
+                Mmap.instance.write_image_as_file(cache_key,true, on_end);
                 break;
             default:
                 if ( use_pixels_in_mmap)
@@ -1101,7 +1094,7 @@ public class Icon_factory_actor implements Actor
                 }
                 else
                 {
-                    Mmap.instance.write_image_as_file(cache_key,(int)image_from_cache.getWidth(),(int)image_from_cache.getHeight(),true, on_end);
+                    Mmap.instance.write_image_as_file(cache_key,true, on_end);
                 }
                 break;
 
