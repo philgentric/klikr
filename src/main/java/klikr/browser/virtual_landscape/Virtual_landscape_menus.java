@@ -680,9 +680,7 @@ public class Virtual_landscape_menus
             Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
 
             List<Path> paths = virtual_landscape.path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
-            Feature_vector_cache.Paths_and_feature_vectors local =
-                    Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
-            return local.fv_cache();
+            return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
 
@@ -694,9 +692,7 @@ public class Virtual_landscape_menus
         {
             Feature_vector_source fvs = new Feature_vector_source_for_song_similarity(virtual_landscape.aborter);
             List<Path> paths = virtual_landscape.path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files));
-            Feature_vector_cache.Paths_and_feature_vectors local =
-                    Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
-            return local.fv_cache();
+            return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
 

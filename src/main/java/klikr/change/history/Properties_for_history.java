@@ -17,7 +17,7 @@ import static klikr.properties.File_storage_using_Properties.AGE;
 public class Properties_for_history
 //**********************************************************
 {
-    private final static boolean dbg = true;
+    private final static boolean dbg = false;
     private final Logger logger;
     private final File_storage storage;
     private final int max;

@@ -119,8 +119,8 @@ public enum Sort_files_by {
     //**********************************************************
     {
         List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
-        Similarity_cache similarity_cache = get_similarity_cache(fvs,paths,path_list_provider, owner, x, y, logger);
-        Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter, logger).fv_cache();
+        Similarity_cache similarity_cache = get_similarity_cache(fvs,path_list_provider, owner, x, y, logger);
+        Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter, logger);
         return new Similarity_comparator_pairs_of_closests(
             ()->fv_cache,
             similarity_cache,
@@ -140,8 +140,8 @@ public enum Sort_files_by {
     //**********************************************************
     {
         List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
-        Similarity_cache similarity_cache = get_similarity_cache(fvs, paths, path_list_provider, owner, x, y, logger);
-        Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs,paths, path_list_provider, owner, x, y, aborter, logger).fv_cache();
+        Similarity_cache similarity_cache = get_similarity_cache(fvs, path_list_provider, owner, x, y, logger);
+        Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs,paths, path_list_provider, owner, x, y, aborter, logger);
         return new Similarity_comparator_by_pursuit(
             ()->fv_cache,
             similarity_cache,
@@ -156,14 +156,14 @@ public enum Sort_files_by {
     //**********************************************************
     private static Similarity_cache get_similarity_cache(
             Feature_vector_source fvs,
-            List<Path> paths,
+            //List<Path> paths,
             Path_list_provider path_list_provider, Window owner,double x, double y, Logger logger)
     //**********************************************************
     {
         Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(path_list_provider.get_folder_path().toAbsolutePath().toString());
         if (similarity_cache == null)
         {
-            similarity_cache = new Similarity_cache(fvs, paths, path_list_provider, owner, x, y, Shared_services.aborter(), logger);
+            similarity_cache = new Similarity_cache(fvs, path_list_provider, owner, x, y, Shared_services.aborter(), logger);
             RAM_caches.similarity_cache_of_caches.put(path_list_provider.get_folder_path().toAbsolutePath().toString(), similarity_cache);
         }
         return similarity_cache;

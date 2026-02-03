@@ -20,13 +20,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Piece
 //**********************************************************
 {
+    private final static boolean dbg = false;
     private MemorySegment segment;
-    //public final Path index_file;
     public final Path giant_file;
     private final Arena arena;
     private final Logger logger;
     private final AtomicLong current_offset = new AtomicLong(0);
-    //private final Map<String, Meta> index = new ConcurrentHashMap<>();
     private static final long ALIGNMENT = 16 * 1024;
     final int who_are_you;
 
@@ -109,8 +108,6 @@ public class Piece
         return false;
     }
 
-
-
     //**********************************************************
     public long has_room(long size)
     //**********************************************************
@@ -126,7 +123,8 @@ public class Piece
             return -1;
         }
 
-        while (true) {
+        while (true)
+        {
             long current = current_offset.get();
             // Calculate position rounded up to the nearest 16KB boundary
             long aligned_start_offset = (current + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
@@ -134,7 +132,7 @@ public class Piece
 
             if (nextOffset > segment.byteSize())
             {
-                logger.log("Not enough space in memory mapped file");
+                if (dbg) logger.log("WARNING: Not enough space in memory mapped PIECE");
                 return -1;
             }
 
@@ -144,42 +142,6 @@ public class Piece
             }
         }
     }
-
-    /*
-    //**********************************************************
-    public String write_file(Simple_metadata simple_meta, Path path)
-    //**********************************************************
-    {
-        String tag = path.toAbsolutePath().normalize().toString();
-        if (index.containsKey(tag))
-        {
-            logger.log("write_file, tag already registered: " + path);
-            return null;
-        }
-        try
-        {
-            long length = Files.length(path);
-            copy_file_to_segment(path, simple_meta.offset(), length);
-
-            Meta prev = index.putIfAbsent(tag, simple_meta);
-            if (prev == null)
-            {
-                // ok, was available
-                logger.log("Registered tag:->" + tag + "<- at aligned offset: " + simple_meta.offset());
-                return tag;
-            }
-            logger.log("FATAL NOT Registered " + tag );
-            return null;
-        }
-        catch (IOException e)
-        {
-            logger.log("Could not register file: " + e.getMessage());
-            return null;
-        }
-
-    }
-*/
-
 
     //**********************************************************
     public void write_file(Simple_metadata simple_meta, Path path)
@@ -203,10 +165,7 @@ public class Piece
         {
             logger.log("Could not write file: " + e.getMessage());
         }
-
     }
-
-
 
     //**********************************************************
     public boolean write_bytes(Simple_metadata simple_meta, String tag, byte[] bytes)
@@ -255,13 +214,10 @@ public class Piece
         return null;
     }
 
-
-
     //**********************************************************
     public boolean write_image_as_pixels(long offset,  Image image)
     //**********************************************************
     {
-
         PixelReader pr = image.getPixelReader();
         if ( pr == null)
         {
@@ -310,25 +266,14 @@ public class Piece
         MemorySegment segment = get_MemorySegment(meta);
         if (segment == null) return null;
         int width = meta.width();
-        logger.log("image w = "+width);
+        if( dbg) logger.log("image w = "+width);
         if ( width <=0)  return null;
         int height = meta.height();
-        logger.log("image h = "+height);
+        if( dbg) logger.log("image h = "+height);
         if ( height <=0)  return null;
 
         ByteBuffer a = segment.asByteBuffer();
 
-        /*
-        ByteBuffer b = ByteBuffer.allocate(a.capacity());
-        for (int i = 0; i < a.limit(); ++i) {
-            b.put(a.get(i));
-        }
-
-        // Flip the buffers to start reading from the beginning
-        a.flip();
-        b.flip();
-
-         */
         PixelBuffer<ByteBuffer> pixelBuffer = new PixelBuffer<>(
                 width,
                 height,
@@ -339,100 +284,6 @@ public class Piece
         //logger.log("Retrieved image FROM PIXELS, w= "+returned.getWidth()+" h= "+returned.getHeight());
         return returned;
     }
-
-
-    /*
-
-
-    public boolean write_image_as_pixels(long address,
-                                         Image fxImage)
-    {
-        int imgWidth = (int)fxImage.getWidth();
-        int imgHeight = (int)fxImage.getHeight()
-        // ---- a. Pull raw BGRA data into a *private* byte[] ----
-        PixelReader pr = fxImage.getPixelReader();
-        if (pr == null) {
-            logger.log("❌ PANIC in write_image, PixelReader is null for image: " + fxImage);
-            return false;
-        }
-
-        int pixelCount = imgWidth * imgHeight;
-
-        // Using a fresh byte[] guarantees we start with zero‑initialized memory.
-        byte[] rawBytes = new byte[pixelCount * 4];
-
-        pr.getPixels(0, 0,
-                imgWidth,
-                imgHeight,
-                PixelFormat.getByteBgraInstance(),
-                rawBytes,
-                0,
-                // *** IMPORTANT: use the *actual* stride returned by getPixels() ----
-                imgWidth * 4);               // usually 1; otherwise calculate real stride
-
-        // ---- b. Premultiply Alpha (in‑place on our private buffer) ----
-        for (int i = 0, base = 0; i < pixelCount; ++i, base += 4) {
-            int a = rawBytes[base + 3] & 0xFF;
-            if (a == 0) continue;                     // skip fully transparent pixels (avoid int‑div overflow)
-
-            float scale = a / 255.0f;
-            rawBytes[base     ] = (byte)((rawBytes[base     ] * scale));   // b
-            rawBytes[base + 1] = (byte)((rawBytes[base + 1] * scale));     // g
-            rawBytes[base + 2] = (byte)((rawBytes[base + 2] * scale));     // r
-            // alpha stays unchanged – it is stored as‑is in the file/format you write later
-        }
-
-        // ---- c. Compute the total size we will copy to native RAM ----
-        long sizeInBytes = pixelCount * 4;   // BGRA = 4 bytes per pixel
-
-        // ---- d. Allocate a fresh MemorySegment for this operation only ----
-        // (instead of re‑using an existing one that may still contain stale data)
-        try (MemorySegment seg = memoryPool.acquire(sizeInBytes)) {
-
-            // Fill it directly from the byte[] – no intermediate copy needed.
-            seg.write(ByteBuffer.wrap(rawBytes));
-
-            // Store the segment’s *address* into your native cache entry
-            nativeCache.put(address, new SegmentInfo(seg.address(), sizeInBytes));
-            return true;
-        }
-    }
-
-    public Image read_image_as_pixel(Memory address, int width, int height) {
-        // Grab the exact segment we stored earlier (size is fixed: width*height*4)
-        try (MemorySegment seg = memoryPool.get(address)) {          // or however you retrieve it
-            if (seg == null) {
-                logger.warning("Attempted to read an image at address that was never written.");
-                return null;
-            }
-
-            // Direct ByteBuffer that reads from the *exact* region we need.
-            ByteBuffer buf = seg.asByteBuffer();
-
-            // Ensure the buffer starts at position 0 and has the proper limit.
-            buf.position(0);
-            buf.limit(width * height * 4);   // total bytes for this image
-
-            // The pixel format *must* match the one we wrote (premultiplied alpha)
-            PixelFormat fmt = PixelFormat.getByteBgraPreInstance();
-
-            // Create a PixelBuffer that points to this buffer.
-            PixelBuffer<ByteBuffer> pb = new PixelBuffer<>(width, height,
-                    buf,
-                    fmt);
-
-            // Build the WritableImage – this does NOT copy any data; it just
-            // binds the native bytes directly to a JavaFX image object.
-            Image img = new WritableImage(pb);
-
-            // At this point `img` is fully populated from the native buffer.
-            return img;
-        }
-    }*/
-
-
-
-
 
     //**********************************************************
     public void write_image_as_file(Image_as_file_metadata meta, Path path)
@@ -466,7 +317,6 @@ public class Piece
         return null;
     }
 
-
     //**********************************************************
     public byte[] read_bytes(Meta meta)
     //**********************************************************
@@ -480,12 +330,10 @@ public class Piece
         return segment.toArray(ValueLayout.JAVA_BYTE);
     }
 
-
     //**********************************************************
     synchronized void clear_cache()
     //**********************************************************
     {
         current_offset.set(0);
     }
-
 }

@@ -20,11 +20,11 @@ import java.util.concurrent.ConcurrentHashMap;
 class State
 //**********************************************************
 {
-    private final static boolean dbg = true;
+    //private final static boolean dbg = true;
     private volatile Map<Path, Integer> path_to_index;
     private volatile Map<Integer,Path> index_to_path;
     private final Logger logger;
-    private final Aborter aborter;
+    //private final Aborter aborter;
     private final Path_list_provider path_list_provider;
     private final Path_comparator_source path_comparator_source;
     private final Type type;
@@ -33,7 +33,7 @@ class State
     //**********************************************************
     {
         this.logger = logger;
-        this.aborter = aborter;
+        //this.aborter = aborter;
         this.path_list_provider = path_list_provider;
         this.type = type;
         this.path_comparator_source = path_comparator_source;

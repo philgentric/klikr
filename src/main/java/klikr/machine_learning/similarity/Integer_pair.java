@@ -8,35 +8,33 @@ import java.nio.file.Paths;
 
 // DO NOT use the constructor !
 //**********************************************************
-public record Path_pair(Path i, Path j)
+public record Integer_pair(int i, int j)
 //**********************************************************
 {
     public static long size()
     {
-        // shallow length only...
-        return 32L;
+        return 2*(Integer.SIZE)/8;
     }
 
-    public static Path_pair build(Path i, Path j)
+    public static Integer_pair build(int i, int j)
     {
         // trying to make sure pairs are in the same order
         // i.e. pair(i,j) == pair(j,i)
-        if ( i.hashCode() < j.hashCode()) return new Path_pair(i,j);
-        else return new Path_pair(j,i);
+        if ( i < j ) return new Integer_pair(i,j);
+        else return new Integer_pair(j,i);
     }
 
     public String to_string_key()
     {
-        // The null character is not allowed in file paths on any operating system.
-        return i.toAbsolutePath().normalize().toString()+"\0"+j.toAbsolutePath().normalize().toString();
+        return i+"\0"+j;
     }
 
-    public static Path_pair from_string_key(String s)
+    public static Integer_pair from_string_key(String s)
     {
         String[] parts = s.split("\0", 2); // Split into exactly 2 parts
-        Path i = Paths.get(parts[0]);
-        Path j = Paths.get(parts[1]);
-        return Path_pair.build(i,j);
+        int i = Integer.parseInt(parts[0]);
+        int j = Integer.parseInt(parts[1]);
+        return Integer_pair.build(i,j);
     }
 
 }

@@ -93,7 +93,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         {
             if ( path.toFile().exists())
             {
-                // The server failed to return a vector. the file may be corrupted
+                // The server failed to return a vector. the file may be corrupted?
 
                 logger.log("❗ WARNING: File MAY BE CORRUPTED: "+path);
             }
@@ -191,7 +191,6 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
             logger.log("aborting(1) Feature_vector_source::get_feature_vector_from_server_generic reason: "+aborter.reason());
             return Optional.empty();
         }
-
 
         if ( path == null)
         {

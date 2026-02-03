@@ -6,10 +6,10 @@ package klikr.browser.comparators;
 //SOURCES ../../image_ml/image_similarity/Feature_vector_source_for_image_similarity.java;
 //SOURCES ../../image_ml/image_similarity/Path_pair.java;
 
+import klikr.machine_learning.similarity.Integer_pair;
 import klikr.util.cache.Clearable_RAM_cache;
 import klikr.path_lists.Path_list_provider;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
-import klikr.machine_learning.similarity.Path_pair;
 import klikr.machine_learning.similarity.Similarity_cache;
 import klikr.properties.boolean_features.Feature;
 import klikr.properties.boolean_features.Feature_cache;
@@ -29,7 +29,9 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
 //**********************************************************
 {
     protected final Map<Path, Integer> dummy_names = new HashMap<>();
-    private final Map<Path_pair, Integer> distances_cache = new HashMap<>();
+    private final Map<Integer_pair, Integer> distances_cache = new HashMap<>();
+    private final List<Path> paths = new ArrayList<>();
+
     protected final Supplier<Feature_vector_cache> fv_cache_supplier;
     protected final Logger logger;
     protected final Similarity_cache similarity_cache;
@@ -59,8 +61,8 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
         }
 
 
-        Function<Path_pair, Long> size_of_Path_pair = pathPair -> 2* Size_.of_Path();
-        returned += Size_.of_Map(distances_cache,size_of_Path_pair, Size_.of_Integer_F());
+        Function<Integer_pair, Long> size_of_Integer_pair = integer_pair -> 8L;
+        returned += Size_.of_Map(distances_cache,size_of_Integer_pair, Size_.of_Integer_F());
         distances_cache.clear();
 
         returned += Size_.of_Map(dummy_names,Size_.of_Path_F(), Size_.of_Integer_F());
@@ -82,7 +84,20 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
-        Path_pair pp = Path_pair.build(p1,p2);
+        int i = paths.indexOf(p1);
+        if ( i == -1)
+        {
+            paths.add(p1);
+            i = paths.indexOf(p1);
+        }
+        int j = paths.indexOf(p2);
+        if ( j == -1)
+        {
+            paths.add(p2);
+            j = paths.indexOf(p2);
+        }
+
+        Integer_pair pp = Integer_pair.build(i,j);
         Integer d = distances_cache.get(pp);
         if (d != null) return d;
 

@@ -556,7 +556,7 @@ public class Icon_factory_actor implements Actor
         {
             Mmap.instance.write_file(cache_key,true);
         }
-        logger.log("Icon_factory process_video, WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
+        logger.log("Icon_factory process_video: WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
 
 
         Image_properties properties = new Image_properties(image_from_cache.getWidth(), image_from_cache.getHeight(), Rotation.normal);
@@ -568,7 +568,7 @@ public class Icon_factory_actor implements Actor
     private Optional<Image_and_properties> process_image_icons_cached_as_file(Iconifiable_item_type item_type, Icon_factory_request icon_factory_request, Icon_destination destination)
     //**********************************************************
     {
-        if (verbose_dbg) logger.log("✅ Icon_factory_actor  process_image_icons_cached_as_file " + destination.get_item_path().toAbsolutePath());
+        if (verbose_dbg) logger.log("✅ Icon_factory_actor process_image_icons_cached_as_file " + destination.get_item_path().toAbsolutePath());
 
         double length = Non_booleans_properties.get_animated_gif_duration_for_a_video(icon_factory_request.owner);
         Path resulting_gif_name = Icon_caching.path_for_icon_caching(destination.get_path_for_display_icon_destination(), String.valueOf(icon_factory_request.icon_size)+"_"+length, Icon_caching.gif_extension, owner, logger);
@@ -641,7 +641,7 @@ public class Icon_factory_actor implements Actor
             {
                 Mmap.instance.write_file(cache_key, true);
             }
-            logger.log("Icon_factory process_image_icons_cached_as_file, WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
+            logger.log("Icon_factory process_image_icons_cached_as_file, WROTE file to cache, returning image for :" + destination.get_item_path().getFileName());
 
 
             Image_properties properties = new Image_properties(op.get().getWidth(), op.get().getHeight(), Rotation.normal);
@@ -759,110 +759,6 @@ public class Icon_factory_actor implements Actor
         return Optional.of(new Image_and_properties(image_from_cache,properties));
     }
 
-/*
-    //**********************************************************
-    private Optional<Image_and_properties> process_animated_gif(Icon_factory_request icon_factory_request, Icon_destination destination)
-    //**********************************************************
-    {
-        if (verbose_dbg) logger.log("✅ Icon_factory_actor  process_animated_gif " + destination.get_item_path().toAbsolutePath());
-
-        boolean bypass = true;
-        if ( bypass)
-        {
-            Image image = Icons_from_disk.load_icon(destination.get_item_path(), logger);
-            Image_properties properties = new Image_properties(image.getWidth(), image.getHeight(), Rotation.normal);
-            return Optional.of(new Image_and_properties(image, properties));
-
-        }
-        Path resulting_gif_name = Icon_caching.path_for_icon_caching(destination.get_path_for_display_icon_destination(), String.valueOf(icon_factory_request.icon_size), Icon_caching.gif_extension, owner, logger);
-        Path cache_key = Paths.get(icon_cache_dir.toAbsolutePath().toString(), resulting_gif_name.getFileName().toString());
-
-        // we are going to create a scaled down animated gif using Image
-        // ... unless it is already in the mmap cache
-
-        Image image_from_cache = null;
-        boolean image_as_file = false;
-        if ( image_as_file)
-        {
-            image_from_cache = Mmap.instance.read_image_as_file(cache_key.toAbsolutePath().toString());
-        }
-        else
-        {
-            byte[] bytes = Mmap.instance.read_file(cache_key);
-            if (bytes != null) {
-                try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
-                    image_from_cache = new Image(bais);
-                    logger.log("Retrieved image FROM FILE, w= " + image_from_cache.getWidth() + " h= " + image_from_cache.getHeight());
-                    logger.log("error:" + image_from_cache.isError() + " " + image_from_cache.getException());
-                } catch (IOException e) {
-                    logger.log(Stack_trace_getter.get_stack_trace("" + e));
-                }
-            }
-        }
-        if (icon_factory_request.aborter.should_abort()) {
-            if (aborting_dbg) logger.log("❗ Icon_factory_actor process_animated_gif aborting4");
-            return Optional.empty();
-        }
-        if (image_from_cache != null)
-        {
-            if (dbg)
-                logger.log("✅ Icon_factory_actor process_animated_gif found in cache(): " + destination.get_item_path().getFileName());
-
-            Image_properties properties = new Image_properties(image_from_cache.getWidth(), image_from_cache.getHeight(), Rotation.normal);
-            return Optional.of(new Image_and_properties(image_from_cache, properties));
-        }
-        if (dbg)
-            logger.log("❗ Icon_factory_actor process_animated_gif load from cache FAILED for " + destination.get_item_path());
-
-        if (icon_factory_request.aborter.should_abort()) {
-            if (aborting_dbg) logger.log("❗ Icon_factory_actor process_animated_gif aborting5");
-            return Optional.empty();
-        }
-        if (cache_key.toFile().length() == 0) {
-            logger.log("❗process_animated_gif ERROR animated gif empty " + cache_key.toAbsolutePath());
-            return Optional.empty();
-        }
-        if (verbose_dbg)
-            logger.log("✅ Icon_factory process_animated_gif Animated gif icon MADE for " + destination.get_item_path().getFileName() + " as " + cache_key.toAbsolutePath());
-
-
-        image_from_cache = Icons_from_disk.load_icon2(cache_key, icon_factory_request.icon_size, logger);
-        //Optional<Image> ll = Icons_from_disk.read_original_image_from_disk_and_return_icon(cache_key,Iconifiable_item_type.animated_gif,icon_factory_request.icon_size,true,owner,aborter,logger);
-
-        if (icon_factory_request.aborter.should_abort()) {
-            if (aborting_dbg) logger.log("❗ Icon_factory_actor process_animated_gif aborting7");
-            return Optional.empty();
-        }
-        if ( image_from_cache != null ) {
-            logger.log("Icon_factory_actor process_animated_gif read_original_image_from_disk_and_return_icon OK for " + destination.get_item_path().getFileName());
-        }
-        else
-        {
-            logger.log("❗ Icon_factory_actor process_animated_gif load from file FAILED (5) for " + destination.get_item_path().getFileName());
-            return Optional.empty();
-        }
-        if ((image_from_cache.getHeight() == 0) && (image_from_cache.getWidth() == 0)) {
-            logger.log("❗ Icon_factory_actor process_animated_gif load from file FAILED (6) for " + destination.get_item_path().getFileName());
-            return Optional.empty();
-        }
-
-        if ( image_as_file)
-        {
-            Mmap.instance.write_image_as_file(cache_key,image_from_cache,true, null);
-        }
-        else
-        {
-            Mmap.instance.write_file(cache_key,true);
-        }
-        logger.log("Icon_factory process_animated_gif, WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
-
-
-        Image_properties properties = new Image_properties(image_from_cache.getWidth(), image_from_cache.getHeight(), Rotation.normal);
-        return Optional.of(new Image_and_properties(image_from_cache, properties));
-
-    }
-
-*/
 
 
 
@@ -1100,7 +996,7 @@ public class Icon_factory_actor implements Actor
 
         }
 
-        logger.log("Icon_factory do_it, WROTE animated GIF to cache, returning image for :" + destination.get_item_path().getFileName());
+        logger.log("Icon_factory do_it, WROTE pixels to cache, returning image for :" + destination.get_item_path().getFileName());
 
         Image_properties properties = new Image_properties(image_from_cache.getWidth(), image_from_cache.getHeight(), Rotation.normal);
         return Optional.of(new Image_and_properties(image_from_cache, properties));

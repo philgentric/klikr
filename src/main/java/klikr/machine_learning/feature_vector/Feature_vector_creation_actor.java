@@ -8,6 +8,7 @@ package klikr.machine_learning.feature_vector;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.execute.actor.virtual_threads.Concurrency_limiter;
+import klikr.util.mmap.Mmap;
 
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public class Feature_vector_creation_actor implements Actor
 {
     public static final boolean dbg = false;
     final Feature_vector_source fvs;
-    Concurrency_limiter cl = null;//new Concurrency_limiter("Feature_vector_creation_actor",0.5);
+    Concurrency_limiter cl = new Concurrency_limiter("Feature_vector_creation_actor",0.5);
 
     //**********************************************************
     public Feature_vector_creation_actor(Feature_vector_source fvs)
@@ -51,22 +52,23 @@ public class Feature_vector_creation_actor implements Actor
 
         if (image_feature_vector_message.aborter.should_abort())
         {
-            image_feature_vector_message.logger.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
-            cl.release();
+            if ( dbg) image_feature_vector_message.logger.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
+            if ( cl != null) cl.release();
+            Mmap.instance.save_index();
             return "aborted";
         }
 
         Optional<Feature_vector> fv = fvs.get_feature_vector(image_feature_vector_message.path, image_feature_vector_message.owner, image_feature_vector_message.aborter, image_feature_vector_message.logger);
+        if ( cl != null) cl.release();
 
         if ( fv.isEmpty())
         {
-            image_feature_vector_message.logger.log("Warning: fv source failed");
-            if ( cl != null) cl.release();
+            image_feature_vector_message.logger.log("Warning: fv source failed for "+ image_feature_vector_message.path);
+            Mmap.instance.save_index();
             return "Warning: embeddings server failed";
         }
         //image_feature_vector_message.logger.log("OK: fv made by source");
         image_feature_vector_message.feature_vector_cache.inject(image_feature_vector_message.path,fv.get());
-        if ( cl != null) cl.release();
         return "ok";
     }
 

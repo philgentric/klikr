@@ -27,7 +27,7 @@ import java.util.UUID;
 public class Undo_for_moves implements Datetime_to_signature_source
 //**********************************************************
 {
-    private static final boolean dbg = true;
+    private static final boolean dbg = false;
     private static Undo_for_moves instance =  null;
     private static Logger logger = null;
     public static List<Active_list_stage> undo_stages = new ArrayList<>();

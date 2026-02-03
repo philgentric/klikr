@@ -22,6 +22,10 @@ import java.util.concurrent.*;
 public class Mmap
 //**********************************************************
 {
+    private final static boolean dbg = false;
+    private final static boolean stats_dbg = false;
+    private final static boolean ultra_dbg = false;
+
     public static volatile Mmap instance;
 
     private final Map<Integer,Piece> pieces = new ConcurrentHashMap<>();
@@ -32,9 +36,6 @@ public class Mmap
     private final Path main_index_file;
     private final ArrayBlockingQueue<Boolean> save_queue = new ArrayBlockingQueue<>(1);
 
-
-    private final static boolean stats_dbg = false;
-    private final static boolean ultra_dbg = false;
 
     private final Map<String, Integer> usage = new ConcurrentHashMap<>();
 
@@ -116,7 +117,6 @@ public class Mmap
         }
     }
 
-
     //**********************************************************
     public void write_bytes(String tag, byte[] bytes, boolean and_save)
     //**********************************************************
@@ -125,16 +125,35 @@ public class Mmap
         Simple_metadata meta = find_room_for_bytes(tag,bytes);
         if ( meta == null )
         {
-            logger.log("no room found for "+tag);
+            logger.log("Mmap no room found for "+tag);
             return;
         }
         meta.piece().write_bytes(meta,tag,bytes);
         String key = tag;
         record_index(key, meta,meta.piece());
         if (ultra_dbg) logger.log("mmap write_file_internal WROTE: "+key);
+        consider_saving(and_save);
+
+    }
+
+    static long last_saved = -1;
+    //**********************************************************
+    private void consider_saving(boolean and_save)
+    //**********************************************************
+    {
+        long now = System.currentTimeMillis();
         if (and_save)
         {
             save_index();
+            last_saved = now;
+        }
+        else
+        {
+            if ( now - last_saved > 10_000 )
+            {
+                last_saved = now;
+                save_index();
+            }
         }
     }
 
@@ -148,17 +167,15 @@ public class Mmap
         Simple_metadata meta = find_room_for_file(path);
         if ( meta == null )
         {
-            logger.log("no room found for "+path);
+            logger.log("Mmap no room found for "+path);
             return;
         }
         meta.piece().write_file(meta,path);
         String key = path.toAbsolutePath().toString();
         record_index(key, meta,meta.piece());
         if (ultra_dbg) logger.log("mmap write_file_internal WROTE: "+key);
-        if (and_save)
-        {
-            save_index();
-        }
+        consider_saving(and_save);
+
     }
 
 
@@ -176,13 +193,13 @@ public class Mmap
         Simple_metadata sm = (Simple_metadata) main_index.get(tag);
         if ( sm == null)
         {
-            logger.log("read_file failed: no metadata found for "+tag);
+            if ( dbg) logger.log("Mmap read_file failed: no metadata found for "+tag);
             return null;
         }
         Piece piece = sm.piece();
         if ( piece == null)
         {
-            logger.log("read_file failed: no piece for "+tag);
+            logger.log("❌ PANIC Mmap read_file failed: no piece for "+tag);
             return null;
         }
         if ( stats_dbg)
@@ -199,13 +216,13 @@ public class Mmap
         Simple_metadata sm = (Simple_metadata) main_index.get(p.toAbsolutePath().toString());
         if ( sm == null)
         {
-            logger.log("read_file failed: no metadata found for "+p);
+            logger.log("Mmap read_file failed: no metadata found for "+p);
             return null;
         }
         Piece piece = sm.piece();
         if ( piece == null)
         {
-            logger.log("read_file failed: no piece for "+p);
+            logger.log("Mmap read_file failed: no piece for "+p);
             return null;
         }
         if ( stats_dbg)
@@ -225,15 +242,17 @@ public class Mmap
     //**********************************************************
     {
         Image_as_file_metadata meta = find_room_for_image_as_file(path);
-        if ( meta == null ) return;
+        if ( meta == null )
+        {
+            logger.log("Mmap no room found for "+path);
+            return;
+        }
         String key = path.toAbsolutePath().toString();
         meta.piece().write_image_as_file(meta,path);
         record_index(key, meta, meta.piece());
         if (ultra_dbg) logger.log("mmap image as file: "+key);
-        if (and_save)
-        {
-            save_index();
-        }
+        consider_saving(and_save);
+
         if ( on_end != null )
         {
             on_end.run();
@@ -247,14 +266,16 @@ public class Mmap
     //**********************************************************
     {
         Image_as_pixel_metadata meta = find_room_for_image_as_pixel(image, tag);
-        if ( meta == null ) return;
+        if ( meta == null )
+        {
+            logger.log("Mmap no room found for "+tag);
+            return;
+        }
         meta.piece().write_image_as_pixels(meta.offset(),image);
         record_index(tag, meta, meta.piece());
         if (ultra_dbg) logger.log("mmap image as pixel: "+tag);
-        if (and_save)
-        {
-            save_index();
-        }
+        consider_saving(and_save);
+
         if ( on_end != null )
         {
             on_end.run();
@@ -269,7 +290,11 @@ public class Mmap
     {
         long start = System.currentTimeMillis();
         Image_as_pixel_metadata meta = (Image_as_pixel_metadata) main_index.get(tag);
-        if ( meta == null ) return null;
+        if ( meta == null )
+        {
+            if (dbg) logger.log("Mmap tag found for "+tag);
+            return null;
+        }
         //logger.log("mmap reading image: "+tag+" is pixels=yes");
         Piece p = meta.piece();
         if (p == null) return null;
@@ -296,7 +321,11 @@ public class Mmap
     {
         String tag = path.toAbsolutePath().toString();
         Image_as_file_metadata meta = (Image_as_file_metadata) main_index.get(tag);
-        if ( meta == null ) return null;
+        if ( meta == null )
+        {
+            if ( dbg) logger.log("Mmap path found for "+path);
+            return null;
+        }
         if (ultra_dbg) logger.log("mmap reading image: "+tag+" is pixels=no");
         Piece p = meta.piece();
         if (p == null) return null;
@@ -327,6 +356,7 @@ public class Mmap
     //**********************************************************
     {
         Simple_metadata sm = (Simple_metadata) main_index.get(tag);
+        if (sm == null) return null;
         Piece p = sm.piece();
         if (p == null) return null;
         return p.get_MemorySegment(sm);
@@ -343,7 +373,7 @@ public class Mmap
     {
         try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(index_file.toFile())))
         {
-            logger.log("index size ="+local.size());
+            if (dbg) logger.log("index size ="+local.size());
             dos.writeInt(local.size());
             for (Map.Entry<String, Meta> entry : local.entrySet())
             {
@@ -371,7 +401,7 @@ public class Mmap
                 }
                 else if (meta instanceof Image_as_file_metadata isfm)
                 {
-                    logger.log("writing Image_as_file_metadata ="+entry.getKey());
+                    if (ultra_dbg) logger.log("writing Image_as_file_metadata ="+entry.getKey());
 
                     dos.writeInt(isfm.piece().who_are_you);
                     dos.write(IMAGE_FILE_META);
@@ -381,7 +411,7 @@ public class Mmap
                 }
             }
             dos.flush();
-            logger.log("Index saved with " + local.size() + " entries.");
+            if ( dbg) logger.log("Index saved with " + local.size() + " entries.");
         }
         catch (FileNotFoundException e)
         {
@@ -531,6 +561,12 @@ public class Mmap
     private Room find_room(long length)
     //**********************************************************
     {
+        if (length > (long) piece_size_in_megabytes * 1024 * 1024)
+        {
+            logger.log("Item too large for any piece: " + length + " bytes (limit: " + piece_size_in_megabytes + " MB)");
+            return null;
+        }
+
         for ( Piece piece : pieces.values() )
         {
             long offset = piece.has_room(length);
@@ -539,28 +575,20 @@ public class Mmap
                 return new Room(piece,offset);
             }
         }
-
-
-        int next_index = pieces.size();
-        for(;;)
+        // need to create a new Piece
+        int next_piece_index = pieces.size();
+        Piece piece = pieces.computeIfAbsent(next_piece_index, index -> {
+            Piece p = new Piece(index, cache_folder, logger);
+            p.init(new HashMap<>(), piece_size_in_megabytes);
+            return p;
+        });
+        long offset = piece.has_room(length);
+        if (offset >= 0)
         {
-            Piece piece = pieces.computeIfAbsent(next_index, index -> {
-                Piece p = new Piece(index, cache_folder, logger);
-                p.init(new HashMap<>(), piece_size_in_megabytes);
-                return p;
-            });
-            long offset = piece.has_room(length);
-            if (offset >= 0)
-            {
-                return new Room(piece, offset);
-            }
-            if (length > (long) piece_size_in_megabytes * 1024 * 1024)
-            {
-                logger.log("Item too large for any piece: " + length + " bytes (limit: " + piece_size_in_megabytes + " MB)");
-                return null;
-            }
-            next_index++;
+            return new Room(piece, offset);
         }
+        logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN Room not found for piece: " + piece));
+        return null;
     }
 
 

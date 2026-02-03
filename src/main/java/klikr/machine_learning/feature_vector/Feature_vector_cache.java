@@ -37,53 +37,44 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 //**********************************************************
 public class Feature_vector_cache implements Clearable_RAM_cache
 //**********************************************************
 {
     private final static boolean ultra_dbg = false;
-    //byte features_are_double = 0x01;
     public final static boolean dbg = false;
     protected final Logger logger;
     protected final String tag;
-    protected final Path folder_path;
-    protected final Path cache_file_path;
 
-    public record Paths_and_feature_vectors(Feature_vector_cache fv_cache, List<Path> paths) { }
     // classic RAM cache
-    private final Map<String, Feature_vector> the_cache = new ConcurrentHashMap<>();
+    //private final Map<String, Feature_vector> the_cache = new ConcurrentHashMap<>();
 
-    //mmap cache: given the tag, will retrieve the FV
-    //private record Feature_vector_mmap_entry(String tag, int size) {}
-    //private final Map<String, Feature_vector_mmap_entry> mmap_index = new ConcurrentHashMap<>();
 
     private final Feature_vector_creation_actor feature_vector_creation_actor;
 
     private final int instance_number;
     private static AtomicInteger instance_number_generator = new AtomicInteger(0);
-    private Mmap mmap;
 
 
-    private static byte[] doubles_to_bytes(double[] doubles) {
+    //**********************************************************
+    private static byte[] doubles_to_bytes(double[] doubles)
+    //**********************************************************
+    {
         ByteBuffer buffer = ByteBuffer.allocate(doubles.length * 8);
         buffer.asDoubleBuffer().put(doubles);
         return buffer.array();
     }
 
-    private static double[] bytes_to_doubles(byte[] bytes) {
+    //**********************************************************
+    private static double[] bytes_to_doubles(byte[] bytes)
+    //**********************************************************
+    {
         DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes).asDoubleBuffer();
         double[] doubles = new double[bytes.length / 8];
         doubleBuffer.get(doubles);
         return doubles;
     }
 
-    private Mmap get_mmap() {
-        if (mmap == null) {
-            mmap = Mmap.get_instance(100, null, logger);
-        }
-        return mmap;
-    }
     //**********************************************************
     public Feature_vector_cache(
             String tag,
@@ -94,12 +85,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     {
         instance_number = instance_number_generator.getAndIncrement();
         logger = logger_;
-        //this.aborter = aborter; // as this is a shared cache, closing the browser that created it must not disable it
         this.tag = tag;
-        String cache_file_name = UUID.nameUUIDFromBytes(tag.getBytes()) +".fv_cache";
-        folder_path = get_feature_vector_cache_dir(null,logger);
-        cache_file_path= Path.of(folder_path.toAbsolutePath().toString(), cache_file_name);
-        if ( dbg) logger.log(tag +" cache file ="+cache_file_path);
         feature_vector_creation_actor = new Feature_vector_creation_actor(fvs);
     }
 
@@ -110,11 +96,13 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     //**********************************************************
     {
         double returned = 0;
+        /*
         for (Feature_vector fv : the_cache.values())
         {
             returned += fv.size();
         }
         the_cache.clear();
+        */
         //mmap_index.clear();
         if (dbg) logger.log("feature vector cache file cleared");
         return returned;
@@ -135,30 +123,33 @@ public class Feature_vector_cache implements Clearable_RAM_cache
 
     //**********************************************************
     // if wait_if_needed is true, tr can be null
+    // if tr is not null it must be safe to execute for emergency abort
     public Feature_vector get_from_cache_or_make(Path p, Job_termination_reporter tr, boolean wait_if_needed, Window owner, Aborter browser_aborter)
     //**********************************************************
     {
         String key = key_from_path(p);
+        /*
         // in RAM?
         Feature_vector feature_vector =  the_cache.get(key);
         if ( feature_vector != null)
         {
             if ( dbg)
-                logger.log("feature_vector found in cache for "+p);
+                logger.log("feature_vector found in RAM cache for "+p);
             if ( tr != null) tr.has_ended("found in cache",null);
             return feature_vector;
         }
         if ( browser_aborter.should_abort())
         {
             logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+browser_aborter.name+"<- reason="+browser_aborter.reason()+ " target path="+p));
+            if (tr != null) tr.has_ended("aborted", null);
             return null;
         }
-
+        */
         // look in mmap
-        byte[] bytes = get_mmap().read_bytes(key);
+        byte[] bytes = Mmap.instance.read_bytes(key);
         if (bytes != null) {
-            feature_vector = new Feature_vector_double(bytes_to_doubles(bytes));
-            the_cache.put(key, feature_vector);  // Promote to RAM cache
+            Feature_vector feature_vector = new Feature_vector_double(bytes_to_doubles(bytes));
+            //the_cache.put(key, feature_vector);  // Promote to RAM cache
             if (dbg) logger.log("feature_vector loaded from mmap for " + p);
             if (tr != null) tr.has_ended("loaded from mmap", null);
             return feature_vector;
@@ -168,21 +159,26 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         if ( browser_aborter.should_abort())
         {
             logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+browser_aborter.name+"<- reason="+browser_aborter.reason()+ " target path="+p));
+            if (tr != null) tr.has_ended("aborted", null);
             return null;
         }
 
-
-
-
-        //if ( dbg)
-            logger.log("going to make feature_vector for "+p);
+        if ( dbg) logger.log("going to make feature_vector for "+p);
 
         Feature_vector_build_message imp = new Feature_vector_build_message(p,this,owner,browser_aborter,logger);
         if ( wait_if_needed)
         {
+            //logger.log("blocking FV creation call for "+p);
             feature_vector_creation_actor.run(imp); // blocking call
-            Feature_vector x = the_cache.get(key_from_path(p));
-            if ( x == null) logger.log("❌ PANIC null Feature_vector in cache after blocking call ");
+            if (tr != null) tr.has_ended("done after blocking", null);
+            //Feature_vector x = the_cache.get(key_from_path(p));
+            byte[] the_bytes = Mmap.instance.read_bytes(key_from_path(p));
+            if ( the_bytes == null)
+            {
+                logger.log("❌ PANIC null Feature_vector in cache after blocking call for "+p);
+                return null;
+            }
+            Feature_vector x = new Feature_vector_double(bytes_to_doubles(the_bytes));
             return x;
         }
         Actor_engine.run(feature_vector_creation_actor,imp,tr,logger);
@@ -193,81 +189,62 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     private static String key_from_path(Path p)
     //**********************************************************
     {
-        return p.getFileName().toString();
+        return "FV_"+p.toAbsolutePath();
     }
     //**********************************************************
     public void inject(Path path, Feature_vector fv)
     //**********************************************************
     {
-        if(dbg) logger.log(tag +" inject "+path+" value="+fv.to_string()+" components");
+        if(dbg) logger.log(tag +" inject "+path);//+" value="+fv.to_string()+" components");
 
         String key = key_from_path(path);
-        the_cache.put(key, fv);
-
-        // also to mmap
+        //the_cache.put(key, fv);
 
         if (fv instanceof Feature_vector_double fvd)
         {
             byte[] bytes = doubles_to_bytes(fvd.features);
-            get_mmap().write_bytes(key, bytes, true);
+            Mmap.instance.write_bytes(key, bytes, true);
         }
         else if (fv instanceof Feature_vector_for_song fvfs)
         {
             byte[] bytes = doubles_to_bytes(fvfs.features);
-            get_mmap().write_bytes(key, bytes, true);
+            Mmap.instance.write_bytes(key, bytes, true);
         }
     }
 
     //**********************************************************
-    public void reload_cache_from_disk(AtomicInteger in_flight, Aborter browser_aborter)
+    public List<Path> reload_cache_from_disk(List<Path> paths, AtomicInteger in_flight, Aborter browser_aborter)
     //**********************************************************
     {
+        List<Path> missing = new ArrayList<>();
+        logger.log((tag +" reload_cache_from_disk"));
+
         int reloaded = 0;
-        try(DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(cache_file_path.toFile()))))
+        in_flight.set(paths.size());
+
+        for ( Path p : paths)
         {
-            int number_of_vectors = dis.readInt();
-            in_flight.set(number_of_vectors);
-            for ( int i = 0; i < number_of_vectors; i++)
+            String key = key_from_path(p);
+            byte[] bytes= Mmap.instance.read_bytes(key);
+            if ( bytes == null)
             {
-                if ( browser_aborter.should_abort())
-                {
-                    logger.log("aborting : Feature_vector_cache::reload_cache_from_disk "+browser_aborter.reason());
-                    return;
-                }
-                String key = dis.readUTF();
-                byte[] bytes= get_mmap().read_bytes(key);
-                double[] vector = bytes_to_doubles(bytes);
-                Feature_vector_double fv = new Feature_vector_double(vector);
-                /*
-                if ( type == feature_vector_is_string)
-                {
-                    String s = dis.readUTF();
-                    fv = new Feature_vector_for_song(s,logger);
-                }*/
-                if ( fv == null)
-                {
-                    logger.log("❌ Fatal, unknown feature vector type in cache file");
-                    return;
-                }
-                the_cache.put(key, fv);
-                in_flight.decrementAndGet();
-                reloaded++;
-                if ( i%1000==0) logger.log(i+" feature vectors loaded from disk");
+                logger.log("no feature vector in mmap for "+key);
+                missing.add(p);
+                continue;
             }
-        }
-        catch (FileNotFoundException e)
-        {
-            if (dbg) logger.log("first time in this folder: "+e);
-        }
-        catch (EOFException e)
-        {
-            if (dbg) logger.log("empty feature cache: "+e);
-        }
-        catch (IOException e)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            /*
+            double[] vector = bytes_to_doubles(bytes);
+            Feature_vector_double fv = new Feature_vector_double(vector);
+
+            the_cache.put(key, fv);
+            in_flight.decrementAndGet();
+            reloaded++;
+            if ( reloaded%1000==0)
+                logger.log(reloaded+" feature vectors loaded from disk");
+            */
         }
 
+/*
         //if (dbg)
             logger.log((tag +": "+reloaded+" feature vectors reloaded from file"));
 
@@ -277,130 +254,17 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             for (String s  : the_cache.keySet())
             {
                 logger.log(s+" => "+ the_cache.get(s));
+                logger.log(s+" => "+ new Feature_vector_double(bytes_to_doubles(Mmap.instance.read_bytes(s))));
             }
             logger.log("****************************************************************\n\n\n");
         }
+
+ */
+        return missing;
     }
 
     //**********************************************************
-    public void save_whole_cache_to_disk()
-    //**********************************************************
-    {
-        // Save the index file (key → mmap location)
-        Path index_path = Path.of(cache_file_path.toString() + ".index");
-        File tmp_file = new File(index_path.toString() + ".tmp");
-
-        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tmp_file))))
-        {
-            dos.writeInt(the_cache.size());
-            for (Map.Entry<String, Feature_vector> e : the_cache.entrySet()) {
-                dos.writeUTF(e.getKey());
-            }
-        }
-        catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("" + e));
-            return;
-        }
-
-        try {
-            Files.move(tmp_file.toPath(), index_path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            logger.log(the_cache.size() + " feature vector index entries saved");
-        }
-        catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("" + e));
-        }
-
-        // Save mmap index too
-        get_mmap().save_index();
-    }
-
-
-    /*
-    //**********************************************************
-    public void save_whole_cache_to_disk()
-    //**********************************************************
-    {
-        int saved = 0;
-        File tmp_file = new File(cache_file_path.toString()+".tmp");
-        try(DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tmp_file))))
-        {
-            // extract first feature vector to decide type
-            if ( the_cache.size() == 0)
-            {
-                logger.log("feature vector cache empty, nothing to save");
-                return;
-            }
-            Map.Entry<String, Feature_vector> e0 = the_cache.entrySet().iterator().next();
-            boolean feature_vectors_are_double = false;
-            if ( e0.getValue() instanceof Feature_vector_double)
-            {
-                dos.writeByte(features_are_double);
-                feature_vectors_are_double = true;
-            }
-            if ( e0.getValue() instanceof Feature_vector_for_song)
-            {
-                dos.writeByte(feature_vector_is_string);
-            }
-            dos.writeInt(the_cache.size());
-
-
-            for(Map.Entry<String, Feature_vector> e : the_cache.entrySet())
-            {
-                Feature_vector fv = e.getValue();
-                if ( fv == null)
-                {
-                    logger.log("❌ PANIC null feature vector for key="+e.getKey());
-                    continue;
-                }
-                if ( feature_vectors_are_double)
-                {
-                    Feature_vector_double fvd = (Feature_vector_double) fv;
-                    if (fvd.features == null) {
-                        logger.log("❌ PANIC null features for key=" + e.getKey());
-                        continue;
-                    }
-                    saved++;
-                    dos.writeUTF(e.getKey());
-                    dos.writeInt(fvd.features.length);
-                    dos.writeUTF(e.getValue().mmap_tag());
-
-                    for (int i = 0; i < fvd.features.length; i++) {
-                        dos.writeDouble(fvd.features[i]);
-                    }
-                }
-                else
-                {
-                    Feature_vector_for_song fvb = (Feature_vector_for_song) fv;
-                    if (fvb.original_string == null) {
-                        logger.log("❌ PANIC null original_string for key=" + e.getKey());
-                        continue;
-                    }
-                    saved++;
-                    dos.writeUTF(e.getKey());
-                    dos.writeUTF(fvb.original_string);
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
-        }
-
-        try
-        {
-            Files.move(tmp_file.toPath(), cache_file_path, StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
-            //if (dbg)
-            logger.log(saved +" feature vectors from cache saved to file");
-        }
-        catch (IOException e)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
-        }
-       // logger.log("feature vector components min = "+min+" max = "+ max);
-    }
-*/
-    //**********************************************************
-    public static Paths_and_feature_vectors preload_all_feature_vector_in_cache(
+    public static Feature_vector_cache preload_all_feature_vector_in_cache(
             Feature_vector_source fvs,
             List<Path> paths,
             Path_list_provider path_list_provider,
@@ -413,8 +277,8 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         try( Perf p = new Perf("preload_all_feature_vector_in_cache"))
         {
             logger.log("\n\n✅ Going to preload_all_feature_vector_in_cache\n\n");
-        Feature_vector_cache feature_vector_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_name());
-        AtomicInteger in_flight = new AtomicInteger(1); // '1' to keep it alive until update settles the final count
+            Feature_vector_cache feature_vector_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_name());
+            AtomicInteger in_flight = new AtomicInteger(1); // '1' to keep it alive until update settles the final count
 
             if ( feature_vector_cache == null)
             {
@@ -429,35 +293,35 @@ public class Feature_vector_cache implements Clearable_RAM_cache
 
                 Or_aborter or_aborter = new Or_aborter(browser_aborter,Progress_window.get_aborter(hourglass, logger),logger);
                 feature_vector_cache = new Feature_vector_cache(path_list_provider.get_name(), fvs, or_aborter,logger);
-                Paths_and_feature_vectors paths_and_feature_vectors = feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, or_aborter,logger);
+                feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, or_aborter,logger);
                 RAM_caches.fv_cache_of_caches.put(path_list_provider.get_name(),feature_vector_cache);
                 hourglass.ifPresent(Hourglass::close);
-                return paths_and_feature_vectors;
+                return feature_vector_cache;
             }
-        return feature_vector_cache.update(paths, in_flight,owner, browser_aborter,logger);
+            feature_vector_cache.update(paths, in_flight,owner, browser_aborter,logger);
+            return feature_vector_cache;
         }
     }
 
     //**********************************************************
-    private Paths_and_feature_vectors read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Window owner, Aborter browser_aborter, Logger logger)
+    private void read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Window owner, Aborter browser_aborter, Logger logger)
     //**********************************************************
     {
-        reload_cache_from_disk(in_flight,browser_aborter);
-        logger.log("read_from_disk "+ the_cache.size()+" fv reloaded from disk");
-        return update( paths, in_flight, owner, browser_aborter, logger);
+        List<Path> missing = reload_cache_from_disk(paths, in_flight,browser_aborter);
+        //logger.log("read_from_disk "+ the_cache.size()+" fv reloaded from disk");
+        update( missing, in_flight, owner, browser_aborter, logger);
     }
 
     //**********************************************************
-    private Paths_and_feature_vectors update(
-            List<Path> paths,
+    private void update(List<Path> missing_paths,
             AtomicInteger in_flight, Window owner, Aborter browser_aborter,Logger logger)
     //**********************************************************
     {
-        if ( ultra_dbg) logger.log("update "+paths+" fv to be rebuild");
+        if ( ultra_dbg) logger.log("update: "+missing_paths.size()+" missing fv to be rebuild");
 
         Feature_vector_source_server.start  = System.nanoTime();
-        List<Path> missing_paths = new ArrayList<>();
-        for (Path p : paths)
+        /*List<Path> missing_paths = new ArrayList<>();
+        for (Path p : missing)
         {
             //if ( !Guess_file_type.is_file_an_image(p.toFile())) continue;
             if ( !the_cache.containsKey(p.getFileName().toString()))
@@ -466,6 +330,8 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                 missing_paths.add(p);
             }
         }
+        */
+
         in_flight.addAndGet(missing_paths.size()-1); //-1 to compensate the +1 "keep alive" in preload_all_feature_vector_in_cache
         CountDownLatch cdl = new CountDownLatch(missing_paths.size());
         Job_termination_reporter tr = (message, job) -> {
@@ -482,13 +348,9 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             logger.log("Paths_and_feature_vectors from_disk interrupted:"+e);
         }
 
+        Mmap.instance.save_index();
         Feature_vector_source_server.print_embeddings_stats(logger);
-        if (!missing_paths.isEmpty())
-        {
-            logger.log(("feature vector cache update: "+missing_paths.size()+" new items added"));
-            save_whole_cache_to_disk();
-        }
-        return new Paths_and_feature_vectors(this, paths);
+
     }
 
 

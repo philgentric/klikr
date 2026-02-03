@@ -118,7 +118,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         if ( fv0 ==null)
         {
             hourglass.ifPresent(Hourglass::close);
-            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: fv cannot be acquired"));
+            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: fv not acquired"));
             return new ArrayList<>();
         }
 

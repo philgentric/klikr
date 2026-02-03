@@ -12,6 +12,7 @@ import klikr.util.execute.actor.Message;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.util.log.Logger;
+import klikr.util.mmap.Mmap;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -26,7 +27,7 @@ public class Similarity_cache_warmer_actor implements Actor
     public static final double SIMILARITY_THRESHOLD = 0.14;
 
     private final List<Path> paths;
-    private final Klikr_cache<Path_pair, Double> similarities;
+    private final Klikr_cache<Integer_pair, Double> similarities;
     private final Feature_vector_cache cache;
     private final Logger logger;
 
@@ -34,7 +35,7 @@ public class Similarity_cache_warmer_actor implements Actor
     public Similarity_cache_warmer_actor(
             List<Path> paths, 
             Feature_vector_cache cache,
-            Klikr_cache<Path_pair, Double> similarities,
+            Klikr_cache<Integer_pair, Double> similarities,
             Logger logger)
     //**********************************************************
     {
@@ -65,20 +66,25 @@ public class Similarity_cache_warmer_actor implements Actor
             }
         }
 
-        Top_k<Path> top_5 = new Top_k<>(5); // Keep top 5
+        Top_k<Integer> top_5 = new Top_k<>(5); // Keep top 5
 
-        for (Path p2 : paths)
+        for (int j = 0; j < paths.size(); j++)
         {
+            Path p2 = paths.get(j);
             if ( p2.getFileName().toString().equals(scwm.p1.getFileName().toString())) continue;
 
-            Path_pair pp = Path_pair.build(scwm.p1, p2);
+            Integer_pair pp = Integer_pair.build(scwm.index_of_p1, j);
             // already in cache?
             if ( similarities.get(pp,browser_aborter,null,owner) != null)
             {
                 //logger.log("not computed: similarity already in cache "+p1+" vs "+p2);
                 continue;
             }
-            if (browser_aborter.should_abort()) return "aborted";
+            if (browser_aborter.should_abort())
+            {
+                Mmap.instance.save_index();
+                return "aborted";
+            }
 
             //logger.log("processing "+p1+" vs "+p2);
             Feature_vector emb2 = cache.get_from_cache_or_make(p2, null, true,owner, browser_aborter);
@@ -90,20 +96,18 @@ public class Similarity_cache_warmer_actor implements Actor
                 }
             }
             double diff = emb1.distance(emb2);
-            //logger.log("similarity = "+diff+" "+dnm.p1+" vs "+p2);
-            //if ( diff < min_similarity) min_similarity = diff;
-            //if ( diff > max_similarity) max_similarity = diff;
-
-            top_5.add(diff, p2);
 
             // to avoid 'OutOfMemoryError: Java heap space'
             // we limit the number of entries
+            // strategy#1, hard-coded threshold
             //if ( diff < SIMILARITY_THRESHOLD) similarities.inject(pp, diff,false);
+            // or keep top-K
+            top_5.add(diff, j);
         }
 
-        for (Top_k.Result<Path> res : top_5.get_results())
+        for (Top_k.Result<Integer> res : top_5.get_results())
         {
-            similarities.inject(Path_pair.build(p1, res.item()), res.score(), false);
+            similarities.inject(Integer_pair.build(scwm.index_of_p1, res.item()), res.score(), false);
         }
         return "Done";
     }

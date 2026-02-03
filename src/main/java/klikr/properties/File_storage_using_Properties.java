@@ -23,9 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class File_storage_using_Properties implements File_storage
 //**********************************************************
 {
-    private final static boolean dbg = true;
-    private final static boolean dbg_set= true;
-    private final static boolean dbg_get= true;
+    private final static boolean dbg = false;
+    private final static boolean dbg_set= false;
+    private final static boolean dbg_get= false;
     public static final String AGE = "_age";
     private final Logger logger;
     private final String tag;

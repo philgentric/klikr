@@ -45,7 +45,7 @@ public class ML_servers_monitor implements AutoCloseable
     private volatile boolean running = true;
     private Logger logger;
     private Aborter aborter;
-    private static final int DEFAULT_sleep_between_network_scans_ms = 180_000; // 3 minutes
+    private static final int DEFAULT_sleep_between_network_scans_ms = 3_000;
     private static int sleep_between_network_scans_ms = DEFAULT_sleep_between_network_scans_ms;
     private static int limit;
 
@@ -55,7 +55,7 @@ public class ML_servers_monitor implements AutoCloseable
    public static void make_faster_network_scans()
    //**********************************************************
    {
-       sleep_between_network_scans_ms = 100;
+       sleep_between_network_scans_ms = 1000;
        limit = 1800; // the fast scan will last 1800*100ms = 3 minutes
    }
 
@@ -199,7 +199,6 @@ public class ML_servers_monitor implements AutoCloseable
         while (running) {
             try {
                 read_registry_files_and_update_UI(owner);
-                // re-check every ...
                 Thread.sleep(sleep_between_network_scans_ms);
                 if ( sleep_between_network_scans_ms < DEFAULT_sleep_between_network_scans_ms)
                 {
@@ -211,7 +210,7 @@ public class ML_servers_monitor implements AutoCloseable
                     }
                 }
             } catch (Exception e) {
-                logger.log(""+e);
+                logger.log("for_ever_ask_servers_using_http_health "+e);
             }
         }
     }
@@ -222,7 +221,11 @@ public class ML_servers_monitor implements AutoCloseable
     //**********************************************************
     {
         Map<String, List<ML_server>> server_ports = ML_registry_discovery.scan_all_registry(owner, logger);
-        if ( server_ports == null ) return;
+        if ( server_ports == null )
+        {
+            logger.log("???? Server ports not found");
+            return;
+        }
         for ( Map.Entry<String, List<ML_server>> entry : server_ports.entrySet() )
         {
             List<ML_server> list = entry.getValue();

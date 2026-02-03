@@ -106,7 +106,7 @@ public class Virtual_landscape
 //**********************************************************
 {
     public static final boolean dbg = false;
-    public static final boolean crumbs_dbg = true;
+    public static final boolean crumbs_dbg = false;
     public static final boolean ultra_dbg = false;
     public static final boolean invisible_dbg = false;
     public static final boolean visible_dbg = false;
@@ -844,10 +844,9 @@ public class Virtual_landscape
 
                 Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner,logger);
                 List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
-                Feature_vector_cache.Paths_and_feature_vectors images_and_feature_vectors = Feature_vector_cache
+                fv_cache = Feature_vector_cache
                         .preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter,
                                 logger);
-                fv_cache = images_and_feature_vectors.fv_cache();
                 return fv_cache;
             };
 
@@ -883,20 +882,17 @@ public class Virtual_landscape
             CountDownLatch wait_for_end = new CountDownLatch(image_properties_in_flight);
             Job_termination_reporter tr = (message, job) -> wait_for_end.countDown();
             long start = System.currentTimeMillis();
-            for (Path path : paths_holder.iconized_paths) {
+            for (Path path : paths_holder.iconized_paths)
+            {
                 if (ultra_dbg)
                     logger.log("Virtual_landscape process_iconified_items " + path);
-                Item item;
-                // if (show_icons_for_files)
+                Item item = all_items_map.get(path);
+                if (item == null)
                 {
-                    item = all_items_map.get(path);
-                    if (item == null) {
-                        // depending on the sort order
-
-                        if (need_image_properties) {
-                            // ask for image properties fetch in threads
-                            get_image_properties_cache().get(path, aborter, tr, owner);
-                        }
+                    if (need_image_properties)
+                    {
+                        // ask for image properties fetch in threads
+                        get_image_properties_cache().get(path, aborter, tr, owner);
                     }
                 }
             }

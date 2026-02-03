@@ -16,15 +16,17 @@ public class Similarity_cache_warmer_message implements Message
 
     private final Aborter browser_aborter;
     final Path p1;
+    final int index_of_p1;
     private final Window owner;
 
     //**********************************************************
-    public Similarity_cache_warmer_message(Window owner, Aborter browser_aborter, Path p1)
+    public Similarity_cache_warmer_message(Window owner, Aborter browser_aborter, Path p1, int index)
     //**********************************************************
     {
         this.owner = owner;
         this.browser_aborter = browser_aborter;
         this.p1 = p1;
+        this.index_of_p1 = index;
     }
     @Override
     public String to_string() {

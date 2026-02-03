@@ -406,7 +406,6 @@ public class Text_frame
             dialog.setHeaderText("Enter text to search, then use 'd' or 'n' to jump down and 'u' or 'p' to jump up");
             dialog.setContentText("Text:");
 
-            if ( dbg) logger.log("dialog !");
             Optional<String> result = dialog.showAndWait();
             if (result.isPresent())
             {

@@ -437,7 +437,7 @@ public class Image_context
             dialog.setHeaderText("Enter your keywords, separated by space");
             dialog.setContentText("Keywords:");
 
-            logger.log("dialog !");
+            //logger.log("dialog !");
             Optional<String> result = dialog.showAndWait();
             if (result.isPresent())
             {
