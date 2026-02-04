@@ -65,7 +65,7 @@ public class Static_image_utilities
         }
         catch (IOException e)
         {
-            logger.log("Icon_writer_actor: Error writing icon to cache: " + e.getMessage());
+            logger.log("Icon_writer_actor: Error writing icon to cache: " + e);
         }
         if (dbg) logger.log("Icon_writer_actor: Icon written to cache: ");
     }

@@ -23,15 +23,14 @@ import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
+import klikr.util.mmap.Save_and_what;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -370,7 +369,7 @@ public class Similarity_cache implements Clearable_RAM_cache
             hourglass.ifPresent(Hourglass::close);
             logger.log("similarity cache interrupted" + e);
         }
-        Mmap.instance.save_index();
+        Mmap.instance.save_index(new Save_and_what(null));
         similarities.save_whole_cache_to_disk();
         hourglass.ifPresent(Hourglass::close);
     }

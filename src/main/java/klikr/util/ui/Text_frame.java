@@ -129,7 +129,7 @@ public class Text_frame
             }
             catch (InterruptedException e)
             {
-                logger.log("thread interrupted: " + e.getMessage());
+                logger.log("thread interrupted: " + e);
             }
         };
         Actor_engine.execute(r,"Text frame source monitor",logger);

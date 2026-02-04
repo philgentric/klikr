@@ -151,7 +151,7 @@ public class Jar_utils
         }
         catch (IOException e)
         {
-            logger.log("WARNING: an error occurred when reading: " + image_file_path + " " + e.getMessage());
+            logger.log("WARNING: an error occurred when reading: " + image_file_path + " " + e);
             return null;
         }
     }

@@ -24,7 +24,7 @@ public class Macdock {
         }
         catch (UnsatisfiedLinkError e)
         {
-            System.err.println("Failed to load native library for MacOS dock icons: " + e.getMessage());
+            System.err.println("Failed to load native library for MacOS dock icons: " + e);
             load_done = false;
         }
     }

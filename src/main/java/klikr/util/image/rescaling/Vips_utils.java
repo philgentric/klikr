@@ -328,7 +328,7 @@ public class Vips_utils
                     try {
                         target = Files.isSymbolicLink(p) ? " -> " + Files.readSymbolicLink(p) : "";
                     } catch (Exception e) {
-                        target = " (symlink read error: " + e.getMessage() + ")";
+                        target = " (symlink read error: " + e + ")";
                     }
                     System.out.println("  " + p.getFileName() + target);
                 }

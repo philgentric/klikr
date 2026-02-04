@@ -20,20 +20,16 @@ import klikr.path_lists.Path_list_provider;
 import klikr.machine_learning.song_similarity.Feature_vector_for_song;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
+import klikr.util.mmap.Save_and_what;
 import klikr.util.perf.Perf;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
-import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -348,7 +344,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             logger.log("Paths_and_feature_vectors from_disk interrupted:"+e);
         }
 
-        Mmap.instance.save_index();
+        Mmap.instance.save_index(new Save_and_what(null));
         Feature_vector_source_server.print_embeddings_stats(logger);
 
     }

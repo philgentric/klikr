@@ -87,7 +87,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("Failed to memory-map the file: " + e.getMessage()));
+            logger.log(Stack_trace_getter.get_stack_trace("Failed to memory-map the file: " + e));
             return false;
         }
 
@@ -102,7 +102,7 @@ public class Piece
             // Set the file length immediately without allocating heap memory
             raf.setLength(1024L * 1024L * size_in_megabytes);
         } catch (IOException e) {
-            logger.log("Failed to create file: " + e.getMessage());
+            logger.log("Failed to create file: " + e);
             return true;
         }
         return false;
@@ -114,12 +114,12 @@ public class Piece
     {
         if ( segment == null)
         {
-            logger.log("FATAL: segment == null");
+            logger.log("❌ FATAL: segment == null");
             return -1;
         }
 
         if (size > segment.byteSize()) {
-            logger.log("Item too huge for cache file");
+            logger.log("❌ FATAL: Item too huge for cache file");
             return -1;
         }
 
@@ -163,7 +163,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            logger.log("Could not write file: " + e.getMessage());
+            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL write_file_internal Could not write file: " + e));
         }
     }
 
@@ -191,7 +191,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            logger.log("Error copying file to memory-mapped segment: " + e.getMessage());
+            logger.log("Error copying file to memory-mapped segment: " + e);
         }
     }
 
@@ -281,7 +281,7 @@ public class Piece
                 PixelFormat.getByteBgraPreInstance() // Must match the format used in write_image
             );
         Image returned = new WritableImage(pixelBuffer);
-        //logger.log("Retrieved image FROM PIXELS, w= "+returned.getWidth()+" h= "+returned.getHeight());
+        logger.log("Mmap retrieved image 'AS PIXELS', w= "+returned.getWidth()+" h= "+returned.getHeight());
         return returned;
     }
 
@@ -303,7 +303,7 @@ public class Piece
 
         try( ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
             Image returned = new Image(bais);
-            logger.log("Retrieved image FROM FILE, w= " + returned.getWidth() + " h= " + returned.getHeight());
+            logger.log("Mmap retrieved image 'AS FILE', w= " + returned.getWidth() + " h= " + returned.getHeight());
             if ( !returned.isError())
             {
                 return returned;

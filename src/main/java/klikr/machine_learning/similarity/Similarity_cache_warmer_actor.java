@@ -13,6 +13,7 @@ import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
+import klikr.util.mmap.Save_and_what;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -82,7 +83,7 @@ public class Similarity_cache_warmer_actor implements Actor
             }
             if (browser_aborter.should_abort())
             {
-                Mmap.instance.save_index();
+                Mmap.instance.save_index(new Save_and_what(null));
                 return "aborted";
             }
 

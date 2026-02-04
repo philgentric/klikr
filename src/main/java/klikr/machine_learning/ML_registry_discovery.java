@@ -44,7 +44,7 @@ public class ML_registry_discovery
     private Aborter pump_aborter;
     private final Map<String,Integer> running = new ConcurrentHashMap<>();
 
-    
+
     //**********************************************************
     public static Map<String,List<ML_server>> scan_all_registry(Window owner, Logger logger)
     //**********************************************************

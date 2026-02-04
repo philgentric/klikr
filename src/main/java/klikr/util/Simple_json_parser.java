@@ -82,7 +82,7 @@ public class Simple_json_parser
                 }
             }
         } catch (Exception e) {
-            logger.log("Error parsing JSON: " + e.getMessage());
+            logger.log("Error parsing JSON: " + e);
             return null;
         }
     }

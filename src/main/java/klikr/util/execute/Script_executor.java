@@ -86,7 +86,7 @@ public class Script_executor
             try {
                 ui_latch.await();
             } catch (InterruptedException e) {
-                logger.log("Interrupted while waiting for UI: " + e.getMessage());
+                logger.log("Interrupted while waiting for UI: " + e);
                 return;
             }
         }
@@ -141,7 +141,7 @@ public class Script_executor
                     Files.setPosixFilePermissions(script_path, perms);
                 } catch (Exception e) {
                     // ignore if FS doesn't support POSIX
-                    queue.add("Warning: Could not set executable permissions: " + e.getMessage());
+                    queue.add("Warning: Could not set executable permissions: " + e);
                 }
             }
 
@@ -186,7 +186,7 @@ public class Script_executor
                 }
                 catch (IOException e)
                 {
-                    queue.add("Error reading output: " + e.getMessage());
+                    queue.add("Error reading output: " + e);
                 }
             };
 

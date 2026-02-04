@@ -7,7 +7,6 @@ import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Simple_logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.*;
@@ -34,7 +33,7 @@ public class Mmap
     private final int piece_size_in_megabytes;
     private final Path cache_folder;
     private final Path main_index_file;
-    private final ArrayBlockingQueue<Boolean> save_queue = new ArrayBlockingQueue<>(1);
+    private final ArrayBlockingQueue<Save_and_what> save_queue = new ArrayBlockingQueue<>(1);
 
 
     private final Map<String, Integer> usage = new ConcurrentHashMap<>();
@@ -71,17 +70,16 @@ public class Mmap
             public void run() {
                 for(;;) {
                     try {
-                        Object marker = save_queue.poll(1, TimeUnit.SECONDS);
-                        if (marker != null) {
-                            // Take snapshot to avoid Issue #5
-                            Map<String, Meta> snapshot = Map.copyOf(main_index);
-                            util_save_index(snapshot, main_index_file, logger);
+                        Save_and_what saw = save_queue.poll(1, TimeUnit.SECONDS);
+                        if (saw != null) {
+                            util_save_index(main_index, main_index_file, logger);
+                            if (saw.cdl() != null) saw.cdl().countDown();
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
                     } catch (Exception e) {
-                        logger.log("Save failed: " + e.getMessage());
+                        logger.log("Save failed: " + e);
                     }
                 }
             }
@@ -144,7 +142,7 @@ public class Mmap
         long now = System.currentTimeMillis();
         if (and_save)
         {
-            save_index();
+            save_index(new Save_and_what(null));
             last_saved = now;
         }
         else
@@ -152,7 +150,7 @@ public class Mmap
             if ( now - last_saved > 10_000 )
             {
                 last_saved = now;
-                save_index();
+                save_index(new Save_and_what(null));
             }
         }
     }
@@ -276,10 +274,7 @@ public class Mmap
         if (ultra_dbg) logger.log("mmap image as pixel: "+tag);
         consider_saving(and_save);
 
-        if ( on_end != null )
-        {
-            on_end.run();
-        }
+        if ( on_end != null ) on_end.run();
     }
 
     private static ConcurrentLinkedQueue<Long> elapseds = new ConcurrentLinkedQueue<>();
@@ -289,13 +284,18 @@ public class Mmap
     //**********************************************************
     {
         long start = System.currentTimeMillis();
-        Image_as_pixel_metadata meta = (Image_as_pixel_metadata) main_index.get(tag);
-        if ( meta == null )
+        Meta meta0  = main_index.get(tag);
+        if ( meta0 == null )
         {
             if (dbg) logger.log("Mmap tag found for "+tag);
             return null;
         }
-        //logger.log("mmap reading image: "+tag+" is pixels=yes");
+        if (!( meta0 instanceof Image_as_pixel_metadata ))
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag));
+            return null;
+        }
+        Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta0;
         Piece p = meta.piece();
         if (p == null) return null;
         if ( stats_dbg)
@@ -307,11 +307,11 @@ public class Mmap
         long elapsed = end - start;
         elapseds.add(elapsed);
         counter++;
-        if ( counter%10 == 0)
+        if ( counter%100 == 0)
         {
             double tot = 0;
             for ( long l : elapseds ) tot += l;
-            logger.log(" average READ "+tot/(double)counter+" ms");
+            logger.log(" average READ for 'read_image_as_pixels' "+tot/(double)counter+" ms");
         }
         return returned;
     }
@@ -319,6 +319,7 @@ public class Mmap
     public Image read_image_as_file(Path path)
     //**********************************************************
     {
+        long start = System.currentTimeMillis();
         String tag = path.toAbsolutePath().toString();
         Image_as_file_metadata meta = (Image_as_file_metadata) main_index.get(tag);
         if ( meta == null )
@@ -333,10 +334,19 @@ public class Mmap
         {
             usage.merge(tag, 1, Integer::sum);;
         }
-        return p.read_image_as_file(tag, meta);
+        Image returned =  p.read_image_as_file(tag, meta);
+        long end = System.currentTimeMillis();
+        long elapsed = end - start;
+        elapseds.add(elapsed);
+        counter++;
+        if ( counter%100 == 0)
+        {
+            double tot = 0;
+            for ( long l : elapseds ) tot += l;
+            logger.log(" average READ for 'read_image_as_file' "+tot/(double)counter+" ms");
+        }
+        return returned;
     }
-
-
 
 
     //**********************************************************
@@ -347,7 +357,7 @@ public class Mmap
         main_index.clear();
         if( stats_dbg) usage.clear();
         for ( Piece piece : pieces.values() ) piece.clear_cache();
-        save_index();
+        save_index(new Save_and_what(null));
         return d;
     }
 
@@ -478,7 +488,7 @@ public class Mmap
             try {
                 Files.deleteIfExists(main_index_file);
             } catch (IOException ee) {
-                logger.log("Could not delete index file: " + ee.getMessage());
+                logger.log("Could not delete index file: " + ee);
             }
             logger.log(Stack_trace_getter.get_stack_trace(""+e));
         }
@@ -498,11 +508,12 @@ public class Mmap
 
 
 
+
     //**********************************************************
-    public void save_index()
+    public void save_index(Save_and_what save_and_what)
     //**********************************************************
     {
-        save_queue.offer(true );
+        save_queue.offer(save_and_what );
     }
 
     //**********************************************************

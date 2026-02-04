@@ -9,6 +9,7 @@ import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.execute.actor.virtual_threads.Concurrency_limiter;
 import klikr.util.mmap.Mmap;
+import klikr.util.mmap.Save_and_what;
 
 import java.util.Optional;
 
@@ -54,7 +55,7 @@ public class Feature_vector_creation_actor implements Actor
         {
             if ( dbg) image_feature_vector_message.logger.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
             if ( cl != null) cl.release();
-            Mmap.instance.save_index();
+            Mmap.instance.save_index(new Save_and_what(null));
             return "aborted";
         }
 
@@ -64,7 +65,7 @@ public class Feature_vector_creation_actor implements Actor
         if ( fv.isEmpty())
         {
             image_feature_vector_message.logger.log("Warning: fv source failed for "+ image_feature_vector_message.path);
-            Mmap.instance.save_index();
+            Mmap.instance.save_index(new Save_and_what(null));
             return "Warning: embeddings server failed";
         }
         //image_feature_vector_message.logger.log("OK: fv made by source");

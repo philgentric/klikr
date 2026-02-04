@@ -28,7 +28,9 @@ import klikr.properties.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
+import klikr.util.mmap.Save_and_what;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -215,7 +217,6 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     public void shutdown()
     //**********************************************************
     {
-        Mmap.instance.save_index();
         aborter.abort("Browser is closed for "+get_Path_list_provider().get_name());
         if (dbg) logger.log("Browser shutdown " + signature());
 
@@ -232,8 +233,15 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
             else
             {
                 logger.log("SHOULD NOT HAPPEN Abstract_browser: primary_stage is null");
-
             }
+            CountDownLatch cdl = new CountDownLatch(1);
+            Mmap.instance.save_index(new Save_and_what(cdl));
+            try {
+                cdl.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
             if (dbg) logger.log("primary_stage closing GOING TO CALL Platform.exit()");
             Platform.exit();
             if (dbg) logger.log("primary_stage closing GOING TO CALL System.exit()");
