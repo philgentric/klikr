@@ -55,7 +55,7 @@ public class Feature_vector_creation_actor implements Actor
         {
             if ( dbg) image_feature_vector_message.logger.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
             if ( cl != null) cl.release();
-            Mmap.instance.save_index(new Save_and_what(null));
+            Mmap.instance.save_index();
             return "aborted";
         }
 
@@ -65,7 +65,7 @@ public class Feature_vector_creation_actor implements Actor
         if ( fv.isEmpty())
         {
             image_feature_vector_message.logger.log("Warning: fv source failed for "+ image_feature_vector_message.path);
-            Mmap.instance.save_index(new Save_and_what(null));
+            Mmap.instance.save_index();
             return "Warning: embeddings server failed";
         }
         //image_feature_vector_message.logger.log("OK: fv made by source");

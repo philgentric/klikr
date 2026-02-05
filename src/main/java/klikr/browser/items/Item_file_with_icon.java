@@ -458,7 +458,7 @@ public class Item_file_with_icon extends Item_file
         // this is NOT on the FX thread
         if ( image_view == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("❗ the_image_view == null"));
+            logger.log(Stack_trace_getter.get_stack_trace("❗ image_view == null"));
             return;
         }
 

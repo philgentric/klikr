@@ -78,7 +78,7 @@ public class Booleans
             Platform.runLater(()->{
                 if ( Popups.info_popup(msg, GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                 {
-                    Feature_cache.update_cached_boolean_and_save(Feature.Show_ffmpeg_install_warning, false,owner);
+                    Feature_cache.update_cached_boolean(Feature.Show_ffmpeg_install_warning, false,owner);
                 }
             });
         }
@@ -101,7 +101,7 @@ public class Booleans
                             "\nOn Mac, type: 'brew install graphicsmagick' in a shell";
                     if ( Popups.info_popup(msg,GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                     {
-                        Feature_cache.update_cached_boolean_and_save(Feature.Show_graphicsmagick_install_warning, false,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_graphicsmagick_install_warning, false,owner);
                     }
 
                 }
@@ -128,7 +128,7 @@ public class Booleans
                             "\nOn Mac: use the launcher or type 'brew install chromaprint' in a shell";
                     if ( Popups.info_popup(msg,GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                     {
-                        Feature_cache.update_cached_boolean_and_save(Feature.Show_fpcalc_install_warning, false,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_fpcalc_install_warning, false,owner);
                     }
 
                 }
@@ -154,7 +154,7 @@ public class Booleans
                             "\nOn Mac: use the launcher or type 'brew install imagemagick' in a shell";
                     if ( Popups.info_popup(msg,GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                     {
-                        Feature_cache.update_cached_boolean_and_save(Feature.Show_imagemagick_install_warning, false,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_imagemagick_install_warning, false,owner);
                     }
 
                 }
@@ -181,7 +181,7 @@ public class Booleans
                             "\nOn Mac: use the launcher or type 'brew install imagemagick' in a shell";
                     if ( Popups.info_popup(msg,GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                     {
-                        Feature_cache.update_cached_boolean_and_save(Feature.Show_mediainfo_install_warning, false,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_mediainfo_install_warning, false,owner);
                     }
 
                 }
@@ -208,7 +208,7 @@ public class Booleans
                             "\nOn Mac: use the launcher or type 'brew install yt-dlp' in a shell";
                     if ( Popups.info_popup(msg,GOT_IT_DONT_SHOW_ME_THIS_AGAIN,owner,logger))
                     {
-                        Feature_cache.update_cached_boolean_and_save(Feature.Show_ytdlp_install_warning, false,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_ytdlp_install_warning, false,owner);
                     }
 
                 }

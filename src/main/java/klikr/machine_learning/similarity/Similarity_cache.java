@@ -369,7 +369,7 @@ public class Similarity_cache implements Clearable_RAM_cache
             hourglass.ifPresent(Hourglass::close);
             logger.log("similarity cache interrupted" + e);
         }
-        Mmap.instance.save_index(new Save_and_what(null));
+        Mmap.instance.save_index();
         similarities.save_whole_cache_to_disk();
         hourglass.ifPresent(Hourglass::close);
     }

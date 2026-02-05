@@ -3,18 +3,21 @@ package klikr.util.mmap;
 import javafx.scene.image.*;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import org.jspecify.annotations.Nullable;
 
 import java.io.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.CRC32C;
 
 //**********************************************************
 public class Piece
@@ -158,8 +161,21 @@ public class Piece
     {
         try
         {
-            long size = Files.size(path);
-            copy_file_to_segment(path, offset, size);
+            long data_length = Files.size(path);
+            // Use a confined arena for the source handling, it closes immediately after copy
+            try (Arena localArena = Arena.ofConfined(); FileChannel srcChannel = FileChannel.open(path, StandardOpenOption.READ))
+            {
+                MemorySegment srcSegment = srcChannel.map(FileChannel.MapMode.READ_ONLY, 0, data_length, localArena);
+                MemorySegment.copy(srcSegment, 0, this.segment, offset, data_length);
+                CRC32C crc = new CRC32C();
+                crc.update(srcSegment.asByteBuffer());
+                int checksum = (int) crc.getValue();
+                this.segment.set(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withByteAlignment(1),offset+data_length,checksum);
+            }
+            catch (IOException e)
+            {
+                logger.log("Error copying file to memory-mapped segment: " + e);
+            }
         }
         catch (IOException e)
         {
@@ -167,52 +183,8 @@ public class Piece
         }
     }
 
-    //**********************************************************
-    public boolean write_bytes(Simple_metadata simple_meta, String tag, byte[] bytes)
-    //**********************************************************
-    {
 
-        long size = bytes.length;
 
-        MemorySegment sourceParam = MemorySegment.ofArray(bytes);
-        MemorySegment.copy(sourceParam, 0, segment, simple_meta.offset(), size);
-        return true;
-    }
-
-    //**********************************************************
-    private void copy_file_to_segment(Path sourceFile, long destinationOffset, long size)
-    //**********************************************************
-    {
-        // Use a confined arena for the source handling, it closes immediately after copy
-        try (Arena localArena = Arena.ofConfined(); FileChannel srcChannel = FileChannel.open(sourceFile, StandardOpenOption.READ))
-        {
-            MemorySegment srcSegment = srcChannel.map(FileChannel.MapMode.READ_ONLY, 0, size, localArena);
-            MemorySegment.copy(srcSegment, 0, this.segment, destinationOffset, size);
-        }
-        catch (IOException e)
-        {
-            logger.log("Error copying file to memory-mapped segment: " + e);
-        }
-    }
-
-    //**********************************************************
-    public MemorySegment get_MemorySegment(Meta meta)
-    //**********************************************************
-    {
-        if ( meta instanceof Simple_metadata simple)
-        {
-            return segment.asSlice(simple.offset(), simple.length());
-        }
-        else if ( meta instanceof Image_as_pixel_metadata imageMeta)
-        {
-            return segment.asSlice(imageMeta.offset(), (long) imageMeta.width() * imageMeta.height() * 4);
-        }
-        else if ( meta instanceof Image_as_file_metadata imageMeta)
-        {
-            return segment.asSlice(imageMeta.offset(), imageMeta.length());
-        }
-        return null;
-    }
 
     //**********************************************************
     public boolean write_image_as_pixels(long offset,  Image image)
@@ -231,8 +203,9 @@ public class Piece
         // ByteBuffer buffer = ByteBuffer.allocateDirect((int) width*height*4);
         // pr.getPixels(0, 0, width, height, PixelFormat.getByteBgraInstance(), buffer.array(), 0, width * 4);
 
-
-        byte[] bytes = new byte[width*height*4];
+        int data_length = width * height*4;
+        // add 4 for the CRC
+        byte[] bytes = new byte[data_length +4];
         pr.getPixels(0, 0, width, height, PixelFormat.getByteBgraInstance(), bytes, 0, width * 4);
         for (int i = 0; i < width*height; i++) {
             int base = i * 4;
@@ -247,13 +220,15 @@ public class Piece
             bytes[base+2] = (byte)((r * a) / 255);
             bytes[base+3] = (byte)a;   // alpha stays the same
         }
-
-
-
-        long size = bytes.length;
-
-        MemorySegment sourceParam = MemorySegment.ofArray(bytes);
-        MemorySegment.copy(sourceParam, 0, segment, offset, size);
+        CRC32C crc = new CRC32C();
+        crc.update(bytes, 0, data_length);
+        int checksum = (int) crc.getValue();
+        int local_offset = data_length;
+        bytes[local_offset]   = (byte)(checksum >>> 24);
+        bytes[local_offset+1] = (byte)(checksum >>> 16);
+        bytes[local_offset+2] = (byte)(checksum >>> 8);
+        bytes[local_offset+3] = (byte) checksum;
+        MemorySegment.copy(MemorySegment.ofArray(bytes), 0, segment, offset, bytes.length);
 
         return true;
     }
@@ -263,7 +238,7 @@ public class Piece
     public Image read_image_as_pixels(Image_as_pixel_metadata meta)
     //**********************************************************
     {
-        MemorySegment segment = get_MemorySegment(meta);
+        MemorySegment segment = read_MemorySegment(meta);
         if (segment == null) return null;
         int width = meta.width();
         if( dbg) logger.log("image w = "+width);
@@ -281,7 +256,7 @@ public class Piece
                 PixelFormat.getByteBgraPreInstance() // Must match the format used in write_image
             );
         Image returned = new WritableImage(pixelBuffer);
-        logger.log("Mmap retrieved image 'AS PIXELS', w= "+returned.getWidth()+" h= "+returned.getHeight());
+        if ( dbg) logger.log("Mmap retrieved image 'AS PIXELS', w= "+returned.getWidth()+" h= "+returned.getHeight());
         return returned;
     }
 
@@ -291,7 +266,7 @@ public class Piece
     {
         write_file_internal(path,meta.offset());
         String tag = path.toAbsolutePath().normalize().toString();
-        logger.log("write_image_as_file tag:->" + tag + "<- at aligned offset: " + meta.offset());
+        if ( dbg) logger.log("write_image_as_file tag:->" + tag + "<- at aligned offset: " + meta.offset());
     }
 
     //**********************************************************
@@ -303,7 +278,7 @@ public class Piece
 
         try( ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
             Image returned = new Image(bais);
-            logger.log("Mmap retrieved image 'AS FILE', w= " + returned.getWidth() + " h= " + returned.getHeight());
+            if ( dbg) logger.log("Mmap retrieved image 'AS FILE', w= " + returned.getWidth() + " h= " + returned.getHeight());
             if ( !returned.isError())
             {
                 return returned;
@@ -317,11 +292,34 @@ public class Piece
         return null;
     }
 
+
+
+    //**********************************************************
+    synchronized void clear_cache()
+    //**********************************************************
+    {
+        current_offset.set(0);
+    }
+
+
+    //**********************************************************
+    public boolean write_bytes(byte[] bytes, long offset)
+    //**********************************************************
+    {
+        long length = bytes.length;
+        MemorySegment data = MemorySegment.ofArray(bytes);
+        MemorySegment.copy(data, 0, segment, offset, length);
+        CRC32C crc = new CRC32C();
+        crc.update(data.asByteBuffer());
+        int checksum = (int) crc.getValue();
+        this.segment.set(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withByteAlignment(1),offset+length,checksum);
+        return true;
+    }
     //**********************************************************
     public byte[] read_bytes(Meta meta)
     //**********************************************************
     {
-        MemorySegment segment = get_MemorySegment(meta);
+        MemorySegment segment = read_MemorySegment(meta);
         if (segment == null)
         {
             logger.log(" no segment for "+ meta.tag());
@@ -331,9 +329,39 @@ public class Piece
     }
 
     //**********************************************************
-    synchronized void clear_cache()
+    public MemorySegment read_MemorySegment(Meta meta)
     //**********************************************************
     {
-        current_offset.set(0);
+        if ( meta instanceof Simple_metadata simple)
+        {
+            return read_MemorySegment_with_crc_check(simple.offset(), simple.length());
+        }
+        else if ( meta instanceof Image_as_pixel_metadata image_meta)
+        {
+            return read_MemorySegment_with_crc_check(image_meta.offset(), (long) image_meta.width() * image_meta.height() * 4);
+        }
+        else if ( meta instanceof Image_as_file_metadata file_meta)
+        {
+            return read_MemorySegment_with_crc_check(file_meta.offset(), file_meta.length());
+        }
+        return null;
     }
+
+    //**********************************************************
+    private @Nullable MemorySegment read_MemorySegment_with_crc_check(long offset, long length)
+    //**********************************************************
+    {
+        MemorySegment data = segment.asSlice(offset, length);
+        CRC32C crc = new CRC32C();
+        crc.update(data.asByteBuffer());
+        int computed_checksum = (int) crc.getValue();
+        int checksum_on_disk = this.segment.get(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withByteAlignment(1), offset + length);
+        if ( checksum_on_disk != computed_checksum)
+        {
+            logger.log("❌  PANIC in mmap, checksum mismatch");
+            return null;
+        }
+        return data;
+    }
+
 }

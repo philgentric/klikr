@@ -304,7 +304,7 @@ public class Virtual_landscape
             // Shortcut show details: ⌘/Ctrl + 2
             show_details = new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(show_details, () -> {
-                Feature_cache.update_cached_boolean_and_dont_save(Feature.Show_single_column_with_details, !Feature_cache.get(Feature.Show_single_column_with_details), owner);
+                Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details, !Feature_cache.get(Feature.Show_single_column_with_details), owner);
             });
         }
 
@@ -313,7 +313,7 @@ public class Virtual_landscape
             KeyCombination kc = new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
                 if (Feature_cache.get(Feature.Show_single_column_with_details))
-                    Feature_cache.update_cached_boolean_and_dont_save(Feature.Show_single_column_with_details,false,owner);
+                    Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details,false,owner);
             });
         }
 
@@ -1101,12 +1101,14 @@ public class Virtual_landscape
                 if (ip.isPresent()) {
                     return ip.get();
                 }
-                // try to load the image
-                Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, null, aborter,logger);
-                if ( op.isPresent())
+                if ( Guess_file_type.is_this_path_an_image(path, owner, logger))
                 {
-                    Image image = op.get();
-                    return new Image_properties(image.getWidth(), image.getHeight(), Rotation.normal);
+                    // try to load the image
+                    Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, null, aborter, logger);
+                    if (op.isPresent()) {
+                        Image image = op.get();
+                        return new Image_properties(image.getWidth(), image.getHeight(), Rotation.normal);
+                    }
                 }
                 logger.log("EXIF failed to return Image properties for"+path);
                 return new Image_properties(-1,-1, Rotation.normal);
@@ -2361,7 +2363,7 @@ public class Virtual_landscape
 
     Scan_show the_scan_show;
 
-    private static final String msg = "(press \"s\" to start/stop/change direction, \"x\"=faster, \"w\"=slower) speed = ";
+    private static final String msg = "(press \"s\" to start/stop/change direction, \"command + ->\"=faster, \"command + <-\"=slower) speed = ";
 
     //**********************************************************
     private void start_scan()

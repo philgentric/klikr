@@ -29,11 +29,19 @@ import klikr.util.ui.Popups;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class More_settings_stage
 {
+
+    // these feature can be toggled during one usage of klikr
+    // but they are not saved i.e. reset to default when klikr (re-)starts
+    public static final Feature[] non_saved_features ={
+            Feature.Show_single_column_with_details,
+            Feature.Fusk_is_on
+    };
 
     public static final Feature[] basic_features ={
             Feature.Show_icons_for_files,
@@ -48,6 +56,7 @@ public class More_settings_stage
 
     public static final Feature[] advanced_features ={
             Feature.Monitor_folders,
+            Feature.Enable_mmap_caching,
             //Feature.Enable_face_recognition,
             //Feature.Enable_image_similarity,
             Feature.Enable_bit_level_deduplication,
@@ -75,7 +84,7 @@ public class More_settings_stage
     public static final Feature[] debugging_features ={
             Feature.Log_to_file,
             Feature.Log_performances,
-            Feature.Fusk_is_on,
+            //Feature.Fusk_is_on, // this is available in the UI, once enabled
             Feature.Show_ffmpeg_install_warning,
             Feature.Show_graphicsmagick_install_warning,
             //Feature.Show_can_use_ESC_to_close_windows,
@@ -161,11 +170,6 @@ public class More_settings_stage
                 }
                 box.getChildren().add(mb);
             }
-
-
-
-
-
             ScrollPane sp = new ScrollPane(box);
             sp.setFitToWidth(true);          // stretch items horizontally
             sp.setPrefViewportHeight(200);   // limit visible height
@@ -178,8 +182,6 @@ public class More_settings_stage
             {
                 add_one_line(true,f, box);
             }
-            //if (Feature_cache.get(Feature.Max_RAM_is_defined_by_user))
-
             ScrollPane sp = new ScrollPane(box);
             sp.setFitToWidth(true);          // stretch items horizontally
             sp.setPrefViewportHeight(200);   // limit visible height
@@ -205,13 +207,13 @@ public class More_settings_stage
             VBox box = new VBox(10);
             Installers.make_ui_to_install_python_libs_for_ML(w, icon_size, look_and_feel,box, owner, logger);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean_and_save(Feature.Enable_ML_server_debug,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_ML_server_debug,false,owner);
             add_one_line(similarity_enabled,Feature.Enable_ML_server_debug, box);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean_and_save(Feature.Display_image_distances,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Display_image_distances,false,owner);
             add_one_line(similarity_enabled,Feature.Display_image_distances, box);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean_and_save(Feature.Enable_image_similarity,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_image_similarity,false,owner);
             add_one_line(similarity_enabled,Feature.Enable_image_similarity,box);
             {
                 HBox hb = Installers.make_ui_to_start_image_similarity_servers(w, icon_size, look_and_feel, box, owner, logger);
@@ -219,7 +221,6 @@ public class More_settings_stage
                     disable_button(hb);
                 }
             }
-
             {
                 HBox hb = Installers.make_ui_to_stop_image_similarity_servers(w, icon_size, look_and_feel, box, owner, logger);
                 if (!Feature_cache.get(Feature.Enable_image_similarity)) {
@@ -357,7 +358,7 @@ public class More_settings_stage
     {
         boolean value = cb.isSelected();
         logger.log("Preference changing for: " + bf + "new value:" + value);
-        Feature_cache.update_cached_boolean_and_save(bf, value, owner);
+        Feature_cache.update_cached_boolean(bf, value, owner);
     }
 
     //**********************************************************

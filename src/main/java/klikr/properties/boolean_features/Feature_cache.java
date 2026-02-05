@@ -6,13 +6,11 @@ package klikr.properties.boolean_features;
 import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Launcher;
+import klikr.properties.More_settings_stage;
 import klikr.util.Shared_services;
 import klikr.util.log.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 //**********************************************************
 public class Feature_cache
@@ -32,6 +30,7 @@ public class Feature_cache
             Feature.Show_file_names_as_tooltips,
             Feature.Reload_last_folder_on_startup,
             Feature.Monitor_folders,
+            Feature.Enable_mmap_caching,
             Feature.Use_escape_to_close_windows,
             Feature.Show_graphicsmagick_install_warning,
             Feature.Show_ffmpeg_install_warning);
@@ -122,23 +121,25 @@ public class Feature_cache
     {
         return boolean_feature_cache.get(feature);
     }
+
+
     //**********************************************************
-    public static void update_cached_boolean_and_save(Feature feature, boolean new_val, Window owner)
+    public static void update_cached_boolean(Feature feature, boolean new_val, Window owner)
     //**********************************************************
     {
-        update_cached_boolean(feature, new_val, true, owner);
-
+        if (Arrays.stream(More_settings_stage.non_saved_features).toList().contains(feature))
+        {
+            update_cached_boolean_internal(feature, new_val, false, owner);
+        }
+        else
+        {
+            update_cached_boolean_internal(feature, new_val, true, owner);
+        }
     }
-    //**********************************************************
-    public static void update_cached_boolean_and_dont_save(Feature feature, boolean new_val, Window owner)
-    //**********************************************************
-    {
-        update_cached_boolean(feature, new_val, false, owner);
 
-    }
 
     //**********************************************************
-    private static void update_cached_boolean(Feature feature, boolean new_val, boolean and_save, Window owner)
+    private static void update_cached_boolean_internal(Feature feature, boolean new_val, boolean and_save, Window owner)
     //**********************************************************
     {
         if ( and_save) Booleans.save_boolean(feature.name(),new_val,owner);

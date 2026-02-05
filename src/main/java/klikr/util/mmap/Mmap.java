@@ -116,20 +116,19 @@ public class Mmap
     }
 
     //**********************************************************
-    public void write_bytes(String tag, byte[] bytes, boolean and_save)
+    public void write_bytes(String key, byte[] bytes, boolean and_save)
     //**********************************************************
     {
-        if (ultra_dbg) logger.log("mmap write_bytes "+tag);
-        Simple_metadata meta = find_room_for_bytes(tag,bytes);
+        if (ultra_dbg) logger.log("mmap write_bytes "+key);
+        Simple_metadata meta = find_room_for_bytes(key,bytes);
         if ( meta == null )
         {
-            logger.log("Mmap no room found for "+tag);
+            logger.log("Mmap no room found for "+key);
             return;
         }
-        meta.piece().write_bytes(meta,tag,bytes);
-        String key = tag;
+        meta.piece().write_bytes(bytes,meta.offset());
         record_index(key, meta,meta.piece());
-        if (ultra_dbg) logger.log("mmap write_file_internal WROTE: "+key);
+        if (ultra_dbg) logger.log("mmap write_bytes WROTE: "+key);
         consider_saving(and_save);
 
     }
@@ -271,7 +270,7 @@ public class Mmap
         }
         meta.piece().write_image_as_pixels(meta.offset(),image);
         record_index(tag, meta, meta.piece());
-        if (ultra_dbg) logger.log("mmap image as pixel: "+tag);
+        if (ultra_dbg) logger.log("Mmap image as pixel: "+tag);
         consider_saving(and_save);
 
         if ( on_end != null ) on_end.run();
@@ -284,18 +283,18 @@ public class Mmap
     //**********************************************************
     {
         long start = System.currentTimeMillis();
-        Meta meta0  = main_index.get(tag);
-        if ( meta0 == null )
+        Meta meta_from_index  = main_index.get(tag);
+        if ( meta_from_index == null )
         {
             if (dbg) logger.log("Mmap tag found for "+tag);
             return null;
         }
-        if (!( meta0 instanceof Image_as_pixel_metadata ))
+        if (!( meta_from_index instanceof Image_as_pixel_metadata ))
         {
-            logger.log(Stack_trace_getter.get_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag));
+            logger.log(Stack_trace_getter.get_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag+" got: "+meta_from_index.getClass().getName()));
             return null;
         }
-        Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta0;
+        Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta_from_index;
         Piece p = meta.piece();
         if (p == null) return null;
         if ( stats_dbg)
@@ -303,6 +302,7 @@ public class Mmap
             usage.merge(tag, 1, Integer::sum);;
         }
         Image returned = p.read_image_as_pixels(meta);
+
         long end = System.currentTimeMillis();
         long elapsed = end - start;
         elapseds.add(elapsed);
@@ -361,16 +361,6 @@ public class Mmap
         return d;
     }
 
-    //**********************************************************
-    public MemorySegment get_MemorySegment(String tag)
-    //**********************************************************
-    {
-        Simple_metadata sm = (Simple_metadata) main_index.get(tag);
-        if (sm == null) return null;
-        Piece p = sm.piece();
-        if (p == null) return null;
-        return p.get_MemorySegment(sm);
-    }
 
 
 
@@ -432,6 +422,7 @@ public class Mmap
             logger.log(Stack_trace_getter.get_stack_trace(""+e));
         }
     }
+
     //**********************************************************
     public void load_index()
     //**********************************************************
@@ -474,7 +465,7 @@ public class Mmap
                     if (ultra_dbg) logger.log("cached item reloaded from file: "+key);
                 }
             }
-            logger.log("Index local with " + main_index.size() + " entries.");
+            if (dbg) logger.log("Index local with " + main_index.size() + " entries.");
         }
         catch (FileNotFoundException e)
         {
@@ -483,6 +474,7 @@ public class Mmap
         catch (IOException e)
         {
             // if cache is corrupted, clear the index
+            logger.log("❗ WARNING: deleted corrupted index file: ");
             main_index.clear();
             pieces.clear();
             try {
@@ -506,15 +498,32 @@ public class Mmap
         }
     }
 
+    //**********************************************************
+    public void save_index()
+    //**********************************************************
+    {
+        save_queue.offer(new Save_and_what(null) );
 
-
+    }
 
     //**********************************************************
     public void save_index(Save_and_what save_and_what)
     //**********************************************************
     {
-        save_queue.offer(save_and_what );
+        // retry until the save request is accepted
+        for(;;)
+        {
+            if ( save_queue.offer(save_and_what )) return;
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                logger.log(""+e);
+            }
+        }
     }
+
+
+    record Room(Piece piece, long offset){}
 
     //**********************************************************
     private Image_as_pixel_metadata find_room_for_image_as_pixel(Image image, String tag)
@@ -544,7 +553,7 @@ public class Mmap
         Room room = find_room(size);
         if ( room == null)
         {
-            logger.log("find_room_for_file failed for "+tag);
+            logger.log("find_room_for_file failed for "+tag+ " length="+size);
             return null;
         }
         return new Simple_metadata(room.piece(), tag, room.offset(), size);
@@ -560,21 +569,21 @@ public class Mmap
         String tag = path.toAbsolutePath().toString();
         if ( room == null)
         {
-            logger.log("find_room_for_file failed for "+tag);
+            logger.log("find_room_for_file failed for "+tag+ " length="+size);
             return null;
         }
         return new Simple_metadata(room.piece(), tag, room.offset(), size);
     }
 
-    record Room(Piece piece, long offset){}
 
     //**********************************************************
     private Room find_room(long length)
     //**********************************************************
     {
+        length += 4; // for CRC
         if (length > (long) piece_size_in_megabytes * 1024 * 1024)
         {
-            logger.log("Item too large for any piece: " + length + " bytes (limit: " + piece_size_in_megabytes + " MB)");
+            logger.log("❗WARNING: Item too large for any piece: " + length + " bytes (limit: " + piece_size_in_megabytes + " MB)");
             return null;
         }
 

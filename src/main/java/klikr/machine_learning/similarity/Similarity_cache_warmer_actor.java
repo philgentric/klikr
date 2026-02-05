@@ -83,7 +83,7 @@ public class Similarity_cache_warmer_actor implements Actor
             }
             if (browser_aborter.should_abort())
             {
-                Mmap.instance.save_index(new Save_and_what(null));
+                Mmap.instance.save_index();
                 return "aborted";
             }
 

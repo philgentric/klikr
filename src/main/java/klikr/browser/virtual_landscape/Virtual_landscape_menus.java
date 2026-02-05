@@ -527,7 +527,7 @@ public class Virtual_landscape_menus
             {
                 if ( menu_item.isSelected())
                 {
-                    Feature_cache.update_cached_boolean_and_save(Feature.Play_music, true, owner);
+                    Feature_cache.update_cached_boolean(Feature.Play_music, true, owner);
                     if ( Klikr_application.audio_player != null)
                     {
                         logger.log("an audio player already exists");
@@ -540,7 +540,7 @@ public class Virtual_landscape_menus
                 }
                 else
                 {
-                    Feature_cache.update_cached_boolean_and_save(Feature.Play_music, false, owner);
+                    Feature_cache.update_cached_boolean(Feature.Play_music, false, owner);
                     if ( Klikr_application.audio_player != null)
                     {
                         logger.log("killing audio player");
@@ -803,7 +803,7 @@ public class Virtual_landscape_menus
         item.setOnAction(actionEvent ->
         {
             boolean val = ((CheckMenuItem) actionEvent.getSource()).isSelected();
-            Feature_cache.update_cached_boolean_and_save(Feature.Fusk_is_on,val,owner);
+            Feature_cache.update_cached_boolean(Feature.Fusk_is_on,val,owner);
 
         });
         Items_with_explanation.add_question_mark_button(key, item, virtual_landscape.owner ,logger);
@@ -1405,7 +1405,7 @@ public class Virtual_landscape_menus
         item.setSelected(Feature_cache.get(Feature.Show_single_column_with_details));
         item.setOnAction(actionEvent -> {
             CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
-            Feature_cache.update_cached_boolean_and_dont_save(Feature.Show_single_column_with_details, local.isSelected(), owner);
+            Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details, local.isSelected(), owner);
             local_virtual_landscape.redraw_fx("Show_single_column_with_details",true);
         });
         return item;

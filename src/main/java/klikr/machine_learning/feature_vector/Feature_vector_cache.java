@@ -344,7 +344,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             logger.log("Paths_and_feature_vectors from_disk interrupted:"+e);
         }
 
-        Mmap.instance.save_index(new Save_and_what(null));
+        Mmap.instance.save_index();
         Feature_vector_source_server.print_embeddings_stats(logger);
 
     }
