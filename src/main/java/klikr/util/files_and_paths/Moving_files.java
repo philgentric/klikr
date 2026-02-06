@@ -149,13 +149,12 @@ public class Moving_files
             Logger logger)
     //**********************************************************
     {
-        Optional<Hourglass> hourglass = check(the_list,x, y,  owner, logger);
-        Aborter local = new Or_aborter(aborter,Progress_window.get_aborter(hourglass, logger),logger);
+        Optional<Hourglass> hourglass = check(aborter,the_list,x, y,  owner, logger);
         List<Old_and_new_Path> done = new ArrayList<>();
         List<Old_and_new_Path> not_done = new ArrayList<>();
         for (Old_and_new_Path oandn : the_list)
         {
-            if ( local.should_abort())
+            if ( aborter.should_abort())
             {
                 logger.log("file move aborted by user");
                 break;
@@ -163,7 +162,7 @@ public class Moving_files
             // record (last) move destination folder
             Redo_same_move_engine.last_destination_folder = oandn.new_Path.getParent();
 
-            Old_and_new_Path actual = process_one_move(oandn, owner, local, logger);
+            Old_and_new_Path actual = process_one_move(oandn, owner, aborter, logger);
             if ( actual==null)
             {
                 logger.log(Stack_trace_getter.get_stack_trace("move has failed for "+oandn.old_Path));
@@ -201,7 +200,6 @@ public class Moving_files
                 sb.append(i.new_Path.toAbsolutePath());
                 sb.append("   ");
                 sb.append(i.status);
-
             }
             boolean for_3seconds = true;
             if (not_done.size() >= 2) for_3seconds = false;
@@ -217,6 +215,7 @@ public class Moving_files
     // if yes, return a progress window
     //**********************************************************
     private static Optional<Hourglass> check(
+            Aborter aborter,
             List<Old_and_new_Path> the_list,
             double x, double y,
             Window owner,
@@ -245,8 +244,8 @@ public class Moving_files
         }
         if ( show_progress_window)
         {
-            return Progress_window.show(
-                    true,
+            return Progress_window.show_with_abort_button(
+                    aborter,
                     "File(s) are being moved",
                     20000,
                     x,

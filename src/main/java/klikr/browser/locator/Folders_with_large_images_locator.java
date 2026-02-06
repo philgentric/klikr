@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
+import static klikr.util.Shared_services.aborter;
+
 //**********************************************************
 public class Folders_with_large_images_locator
 //**********************************************************
@@ -81,15 +83,15 @@ public class Folders_with_large_images_locator
 
                 double x = owner.getX()+100;
                 double y = owner.getY()+100;
-                Optional<Hourglass> hourglass = Progress_window.show(
-                        true,
+                Aborter private_aborter = new Aborter("large image locator",logger);
+                Optional<Hourglass> hourglass = Progress_window.show_with_abort_button(
+                        private_aborter,
                         "Looking for folders with large images",
                         20000,
                         x,
                         y,
                         owner,
                         logger);
-                private_aborter = Progress_window.get_aborter(hourglass, logger);
                 explore(top.toFile());
 
                 // wait for exploration to end
@@ -166,11 +168,14 @@ public class Folders_with_large_images_locator
         int count_images = 0;
         for (File f : all_files)
         {
-            if (private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                if ( dbg) logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return;
+                if (private_aborter.should_abort())
+                {
+                    if ( dbg) logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return;
+                }
             }
 
             if (!f.isFile()) continue;
@@ -194,11 +199,14 @@ public class Folders_with_large_images_locator
             return;
         }
 
-        if (private_aborter.should_abort())
+        if ( private_aborter != null)
         {
-            logger.log("Folders_with_large_images_locator thread aborting");
-            if ( monitor!=null) monitor.close();
-            return;
+            if (private_aborter.should_abort())
+            {
+                logger.log("Folders_with_large_images_locator thread aborting");
+                if ( monitor!=null) monitor.close();
+                return;
+            }
         }
 
         // launch one thread per sub_folder
@@ -227,11 +235,14 @@ public class Folders_with_large_images_locator
                     r.run();
                 }
             }
-            if (private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return;
+                if (private_aborter.should_abort())
+                {
+                    logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return;
+                }
             }
         }
 
@@ -280,11 +291,14 @@ public class Folders_with_large_images_locator
             {
                 contanimated_directories.put(file_to_key(parent.toFile()), minimum_count);
             }
-            if ( private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return;
+                if ( private_aborter.should_abort())
+                {
+                    logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return;
+                }
             }
         }
     }
@@ -322,11 +336,14 @@ public class Folders_with_large_images_locator
                     }
                 }
             }
-            if ( private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return false;
+                if ( private_aborter.should_abort())
+                {
+                    logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return false;
+                }
             }
         }
         if ( dbg) logger.log("parent NOT contaminated:"+folder);
@@ -369,11 +386,14 @@ public class Folders_with_large_images_locator
             else {
                 if ( dbg) logger.log("parent IS contaminated, we DONT keep "+folder);
             }
-            if ( private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return;
+                if ( private_aborter.should_abort())
+                {
+                    logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return;
+                }
             }
         }
     }
@@ -403,11 +423,14 @@ public class Folders_with_large_images_locator
                 if ( monitor!=null) monitor.show(x);
             }
 
-             if ( private_aborter.should_abort())
+            if ( private_aborter != null)
             {
-                logger.log("Folders_with_large_images_locator thread aborting");
-                if ( monitor!=null) monitor.close();
-                return;
+                if ( private_aborter.should_abort())
+                {
+                    logger.log("Folders_with_large_images_locator thread aborting");
+                    if ( monitor!=null) monitor.close();
+                    return;
+                }
             }
         }
     }

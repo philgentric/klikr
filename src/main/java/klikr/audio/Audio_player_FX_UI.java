@@ -334,7 +334,7 @@ public class Audio_player_FX_UI implements Media_callbacks
                 }
             }
 
-            playlist.user_wants_to_add_songs(the_list);
+            playlist.user_wants_to_add_songs(the_list, null);
 
             // tell the source
             drag_event.setDropCompleted(true);
@@ -1077,8 +1077,9 @@ public class Audio_player_FX_UI implements Media_callbacks
                     String content = clipboard.getString();
                     System.out.println("Clipboard Content: " + content);
                     Runnable r = () -> {
-                        Optional<Hourglass> hourglass = Progress_window.show(
-                                true,
+                        Aborter youtube_abort = new Aborter("you tube abort",logger);
+                        Optional<Hourglass> hourglass = Progress_window.show_with_abort_button(
+                                youtube_abort,
                                 "Importing audio tracks",
                                 30 * 60,
                                 stage.getX() + 100,
@@ -1089,7 +1090,7 @@ public class Audio_player_FX_UI implements Media_callbacks
                         List<String> file_names = import_from_youtube(content);
                         hourglass.ifPresent(Hourglass::close);
                         if (!file_names.isEmpty()) {
-                            Platform.runLater(() -> playlist.user_wants_to_add_songs(file_names));
+                            Platform.runLater(() -> playlist.user_wants_to_add_songs(file_names,youtube_abort));
                         }
                     };
                     Actor_engine.execute(r, "Importing audio track(s)", logger);

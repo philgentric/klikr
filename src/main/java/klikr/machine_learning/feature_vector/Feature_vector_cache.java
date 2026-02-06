@@ -21,7 +21,6 @@ import klikr.machine_learning.song_similarity.Feature_vector_for_song;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
-import klikr.util.mmap.Save_and_what;
 import klikr.util.perf.Perf;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
@@ -75,7 +74,6 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     public Feature_vector_cache(
             String tag,
             Feature_vector_source fvs,
-            Aborter aborter,
             Logger logger_)
     //**********************************************************
     {
@@ -120,7 +118,12 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     //**********************************************************
     // if wait_if_needed is true, tr can be null
     // if tr is not null it must be safe to execute for emergency abort
-    public Feature_vector get_from_cache_or_make(Path p, Job_termination_reporter tr, boolean wait_if_needed, Window owner, Aborter browser_aborter)
+    public Feature_vector get_from_cache_or_make(
+            Path p,
+            Job_termination_reporter tr,
+            boolean wait_if_needed,
+            Window owner,
+            Aborter aborter)
     //**********************************************************
     {
         String key = key_from_path(p);
@@ -152,16 +155,16 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         }
 
 
-        if ( browser_aborter.should_abort())
+        if ( aborter.should_abort())
         {
-            logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+browser_aborter.name+"<- reason="+browser_aborter.reason()+ " target path="+p));
+            logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+aborter.name+"<- reason="+aborter.reason()+ " target path="+p));
             if (tr != null) tr.has_ended("aborted", null);
             return null;
         }
 
         if ( dbg) logger.log("going to make feature_vector for "+p);
 
-        Feature_vector_build_message imp = new Feature_vector_build_message(p,this,owner,browser_aborter,logger);
+        Feature_vector_build_message imp = new Feature_vector_build_message(p,this,owner,aborter,logger);
         if ( wait_if_needed)
         {
             //logger.log("blocking FV creation call for "+p);
@@ -278,7 +281,8 @@ public class Feature_vector_cache implements Clearable_RAM_cache
 
             if ( feature_vector_cache == null)
             {
-                Optional<Hourglass> hourglass = Progress_window.show(
+                Optional<Hourglass> hourglass = Progress_window.show_with_in_flight(
+                        browser_aborter,
                         in_flight,
                         "Wait, making feature vectors",
                         3600*60,
@@ -287,9 +291,9 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                         owner,
                         logger);
 
-                Or_aborter or_aborter = new Or_aborter(browser_aborter,Progress_window.get_aborter(hourglass, logger),logger);
-                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_name(), fvs, or_aborter,logger);
-                feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, or_aborter,logger);
+
+                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_name(), fvs,logger);
+                feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, browser_aborter,logger);
                 RAM_caches.fv_cache_of_caches.put(path_list_provider.get_name(),feature_vector_cache);
                 hourglass.ifPresent(Hourglass::close);
                 return feature_vector_cache;
@@ -300,17 +304,17 @@ public class Feature_vector_cache implements Clearable_RAM_cache
     }
 
     //**********************************************************
-    private void read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Window owner, Aborter browser_aborter, Logger logger)
+    private void read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        List<Path> missing = reload_cache_from_disk(paths, in_flight,browser_aborter);
+        List<Path> missing = reload_cache_from_disk(paths, in_flight,aborter);
         //logger.log("read_from_disk "+ the_cache.size()+" fv reloaded from disk");
-        update( missing, in_flight, owner, browser_aborter, logger);
+        update( missing, in_flight, owner, aborter, logger);
     }
 
     //**********************************************************
     private void update(List<Path> missing_paths,
-            AtomicInteger in_flight, Window owner, Aborter browser_aborter,Logger logger)
+            AtomicInteger in_flight, Window owner, Aborter aborter,Logger logger)
     //**********************************************************
     {
         if ( ultra_dbg) logger.log("update: "+missing_paths.size()+" missing fv to be rebuild");
@@ -336,7 +340,12 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         };
         for (Path p :missing_paths)
         {
-            get_from_cache_or_make(p,tr,false, owner, browser_aborter);
+            if ( aborter.should_abort())
+            {
+                while ( cdl.getCount() > 0 ) cdl.countDown();
+                break;
+            }
+            get_from_cache_or_make(p,tr,false, owner, aborter);
         }
         try {
             cdl.await();

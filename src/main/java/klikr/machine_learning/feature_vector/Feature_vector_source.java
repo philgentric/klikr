@@ -14,5 +14,5 @@ import java.util.Optional;
 public interface Feature_vector_source
 //**********************************************************
 {
-    Optional<Feature_vector> get_feature_vector(Path path, Window owner, Aborter aborter, Logger logger);
+    Optional<Feature_vector> get_feature_vector(Path path, Window owner, Aborter can_be_null, Logger logger);
 }

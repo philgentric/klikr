@@ -38,7 +38,6 @@ public class Audio_info_frame
         double x = owner.getX()+100;
         double y = owner.getY()+100;
         Hourglass progress_window = Progress_window.show(
-                false,
                 "Calling mediainfo",
                 30,
                 x,

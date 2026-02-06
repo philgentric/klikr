@@ -204,23 +204,17 @@ public abstract class Item implements Icon_destination
                 this, target_icon_size,owner,// aborter);
                 new Aborter("Icon creation for "+get_item_path(),logger));
 
-        if (dbg) logger.log("icon request : queued! ");
 
-        Icon_destination destination = icon_factory_request.destination;
-        if (destination == null) {
-            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory : cancel! destination==null"));
-            return;
-        }
-
-        if (icon_factory_request.destination.get_icon_fabrication_requested())
+        if (icon_fabrication_requested.get())
         {
-            logger.log("dont do another icon request, another one is in flight");
+            logger.log("❗ Icon_factory_actor aborting-0, skipping icon request, as another one is in flight");
             return;
         }
-        icon_factory_request.destination.set_icon_fabrication_requested(true);
+        icon_fabrication_requested.set(true);
 
         icon_job = Actor_engine.run(icon_factory_actor, icon_factory_request, null,logger);
 
+        if (dbg) logger.log("icon request : queued for: "+get_item_path());
 
     }
 

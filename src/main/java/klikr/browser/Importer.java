@@ -140,7 +140,7 @@ public class Importer
     }
 
     //**********************************************************
-    public static void estimate_size(Window owner, Aborter aborter, Logger logger)
+    public static void estimate_size(Window owner,  Logger logger)
     //**********************************************************
     {
         Path home = (new File(System.getProperty(String_constants.USER_HOME))).toPath();
@@ -190,8 +190,9 @@ public class Importer
 
         double x = local_stage.getX()+100;
         double y = local_stage.getY()+100;
-        Hourglass hourglass = Progress_window.show(
-                true,
+        Aborter local = new Aborter("estimate_size",logger);
+        Hourglass hourglass = Progress_window.show_with_abort_button(
+                local,
                 "Wait, counting Apple Photo images",
                 20000,
                 x,
@@ -208,7 +209,7 @@ public class Importer
                         file_payload,
                         null,
                         wp,
-                        aborter,
+                        local,
                         logger);
 
                 done.set(true);
@@ -222,7 +223,7 @@ public class Importer
                 final String[] progress_string = {"Please wait, scanning folders..."};
                 for(;;)
                 {
-                    if (aborter.should_abort()) break;
+                    if (local.should_abort()) break;
                     if ( done.get()) break;
                     try
                     {

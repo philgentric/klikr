@@ -52,6 +52,7 @@ import klikr.browser.icons.Error_type;
 import klikr.browser.icons.Icon_factory_actor;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.browser.items.*;
+import klikr.util.execute.actor.Or_aborter;
 import klikr.util.execute.ram_and_threads_meter.RAM_and_threads_meters_stage;
 import klikr.change.Change_receiver;
 import klikr.experimental.backup.Backup_singleton;
@@ -207,7 +208,7 @@ public class Virtual_landscape
 
         the_Pane = new Pane();
 
-        icon_factory_actor = new Icon_factory_actor(get_image_properties_cache(), owner, aborter, logger);
+        icon_factory_actor = new Icon_factory_actor(get_image_properties_cache(), owner, logger);
         paths_holder = new Paths_holder(get_image_properties_cache(), aborter, logger);
         selection_handler = new Selection_handler(the_Pane, this, this, logger);
 
@@ -849,6 +850,7 @@ public class Virtual_landscape
                                 logger);
                 return fv_cache;
             };
+
 
             boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_folder_path(),
                     owner);
@@ -1544,8 +1546,8 @@ public class Virtual_landscape
         LongAdder count = new LongAdder();
         double x = owner.getX() + 100;
         double y = owner.getY() + 100;
-        Optional<Hourglass> progress_window = Progress_window.show(
-                true,
+        Optional<Hourglass> progress_window = Progress_window.show_with_abort_button(
+                aborter,
                 "Computing file count",
                 20 * 60,
                 x,
@@ -1608,22 +1610,23 @@ public class Virtual_landscape
         LongAdder count = new LongAdder();
         double x = owner.getX() + 100;
         double y = owner.getY() + 100;
-        Optional<Hourglass> hourglass = Progress_window.show(
-                true,
+        Aborter local = new Aborter("show_total_size_deep_in_each_folder",logger);
+        Optional<Hourglass> hourglass = Progress_window.show_with_abort_button(
+                new Or_aborter(local, aborter,logger),
                 "Computing folder sizes",
                 20 * 60,
                 x,
                 y,
                 owner,
                 logger);
-        Aborter local_aborter = Progress_window.get_aborter(hourglass, logger);
+
         for (Item i : all_items_map.values()) {
+            if ( local.should_abort()) break;
             if (i instanceof Item_folder item2_folder) {
                 if (Files.isDirectory(item2_folder.get_true_path())) {
                     item2_folder.add_total_size_deep_folder(count, item2_folder.get_button(), item2_folder.text,
                             item2_folder.get_true_path(),
-                            folder_total_sizes_cache,
-                            local_aborter, logger);
+                            folder_total_sizes_cache, logger);
                 }
             }
         }
@@ -2345,7 +2348,7 @@ public class Virtual_landscape
     public void estimate_size_of_importing_apple_Photos()
     //**********************************************************
     {
-        Importer.estimate_size(owner, aborter, logger);
+        Importer.estimate_size(owner, logger);
     }
 
     //**********************************************************
@@ -2651,8 +2654,8 @@ public class Virtual_landscape
         long start = System.currentTimeMillis();
 
         if (show_progress_window_on_redraw && rc.show_hourglass()) {
-            hourglass = Progress_window.show(
-                    false,
+            hourglass = Progress_window.show_with_aborter(
+                    aborter,
                     "Scanning folder",
                     20 * 60,
                     x,
@@ -2840,6 +2843,11 @@ public class Virtual_landscape
     {
 
         try (Perf p = new Perf("refresh_UI_on_fx_thread")) {
+
+            if( aborter.should_abort())
+            {
+                progress_window.ifPresent(Hourglass::close);
+            }
             if (dbg)
                 logger.log("✅ refresh_UI_on_fx_thread reason: " + reason);
 

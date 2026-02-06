@@ -49,10 +49,13 @@ public class Monitor
             public void run() {
                 for(;;)
                 {
-                    if ( aborter.should_abort())
+                    if ( aborter != null)
                     {
-                        logger.log("Folders_with_large_images_locator aborted");
-                        return;
+                        if ( aborter.should_abort())
+                        {
+                            logger.log("Folders_with_large_images_locator aborted");
+                            return;
+                        }
                     }
                     try {
                         String x = input_queue.poll(10, TimeUnit.MINUTES);

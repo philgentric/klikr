@@ -221,7 +221,6 @@ public class Installers
     //**********************************************************
     {
         Optional<Hourglass> local_hourglass = Progress_window.show(
-                false,
                 "Please wait ... getting version",
                 30*60,
                 owner.getX()+100,
@@ -321,7 +320,6 @@ public class Installers
     //**********************************************************
     {
         Optional<Hourglass> local_hourglass = Progress_window.show(
-                false,
                 "Please wait ... getting version",
                 30*60,
                 owner.getX()+100,

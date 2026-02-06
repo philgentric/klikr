@@ -496,7 +496,7 @@ public class Face_recognition_actor implements Actor
         }
         if (face_detection_result.status() != Face_recognition_in_image_status.face_detected)
         {
-            if ( display_face_reco_window) service.show_face_recognition_window(face_detection_result.image(),null,owner,aborter);
+            if ( display_face_reco_window) service.show_face_recognition_window(face_detection_result.image(),null,owner);
             return new Face_recognition_results(null,null, null,null, Face_recognition_in_image_status.no_face_detected);
         }
         Image image_face = face_detection_result.image();
@@ -519,7 +519,7 @@ public class Face_recognition_actor implements Actor
         if ( dbg) logger.log("tmp_path_to_face = "+tmp_path_to_face);
 
         Eval_results eval_result = eval_a_face(tmp_path_to_face,service, aborter);
-        if (display_face_reco_window) service.show_face_recognition_window(image_face,eval_result, owner,aborter);
+        if (display_face_reco_window) service.show_face_recognition_window(image_face,eval_result, owner);
 
         String display_label = eval_result.label();
         if ( eval_result.label() == null)
@@ -561,7 +561,7 @@ public class Face_recognition_actor implements Actor
 
         if (display_face_reco_window)
         {
-            service.show_face_recognition_window(face,eval_result, service.owner,aborter);
+            service.show_face_recognition_window(face,eval_result, service.owner);
         }
 
         String display_label = eval_result.label();

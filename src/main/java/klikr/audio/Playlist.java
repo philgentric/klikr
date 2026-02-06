@@ -343,7 +343,7 @@ public class Playlist
     }
 
     //**********************************************************
-    public void user_wants_to_add_songs(List<String> the_list)
+    public void user_wants_to_add_songs(List<String> the_list, Aborter youtube_abort)
     //**********************************************************
     {
         long start = System.currentTimeMillis();
@@ -353,11 +353,12 @@ public class Playlist
             List<String> oks = new ArrayList<>();
             for (String path : the_list)
             {
-
+                if ( youtube_abort != null) if ( youtube_abort.should_abort()) return;
+                if ( aborter.should_abort()) return;
                 File f = new File(path);
                 if (f.isDirectory())
                 {
-                    load_folder(f, oks,to_be_renamed_first);
+                    load_folder(f, oks,to_be_renamed_first, aborter);
                 }
                 else
                 {
@@ -405,14 +406,16 @@ public class Playlist
 
 
     //**********************************************************
-    private void load_folder(File folder, List<String> oks, List<Old_and_new_Path> out)
+    private void load_folder(File folder, List<String> oks, List<Old_and_new_Path> out, Aborter aborter)
     //**********************************************************
     {
         File[] files = folder.listFiles();
         if (files == null) return;
         for (File ff : files)
         {
-            if (ff.isDirectory()) load_folder(ff, oks, out);
+            if ( aborter.should_abort()) return;
+
+            if (ff.isDirectory()) load_folder(ff, oks, out, aborter);
             else
             {
                 sanitize(ff.getAbsolutePath(), oks, out,logger);

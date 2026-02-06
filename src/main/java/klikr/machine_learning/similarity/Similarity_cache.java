@@ -330,7 +330,8 @@ public class Similarity_cache implements Clearable_RAM_cache
     {
         similarities.reload_cache_from_disk();
         AtomicInteger in_flight = new AtomicInteger(paths.size());
-        Optional<Hourglass> hourglass = Progress_window.show(
+        Optional<Hourglass> hourglass = Progress_window.show_with_in_flight(
+                aborter,
                 in_flight,
                 "Wait: computing item similarities",
                 3600*60,
@@ -338,19 +339,18 @@ public class Similarity_cache implements Clearable_RAM_cache
                 y,
                 owner,
                 logger);
-        Aborter local_aborter = new Or_aborter(aborter,Progress_window.get_aborter(hourglass, logger),logger);
         Similarity_cache_warmer_actor actor = new Similarity_cache_warmer_actor(paths, fv_cache, similarities, logger);
         CountDownLatch cdl = new CountDownLatch(paths.size());
         for (int i = 0; i < paths.size(); i++)
         {
             Path p1 = paths.get(i);
-            if ( local_aborter.should_abort())
+            if ( aborter.should_abort())
             {
-                logger.log("aborting Similarity_cache "+ local_aborter.reason());
+                logger.log("aborting Similarity_cache "+ aborter.reason());
                 while ( cdl.getCount()> 0) cdl.countDown();
                 break;
             }
-            Similarity_cache_warmer_message m = new Similarity_cache_warmer_message(owner,local_aborter, p1,i);
+            Similarity_cache_warmer_message m = new Similarity_cache_warmer_message(owner,aborter, p1,i);
             Job_termination_reporter tr = (message, job) -> {
                 cdl.countDown();
                 in_flight.decrementAndGet();

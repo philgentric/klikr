@@ -46,9 +46,10 @@ public class Or_aborter extends Aborter
     public String reason()
     //**********************************************************
     {
+        if ( a.should_abort() && b.should_abort() )  return a.reason()+ " or " +b.reason();
         if (a.should_abort()) return a.reason();
         if (b.should_abort()) return b.reason();
-        return a.reason()+ " or " +b.reason();
+        return "wtf";
     }
 
 }

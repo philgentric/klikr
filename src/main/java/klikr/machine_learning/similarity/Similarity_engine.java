@@ -106,7 +106,6 @@ public class Similarity_engine implements Clearable_RAM_cache
         }
 
         Optional<Hourglass> hourglass = Progress_window.show(
-                false,
                 "wait, looking for similar items",
                 20000,
                 x,
@@ -162,7 +161,6 @@ public class Similarity_engine implements Clearable_RAM_cache
         Optional<Hourglass>  hourglass = Optional.empty();
         if ( show_hour_glass) {
             hourglass = Progress_window.show(
-                    false,
                     "wait, looking for similar items",
                     20000,
                     x,

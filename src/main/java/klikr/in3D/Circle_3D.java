@@ -577,7 +577,6 @@ public class Circle_3D implements Window_provider, Shutdown_target
 
     public static Optional<Hourglass> get_hourglass(Stage stage, Logger logger) {
         return Progress_window.show(
-                true,
                 "Wait, loading in 3D",
                 20000,
                 100,

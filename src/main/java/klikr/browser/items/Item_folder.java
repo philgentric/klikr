@@ -454,7 +454,7 @@ public class Item_folder extends Item implements Icon_destination
     //**********************************************************
     public void add_total_size_deep_folder(LongAdder count, Button button, String text, Path path,
                                            Map<Path, Long> folder_total_sizes,
-                                           Aborter aborter, Logger logger)
+                                           Logger logger)
     //**********************************************************
     {
         count.increment();

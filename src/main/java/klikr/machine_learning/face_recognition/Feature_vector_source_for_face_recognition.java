@@ -36,10 +36,10 @@ public class Feature_vector_source_for_face_recognition extends Feature_vector_s
 
 
     //**********************************************************
-    public Optional<Feature_vector> get_feature_vector(Path path, Window owner, Aborter aborter,Logger logger)
+    public Optional<Feature_vector> get_feature_vector(Path path, Window owner, Aborter can_be_null,Logger logger)
     //**********************************************************
     {
-        return get_feature_vector_from_server(path, owner, aborter, logger);
+        return get_feature_vector_from_server(path, owner, can_be_null, logger);
     }
 
 }

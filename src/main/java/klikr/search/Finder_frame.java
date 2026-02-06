@@ -485,7 +485,7 @@ public class Finder_frame implements Search_receiver
         double x = stage.getX()+100;
         double y = stage.getY()+100;
 
-        hourglass = Progress_window.show(false,"Searching",10*60*60,x,y,stage,logger);
+        hourglass = Progress_window.show("Searching",10*60*60,x,y,stage,logger);
 		List<String> keywords = new ArrayList<>(keyword_to_slot.keySet());
         logger.log("Finder_frame::start_search() "+keywords+" in: "+target_path);
 

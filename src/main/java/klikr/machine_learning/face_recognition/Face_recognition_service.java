@@ -122,9 +122,7 @@ public class Face_recognition_service
     //**********************************************************
     {
         Optional<String> localo = get_Face_recognition_model_name(owner,logger);
-
         if ( localo.isEmpty()) return;
-
         instance = new Face_recognition_service(localo.get(), owner,logger);
         instance.load_internal();
     }
@@ -204,15 +202,17 @@ public class Face_recognition_service
         AtomicInteger files_in_flight = new AtomicInteger();
         double x = owner.getX()+100;
         double y = owner.getY()+100;
-        Optional<Hourglass> hourglass = Progress_window.show(
+        Aborter aborter = new Aborter("face_recog_auto", logger);
+        Optional<Hourglass> hourglass = Progress_window.show_with_in_flight_and_aborter(
                 files_in_flight,
+                aborter,
                 "Wait for auto train to complete",
                 3600*60,
                 x,
                 y,
                 owner,
                 logger);
-        Aborter aborter_for_auto_train =  Progress_window.get_aborter(hourglass, logger);
+
         Face_recognition_actor Face_recognition_actor = new Face_recognition_actor(this);
 
         last_report = System.currentTimeMillis();
@@ -256,7 +256,7 @@ public class Face_recognition_service
         int i = 0;
         for ( File f : folders)
         {
-            if ( aborter_for_auto_train.should_abort()) return;
+            if ( aborter.should_abort()) return;
 
             String label = f.getName();
             double percent = 100.0*(double)i/(double)folders.size();
@@ -298,7 +298,7 @@ public class Face_recognition_service
             }
 
             LongAdder label_in_flight = new LongAdder();
-            auto_folder_for_one_label(f,label, Face_recognition_actor, aborter_for_auto_train, files_in_flight, label_in_flight);
+            auto_folder_for_one_label(f,label, Face_recognition_actor, aborter, files_in_flight, label_in_flight);
         }
 
         // DONT save_internal(aborter_for_auto_train);
@@ -311,7 +311,7 @@ public class Face_recognition_service
     //**********************************************************
     private boolean auto_folder_for_one_label(File dir, String label,
                                               Face_recognition_actor Face_recognition_actor,
-                                              Aborter aborter_for_auto_train,
+                                              Aborter aborter_may_be_null,
                                               AtomicInteger files_in_flight,
                                               LongAdder label_in_flight)
     //**********************************************************
@@ -350,16 +350,19 @@ public class Face_recognition_service
         if ( files.length == 0) return true;
         for ( File f: files)
         {
-            if ( aborter_for_auto_train.should_abort())
+            if ( aborter_may_be_null != null)
             {
-                logger.log("auto aborted");
-                return false;
+                if ( aborter_may_be_null.should_abort())
+                {
+                    logger.log("auto aborted");
+                    return false;
+                }
             }
 
 
             if ( f.isDirectory())
             {
-                if ( !auto_folder_for_one_label(f,label, Face_recognition_actor, aborter_for_auto_train, files_in_flight,label_in_flight))
+                if ( !auto_folder_for_one_label(f,label, Face_recognition_actor, aborter_may_be_null, files_in_flight,label_in_flight))
                 {
                     logger.log("auto_folder returns false, aborting folder "+dir);
                     return false;
@@ -368,7 +371,9 @@ public class Face_recognition_service
             if (Guess_file_type.is_this_file_an_image(f,owner, logger))
             {
                 label_in_flight.increment();
-                Face_recognition_message msg = new Face_recognition_message(f, Face_detection_type.MTCNN, true, label, false, aborter_for_auto_train, files_in_flight);
+                Aborter local_never_null = aborter_may_be_null;
+                if ( local_never_null == null) local_never_null = new Aborter("dummy",logger);
+                Face_recognition_message msg = new Face_recognition_message(f, Face_detection_type.MTCNN, true, label, false, local_never_null, files_in_flight);
                 Actor_engine.run(Face_recognition_actor, msg, tr, logger);
            }
         }
@@ -394,9 +399,7 @@ public class Face_recognition_service
     public void show_face_recognition_window(
             Image face,
             Face_recognition_actor.Eval_results eval_result,
-            Window owner,
-            Aborter aborter
-    )
+            Window owner)
     //**********************************************************
     {
         int size = 1600/Face_recognition_actor.K_of_KNN;
@@ -676,8 +679,10 @@ public class Face_recognition_service
         AtomicInteger in_flight = new AtomicInteger();
         double x = owner.getX()+100;
         double y = owner.getY()+100;
-        Optional<Hourglass> hourglass = Progress_window.show(
+        Aborter aborter = new Aborter("face recog load",logger);
+        Optional<Hourglass> hourglass = Progress_window.show_with_in_flight_and_aborter(
                 in_flight,
+                aborter,
                 "Loading face recognition prototypes",
                 3600*60,
                 x,
@@ -691,15 +696,17 @@ public class Face_recognition_service
             if ( files == null)
             {
                 try {
+                    logger.log("going to create folder: "+p.toAbsolutePath());
                     Files.createDirectory(p);
                 } catch (IOException e) {
                     logger.log("cannot create folder: "+p.toAbsolutePath());
                 }
                 return;
             }
-            Aborter aborter = Progress_window.get_aborter(hourglass, logger);
+
             for (File f: files)
             {
+                if ( aborter.should_abort()) return;
                 if ( f.isDirectory()) continue;
                 in_flight.incrementAndGet();
                 Job_termination_reporter tr = (message, job) -> in_flight.decrementAndGet();
@@ -900,8 +907,10 @@ public class Face_recognition_service
         AtomicInteger files_in_flight = new AtomicInteger(0);
         double x = owner.getX()+100;
         double y = owner.getY()+100;
-        Optional<Hourglass> hourglass = Progress_window.show(
+        Aborter aborter =  new Aborter("face recog do_folder",logger);
+        Optional<Hourglass> hourglass = Progress_window.show_with_in_flight_and_aborter(
                 files_in_flight,
+                aborter,
                 "Wait for SELF face recognition to complete",
                 3600*60,
                 x,
@@ -914,7 +923,6 @@ public class Face_recognition_service
         //Path target = face_recognizer_path;
         logger.log("doing SELF on: "+target);
 
-        Aborter aborter = Progress_window.get_aborter(hourglass, logger);
         do_folder(target,null,aborter,recognition_stats);
 
 
@@ -956,7 +964,7 @@ public class Face_recognition_service
     }
 
     //**********************************************************
-    private void do_one_file(File file, String self_target_tag, Aborter aborter_for_self, Recognition_stats recognition_stats)
+    private void do_one_file(File file, String self_target_tag, Aborter aborter, Recognition_stats recognition_stats)
     //**********************************************************
     {
         logger.log("Face recognition test on " + file.getName());
@@ -971,7 +979,7 @@ public class Face_recognition_service
                 file.toPath(),
                 face_detection_type,
                 false,
-                aborter_for_self, owner,logger);
+                        aborter, owner,logger);
 
             logger.log(face_recognition_results.to_string()+"\n\n\n");
 

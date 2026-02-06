@@ -224,7 +224,7 @@ public class Song
                 aborter,
                 logger);
         Feature_vector_source fvs = new Feature_vector_source_for_song_similarity(aborter);
-        Feature_vector_cache fvc = new Feature_vector_cache("audio_feature_vector_cache", fvs, aborter, logger);
+        Feature_vector_cache fvc = new Feature_vector_cache("audio_feature_vector_cache", fvs, logger);
         Supplier<Feature_vector_cache> fv_cache_supplier = () -> fvc;
         LongAdder count_pairs_examined = new LongAdder();
         List<Most_similar> similars = similarity_engine.find_similars_generic(

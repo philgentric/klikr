@@ -224,7 +224,6 @@ public class Launcher extends Application implements UI_change_target
     //**********************************************************
     {
         hourglass = Progress_window.show(
-                false,
                 "Please wait ... starting "+app_name,
                 30*60,
                 stage.getX()+100,

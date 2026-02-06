@@ -346,7 +346,6 @@ public class Virtual_landscape_menus
         double y = this.owner.getY()+100;
 
         Hourglass hourglass = Progress_window.show(
-                false,
                 "Making PDF contact sheet",
                 20_000,
                 x,
