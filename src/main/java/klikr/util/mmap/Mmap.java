@@ -427,6 +427,7 @@ public class Mmap
     public void load_index()
     //**********************************************************
     {
+        if ( !main_index_file.toFile().exists()) return;
         try (DataInputStream dis = new DataInputStream(new FileInputStream(main_index_file.toFile())))
         {
             int size = dis.readInt();
