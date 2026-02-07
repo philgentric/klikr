@@ -574,7 +574,6 @@ TODO:
                         }
                         else
                         {
-                            logger.log("gif icon save !!!!");
                             // we use GraphickMagick to create a resized icoh FILE
                             // gm convert <input.gif> -coalesce -resize 128x128 <output.gif>
                             List<String> command_line_for_GraphicsMagic = new ArrayList<>();
