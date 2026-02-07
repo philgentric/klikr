@@ -65,10 +65,7 @@ public record Start_context(List<String> args, String bet_full)
                 args.add(s);
             }
         }
-
-
         Start_context returned = new Start_context(args,bet_full);
-
         if ( dbg ) returned.print();
         return returned;
     }

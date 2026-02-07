@@ -469,19 +469,8 @@ TODO:
 
             case gif:
             {
-                Optional<Image> op;
-                /*if (cache_gifs_as_files_in_mmap)
-                {
-                    // dont resize, to get the full icon ALSO the first time
-                    // since we write the original file in mmap
-                    // => fast rich solution, dangerous for machines with little RAM
-                    op = Full_image_from_disk.load_native_resolution_image_from_disk(original_path,true,owner,aborter,logger);
-                }
-                else
-                {*/
-                    // resize to icon target size (saves RAM)
-                    op =  Icons_from_disk.read_original_image_from_disk_and_return_icon(original_path, item_type, icon_factory_request.icon_size, true, icon_factory_request.owner, icon_factory_request.aborter, logger);
-                //}
+                // make a resized Image (this is only for the 'first time')
+                Optional<Image> op =  Icons_from_disk.read_original_image_from_disk_and_return_icon(original_path, item_type, icon_factory_request.icon_size, true, icon_factory_request.owner, icon_factory_request.aborter, logger);
                 if ( dbg)
                 {
                     if ( op.isPresent())
@@ -514,6 +503,21 @@ TODO:
                 return op;
             }
         }
+    }
+
+    // storm avoider
+    //**********************************************************
+    private boolean is_icon_cache_folder(Path original_path )
+    //**********************************************************
+    {
+        if (original_path.getParent().toAbsolutePath().toString().equals(icon_cache_dir.toAbsolutePath().toString()))
+        {
+            // the user is browsing the icon cache. if we save a file for the icon, it will trigger the change detector ...
+            // so a new icon request...  ad nauseam ! ==> storm avoidance = dont save the icon.
+            if (dbg) logger.log("✅ Icon_factory thread: (storm avoidance) not saving the icon for a file which is in the icons' cache folder" );
+            return true;
+        }
+        return false;
     }
 
     private static Set<String> icons_in_flight = ConcurrentHashMap.newKeySet();
@@ -552,7 +556,8 @@ TODO:
             }
             icons_in_flight.add(icon_path.toAbsolutePath().toString());
 
-            switch (item_type) {
+            switch (item_type)
+            {
                 case video:
                 {
                     Mmap.instance.write_image_as_file(icon_path, true, delete_on_end);
@@ -563,54 +568,54 @@ TODO:
                 case gif:
                     if (cache_gifs_as_files_in_mmap)
                     {
-                        // we use GraphickMagick
-                        // gm convert <input.gif> -coalesce -resize 128x128 <output.gif>
-                        List<String> command_line_for_GraphicsMagic = new ArrayList<>();
-                        command_line_for_GraphicsMagic.add(External_application.GraphicsMagick.get_command(owner,logger));
-                        command_line_for_GraphicsMagic.add("convert");
-                        command_line_for_GraphicsMagic.add(original_path.toAbsolutePath().toString());
-                        command_line_for_GraphicsMagic.add("-coalesce");
-                        command_line_for_GraphicsMagic.add("-resize");
-                        command_line_for_GraphicsMagic.add(""+icon_factory_request.icon_size+"x"+icon_factory_request.icon_size);
-                        command_line_for_GraphicsMagic.add(icon_path.toAbsolutePath().toString());
-                        StringBuilder sb = null;
-                        if ( pdf_dbg) sb = new StringBuilder();
-                        File file_in = destination.get_item_path().toFile();
-                        File wd = file_in.getParentFile();
-                        Execute_result res = Execute_command.execute_command_list(command_line_for_GraphicsMagic, wd, 2000, sb,logger);
-                        if ( !res.status())
+                        if (is_icon_cache_folder(original_path))
                         {
-                            List<String> verify = new ArrayList<>();
-                            verify.add(External_application.GraphicsMagick.get_command(owner,logger));
-                            verify.add("--version");
-                            String home = System.getProperty(String_constants.USER_HOME);
-                            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
-                            if ( !res2.status())
-                            {
-                                Booleans.manage_show_graphicsmagick_install_warning(owner,logger);
+                            logger.log("Skipping gif icon save as the visited folder IS the icon cache!");
+                        }
+                        else
+                        {
+                            logger.log("gif icon save !!!!");
+                            // we use GraphickMagick to create a resized icoh FILE
+                            // gm convert <input.gif> -coalesce -resize 128x128 <output.gif>
+                            List<String> command_line_for_GraphicsMagic = new ArrayList<>();
+                            command_line_for_GraphicsMagic.add(External_application.GraphicsMagick.get_command(owner, logger));
+                            command_line_for_GraphicsMagic.add("convert");
+                            command_line_for_GraphicsMagic.add(original_path.toAbsolutePath().toString());
+                            command_line_for_GraphicsMagic.add("-coalesce");
+                            command_line_for_GraphicsMagic.add("-resize");
+                            command_line_for_GraphicsMagic.add("" + icon_factory_request.icon_size + "x" + icon_factory_request.icon_size);
+                            command_line_for_GraphicsMagic.add(icon_path.toAbsolutePath().toString());
+                            StringBuilder sb = null;
+                            if (pdf_dbg) sb = new StringBuilder();
+                            File file_in = destination.get_item_path().toFile();
+                            File wd = file_in.getParentFile();
+                            Execute_result res = Execute_command.execute_command_list(command_line_for_GraphicsMagic, wd, 2000, sb, logger);
+                            if (!res.status()) {
+                                List<String> verify = new ArrayList<>();
+                                verify.add(External_application.GraphicsMagick.get_command(owner, logger));
+                                verify.add("--version");
+                                String home = System.getProperty(String_constants.USER_HOME);
+                                Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
+                                if (!res2.status()) {
+                                    Booleans.manage_show_graphicsmagick_install_warning(owner, logger);
+                                }
+                                logger.log("❗ GIF icon resize failed " + icon_path.toAbsolutePath());
+                                return;
                             }
-                            logger.log("❗ GIF icon resize failed " + icon_path.toAbsolutePath());
-                            return;
+                            if (pdf_dbg) logger.log(sb.toString());
+                            if (icon_path.toFile().length() == 0) {
+                                logger.log("❗ GIF icon resize failed " + icon_path.toAbsolutePath());
+                                return;
+                            }
+                            Mmap.instance.write_image_as_file(icon_path, true, delete_on_end);
+                            if (dbg)
+                                logger.log("Icon caching, WROTE GIF as file to mmap :" + icon_path + " w=" + icon_factory_request.icon_size + " h=" + icon_factory_request.icon_size);
                         }
-                        if ( pdf_dbg) logger.log(sb.toString());
-                        if (icon_path.toFile().length() == 0) {
-                            logger.log("❗ GIF icon resize failed " + icon_path.toAbsolutePath());
-                            return;
-                        }
-                        Mmap.instance.write_image_as_file(icon_path, true, null);
-                        if ( dbg) logger.log("Icon caching, WROTE GIF as file to mmap :" + icon_path + " w=" + icon_factory_request.icon_size + " h=" + icon_factory_request.icon_size);
                     }
                     break;
 
                 default:
-                    if (original_path.getParent().toAbsolutePath().toString().equals(icon_cache_dir.toAbsolutePath().toString()))
-                    {
-                        // the user is browsing the icon cache. if we save a file for the icon, it will trigger the change detector ...
-                        // so a new icon request...  ad nauseam ! ==> storm avoidance = dont save the icon.
-                        if (dbg)
-                            logger.log("✅ Icon_factory thread: (storm avoidance) not saving the icon for a file which is in the icons' cache folder " + icon_path);
-                        break;
-                    }
+                    if ( is_icon_cache_folder(original_path)) break;
                     if ( cache_png_in_mmap)
                     {
                         if (use_pixels_in_mmap)
@@ -630,8 +635,10 @@ TODO:
                             if ( item_type != Iconifiable_item_type.pdf)
                             {
                                 // we need to save the icon (Image) to disk
+                                logger.log("WTF 8888 !!!!");
                                 Static_image_utilities.write_png_to_disk(icon_from_cache, icon_path, logger);
                             }
+                            // then we save the file in mmap
                             Mmap.instance.write_image_as_file(icon_path, true, delete_on_end);
                             if ( dbg) logger.log("Icon caching, WROTE image as file to cache :" + icon_path + " w=" + icon_from_cache.getWidth() + " h=" + icon_from_cache.getHeight());
                         }
@@ -659,9 +666,9 @@ TODO:
     //**********************************************************
     {
         // TODO: clarify the difference between
-        // destination.get_item_path().toAbsolutePath();
+        // destination.get_item_path()
         // and
-        // destination.get_path_for_display_icon_destination());
+        // destination.get_path_for_display_icon_destination()
 
         if (icon_factory_request.aborter.should_abort())
         {
@@ -684,15 +691,12 @@ TODO:
         // try to read the icon from the cache
 
         Image icon_from_cache = get_icon_from_cache(original_path, icon_path, icon_factory_request, destination);
-
-
         if (icon_from_cache != null)
         {
             if (dbg) logger.log("✅ Icon caching, READ icon from cache(): " + destination.get_item_path()+ " w="+icon_from_cache.getWidth()+" h="+icon_from_cache.getHeight());
             Image_properties properties = new Image_properties(icon_from_cache.getWidth(), icon_from_cache.getHeight(), Rotation.normal);
             return Optional.of(new Image_and_properties(icon_from_cache, properties));
         }
-
         if (icon_factory_request.aborter.should_abort())
         {
             if (aborting_dbg) logger.log("❗ Icon_factory_actor aborting-3");
@@ -702,12 +706,10 @@ TODO:
         // the icon was not in the cache, let us MAKE one
 
         icon_from_cache = make_icon(original_path,icon_path, icon_factory_request, destination).orElse(null);
-
         if (icon_from_cache == null) {
             logger.log("❗ Icon caching, load from file FAILED (5) for " + destination.get_item_path());
             return Optional.empty();
         }
-
         if ((icon_from_cache.getHeight() == 0) && (icon_from_cache.getWidth() == 0)) {
             logger.log("❗ Icon caching, load from file FAILED (6) for " + destination.get_item_path());
             return Optional.empty();

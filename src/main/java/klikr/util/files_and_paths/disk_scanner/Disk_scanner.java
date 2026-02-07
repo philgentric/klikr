@@ -10,6 +10,7 @@ import klikr.util.execute.actor.Executor;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -28,8 +29,8 @@ public class Disk_scanner implements Runnable
     final Dir_payload dir_payload;
     final ConcurrentLinkedQueue<String> warning_payload;
 
-    public final LongAdder file_count_stop_counter;
-    public final LongAdder folder_count_stop_counter;
+    private final LongAdder file_count_stop_counter;
+    private final LongAdder folder_count_stop_counter;
 
     public final Aborter aborter;
     public final Logger logger;
@@ -132,7 +133,7 @@ public class Disk_scanner implements Runnable
             File_payload file_payload_,
             Dir_payload dir_payload_,
             ConcurrentLinkedQueue<String> warning_payload_,
-            Aborter aborter_,
+            @NonNull Aborter aborter_,
             Logger logger_)
     //**********************************************************
     {
@@ -144,10 +145,6 @@ public class Disk_scanner implements Runnable
         file_count_stop_counter = file_count_stop_counter_;
         folder_count_stop_counter = folder_count_stop_counter_;
         logger = logger_;
-        if ( aborter_ == null)
-        {
-            logger.log_stack_trace(origin+ "❌ FATAL: aborter must not be null");
-        }
         aborter = aborter_;
     }
 
@@ -202,11 +199,15 @@ public class Disk_scanner implements Runnable
                     if ((Executor.use_virtual_threads))
                     {
                         // with virtual threads we can afford to start one thread per file !
-                        Actor_engine.execute(() -> file_payload.process_file(f,file_count_stop_counter), "Disk scanner, scan file: "+path,logger);
+                        Actor_engine.execute(() -> {
+                            file_payload.process_file(f);
+                            file_count_stop_counter.decrement();
+                        }, "Disk scanner, scan file: "+path,logger);
                     }
                     else
                     {
-                        file_payload.process_file(f, file_count_stop_counter);
+                        file_payload.process_file(f);
+                        file_count_stop_counter.decrement();
                     }
                 }
             }

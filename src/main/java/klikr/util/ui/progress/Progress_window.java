@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.Check_remaining_RAM;
-import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
@@ -146,12 +145,10 @@ public class Progress_window implements Hourglass
 	{
 		if ( Platform.isFxApplicationThread())
 		{
-			logger.log("Progress_window HAPPENS2 launch");
 			local.define_fx(wait_message,owner,x,y);
 		}
 		else
 		{
-			logger.log("Progress_window HAPPENS1 launch");
 			Jfx_batch_injector.inject(()->local.define_fx(wait_message,owner,x,y),logger);
 		}
 		return local;
@@ -216,6 +213,7 @@ public class Progress_window implements Hourglass
 		{
 			Button abort = new Button(My_I18n.get_I18n_string("Abort",owner,logger));
             Look_and_feel_manager.set_button_look(abort,true,stage,logger);
+			//abort.setBorder(Look_and_feel_manager.get_border(owner,logger));
 			vbox.getChildren().add(abort);
 			abort.setOnAction(e -> {
 				logger.log("Progress_window abort BUTTON !");
@@ -248,12 +246,15 @@ public class Progress_window implements Hourglass
 					if (!b)
 					{
 						// timeout
-                        if (the_aborter.should_abort())
+						if ( the_aborter != null)
 						{
-							has_ended("aborted",false);
-							return;
+							if (the_aborter.should_abort())
+							{
+								has_ended("aborted",false);
+								return;
+							}
 						}
-                        else count++;
+                        count++;
                         if ( count > timeout_s)
 						{
 							has_ended("Time count out", false);

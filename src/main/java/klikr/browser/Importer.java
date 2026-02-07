@@ -15,11 +15,10 @@ import klikr.properties.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.files_and_paths.Extensions;
+import klikr.util.files_and_paths.disk_scanner.Dir_payload;
 import klikr.util.files_and_paths.disk_scanner.Disk_scanner;
 import klikr.util.files_and_paths.disk_scanner.File_payload;
-import klikr.look.Font_size;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.log.Logger;
 import klikr.util.ui.progress.Hourglass;
@@ -46,12 +45,8 @@ public class Importer
     //**********************************************************
     {
         Path home = (new File(System.getProperty(String_constants.USER_HOME))).toPath();
-
-
         Path target = home.resolve(Path.of("Pictures"));
         //Path target = home.resolve(Path.of("Pictures/Photos Library.photoslibrary"));
-
-
         LongAdder counter = new LongAdder();
         Path new_dir = null;
 
@@ -87,7 +82,7 @@ public class Importer
 
         logger.log("Importer: copy starting");
 
-        File_payload file_payload = (f, folder_count_stop_counter) -> {
+        File_payload file_payload = (f) -> {
             logger.log("Importer: looking at file: "+f.getName());
             if (!(Extensions.get_extension(f.getName()).equals("jpeg")))
             {
@@ -144,7 +139,6 @@ public class Importer
     //**********************************************************
     {
         Path home = (new File(System.getProperty(String_constants.USER_HOME))).toPath();
-
         Path target = home.resolve(Path.of("Pictures"));
 
         Stage local_stage = new Stage();
@@ -154,9 +148,9 @@ public class Importer
         local_stage.setHeight(400);
         local_stage.setWidth(800);
         TextArea textarea1 = new TextArea("Please wait, scanning folders...");
+        Look_and_feel_manager.set_region_look(textarea1,owner,logger);
         TextArea textarea2 = new TextArea();
-        Font_size.apply_this_font_size_to_Node(textarea1,24,logger);
-        Font_size.apply_this_font_size_to_Node(textarea2,20,logger);
+        Look_and_feel_manager.set_region_look(textarea2,owner,logger);
         VBox vbox = new VBox(textarea1, textarea2);
         Scene scene = new Scene(vbox, Color.WHITE);
         local_stage.setTitle(target.toAbsolutePath().toString());
@@ -172,15 +166,14 @@ public class Importer
 
         File_payload file_payload = new File_payload() {
             @Override
-            public void process_file(File f, LongAdder file_count_stop_counter) {
-                //logger.log("Importer: looking at file: "+f.getName());
-                if (!(Extensions.get_extension(f.getName()).equals("jpeg")))
+            public void process_file(File f)
+            {
+                logger.log("Importer: looking at file: "+f.getName());
+                if ((Extensions.get_extension(f.getName()).equals("jpeg")))
                 {
                     //logger.log("Importer: skipping at file: "+f.getName()+" wrong extension: "+Extensions.get_extension(f.getName()));
-                    return;
+                    size.add(f.length());
                 }
-                size.add(f.length());
-                file_count_stop_counter.decrement();
             }
         };
 
@@ -207,10 +200,16 @@ public class Importer
                         target,
                         "Photo importer length estimate",
                         file_payload,
-                        null,
+                        new Dir_payload() {
+                            @Override
+                            public void process_dir(File dir) {
+                                logger.log("Photo importer processing: " + dir.getAbsolutePath());
+                            }
+                        },
                         wp,
                         local,
                         logger);
+                logger.log("Importer: setting done = true");
 
                 done.set(true);
             }
@@ -224,7 +223,11 @@ public class Importer
                 for(;;)
                 {
                     if (local.should_abort()) break;
-                    if ( done.get()) break;
+                    if ( done.get())
+                    {
+                        logger.log("Importer: done");
+                        break;
+                    }
                     try
                     {
                         Thread.sleep(100);

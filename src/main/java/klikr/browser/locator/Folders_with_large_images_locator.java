@@ -37,7 +37,6 @@ public class Folders_with_large_images_locator
     private final Path top;
     private final int minimum_count;
     private final int min_bytes;
-    //private final Browser browser;
     private final Window owner;
     private final Logger logger;
     private final  ConcurrentHashMap<String,Integer> contanimated_directories = new ConcurrentHashMap<>();
@@ -46,7 +45,7 @@ public class Folders_with_large_images_locator
     private static final int MAX_WINDOWS = 10;
 
     private Monitor monitor = null;
-    private Aborter private_aborter = null;
+    private final Aborter private_aborter = null;
 
     //**********************************************************
     public static void locate(Path top, int minimum_count, int min_bytes, 
