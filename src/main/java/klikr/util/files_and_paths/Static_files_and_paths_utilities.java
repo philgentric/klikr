@@ -1168,11 +1168,17 @@ public class Static_files_and_paths_utilities
 
         Path returned = Paths.get(conf_dir2.toAbsolutePath().toString(), relative_dir_name);
         if (dbg) logger.log("privacy screen dir=" + returned.toAbsolutePath());
-        if (!Files.exists(returned)) {
+        if (!Files.exists(returned))
+        {
             try {
                 Files.createDirectory(returned);
                 return returned;
-            } catch (IOException e) {
+            }
+            catch(FileAlreadyExistsException e)
+            {
+                logger.log("IGNORING privacy screen dir=" + e);
+            }
+            catch (IOException e) {
                 String err = " Attempt to create a directory named->" + returned.toAbsolutePath() + "<- failed (3)";
                 Popups.popup_Exception(e, 300, err, owner, logger);
                 return null;
