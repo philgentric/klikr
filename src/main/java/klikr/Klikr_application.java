@@ -108,6 +108,7 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import klikr.audio.Audio_player;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
@@ -264,7 +265,7 @@ public class Klikr_application extends Application
             }
             if ( !already_asked)
             {
-                Github_stars.ask_for_github_star(primary_stage);
+                Github_stars.ask_for_github_star(window_provider.get_owner());
             }
         }
 
