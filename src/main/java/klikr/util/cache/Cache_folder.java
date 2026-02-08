@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 // caches that have a disk 'backup'
 // we need to have a static list because when we 'clear all disk caches'
@@ -25,7 +26,8 @@ import java.util.List;
 public enum Cache_folder
 //**********************************************************
 {
-
+    mmap,
+    logs,
     icon_cache, // each image has a file
     folder_icon_cache, // each folder has a file
 
@@ -98,7 +100,9 @@ public enum Cache_folder
         Path icon_cache_dir = get_cache_dir( Cache_folder.icon_cache,owner,logger);
         int icon_size = Non_booleans_properties.get_icon_size(owner);
 
-        Path icon_path = Icon_caching.path_for_icon_caching(path,String.valueOf(icon_size),Icon_caching.png_extension,owner,logger);
+        Optional<Path> op = Icon_caching.path_for_icon_caching(path, String.valueOf(icon_size), Icon_caching.png_extension, owner, logger);
+        if (op.isEmpty()) return;
+        Path icon_path = op.get();
         try {
             Files.delete(icon_path);
             logger.log("one icon deleted from cache:" + icon_path);

@@ -6,9 +6,11 @@ package klikr.util.image.icon_cache;
 import javafx.stage.Window;
 import klikr.util.cache.Cache_folder;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 
 //**********************************************************
@@ -23,7 +25,7 @@ public class Icon_caching
 
 
     //**********************************************************
-    public static Path path_for_icon_caching(
+    public static Optional<Path> path_for_icon_caching(
             Path original_image_file,
             String tag,
             String extension,
@@ -31,12 +33,17 @@ public class Icon_caching
             Logger logger)
     //**********************************************************
     {
-        if ( original_image_file == null) return null;
+        if ( original_image_file == null)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("WTF?"));
+            return Optional.empty();
+        }
 
         if (icon_cache_dir == null) icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,owner,logger);
         //int icon_size = Non_booleans_properties.get_icon_size(owner);
         //String tag = String.valueOf(icon_size);
-        return icon_cache_dir.resolve(make_cache_name(original_image_file.toAbsolutePath().toString(), tag, extension));
+        Path returned = icon_cache_dir.resolve(make_cache_name(original_image_file.toAbsolutePath().toString(), tag, extension));
+        return Optional.of(returned);
     }
 
     //**********************************************************

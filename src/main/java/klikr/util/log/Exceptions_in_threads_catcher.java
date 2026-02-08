@@ -39,7 +39,7 @@ public class Exceptions_in_threads_catcher
 	public static void main(String[] args)
 	//**********************************************************
 	{
-		Logger l = new File_logger("Exceptions_in_threads_catcher test");
+		Logger l = new File_logger("Exceptions_in_threads_catcher_test");
 		set_exceptions_in_threads_catcher(l);
 		
 		try {

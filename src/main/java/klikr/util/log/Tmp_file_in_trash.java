@@ -47,6 +47,7 @@ public class Tmp_file_in_trash
         }
     }
 
+
     //**********************************************************
     public static Path get_tmp_file_path_in_trash(String prefix, String extension,Window owner, Logger logger)
     //**********************************************************

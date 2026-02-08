@@ -454,18 +454,26 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         }
         StringBuilder sb = new StringBuilder();
         sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(sizes.bytes(),owner,logger));
+
         intercalaire(on_one_line, sb);
+
         sb.append(sizes.folders());
         String folders = My_I18n.get_I18n_string("Folders",owner,logger);
+        sb.append(" ");
         sb.append(folders);
+
         intercalaire(on_one_line, sb);
+
         sb.append(sizes.files());
         String files = My_I18n.get_I18n_string("Files",owner,logger);
+        sb.append(" ");
         sb.append(files);
+
         intercalaire(on_one_line, sb);
+
         sb.append(sizes.images());
         String images = My_I18n.get_I18n_string("Images",owner,logger);
-
+        sb.append(" ");
         sb.append(images);
         label_for_sizes.setText(sb.toString());
 

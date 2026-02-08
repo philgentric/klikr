@@ -53,13 +53,13 @@ public class Shared_services
     }
 
     //**********************************************************
-    public static Logger get_logger(String tag)
+    public static Logger get_logger(String prefix)
     //**********************************************************
     {
         Logger logger;
         if (Booleans.get_boolean_defaults_to_false(Feature.Log_to_file.name()))
         {
-            logger = new File_logger(tag);
+            logger = new File_logger(prefix);
         }
         else
         {

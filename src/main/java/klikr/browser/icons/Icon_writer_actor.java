@@ -15,6 +15,7 @@ import klikr.util.mmap.Mmap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 
 /*
@@ -80,7 +81,9 @@ public class Icon_writer_actor implements Actor
     public void write_icon_to_cache_on_disk(Icon_write_message iwm)
     //**********************************************************
     {
-		Path out_path = Icon_caching.path_for_icon_caching(iwm.absolute_path(), String.valueOf(iwm.icon_size()), Icon_caching.png_extension, owner, logger);
+		Optional<Path> op = Icon_caching.path_for_icon_caching(iwm.absolute_path(), String.valueOf(iwm.icon_size()), Icon_caching.png_extension, owner, logger);
+		if (op.isEmpty()) return;
+		Path out_path = op.get();
 		if ( use_mmap)
 		{
 			Runnable on_end = ()->

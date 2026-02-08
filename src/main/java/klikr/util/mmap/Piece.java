@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32C;
 
@@ -235,17 +236,17 @@ public class Piece
 
 
     //**********************************************************
-    public Image read_image_as_pixels(Image_as_pixel_metadata meta)
+    public Optional<Image> read_image_as_pixels(Image_as_pixel_metadata meta)
     //**********************************************************
     {
         MemorySegment segment = read_MemorySegment(meta);
-        if (segment == null) return null;
+        if (segment == null) return Optional.empty();
         int width = meta.width();
         if( dbg) logger.log("image w = "+width);
-        if ( width <=0)  return null;
+        if ( width <=0)  return Optional.empty();
         int height = meta.height();
         if( dbg) logger.log("image h = "+height);
-        if ( height <=0)  return null;
+        if ( height <=0)  return Optional.empty();
 
         ByteBuffer a = segment.asByteBuffer();
 
@@ -257,7 +258,7 @@ public class Piece
             );
         Image returned = new WritableImage(pixelBuffer);
         if ( dbg) logger.log("Mmap retrieved image 'AS PIXELS', w= "+returned.getWidth()+" h= "+returned.getHeight());
-        return returned;
+        return Optional.of(returned);
     }
 
     //**********************************************************

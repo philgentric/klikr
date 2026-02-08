@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 //**********************************************************
 public class Mmap_test extends Application
@@ -49,14 +50,23 @@ public class Mmap_test extends Application
             String tag2 = "src/main/resources/icons/French.png";
             Image french = new Image(new File(tag2).toURI().toString());
             mmap.write_image_as_pixels(tag2,french,true,null);
-            Image image2 = mmap.read_image_as_pixels(tag2);
-            vbox.getChildren().add(new ImageView(image2));
+            Optional<Image> image2 = mmap.read_image_as_pixels(tag2);
+            if (image2.isEmpty())
+            {
+                logger.log("Image not found "+tag2);
+                return;
+            }
+            vbox.getChildren().add(new ImageView(image2.get()));
         }
         {
             String tag3 = "src/main/resources/icons/Korean.png";
             mmap.write_image_as_file(Path.of(tag3), true, null);
-            Image image3 = mmap.read_image_as_file(Path.of(tag3));
-            vbox.getChildren().add(new ImageView(image3));
+            Optional<Image> image3 = mmap.read_image_as_file(Path.of(tag3));
+            if (image3.isEmpty())
+            {
+                logger.log("Image not found "+tag3);
+                return;
+            }vbox.getChildren().add(new ImageView(image3.get()));
         }
         boolean qsdfd = true;
         if ( qsdfd)

@@ -36,6 +36,7 @@ import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
+import org.jspecify.annotations.NonNull;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -128,7 +129,7 @@ public class Icon_factory_actor implements Actor
             return null;
         }
 
-        Optional<Image_and_properties> image_and_properties = Optional.empty();
+        Optional<Image_and_properties> image_and_properties;
         for(;;)
         {
             image_and_properties = do_it(icon_factory_request, destination);
@@ -262,11 +263,17 @@ TODO:
      */
 
     //**********************************************************
-    private Path make_icon_path(Path original_path,
+    private Optional<Path> make_icon_path(
+            Path original_path,
             Icon_factory_request icon_factory_request,
             Icon_destination destination)
     //**********************************************************
     {
+        if ( original_path == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return Optional.empty();
+        }
         String icon_filename_adder = "";
         Iconifiable_item_type item_type = destination.get_item_type();
         if ( item_type == Iconifiable_item_type.video)
@@ -288,62 +295,57 @@ TODO:
     }
 
     //**********************************************************
-    private Image get_icon_from_cache(Path original_path,
+    private Optional<Image> get_icon_from_cache(Path original_path,
                                       Path icon_path,
                                       Icon_factory_request icon_factory_request,
                                       Icon_destination destination)
     //**********************************************************
     {
-        Image image_from_cache = null;
         Iconifiable_item_type item_type = destination.get_item_type();
         switch (item_type)
         {
             case gif:
             {
-                image_from_cache = Mmap.instance.read_image_as_file(icon_path);
-                if( dbg) logger.log("Icon caching, READ of GIF icon from mmap, as file");
-                /*
-                {
-                    // read it directly!
-                    Optional<Image> op = Icons_from_disk.read_original_image_from_disk_and_return_icon(original_path, item_type, icon_factory_request.icon_size, true, icon_factory_request.owner, icon_factory_request.aborter, logger);
-                    if ( op.isPresent()) image_from_cache = op.get();
-                    if( dbg) logger.log("Icon caching, READ of GIF full image from disk");
-                }*/
+                Optional<Image> op = Mmap.instance.read_image_as_file(icon_path);
+                if( dbg) if ( op.isPresent()) logger.log("Icon caching, READ of GIF icon from mmap, as file");
+                return op;
             }
-            break;
+
             case video:
             {
-                image_from_cache = Mmap.instance.read_image_as_file(icon_path);
+                Optional<Image> op = Mmap.instance.read_image_as_file(icon_path);
                 if( dbg) logger.log("Icon caching, READ of icon from mmap, as file");
+                return op;
             }
-            break;
+
             default:
-                if (cache_png_in_mmap)
+            if (cache_png_in_mmap)
+            {
+                if (use_pixels_in_mmap)
                 {
-                    if (use_pixels_in_mmap)
-                    {
-                        image_from_cache = Mmap.instance.read_image_as_pixels(icon_path.toAbsolutePath().toString());
-                        if( dbg) logger.log("Icon caching, READ of icon from mmap, as pixels");
-                    }
-                    else
-                    {
-                        image_from_cache = Mmap.instance.read_image_as_file(icon_path);
-                        if( dbg) logger.log("Icon caching, READ of icon from mmap, as file");
-                    }
+                    Optional<Image> op = Mmap.instance.read_image_as_pixels(icon_path.toAbsolutePath().toString());
+                    if( dbg) if ( op.isPresent()) logger.log("Icon caching, READ of icon from mmap, as pixels");
+                    return op;
                 }
                 else
                 {
-                    image_from_cache = Icons_from_disk.load_icon_from_disk_cache(
-                            original_path,
-                            icon_factory_request.icon_size,
-                            String.valueOf(icon_factory_request.icon_size),
-                            Icon_caching.png_extension,
-                            false, icon_factory_request.owner,logger);
-                    if( dbg) logger.log("Icon caching, READ of icon from disk");
+                    Optional<Image> op = Mmap.instance.read_image_as_file(icon_path);
+                    if( dbg) if ( op.isPresent()) logger.log("Icon caching, READ of icon from mmap, as file");
+                    return op;
                 }
-                break;
+            }
+            else
+            {
+                Optional<Image> op = Icons_from_disk.load_icon_from_disk_cache(
+                        original_path,
+                        icon_factory_request.icon_size,
+                        String.valueOf(icon_factory_request.icon_size),
+                        Icon_caching.png_extension,
+                        false, icon_factory_request.owner, logger);
+                if( dbg) if ( op.isPresent()) logger.log("Icon caching, READ of icon from disk");
+                return op;
+            }
         }
-        return image_from_cache;
     }
 
     //**********************************************************
@@ -676,10 +678,24 @@ TODO:
         }
 
         Path original_path = destination.get_path_for_display_icon_destination();
+        if( original_path == null)
+        {
+            // this happens quite a lot, for example
+            // for empty folder (option: show folder with icons)
+            //logger.log(Stack_trace_getter.get_stack_trace(""));
+            return Optional.empty();
+        }
+
+
         if (verbose_dbg) logger.log("✅ Icon caching, original:" + original_path);
 
-        Path icon_path = make_icon_path(original_path, icon_factory_request, destination);
+        Optional<Path> icon_path = make_icon_path(original_path, icon_factory_request, destination);
         if (verbose_dbg) logger.log("icon_path= "+icon_path);
+        if( icon_path.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("icon_path == null ???"));
+            return Optional.empty();
+        }
 
         if (icon_factory_request.aborter.should_abort())
         {
@@ -689,12 +705,12 @@ TODO:
 
         // try to read the icon from the cache
 
-        Image icon_from_cache = get_icon_from_cache(original_path, icon_path, icon_factory_request, destination);
-        if (icon_from_cache != null)
+        Optional<Image> icon_from_cache = get_icon_from_cache(original_path, icon_path.get(), icon_factory_request, destination);
+        if (icon_from_cache.isPresent())
         {
-            if (dbg) logger.log("✅ Icon caching, READ icon from cache(): " + destination.get_item_path()+ " w="+icon_from_cache.getWidth()+" h="+icon_from_cache.getHeight());
-            Image_properties properties = new Image_properties(icon_from_cache.getWidth(), icon_from_cache.getHeight(), Rotation.normal);
-            return Optional.of(new Image_and_properties(icon_from_cache, properties));
+            if (dbg) logger.log("✅ Icon caching, READ icon from cache(): " + destination.get_item_path()+ " w="+icon_from_cache.get().getWidth()+" h="+icon_from_cache.get().getHeight());
+            Image_properties properties = new Image_properties(icon_from_cache.get().getWidth(), icon_from_cache.get().getHeight(), Rotation.normal);
+            return Optional.of(new Image_and_properties(icon_from_cache.get(), properties));
         }
         if (icon_factory_request.aborter.should_abort())
         {
@@ -704,20 +720,20 @@ TODO:
 
         // the icon was not in the cache, let us MAKE one
 
-        icon_from_cache = make_icon(original_path,icon_path, icon_factory_request, destination).orElse(null);
-        if (icon_from_cache == null) {
+        icon_from_cache = make_icon(original_path,icon_path.get(), icon_factory_request, destination);
+        if (icon_from_cache.isEmpty()) {
             logger.log("❗ Icon caching, load from file FAILED (5) for " + destination.get_item_path());
             return Optional.empty();
         }
-        if ((icon_from_cache.getHeight() == 0) && (icon_from_cache.getWidth() == 0)) {
+        if ((icon_from_cache.get().getHeight() == 0) && (icon_from_cache.get().getWidth() == 0)) {
             logger.log("❗ Icon caching, load from file FAILED (6) for " + destination.get_item_path());
             return Optional.empty();
         }
 
-        write_icon_to_cache(icon_from_cache,original_path,icon_path,icon_factory_request, destination);
+        write_icon_to_cache(icon_from_cache.get(),original_path,icon_path.get(),icon_factory_request, destination);
 
-        if ( dbg) logger.log("Icon caching, returning icon for :" + destination.get_item_path()+ " w="+icon_from_cache.getWidth()+" h="+icon_from_cache.getHeight());
-        Image_properties properties = new Image_properties(icon_from_cache.getWidth(), icon_from_cache.getHeight(), Rotation.normal);
-        return Optional.of(new Image_and_properties(icon_from_cache, properties));
+        if ( dbg) logger.log("Icon caching, returning icon for :" + destination.get_item_path()+ " w="+icon_from_cache.get().getWidth()+" h="+icon_from_cache.get().getHeight());
+        Image_properties properties = new Image_properties(icon_from_cache.get().getWidth(), icon_from_cache.get().getHeight(), Rotation.normal);
+        return Optional.of(new Image_and_properties(icon_from_cache.get(), properties));
     }
 }

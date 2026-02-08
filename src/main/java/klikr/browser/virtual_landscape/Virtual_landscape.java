@@ -2746,7 +2746,9 @@ public class Virtual_landscape
             }
 
             try {
-                Image default_icon = Look_and_feel_manager.get_default_icon(256, owner, logger);
+                Optional<Image> op = Look_and_feel_manager.get_default_icon(256, owner, logger);
+                if (op.isEmpty()) return;
+                Image default_icon = op.get();
                 final double[] local_x = { 0 };
                 final double[] local_y = { 0 };
                 final int[] count = { 0 };

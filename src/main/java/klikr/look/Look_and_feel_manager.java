@@ -36,6 +36,7 @@ import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 
 //**********************************************************
@@ -359,27 +360,27 @@ public class Look_and_feel_manager
     */
 
     //**********************************************************
-    public static Image get_default_icon(double icon_size, Window owner,Logger logger)
+    public static Optional<Image> get_default_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
         if (default_icon != null)
         {
-            if ( default_icon.getHeight() == icon_size) return default_icon;
+            if ( default_icon.getHeight() == icon_size) return Optional.of(default_icon);
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return null;
+            return Optional.empty();
         }
         String path = local_instance.get_default_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get default icon path"));
-            return null;
+            return Optional.empty();
         }
         default_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
-        return default_icon;
+        return Optional.of(default_icon);
     }
 
 

@@ -16,7 +16,7 @@ public class Test
     public static void main(String args[])
     //**********************************************************
     {
-        Logger logger = new File_logger("actor test");
+        Logger logger = new File_logger("actor_test");
 
         class Message1 implements Message
         {

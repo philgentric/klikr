@@ -108,7 +108,18 @@ public class Item_file_with_icon extends Item_file
         //this.image_properties_RAM_cache = image_properties_RAM_cache;
         this.fv_cache_supplier = fv_cache_supplier;
         double actual_icon_size = icon_size / 3.0;
-        if ( default_icon == null) default_icon = Look_and_feel_manager.get_default_icon(actual_icon_size,owner,logger);
+        if ( default_icon == null)
+        {
+            Optional<Image> op = Look_and_feel_manager.get_default_icon(actual_icon_size, owner, logger);
+            if ( op.isPresent() )
+            {
+                default_icon = op.get();
+            }
+            else
+            {
+                logger.log("FATAL: Default image not found ");
+            }
+        }
 
         // first time
         image_view = new ImageView();

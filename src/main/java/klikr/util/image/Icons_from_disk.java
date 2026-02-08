@@ -129,8 +129,10 @@ public class Icons_from_disk
         logger.log("use_GraphicsMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
+        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
                 logger);
+        if ( op.isEmpty() ) return Optional.empty();
+        Path png_path = op.get();
 
         // String command_string_to_create_tmp_icon = "gm convert
         // "+original_image_file.toAbsolutePath()+ " "+ png_path.toAbsolutePath();
@@ -160,8 +162,10 @@ public class Icons_from_disk
         logger.log("use_ImageMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
+        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
                 logger);
+        if ( op.isEmpty() ) return Optional.empty();
+        Path png_path = op.get();
 
         // String command_string_to_create_tmp_icon = "magick
         // "+original_image_file.toAbsolutePath()+ " "+ png_path.toAbsolutePath();
@@ -290,7 +294,7 @@ public class Icons_from_disk
 
 
     // **********************************************************
-    public static Image load_icon_from_disk_cache(
+    public static Optional<Image> load_icon_from_disk_cache(
             Path original_image_file, // this is NOT the ICON path, this is the true full length image
             int icon_size, // used for the NAME (not for resizing)
             String tag, // icon length or empty
@@ -306,12 +310,14 @@ public class Icons_from_disk
             logger.log("load_icon_from_disk_cache WARNING: running low on memory ! loading default icon");
             return Look_and_feel_manager.get_default_icon(icon_size, owner, logger);
         }
-        Path path = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, owner, logger);
+        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, owner, logger);
+        if ( op.isEmpty() ) return Optional.empty();
+        Path path = op.get();
         if (dbg)
             logger.log("load_icon_from_disk file is:" + path.toAbsolutePath() + " for " + original_image_file);
         try (InputStream input_stream = Files.newInputStream(path)) {
             Image image = new Image(input_stream);
-            return image;
+            return Optional.of(image);
         } catch (FileNotFoundException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
@@ -327,7 +333,7 @@ public class Icons_from_disk
         } catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        return null;
+        return Optional.empty();
     }
 
     // only for icons i.e. NOT general purpose, which requires fusk support

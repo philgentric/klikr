@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 //**********************************************************
@@ -61,7 +62,7 @@ public class Mmap
     {
         this.piece_size_in_megabytes = piece_size_in_megabytes;
         this.logger = logger;
-        cache_folder = Static_files_and_paths_utilities.get_cache_folder(Cache_folder.icon_cache, owner, logger);
+        cache_folder = Static_files_and_paths_utilities.get_cache_folder(Cache_folder.mmap, owner, logger);
         main_index_file = cache_folder.resolve("main_index");
         load_index();
 
@@ -279,7 +280,7 @@ public class Mmap
     private static ConcurrentLinkedQueue<Long> elapseds = new ConcurrentLinkedQueue<>();
     private static int counter = 0;
     //**********************************************************
-    public Image read_image_as_pixels(String tag)
+    public Optional<Image> read_image_as_pixels(String tag)
     //**********************************************************
     {
         long start = System.currentTimeMillis();
@@ -287,21 +288,21 @@ public class Mmap
         if ( meta_from_index == null )
         {
             if (dbg) logger.log("Mmap tag found for "+tag);
-            return null;
+            return Optional.empty();
         }
         if (!( meta_from_index instanceof Image_as_pixel_metadata ))
         {
             logger.log(Stack_trace_getter.get_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag+" got: "+meta_from_index.getClass().getName()));
-            return null;
+            return Optional.empty();
         }
         Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta_from_index;
         Piece p = meta.piece();
-        if (p == null) return null;
+        if (p == null) return Optional.empty();
         if ( stats_dbg)
         {
             usage.merge(tag, 1, Integer::sum);;
         }
-        Image returned = p.read_image_as_pixels(meta);
+        Optional<Image> returned = p.read_image_as_pixels(meta);
 
         long end = System.currentTimeMillis();
         long elapsed = end - start;
@@ -316,7 +317,7 @@ public class Mmap
         return returned;
     }
     //**********************************************************
-    public Image read_image_as_file(Path path)
+    public Optional<Image> read_image_as_file(Path path)
     //**********************************************************
     {
         long start = System.currentTimeMillis();
@@ -325,11 +326,11 @@ public class Mmap
         if ( meta == null )
         {
             if ( dbg) logger.log("Mmap path found for "+path);
-            return null;
+            return Optional.empty();
         }
         if (ultra_dbg) logger.log("mmap reading image: "+tag+" is pixels=no");
         Piece p = meta.piece();
-        if (p == null) return null;
+        if (p == null) return Optional.empty();
         if ( stats_dbg)
         {
             usage.merge(tag, 1, Integer::sum);;
@@ -345,7 +346,7 @@ public class Mmap
             for ( long l : elapseds ) tot += l;
             logger.log(" average READ for 'read_image_as_file' "+tot/(double)counter+" ms");
         }
-        return returned;
+        return Optional.of(returned);
     }
 
 
