@@ -110,10 +110,10 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import klikr.*;
 import klikr.path_lists.Path_list_provider_for_playlist;
-import klikr.properties.Non_booleans_properties;
 import klikr.properties.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
+import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Exceptions_in_threads_catcher;
 import klikr.util.log.Logger;
 
@@ -131,7 +131,7 @@ public class Image_playlist_app extends Application
 
     //public static Integer ui_change_report_port_at_launcher; // port on which the launcher will LISTEN for UI_CHANGED messages
     public static Stage primary_stage;
-
+    public static Klikr_communicator klikr_communicator;
 
     //**********************************************************
     public static void main(String[] args)
@@ -148,6 +148,7 @@ public class Image_playlist_app extends Application
     //**********************************************************
     {
         application = this;
+        Shared_services.init("image_playlist_app",primary_stage_);
         Logger logger = Shared_services.logger();
         //Perf.monitor(logger);
 
@@ -188,7 +189,10 @@ public class Image_playlist_app extends Application
             }
         }
         logger.log("Starting playlist browser on path ->" + path+"<-");
-        Instructions.additional_no_past(Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,logger),primary_stage_,logger);
+
+        Klikr_communicator.build(context,primary_stage_,logger);
+
+        Window_builder.additional_no_past(Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,logger),primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()->primary_stage, logger).start();
 
 

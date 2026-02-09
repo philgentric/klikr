@@ -40,6 +40,7 @@ import klikr.change.bookmarks.Bookmarks;
 import klikr.change.history.History_engine;
 import klikr.change.undo.Undo_for_moves;
 import klikr.path_lists.Files_and_folders;
+import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.cache.*;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -86,6 +87,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -141,7 +143,7 @@ public class Virtual_landscape
     private double virtual_landscape_height = -Double.MAX_VALUE;
     private double current_vertical_offset = 0;
     private int how_many_rows;
-    private Path top_left;
+    private Optional<Path> top_left = Optional.empty();
     public final double icon_height;
 
     boolean show_how_many_files_deep_in_each_folder_done = false;
@@ -247,11 +249,14 @@ public class Virtual_landscape
     //**********************************************************
     {
         logger.log("virtual_landscape receiving update_config_string key=" + key + " val=" + new_value);
-        if (key.equals(String_constants.LANGUAGE_KEY)) {
-            Instructions.replace_same_folder(shutdown_target, context_type, path_list_provider, get_top_left(), owner,
+
+        Optional<Path> top_left = get_top_left();
+        if (key.equals(String_constants.LANGUAGE_KEY))
+        {
+            Window_builder.replace_same_folder(shutdown_target, context_type, path_list_provider, top_left, owner,
                     logger);
         } else if (key.equals(String_constants.STYLE_KEY)) {
-            Instructions.replace_same_folder(shutdown_target, context_type, path_list_provider, get_top_left(), owner,
+            Window_builder.replace_same_folder(shutdown_target, context_type, path_list_provider, top_left, owner,
                     logger);
         }
     }
@@ -410,7 +415,7 @@ public class Virtual_landscape
             bookmark_this = new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(bookmark_this, () -> {
                 if (Browser.kbd_dbg) logger.log("character is ctrl or meta d = bookmark this");
-                Bookmarks.get(owner).add(path_list_provider.get_folder_path().toAbsolutePath().toString());
+              Bookmarks.get(owner).add(path_list_provider.get_key());
             });
         }
         {
@@ -426,7 +431,7 @@ public class Virtual_landscape
             new_twin_window = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(new_twin_window, () -> {
                 if (Browser.kbd_dbg) logger.log("character is ctrl or meta N = clone");
-                Instructions.additional_same_folder_twin(context_type, path_list_provider, get_top_left(), owner, logger);
+                Window_builder.additional_same_folder_twin(context_type, path_list_provider, get_top_left(), owner, logger);
             });
         }
 
@@ -555,14 +560,32 @@ public class Virtual_landscape
             drag_event.consume();
         });
 
-        Path displayed_folder_path = path_list_provider.get_folder_path();
         the_Scene.setOnDragDropped(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
                 logger.log("Browser: OnDragDropped handler called");
             if (dbg)
-                logger.log("Something has been dropped in browser for dir :" + path_list_provider.get_name());
-            int n = Drag_and_drop.accept_drag_dropped_as_a_move_in(path_list_provider.get_move_provider(), drag_event,
-                    displayed_folder_path, the_Pane, "browser of dir: " + displayed_folder_path, false, owner, logger);
+                logger.log("Something has been dropped in browser for dir :" + path_list_provider.get_key());
+            Path destination = null;
+            if( path_list_provider instanceof Path_list_provider_for_file_system plpffs)
+            {
+                Optional<Path> op = plpffs.get_folder_path();
+                if (op.isPresent()) destination = op.get();
+                else {
+                    logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: no folder path provided"));
+                }
+            }
+            if( path_list_provider instanceof Path_list_provider_for_playlist plpfpl)
+            {
+                destination = plpfpl.the_playlist_file_path;
+            }
+            int n = Drag_and_drop.accept_drag_dropped_as_a_move_in(
+                    path_list_provider.get_move_provider(),
+                    drag_event,
+                    destination,
+                    the_Pane,
+                    "browser of dir: " + path_list_provider.get_key(),
+                    false,
+                    owner, logger);
             set_status(n + " files have been dropped in");
             selection_handler.on_drop();
             drag_event.setDropCompleted(true);
@@ -573,7 +596,7 @@ public class Virtual_landscape
             if (Drag_and_drop.drag_and_drop_dbg)
                 logger.log("Browser: OnDragExited handler called");
             if (dbg)
-                logger.log("OnDragExited in browser for dir :" + displayed_folder_path);
+                logger.log("OnDragExited in browser for dir :" + path_list_provider.get_key());
             // set_status(" drag done");
             virtual_landscape_menus.reset_all_files_and_folders();
             selection_handler.on_drag_exited();
@@ -636,7 +659,7 @@ public class Virtual_landscape
     public boolean scroll_a_bit(double dy)
     //**********************************************************
     {
-        Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_folder_path(), get_top_left());
+        get_top_left().ifPresent((Path tl)->Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(), tl.toAbsolutePath().normalize().toString()));
         return vertical_slider.request_scroll_relative(dy);
     }
 
@@ -654,13 +677,13 @@ public class Virtual_landscape
                         break;
                     case DENIED:
                         logger.log("\n\naccess denied\n\n");
-                        set_status("Access denied for:" + path_list_provider.get_name());
+                        set_status("Access denied for:" + path_list_provider.get_key());
                         on_geometry_changed("access denied", null, is_redrawing);
                         break;
                     case NOT_FOUND:
                     case ERROR:
                         logger.log("\n\ndirectory gone\n\n");
-                        set_status("Gone:" + path_list_provider.get_name());
+                        set_status("Gone:" + path_list_provider.get_key());
                         on_geometry_changed("gone", null, is_redrawing);
                         break;
                 }
@@ -797,16 +820,16 @@ public class Virtual_landscape
     void scroll_to()
     //**********************************************************
     {
-        Path scroll_to = Scroll_position_cache.scroll_position_cache_read(path_list_provider.get_folder_path());
-        // logger.log("scroll_to folder=\n"+" "+path_list_provider.get_name()+"\n
-        // scroll_to="+scroll_to);
-
+        String scroll_to_s = Scroll_position_cache.scroll_position_cache_read(path_list_provider.get_key());
+        if ( scroll_to_s == null) return;
+        Path scroll_to = Paths.get(scroll_to_s);
         current_vertical_offset = get_y_offset_of(scroll_to);
         if (scroll_to_listener == null) {
             logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
             return;
         }
         scroll_to_listener.perform_scroll_to(current_vertical_offset, this);
+
     }
 
     //**********************************************************
@@ -851,9 +874,7 @@ public class Virtual_landscape
                 return fv_cache;
             };
 
-
-            boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_folder_path(),
-                    owner);
+            boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_key(), owner);
 
             double file_button_height = 2 * Non_booleans_properties.get_font_size(owner, logger);
 
@@ -1007,14 +1028,13 @@ public class Virtual_landscape
             if ( dbg) logger.log("image_properties_cache found");
             return image_properties_cache;
         }
-
-        Klikr_cache<Path, Image_properties> tmp = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_folder_path().toAbsolutePath().toString());
-        if ( tmp !=null)
-        {
-            if ( dbg) logger.log("image_properties_cache reloaded from cache of caches");
+        Klikr_cache<Path, Image_properties> tmp = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_key());
+        if (tmp != null) {
+            if (dbg) logger.log("image_properties_cache reloaded from cache of caches");
             image_properties_cache = tmp;
             return image_properties_cache;
         }
+
 
         image_properties_cache =  make_image_properties_cache(path_list_provider, aborter, owner, logger);
         return image_properties_cache;
@@ -1026,9 +1046,18 @@ public class Virtual_landscape
     {
 
         if ( dbg) logger.log("MAKING image_properties_cache");
-
-        String nam = Cache_folder.image_properties_cache.name()+path_list_provider.get_folder_path().getFileName();
-        String cache_file_name = UUID.nameUUIDFromBytes(nam.getBytes()) + ".properties";
+        String tag;
+        Optional<Path> optional_for_folder_path = path_list_provider.get_folder_path();
+        if ( optional_for_folder_path.isEmpty())
+        {
+            // happens for playlists
+            tag = Cache_folder.image_properties_cache.name()+path_list_provider.get_key();
+        }
+        else
+        {
+            tag = Cache_folder.image_properties_cache.name()+optional_for_folder_path.get().getFileName();
+        }
+        String cache_file_name = UUID.nameUUIDFromBytes(tag.getBytes()) + ".properties";
         Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.image_properties_cache.name(), false, owner, logger);
         Path cache_path = Path.of(dir.toAbsolutePath().toString(), cache_file_name);
 
@@ -1126,12 +1155,19 @@ public class Virtual_landscape
         Function<String,Path> K_maker = new Function<String, Path>() {
             @Override
             public Path apply(String s) {
-                return path_list_provider.get_folder_path().resolve(s);
+                if (optional_for_folder_path.isEmpty())
+                {
+                    if ( path_list_provider instanceof Path_list_provider_for_playlist local) {
+                        return Path.of(s);
+                    }
+                    return null; // will crash
+                }
+                return optional_for_folder_path.get().resolve(s);
             }
         };
 
 
-        Klikr_cache<Path, Image_properties> local = new Klikr_cache<Path, Image_properties>(
+        Klikr_cache<Path, Image_properties> local_cache = new Klikr_cache<Path, Image_properties>(
                 new Path_list_provider_for_file_system(cache_path, owner, logger),
                 Cache_folder.image_properties_cache.name(),
                 key_serializer, key_deserializer,
@@ -1144,12 +1180,23 @@ public class Virtual_landscape
 
         if ( dbg) logger.log("MADE image_properties_cache");
 
-        int reloaded = local.reload_cache_from_disk();
+        int reloaded = local_cache.reload_cache_from_disk();
         logger.log("✅ image_properties_cache: "+reloaded+" properties reloaded from file");
 
-        RAM_caches.image_properties_cache_of_caches.put(path_list_provider.get_folder_path().toAbsolutePath().normalize().toString(),local);
 
-        return local;
+        String cache_tag = "default_cache_tag";
+        if (optional_for_folder_path.isPresent())
+        {
+            cache_tag = optional_for_folder_path.get().toAbsolutePath().normalize().toString();
+        }
+        else
+        {
+            if ( path_list_provider instanceof Path_list_provider_for_playlist x) {
+                cache_tag = x.the_playlist_file_path.toAbsolutePath().normalize().toString();
+            }
+        }
+        RAM_caches.image_properties_cache_of_caches.put(cache_tag,local_cache);
+        return local_cache;
     }
 
     //**********************************************************
@@ -1322,8 +1369,6 @@ public class Virtual_landscape
                         folder_path.getFileName().toString(),
                         (int) column_increment,
                         100,
-                        false,
-                        null,
                         get_image_properties_cache(),
                         shutdown_target,
                         new Path_list_provider_for_file_system(folder_path, owner, logger),
@@ -1555,16 +1600,21 @@ public class Virtual_landscape
                 owner,
                 logger);
         for (Item i : all_items_map.values()) {
-            if (i instanceof Item_folder ini) {
-                if (Files.isDirectory(ini.get_true_path())) {
-                    ini.add_how_many_files_deep_folder(
-                            count,
-                            ini.get_button(),
-                            ini.text,
-                            ini.get_true_path(),
-                            folder_file_count_cache,
-                            aborter,
-                            logger);
+            if (i instanceof Item_folder ini)
+            {
+                Optional<Path> op = ini.get_true_path();
+                if ( op.isPresent() )
+                {
+                    if (Files.isDirectory(op.get())) {
+                        ini.add_how_many_files_deep_folder(
+                                count,
+                                ini.get_button(),
+                                ini.text,
+                                op.get(),
+                                folder_file_count_cache,
+                                aborter,
+                                logger);
+                    }
                 }
             }
 
@@ -1597,12 +1647,13 @@ public class Virtual_landscape
     public void show_total_size_deep_in_each_folder()
     //**********************************************************
     {
-        if ((Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(),
+
+        if ((Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
                 owner) == Sort_files_by.SIMILARITY_BY_PAIRS)
                 ||
-                (Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(),
+                (Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
                         owner) == Sort_files_by.SIMILARITY_BY_PURSUIT)) {
-            Sort_files_by.set_sort_files_by(path_list_provider.get_folder_path(), Sort_files_by.FILE_NAME, owner, logger);
+            Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, owner, logger);
         }
         show_how_many_files_deep_in_each_folder_done = false;
         folder_total_sizes_cache = new HashMap<>();
@@ -1622,11 +1673,15 @@ public class Virtual_landscape
 
         for (Item i : all_items_map.values()) {
             if ( local.should_abort()) break;
-            if (i instanceof Item_folder item2_folder) {
-                if (Files.isDirectory(item2_folder.get_true_path())) {
-                    item2_folder.add_total_size_deep_folder(count, item2_folder.get_button(), item2_folder.text,
-                            item2_folder.get_true_path(),
-                            folder_total_sizes_cache, logger);
+            if (i instanceof Item_folder item2_folder)
+            {
+                Optional<Path> opop = item2_folder.get_true_path();
+                if ( opop.isPresent() ) {
+                    if (Files.isDirectory(opop.get())) {
+                        item2_folder.add_total_size_deep_folder(count, item2_folder.get_button(), item2_folder.text,
+                                opop.get(),
+                                folder_total_sizes_cache, logger);
+                    }
                 }
             }
         }
@@ -1656,7 +1711,7 @@ public class Virtual_landscape
 
     @Override // Top_left_provider
     //**********************************************************
-    public Path get_top_left()
+    public Optional<Path> get_top_left()
     //**********************************************************
     {
         return top_left;
@@ -1675,10 +1730,14 @@ public class Virtual_landscape
         for (Item i : all_items_map.values()) {
             // logger.log("\n\nIcon_manager::get_y_offset_of ... looking at
             // "+i.get_item_path().toAbsolutePath());
-            if (i.get_item_path().toAbsolutePath().toString().equals(t2)) {
-                // logger.log("\n\nIcon_manager::get_y_offset_of "+target+ " FOUND offset =
-                // "+i.get_javafx_y());
-                return i.get_javafx_y();
+            Optional<Path> p = i.get_item_path();
+            if (p.isPresent())
+            {
+                if (p.get().toAbsolutePath().toString().equals(t2)) {
+                    // logger.log("\n\nIcon_manager::get_y_offset_of "+target+ " FOUND offset =
+                    // "+i.get_javafx_y());
+                    return i.get_javafx_y();
+                }
             }
         }
         // logger.log(Stack_trace_getter.get_stack_trace("\n\nnot found:
@@ -1907,26 +1966,30 @@ public class Virtual_landscape
     Scene define_UI()
     //**********************************************************
     {
-
+        Optional<Path> op = path_list_provider.get_folder_path();
         double font_size = Non_booleans_properties.get_font_size(owner, logger);
         double height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
 
         Button up_button = null;
-        if (context_type == Window_type.File_system_2D) {
-            String go_up_text = "";
-            if (path_list_provider.has_parent()) {
-                go_up_text = My_I18n.get_I18n_string("Parent_Folder", owner, logger);// to: " +
-                                                                                     // parent.toAbsolutePath().toString();
-            }
-            up_button = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
-                    path_list_provider.get_folder_path().getParent(),
-                    go_up_text,
-                    height,
-                    MIN_PARENT_AND_TRASH_BUTTON_WIDTH,
-                    false,
-                    path_list_provider.get_folder_path(),
-                    logger);
+        if (context_type == Window_type.File_system_2D)
+        {
+
+            if( op.isPresent() )
             {
+                String go_up_text = "";
+                if (path_list_provider.has_parent())
+                {
+                    go_up_text = My_I18n.get_I18n_string("Parent_Folder", owner, logger);
+                }
+                up_button = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
+                        op.get().getParent(),
+                        go_up_text,
+                        height,
+                        MIN_PARENT_AND_TRASH_BUTTON_WIDTH,
+                        false,
+                        op.get(),
+                        logger);
+
                 Image icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
                 if (icon == null) {
                     logger.log("❌ BAD: could not load "
@@ -1934,8 +1997,8 @@ public class Virtual_landscape
                 } else {
                     Look_and_feel_manager.set_button_and_image_look(up_button, icon, height, null, true, owner, logger);
                 }
-
             }
+
             top_buttons.add(up_button);
         }
 
@@ -1944,7 +2007,7 @@ public class Virtual_landscape
             String trash_text = My_I18n.get_I18n_string("Trash", owner, logger);// to: " +
                                                                                 // parent.toAbsolutePath().toString();
             trash = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
-                    Static_files_and_paths_utilities.get_trash_dir(path_list_provider.get_folder_path(), owner, logger),
+                    Static_files_and_paths_utilities.get_trash_dir(Paths.get(path_list_provider.get_key()), owner, logger),
                     trash_text,
                     height,
                     MIN_PARENT_AND_TRASH_BUTTON_WIDTH,
@@ -1990,12 +2053,16 @@ public class Virtual_landscape
     String get_status()
     //**********************************************************
     {
-        Sort_files_by file_sort_by = Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(), owner);
-        if (file_sort_by == null) {
+
+        Sort_files_by file_sort_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner);
+        if (file_sort_by == null)
+        {
             return "Status: OK";
-        } else {
-            //return "Status: OK, files sorting order : " + file_sort_by.name() + " Folder: " + path_list_provider.get_name();
-            return "Status: OK, " + path_list_provider.get_name();
+        }
+        else
+        {
+            //return "Status: OK, files sorting order : " + file_sort_by.name() + " Folder: " + path_list_provider.get_key();
+            return "Status: OK, " + path_list_provider.get_key();
         }
 
     }
@@ -2127,7 +2194,7 @@ public class Virtual_landscape
         String back_string = History_engine.get(owner).get_back();
         if (back_string == null) return;
         logger.log("BACK");
-        Instructions.replace_same_folder(
+        Window_builder.replace_same_folder(
                 shutdown_target,
                 Window_type.File_system_2D,
                 new Path_list_provider_for_file_system(Path.of(back_string), owner, logger), top_left, owner, logger);
@@ -2137,7 +2204,7 @@ public class Virtual_landscape
     public static Button make_button_undo_and_bookmark_and_history(
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
-            Path top_left,
+            Optional<Path> top_left,
             Shutdown_target shutdown_target,
             Window_type context_type,
             double height,
@@ -2165,7 +2232,7 @@ public class Virtual_landscape
             ActionEvent e,
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
-            Path top_left,
+            Optional<Path> top_left,
             Shutdown_target shutdown_target, Window_type context_type, Window owner, Logger logger)
     //**********************************************************
     {
@@ -2233,7 +2300,7 @@ public class Virtual_landscape
     private static ContextMenu define_contextmenu_undo_bookmark_history(
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
-            Path top_left,
+            Optional<Path> top_left,
             Shutdown_target shutdown_target,
             Window_type window_type,
             Window owner, Logger logger)
@@ -2244,7 +2311,7 @@ public class Virtual_landscape
 
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_undos_menu(owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_bookmarks_menu(
-                path_list_provider.get_folder_path(), top_left, shutdown_target, window_type, owner, logger));
+                Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
                 the_whole_history,
                 path_list_provider,
@@ -2270,11 +2337,11 @@ public class Virtual_landscape
 
         // Rectangle2D rectangle = new
         // Rectangle2D(owner.getX(),owner.getY(),owner.getWidth(),owner.getHeight());
-        Menu_items.add_menu_item_for_context_menu("New_Window", null,event -> Instructions.additional_same_folder(context_type,
+        Menu_items.add_menu_item_for_context_menu("New_Window", null,event -> Window_builder.additional_same_folder(context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),event -> Instructions.additional_same_folder_twin(context_type,
+        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),event -> Window_builder.additional_same_folder_twin(context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Double_Window", null,event -> Instructions
+        Menu_items.add_menu_item_for_context_menu("New_Double_Window", null,event -> Window_builder
                 .additional_same_folder_fat_tall(context_type, path_list_provider, get_top_left(), owner, logger),
                 context_menu, owner, logger);
 
@@ -2556,8 +2623,14 @@ public class Virtual_landscape
     public void you_are_backup_destination()
     //**********************************************************
     {
-        Static_backup_paths.set_backup_destination(path_list_provider.get_folder_path());
-        logger.log("✅ backup destination = " + path_list_provider.get_name());
+        Optional<Path> op =  path_list_provider.get_folder_path();
+        if ( op.isEmpty() )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_backup_paths.set_backup_destination(op.get());
+        logger.log("✅ backup destination = " + path_list_provider.get_key());
 
         set_text_background("BACKUP\nDESTINATION");
 
@@ -2567,8 +2640,14 @@ public class Virtual_landscape
     public void you_are_backup_source()
     //**********************************************************
     {
-        Static_backup_paths.set_backup_source(path_list_provider.get_folder_path());
-        logger.log("✅ backup source = " + path_list_provider.get_name());
+        Optional<Path> op =  path_list_provider.get_folder_path();
+        if ( op.isEmpty() )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_backup_paths.set_backup_source(op.get());
+        logger.log("✅ backup source = " + path_list_provider.get_key());
 
         set_text_background("BACKUP\nSOURCE");
 
@@ -2578,8 +2657,14 @@ public class Virtual_landscape
     public void you_are_fusk_destination()
     //**********************************************************
     {
-        Static_fusk_paths.set_fusk_destination(path_list_provider.get_folder_path());
-        logger.log("✅ fusk destination = " + path_list_provider.get_name());
+        Optional<Path> op =  path_list_provider.get_folder_path();
+        if ( op.isEmpty() )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_fusk_paths.set_fusk_destination(op.get());
+        logger.log("✅ fusk destination = " + path_list_provider.get_key());
 
         set_text_background("FUSK\nDESTINATION");
 
@@ -2589,8 +2674,14 @@ public class Virtual_landscape
     public void you_are_fusk_source()
     //**********************************************************
     {
-        Static_fusk_paths.set_fusk_source(path_list_provider.get_folder_path());
-        logger.log("✅ fusk source = " + path_list_provider.get_name());
+        Optional<Path> op =  path_list_provider.get_folder_path();
+        if ( op.isEmpty() )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_fusk_paths.set_fusk_source(op.get());
+        logger.log("✅ fusk source = " + path_list_provider.get_key());
 
         set_text_background("FUSK\nSOURCE");
 
@@ -2699,18 +2790,18 @@ public class Virtual_landscape
         Alphabetical_file_name_comparator alphabetical_file_name_comparator = new Alphabetical_file_name_comparator();
 
         {
-            String cache_key = "other_"+path_list_provider.get_name();
+            String cache_key = "other_"+path_list_provider.get_key();
             other_file_comparator = RAM_caches.similarity_comparator_cache.get(cache_key);
             if ( other_file_comparator==null)
             {
                 other_file_comparator = Sort_files_by.get_non_image_comparator(path_list_provider, owner, aborter, logger);
                 if ( other_file_comparator instanceof Similarity_comparator local) {
-                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_name(), local);
+                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_key(), local);
                 }
             }
         }
         {
-            String cache_key = "image_"+path_list_provider.get_name();
+            String cache_key = "image_"+path_list_provider.get_key();
             image_file_comparator = RAM_caches.similarity_comparator_cache.get(cache_key);
             if ( image_file_comparator==null)
             {
@@ -2718,7 +2809,7 @@ public class Virtual_landscape
                         get_image_properties_cache(),
                         owner, x, y, aborter, logger);
                 if ( image_file_comparator instanceof Similarity_comparator local) {
-                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_name(), local);
+                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_key(), local);
                 }
             }
         }
@@ -2781,13 +2872,13 @@ public class Virtual_landscape
                         Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders),
                         aborter);
 
-                for (Path path : faf.folders()) {
+                for (Path path : faf.folders())
+                {
                     if (dbg)
                         logger.log("✅ Virtual_landscape: looking at path " + path.toAbsolutePath());
 
                     if (aborter.should_abort()) {
-                        logger.log("❗ path manager aborting (1) scan_list "
-                                + path_list_provider.get_folder_path().toAbsolutePath());
+                        logger.log("❗ path manager aborting (1) scan_list ");
                         aborter.on_abort();
                         return;
                     }
@@ -2799,12 +2890,11 @@ public class Virtual_landscape
                         logger.log("✅ Virtual_landscape: looking at path " + path.toAbsolutePath());
 
                     if (aborter.should_abort()) {
-                        logger.log("❗ path manager aborting (2) scan_list "
-                                + path_list_provider.get_folder_path().toAbsolutePath());
+                        logger.log("❗ path manager aborting (2) scan_list ");
                         aborter.on_abort();
                         return;
                     }
-                    paths_holder.add_file(path, show_icons, owner);
+                    paths_holder.add_file(path_list_provider,path, show_icons, owner);
                     // this will start one virtual thread per image
                     // to prefill the image property cache
                 }
@@ -3013,7 +3103,7 @@ public class Virtual_landscape
         if (local_file_comparator == null) {
             if (file_comp_cache != null) {
                 if (file_comp_cache.file_sort_by() == Sort_files_by
-                        .get_sort_files_by(path_list_provider.get_folder_path(), owner)) {
+                        .get_sort_files_by(path_list_provider.get_key(), owner)) {
                     if (dbg)
                         logger.log("✅ getting file comparator from cache=" + file_comp_cache);
                     local_file_comparator = file_comp_cache.comparator();
@@ -3025,12 +3115,15 @@ public class Virtual_landscape
         }
         if (local_file_comparator == null) {
             logger.log("❌ FATAL: local_file_comparator is null");
-        } else {
-            // logger.log("setting file_comp_cache ="+file_comp_cache);
+        }
+        else
+        {
             file_comp_cache = new File_comp_cache(
-                    Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(), owner),
-                    local_file_comparator);
+                        Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner),
+                        local_file_comparator);
+
             image_file_comparator = local_file_comparator;
+
         }
 
         return local_file_comparator;
@@ -3040,9 +3133,8 @@ public class Virtual_landscape
     private Comparator<Path> create_fast_file_comparator()
     //**********************************************************
     {
-
         Comparator<Path> local_file_comparator = null;
-        switch (Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(), owner)) {
+        switch (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner)) {
             case ASPECT_RATIO:
                 local_file_comparator = new Aspect_ratio_comparator(get_image_properties_cache(), aborter, owner);
                 break;

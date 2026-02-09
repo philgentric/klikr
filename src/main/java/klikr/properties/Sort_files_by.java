@@ -22,10 +22,7 @@ import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 // warning: these names are used as-is in the resource bundles !!!
 public enum Sort_files_by {
@@ -51,7 +48,8 @@ public enum Sort_files_by {
     public static Comparator<Path> get_non_image_comparator(Path_list_provider path_list_provider,Window owner, Aborter aborter,Logger logger)
     //**********************************************************
     {
-        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(), owner))
+
+        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
         {
             case NAME_GIFS_FIRST, ASPECT_RATIO, RANDOM_ASPECT_RATIO, IMAGE_HEIGHT , IMAGE_WIDTH, SIMILARITY_BY_PURSUIT, SIMILARITY_BY_PAIRS,
                  FILE_NAME:
@@ -78,8 +76,7 @@ public enum Sort_files_by {
         double x, double y, Aborter aborter, Logger logger)
     //**********************************************************
     {
-
-        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(), owner))
+        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
         {
             case SIMILARITY_BY_PURSUIT: {
                 Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
@@ -160,20 +157,26 @@ public enum Sort_files_by {
             Path_list_provider path_list_provider, Window owner,double x, double y, Logger logger)
     //**********************************************************
     {
-        Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(path_list_provider.get_folder_path().toAbsolutePath().toString());
+        Optional<Path> op = path_list_provider.get_folder_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return null;
+        }
+        Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(op.get().toAbsolutePath().toString());
         if (similarity_cache == null)
         {
             similarity_cache = new Similarity_cache(fvs, path_list_provider, owner, x, y, Shared_services.aborter(), logger);
-            RAM_caches.similarity_cache_of_caches.put(path_list_provider.get_folder_path().toAbsolutePath().toString(), similarity_cache);
+            RAM_caches.similarity_cache_of_caches.put(op.get().toAbsolutePath().toString(), similarity_cache);
         }
         return similarity_cache;
     }
 
     //**********************************************************
-    public static boolean need_image_properties(Path folder_path, Window owner)
+    public static boolean need_image_properties(String key, Window owner)
     //**********************************************************
     {
-        switch(Sort_files_by.get_sort_files_by(folder_path, owner))
+        switch(Sort_files_by.get_sort_files_by(key, owner))
         {
             case SIMILARITY_BY_PURSUIT:
                 return false;
@@ -201,12 +204,12 @@ public enum Sort_files_by {
         return false;
     }
 
-    private static Map<Path, Sort_files_by> cached = new HashMap<>();
+    private static Map<String, Sort_files_by> cached = new HashMap<>();
     //**********************************************************
-    public static Sort_files_by get_sort_files_by(Path folder_path, Window owner)
+    public static Sort_files_by get_sort_files_by(String key, Window owner)
     //**********************************************************
     {
-        Sort_files_by from_cache = cached.get(folder_path);
+        Sort_files_by from_cache = cached.get(key);
         if ( from_cache != null)
         {
             if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (1): "+ Sort_files_by.FILE_NAME));
@@ -218,7 +221,7 @@ public enum Sort_files_by {
         {
             Shared_services.main_properties().set_and_save(SORT_FILES_BY, Sort_files_by.FILE_NAME.name());
             if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (2): "+ Sort_files_by.FILE_NAME));
-            cached.put(folder_path, Sort_files_by.FILE_NAME);
+            cached.put(key, Sort_files_by.FILE_NAME);
             return Sort_files_by.FILE_NAME;
         }
 
@@ -227,7 +230,7 @@ public enum Sort_files_by {
             Sort_files_by returned = Sort_files_by.valueOf(s);
 
             if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (3): "+returned));
-            cached.put(folder_path, returned);
+            cached.put(key, returned);
             return returned;
         }
         catch ( IllegalArgumentException e)
@@ -240,10 +243,10 @@ public enum Sort_files_by {
     }
 
     //**********************************************************
-    public static void set_sort_files_by(Path folder_path, Sort_files_by b, Window owner, Logger logger)
+    public static void set_sort_files_by(String key, Sort_files_by b, Window owner, Logger logger)
     //**********************************************************
     {
-        cached.put(folder_path, b);
+        cached.put(key, b);
 
         if ( b == Sort_files_by.SIMILARITY_BY_PAIRS)
         {

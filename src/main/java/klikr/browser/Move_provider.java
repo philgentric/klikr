@@ -12,5 +12,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 public interface Move_provider {
-    void move(Path destinationDir, boolean destinationIsTrash, List<File> theList, Window owner, double x, double y, Aborter aborter, Logger logger);
+    void move(
+            Path destination, // a folder or a playlist-file
+            boolean destinationIsTrash,
+            List<File> theList,
+            Window owner, double x, double y, Aborter aborter, Logger logger);
 }

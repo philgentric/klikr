@@ -27,8 +27,8 @@ static utilities for drag-and-drop
 public class Drag_and_drop
 //**********************************************************
 {
-    public static boolean drag_and_drop_dbg = false;
-    public static boolean drag_and_drop_ultra_dbg = false;
+    public static boolean drag_and_drop_dbg = true;
+    public static boolean drag_and_drop_ultra_dbg = true;
 
     //**********************************************************
     public static int accept_drag_dropped_as_a_move_in(
@@ -36,7 +36,7 @@ public class Drag_and_drop
             DragEvent drag_event,
             Path destination_dir,
             Node excluded,
-            String origin,
+            String origin, // cosmetic/debug
             boolean destination_is_trash,
             Window owner,
             Logger logger)

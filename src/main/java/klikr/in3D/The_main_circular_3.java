@@ -6,7 +6,7 @@ package klikr.in3D;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import klikr.Window_type;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.util.Shared_services;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.log.Exceptions_in_threads_catcher;
@@ -38,6 +38,6 @@ public class The_main_circular_3 extends Application
         Perf.monitor(logger);
 
         Path p = Path.of(System.getProperty("user.home"));
-        Instructions.additional_no_past(Window_type.File_system_3D,new Path_list_provider_for_file_system(p,primaryStage,logger),primaryStage,logger);
+        Window_builder.additional_no_past(Window_type.File_system_3D,new Path_list_provider_for_file_system(p,primaryStage,logger),primaryStage,logger);
     }
 }

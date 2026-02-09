@@ -54,8 +54,8 @@ package klikr.browser.classic;
 
 import javafx.scene.layout.Pane;
 import javafx.stage.Window;
+import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.Instructions;
 import klikr.browser.virtual_landscape.Scroll_position_cache;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browser.*;
@@ -68,9 +68,12 @@ import klikr.properties.boolean_features.Feature_change_target;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
 
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 
 //**********************************************************
@@ -79,14 +82,14 @@ public class Browser extends Abstract_browser implements Feature_change_target
 {
     public final Path_list_provider path_list_provider;
     //**********************************************************
-    public Browser(Instructions context, Logger logger_)
+    public Browser(Window_builder window_builder, Logger logger_)
     //**********************************************************
     {
         super(logger_);
-        path_list_provider = context.path_list_provider;
+        path_list_provider = window_builder.path_list_provider;
         if ( dbg) logger.log("\n\n\n\n\n\nNEW BROWSER "+path_list_provider.get_folder_path());
 
-        init_abstract_browser(Window_type.File_system_2D, context.shutdown_target,context.rectangle,this, "klikr");
+        init_abstract_browser(Window_type.File_system_2D, window_builder.shutdown_target,window_builder.rectangle,this, "klikr");
 
 
     }
@@ -99,7 +102,6 @@ public class Browser extends Abstract_browser implements Feature_change_target
     //**********************************************************
     {
         monitor();
-
     }
 
     //**********************************************************
@@ -111,7 +113,13 @@ public class Browser extends Abstract_browser implements Feature_change_target
         boolean monitor_this_folder = false;
 
         // ALWAYS monitor external drives
-        monitor_this_folder = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(path_list_provider.get_folder_path(), logger);
+        Optional<Path> op = path_list_provider.get_folder_path();
+        if (op.isEmpty()) {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        monitor_this_folder = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(op.get(), logger);
+
 
         if (!monitor_this_folder)
         {
@@ -124,14 +132,14 @@ public class Browser extends Abstract_browser implements Feature_change_target
         if (monitor_this_folder)
         {
             Runnable r = () -> {
-                filesystem_item_modification_watcher = Filesystem_item_modification_watcher.monitor_folder(path_list_provider.get_folder_path(), FOLDER_MONITORING_TIMEOUT_IN_MINUTES, my_Stage.the_Stage, aborter, logger);
+                filesystem_item_modification_watcher = Filesystem_item_modification_watcher.monitor_folder(op.get(), FOLDER_MONITORING_TIMEOUT_IN_MINUTES, my_Stage.the_Stage, aborter, logger);
                 if (filesystem_item_modification_watcher == null)
                 {
-                    logger.log("❗ WARNING: cannot monitor folder " + path_list_provider.get_folder_path());
+                    logger.log("❗ WARNING: cannot monitor folder " + op.get());
                 }
                 else
                 {
-                    logger.log("✅ Started monitoring folder " + path_list_provider.get_folder_path());
+                    logger.log("✅ Started monitoring folder " + op.get());
 
                 }
             };
@@ -141,7 +149,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
         {
             if ( filesystem_item_modification_watcher != null)
             {
-                logger.log("✅ Stopped monitoring folder " + path_list_provider.get_folder_path());
+                logger.log("✅ Stopped monitoring folder " + op.get());
                 filesystem_item_modification_watcher.cancel();
             }
         }
@@ -161,7 +169,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
     //**********************************************************
     {
         if ( path_list_provider == null) return "should not happen";
-        return path_list_provider.get_name();
+        return path_list_provider.get_key();
     }
 
 
@@ -181,7 +189,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
     //**********************************************************
     {
         if (path_list_provider == null) return;
-        String name = path_list_provider.get_folder_path().toAbsolutePath().toString();
+        String name = path_list_provider.get_key();
         my_Stage.the_Stage.setTitle(name);// fast temporary
         Runnable r = () -> {
             // can be super slow on network drives or slow drives
@@ -210,13 +218,20 @@ public class Browser extends Abstract_browser implements Feature_change_target
         //    return;
         //}
 
-        logger.log("Browser for: "+path_list_provider.get_folder_path()+ ", CHANGE GANG CALL received");
+        Optional<Path> op = path_list_provider.get_folder_path();
+        if( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
 
-        switch (Change_gang.is_my_directory_impacted(path_list_provider.get_folder_path(), l, logger))
+        logger.log("Browser for: "+op.get()+ ", CHANGE GANG CALL received");
+
+        switch (Change_gang.is_my_directory_impacted(op.get(), l, logger))
         {
             case more_changes: {
                 //if (dbg)
-                    logger.log("1 Browser of: " + path_list_provider.get_folder_path() + " RECOGNIZED change gang notification: " + l);
+                    logger.log("1 Browser of: " + op.get() + " RECOGNIZED change gang notification: " + l);
 
                 for ( Old_and_new_Path oan : l)
                 {
@@ -226,21 +241,21 @@ public class Browser extends Abstract_browser implements Feature_change_target
                     // recording its new path would be a bad bug
                     if ( oan.new_Path != null)
                     {
-                        if (oan.new_Path.startsWith(path_list_provider.get_folder_path()))
+                        if (oan.new_Path.startsWith(op.get()))
                         {
                             // make sure the window will scroll to the landing point of the displaced file
-                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_folder_path(), oan.new_Path);
+                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),oan.new_Path.toAbsolutePath().normalize().toString());
                         }
                     }
                 }
                 logger.log("redraw_fx due to change gang");
-                virtual_landscape.redraw_fx("change gang for dir: " + path_list_provider.get_folder_path(),true);
+                virtual_landscape.redraw_fx("change gang for dir: " + op.get(),true);
             }
             break;
             case one_new_file, one_file_gone: {
-                if (dbg) logger.log("CHANGE GANG received: Browser of: " + path_list_provider.get_folder_path() + " RECOGNIZED change gang notification: " + l);
+                if (dbg) logger.log("CHANGE GANG received: Browser of: " + op.get() + " RECOGNIZED change gang notification: " + l);
                 logger.log("redraw_fx due to change gang");
-                virtual_landscape.redraw_fx("change gang for dir: " + path_list_provider.get_folder_path(), true);
+                virtual_landscape.redraw_fx("change gang for dir: " + op.get(), true);
             }
             break;
             default:
@@ -254,7 +269,9 @@ public class Browser extends Abstract_browser implements Feature_change_target
     public String get_Change_receiver_string()
     //**********************************************************
     {
-        return "Browser:" + path_list_provider.get_folder_path().toAbsolutePath() + " " + abstract_browser_ID;
+        Optional<Path> op = path_list_provider.get_folder_path();
+        if ( op.isEmpty()) return "Browser NO PATH ?";
+        return "Browser:" + op.get().toAbsolutePath() + " " + abstract_browser_ID;
     }
 
     @Override

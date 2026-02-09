@@ -19,7 +19,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.browser.classic.Browser;
 import klikr.browser.comparators.Last_access_comparator;
@@ -174,7 +174,8 @@ public class Image_window
                 if (forward_size > 10) forward_size = 10;
                 //logger.log("cache_slots="+cache_slots);
 
-                image_cache = RAM_caches.image_caches.get(path_list_provider.get_folder_path().toAbsolutePath().toString());
+                Optional<Path> op = path_list_provider.get_folder_path();
+                op.ifPresent(folder_path -> image_cache = RAM_caches.image_caches.get(folder_path.toAbsolutePath().toString()));
 
                 if ( image_cache == null)
                 {
@@ -184,7 +185,7 @@ public class Image_window
                     } else {
                         image_cache = new Image_cache_cafeine(forward_size, owner, aborter, logger);
                     }
-                    RAM_caches.image_caches.put(path_list_provider.get_folder_path().toAbsolutePath().toString(), image_cache);
+                    op.ifPresent(folder_path -> RAM_caches.image_caches.put(folder_path.toAbsolutePath().toString(), image_cache));
                 }
             }
 
@@ -200,12 +201,13 @@ public class Image_window
                 }
             }
 
-            Klikr_cache<Path, Image_properties> tmp = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_folder_path().toAbsolutePath().toString());
-            if (tmp == null) {
-                tmp = Virtual_landscape.make_image_properties_cache(path_list_provider,aborter,owner,logger);
-                RAM_caches.image_properties_cache_of_caches.put(path_list_provider.get_folder_path().toAbsolutePath().toString(), tmp);
+            Klikr_cache<Path, Image_properties> tmp_cache = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_key());
+            if (tmp_cache == null)
+            {
+                tmp_cache = Virtual_landscape.make_image_properties_cache(path_list_provider, aborter, owner, logger);
+                RAM_caches.image_properties_cache_of_caches.put(path_list_provider.get_key(), tmp_cache);
             }
-            image_properties_cache = tmp;
+            image_properties_cache = tmp_cache;
 
 
             fv_cache_supplier = () ->
@@ -539,7 +541,7 @@ public class Image_window
             // browse the folder
             KeyCombination kc = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                Instructions.additional_no_past( Window_type.File_system_2D,
+                Window_builder.additional_no_past( Window_type.File_system_2D,
                         new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(),stage,logger),
                         stage,logger);
             });

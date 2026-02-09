@@ -134,7 +134,7 @@ public class System_info
     {
         System.out.println("Physical RAM on this machine: "+ get_total_machine_RAM_in_GBytes( owner, logger).orElse(4)+" GBytes");
         System.out.println("\n\nNumber of cores: "+ how_many_cores());
-        System.out.println("Java VM max RAM for klik: "+(int)(Runtime.getRuntime().maxMemory()/1_000_000_000.0)+" GBytes (reported by Runtime.maxMemory()");
+        System.out.println("Java VM max RAM for Klikr: "+(int)(Runtime.getRuntime().maxMemory()/1_000_000_000.0)+" GBytes (reported by Runtime.maxMemory()");
         //System.out.println("Java VM current RAM for klik: "+(int)(Runtime.getRuntime().totalMemory()/1_000_000_000.0)+" GBytes");
         //System.out.println("Java VM currently free RAM for klik: "+(int)(Runtime.getRuntime().freeMemory()/1_000_000_000.0)+" GBytes");
         System.out.println("\n\n");

@@ -170,7 +170,12 @@ public class Icon_factory_actor implements Actor
         Image_properties image_properties = image_and_properties.get().properties();
         if ( image_properties != null)
         {
-            image_properties_cache.inject(destination.get_item_path(),image_properties,false);
+            Optional<Path> op = destination.get_item_path();
+            if ( op.isEmpty())
+            {
+                logger.log(Stack_trace_getter.get_stack_trace(""));
+            }
+            image_properties_cache.inject(op.get(),image_properties,false);
         }
         //logger.log("Icon_factory_actor: "+ instance.decrementAndGet());
 
@@ -360,6 +365,12 @@ TODO:
 
         //Image icon_from_cache = null;
         Iconifiable_item_type item_type = destination.get_item_type();
+        Optional<Path> optional_item_path = destination.get_item_path();
+        if (optional_item_path.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return Optional.empty();
+        }
         switch ( item_type )
         {
 
@@ -369,7 +380,7 @@ TODO:
                 double length = Non_booleans_properties.get_animated_gif_duration_for_a_video(icon_factory_request.owner);
                 double skip = 0;
                 {
-                    Double duration_in_seconds = Ffmpeg_utils.get_media_duration(destination.get_item_path(), icon_factory_request.owner, logger);
+                    Double duration_in_seconds = Ffmpeg_utils.get_media_duration(optional_item_path.get(), icon_factory_request.owner, logger);
                     if (duration_in_seconds != null) {
                         if (duration_in_seconds > 3 * 3600) {
                             logger.log("❗ WARNING: Icon caching, ffprobe reports duration that looks wrong");
@@ -391,7 +402,7 @@ TODO:
 
 
                 Ffmpeg_utils.video_to_gif(
-                        destination.get_item_path(),
+                        optional_item_path.get(),
                         icon_factory_request.icon_size,
                         10,
                         icon_path,
@@ -407,7 +418,7 @@ TODO:
                 Image icon_from_cache = Icons_from_disk.load_icon(icon_path, logger);
                 if (icon_from_cache == null)
                 {
-                    logger.log("❗ Icon caching, load from file FAILED (5) for " + destination.get_item_path());
+                    logger.log("❗ Icon caching, load from file FAILED (5) for " + optional_item_path.get());
                     return Optional.empty();
                 }
                 else
@@ -419,7 +430,7 @@ TODO:
             case pdf:
             {
                 // we are going to create a png of the front page using GraphicsMagick (gm)
-                File file_in = destination.get_item_path().toFile();
+                File file_in = optional_item_path.get().toFile();
                 {
                     // gm convert -density 300 -resize 256x256 -quality 90 input.pdf output.png
                     List<String> command_line_for_GraphicsMagic = new ArrayList<>();
@@ -459,7 +470,7 @@ TODO:
 
                 Image icon_from_cache = Icons_from_disk.load_icon(icon_path, logger);
                 if (icon_from_cache == null) {
-                    logger.log("❗ Icon caching, load from file FAILED (5) for " + destination.get_item_path());
+                    logger.log("❗ Icon caching, load from file FAILED (5) for " + optional_item_path.get());
                     return Optional.empty();
                 }
                 else
@@ -588,7 +599,13 @@ TODO:
                             command_line_for_GraphicsMagic.add(icon_path.toAbsolutePath().toString());
                             StringBuilder sb = null;
                             if (pdf_dbg) sb = new StringBuilder();
-                            File file_in = destination.get_item_path().toFile();
+                            Optional<Path> optional_item_path = destination.get_item_path();
+                            if (optional_item_path.isEmpty())
+                            {
+                                logger.log(Stack_trace_getter.get_stack_trace(""));
+                                return;
+                            }
+                            File file_in = optional_item_path.get().toFile();
                             File wd = file_in.getParentFile();
                             Execute_result res = Execute_command.execute_command_list(command_line_for_GraphicsMagic, wd, 2000, sb, logger);
                             if (!res.status()) {
@@ -677,8 +694,8 @@ TODO:
             return Optional.empty();
         }
 
-        Path original_path = destination.get_path_for_display_icon_destination();
-        if( original_path == null)
+        Optional<Path> original_path = destination.get_path_for_display_icon_destination();
+        if( original_path.isEmpty())
         {
             // this happens quite a lot, for example
             // for empty folder (option: show folder with icons)
@@ -689,7 +706,7 @@ TODO:
 
         if (verbose_dbg) logger.log("✅ Icon caching, original:" + original_path);
 
-        Optional<Path> icon_path = make_icon_path(original_path, icon_factory_request, destination);
+        Optional<Path> icon_path = make_icon_path(original_path.get(), icon_factory_request, destination);
         if (verbose_dbg) logger.log("icon_path= "+icon_path);
         if( icon_path.isEmpty())
         {
@@ -705,7 +722,7 @@ TODO:
 
         // try to read the icon from the cache
 
-        Optional<Image> icon_from_cache = get_icon_from_cache(original_path, icon_path.get(), icon_factory_request, destination);
+        Optional<Image> icon_from_cache = get_icon_from_cache(original_path.get(), icon_path.get(), icon_factory_request, destination);
         if (icon_from_cache.isPresent())
         {
             if (dbg) logger.log("✅ Icon caching, READ icon from cache(): " + destination.get_item_path()+ " w="+icon_from_cache.get().getWidth()+" h="+icon_from_cache.get().getHeight());
@@ -720,7 +737,7 @@ TODO:
 
         // the icon was not in the cache, let us MAKE one
 
-        icon_from_cache = make_icon(original_path,icon_path.get(), icon_factory_request, destination);
+        icon_from_cache = make_icon(original_path.get(),icon_path.get(), icon_factory_request, destination);
         if (icon_from_cache.isEmpty()) {
             logger.log("❗ Icon caching, load from file FAILED (5) for " + destination.get_item_path());
             return Optional.empty();
@@ -730,7 +747,7 @@ TODO:
             return Optional.empty();
         }
 
-        write_icon_to_cache(icon_from_cache.get(),original_path,icon_path.get(),icon_factory_request, destination);
+        write_icon_to_cache(icon_from_cache.get(),original_path.get(),icon_path.get(),icon_factory_request, destination);
 
         if ( dbg) logger.log("Icon caching, returning icon for :" + destination.get_item_path()+ " w="+icon_from_cache.get().getWidth()+" h="+icon_from_cache.get().getHeight());
         Image_properties properties = new Image_properties(icon_from_cache.get().getWidth(), icon_from_cache.get().getHeight(), Rotation.normal);

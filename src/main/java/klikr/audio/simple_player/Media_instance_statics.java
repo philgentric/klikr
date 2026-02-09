@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.simple_player;
 
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;

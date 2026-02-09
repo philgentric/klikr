@@ -24,8 +24,8 @@ import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.Instructions;
 import klikr.util.Shared_services;
 import klikr.Window_provider;
 import klikr.browser.virtual_landscape.Shutdown_target;
@@ -41,6 +41,7 @@ import klikr.images.Image_window;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
@@ -98,21 +99,31 @@ public class Circle_3D implements Window_provider, Shutdown_target
     private final List<PhongMaterial> materials_to_apply = new ArrayList<>();
 
     //*******************************************************
-    public Circle_3D(Instructions context, Logger logger)
+    public Circle_3D(Window_builder window_builder, Logger logger)
     //*******************************************************
     {
-        this.path_list_provider = context.path_list_provider;
-        this.the_path = context.path_list_provider.get_folder_path();
-        History_engine.get(get_owner()).add(the_path.toAbsolutePath().toString());
-
-        material_cache_large = new Image_cache_cafeine_for_3D(400,new Aborter("i3D image cache",logger),logger);
+        this.path_list_provider = window_builder.path_list_provider;
         this.large_icon_size = (int) CORRIDOR_HEIGHT;
         this.small_icon_size = 64;
-        this.stage = (Stage)context.owner;
+        this.stage = (Stage)window_builder.owner;
         this.logger = logger;
+
+        String title = "Circle 3D";
+        if( window_builder.path_list_provider.get_folder_path().isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            this.the_path = null;
+            this.item_source = null;
+        }
+        else {
+            this.the_path = window_builder.path_list_provider.get_folder_path().get();
+            History_engine.get(get_owner()).add(the_path.toAbsolutePath().toString());
+            this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,stage,logger);
+            title = the_path.toAbsolutePath().toString();
+        }
+        material_cache_large = new Image_cache_cafeine_for_3D(400,new Aborter("i3D image cache",logger),logger);
         //image_source = new Dummy_text_image_source(icon_size,30000);
 
-        this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,stage,logger);
 
         String s = Shared_services.main_properties().get(Sort_files_by.SORT_FILES_BY);
         if ( !s.equals(Sort_files_by.FILE_NAME.name()))
@@ -126,7 +137,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
         stage.setScene(scene);
 
         stage.show();
-        stage.setTitle(context.path_list_provider.get_folder_path().toAbsolutePath().toString());
+        stage.setTitle(title);
         hourglass.ifPresent(Hourglass::close);
 
     }
@@ -216,7 +227,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("Up");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Instructions.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),stage,logger);
+                Window_builder.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -224,7 +235,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("2D");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Instructions.replace_same_folder(this, Window_type.File_system_2D,path_list_provider,null,stage,logger);
+                Window_builder.replace_same_folder(this, Window_type.File_system_2D,path_list_provider,null,stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -560,7 +571,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
                 if (Files.isDirectory(p))
                 {
                     logger.log("is folder: "+p);
-                    Instructions.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(p,stage,logger),stage,logger);
+                    Window_builder.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(p,stage,logger),stage,logger);
                 }
                 else 
                 {

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.old_player;
 
 
 import javafx.application.Platform;
@@ -12,12 +12,13 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.*;
 import javafx.stage.Window;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.audio.Audio_info_frame;
+import klikr.audio.Ffmpeg_metadata_editor;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.animated_gifs.Ffmpeg_utils;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_playlist;
@@ -134,7 +135,7 @@ public class Song
             "Browse_in_new_window",
                 null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                 (ActionEvent e) ->
-                        Instructions.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(Path.of(full_path).getParent(), owner, logger), owner, logger),
+                        Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(Path.of(full_path).getParent(), owner, logger), owner, logger),
                 context_menu,
                 owner, logger);
 

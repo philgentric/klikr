@@ -17,14 +17,14 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.Instructions;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Scrollable_text_field;
 import klikr.util.ui.progress.Progress;
 import klikr.util.execute.actor.Aborter;
-import klikr.audio.Audio_player_gradle_start;
+import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.Drag_and_drop;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.browser.items.Item_file_with_icon;
@@ -218,7 +218,7 @@ public class Results_frame
 	{
 		if (Files.isDirectory(path))
 		{
-			Instructions.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
+			Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
 		}
 		else if (Guess_file_type.is_this_file_an_image(path.toFile(), owner, logger))
 		{

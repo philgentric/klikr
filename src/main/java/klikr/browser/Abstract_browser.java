@@ -26,6 +26,7 @@ import klikr.path_lists.Path_list_provider;
 import klikr.properties.Non_booleans_properties;
 import klikr.properties.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
+import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
 import klikr.util.mmap.Save_and_what;
@@ -114,7 +115,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
                 Platform.runLater(() -> define_UI());
             }
         };
-        Klikr_application.klikr_communicator.set_on_appearance_changed(xx);
+        Klikr_communicator.instance.set_on_appearance_changed(xx);
 
         my_Stage.the_Stage.setOnCloseRequest(event -> {
             //System.out.println("Klik browser window exit");
@@ -217,7 +218,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     public void shutdown()
     //**********************************************************
     {
-        aborter.abort("Browser is closed for "+get_Path_list_provider().get_name());
+        aborter.abort("Browser is closed for "+get_Path_list_provider().get_key());
         if (dbg) logger.log("Browser shutdown " + signature());
 
         int count = number_of_windows.decrementAndGet();

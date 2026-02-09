@@ -6,7 +6,7 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Window;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.util.Shared_services;
 import klikr.Window_type;
 import klikr.look.Look_and_feel_manager;
@@ -112,7 +112,7 @@ public class Scrollable_text_field extends Region
                     (new KeyCodeCombination(KeyCode.N, KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
                         if (dbg) logger.log("Browse in new window!");
-                        Instructions.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
+                        Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
                     }, context_menu, owner, logger);
 
             if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name()))
@@ -121,7 +121,7 @@ public class Scrollable_text_field extends Region
                         "Browse_in_new_3D_window", null,
                         event4 -> {
                             if (dbg) logger.log("Browse in new window!");
-                            Instructions.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
+                            Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
                         }, context_menu, owner, logger);
             }
         }
@@ -132,7 +132,7 @@ public class Scrollable_text_field extends Region
                     (new KeyCodeCombination(KeyCode.N,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
                         if (dbg) logger.log("Browse in new window!");
-                        Instructions.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
+                        Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
                     }, context_menu, owner, logger);
 
             if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name())) {
@@ -140,7 +140,7 @@ public class Scrollable_text_field extends Region
                         "Browse_in_new_3D_window",null,
                         event4 -> {
                             if (dbg) logger.log("Browse in new window!");
-                            Instructions.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
+                            Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
                         }, context_menu, owner, logger);
             }
         }

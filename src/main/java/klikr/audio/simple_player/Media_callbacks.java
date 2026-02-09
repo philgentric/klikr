@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.simple_player;
 
 public interface Media_callbacks {
     void on_player_ready();

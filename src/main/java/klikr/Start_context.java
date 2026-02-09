@@ -85,7 +85,6 @@ public record Start_context(List<String> args, String bet_full)
     //**********************************************************
     {
         // the challenge is to support
-        //Warning: argument contains spaces ->/Users/philippegentric/Desktop/help/misc/not_dangerous/valuable/Music/PG_music_oldies/Queen Greatests Hits<-
         if ( args().isEmpty() ) return null;
 
         // the name may contain spaces AND integers...

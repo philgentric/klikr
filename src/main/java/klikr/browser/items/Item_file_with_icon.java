@@ -9,7 +9,6 @@
 package klikr.browser.items;
 
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -21,7 +20,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.properties.boolean_features.Booleans;
 import klikr.util.Check_remaining_RAM;
@@ -58,7 +57,6 @@ import klikr.util.ui.Menu_items;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,7 +67,7 @@ import java.util.function.Supplier;
 public class Item_file_with_icon extends Item_file
 //**********************************************************
 {
-    private Button button;
+    private final Button button;
     protected ImageView image_view;
     Pane image_pane;
     public Double aspect_ratio;
@@ -146,7 +144,13 @@ public class Item_file_with_icon extends Item_file
         Drag_and_drop.init_drag_and_drop_sender_side(get_Node(),selection_handler,path,logger);
 
         button.setOnContextMenuRequested((ContextMenuEvent event) -> {
-            if ( dbg) logger.log("show context menu of image_view:"+ get_item_path().toAbsolutePath());
+            Optional<Path> op = get_item_path();
+            if ( op.isEmpty())
+            {
+                logger.log(Stack_trace_getter.get_stack_trace(""));
+                return;
+            }
+            if ( dbg) logger.log("show context menu of image_view:"+ op.get().toAbsolutePath());
             ContextMenu context_menu = make_context_menu();
             context_menu.show(button, event.getScreenX(), event.getScreenY());
         });
@@ -167,8 +171,9 @@ public class Item_file_with_icon extends Item_file
     }
 
     @Override
-    public Path get_item_path() {
-        return path;
+    public Optional<Path> get_item_path() {
+        if (path == null) return Optional.empty();
+        return Optional.of(path);
     }
 
     //**********************************************************
@@ -176,14 +181,19 @@ public class Item_file_with_icon extends Item_file
     //**********************************************************
     {
         selection_handler.reset_selection(); // will clear all selections
-
-        if ( Guess_file_type.is_this_path_an_image(get_item_path(),owner,logger))
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
         {
-            open_an_image(path_list_provider,path_comparator_source,get_item_path(),owner,logger);
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        if ( Guess_file_type.is_this_path_an_image(op.get(),owner,logger))
+        {
+            open_an_image(path_list_provider,path_comparator_source,op.get(),owner,logger);
         }
         else
         {
-            System_open_actor.open_with_system(get_item_path(), owner,aborter,logger);
+            System_open_actor.open_with_system(op.get(), owner,aborter,logger);
         }
     }
 
@@ -217,12 +227,12 @@ public class Item_file_with_icon extends Item_file
     }
 
     @Override // Item
-    public Path get_path_for_display(boolean try_deep) {
+    public Optional<Path> get_path_for_display(boolean try_deep) {
         return get_item_path();
     }
 
     @Override // Icon_destination
-    public Path get_path_for_display_icon_destination() {
+    public Optional<Path> get_path_for_display_icon_destination() {
         return get_item_path();
     }
 
@@ -236,10 +246,10 @@ public class Item_file_with_icon extends Item_file
 
     //**********************************************************
     @Override
-    public Path is_parent_of()
+    public Optional<Path> is_parent_of()
     //**********************************************************
     {
-        return null;
+        return Optional.empty();
     }
 
     //**********************************************************
@@ -249,15 +259,22 @@ public class Item_file_with_icon extends Item_file
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu,owner,logger);
 
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return context_menu;
+        }
+
         double x = owner.getX()+100;
         double y = owner.getY()+100;
-        create_open_exif_frame_menu_item(get_item_path(),context_menu);
+        create_open_exif_frame_menu_item(op,context_menu);
 
         if ( Feature_cache.get(Feature.Enable_image_similarity))
         {
             if (!Check_remaining_RAM.low_memory.get()) {
                 context_menu.getItems().add(create_show_similar_menu_item(
-                        get_item_path(),
+                        op.get(),
                         fv_cache_supplier,
                         path_comparator_source,
                         owner,
@@ -267,12 +284,12 @@ public class Item_file_with_icon extends Item_file
         }
 
         {
-            Menu menu = get_open_Menu(get_item_path(),owner,x, y, aborter,logger);
+            Menu menu = get_open_Menu(op.get(),owner,x, y, aborter,logger);
             context_menu.getItems().add(menu);
         }
 
         {
-            MenuItem menu_item = get_rename_MenuItem(get_item_path(),owner,x, y, aborter,logger);
+            MenuItem menu_item = get_rename_MenuItem(op.get(),owner,x, y, aborter,logger);
             context_menu.getItems().add(menu_item);
         }
 
@@ -283,7 +300,7 @@ public class Item_file_with_icon extends Item_file
 
         if ( this.item_type == Iconifiable_item_type.video)
         {
-            make_menu_items_for_videos(get_item_path(),owner,context_menu,dbg, aborter,logger);
+            make_menu_items_for_videos(op.get(),owner,context_menu,dbg, aborter,logger);
         }
         return context_menu;
 
@@ -294,14 +311,13 @@ public class Item_file_with_icon extends Item_file
         String s = My_I18n.get_I18n_string("Open", owner, logger);
         Menu returned = new Menu(s);
 
-
         {
             MenuItem mi = Menu_items.make_menu_item(
                     "Open_With_Registered_Application",
             null,
                     event -> {
-                        if (dbg) logger.log("Opening with registered app: "+get_item_path());
-                        System_open_actor.open_with_click_registered_application(get_item_path(), owner,aborter,logger);
+                        if (dbg) logger.log("Opening with registered app: "+path);
+                        System_open_actor.open_with_click_registered_application(path, owner,aborter,logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -313,8 +329,8 @@ public class Item_file_with_icon extends Item_file
                     "Open_With_System",
                     null,
                     event -> {
-                        if (dbg) logger.log("Opening with system: "+get_item_path());
-                        System_open_actor.open_with_system(get_item_path(), owner,aborter,logger);
+                        if (dbg) logger.log("Opening with system: "+path);
+                        System_open_actor.open_with_system(path, owner,aborter,logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -325,8 +341,8 @@ public class Item_file_with_icon extends Item_file
                     "Edit_File",
                     null,//(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event -> {
-                        if (dbg) logger.log("Editing " + get_item_path());
-                        System_open_actor.open_with_system(get_item_path(), owner, aborter, logger);
+                        if (dbg) logger.log("Editing " + path);
+                        System_open_actor.open_with_system(path, owner, aborter, logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -336,7 +352,7 @@ public class Item_file_with_icon extends Item_file
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     (ActionEvent e) ->
-                            Instructions.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(get_item_path().getParent(), owner, logger), owner, logger),
+                            Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger),
                     owner, logger);
             returned.getItems().add(mi);
         }
@@ -347,7 +363,7 @@ public class Item_file_with_icon extends Item_file
                     null,
                             event -> {
                                 if (dbg) logger.log("Browse in new window!");
-                                Instructions.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(get_item_path().getParent(), owner, logger), owner, logger);
+                                Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
                             }, owner, logger);
             returned.getItems().add(mi);
         }
@@ -355,12 +371,11 @@ public class Item_file_with_icon extends Item_file
     }
 
     //**********************************************************
-    public static MenuItem create_show_similar_menu_item(Path image_path,
-                                                         Supplier<Feature_vector_cache> fv_cache_supplier,
-                                                         Path_comparator_source path_comparator_source,
-                                                         Window owner,
-                                                         Aborter browser_aborter,
-                                                         Logger logger)
+    public static MenuItem create_show_similar_menu_item(
+            Path image_path,
+            Supplier<Feature_vector_cache> fv_cache_supplier,
+            Path_comparator_source path_comparator_source,
+            Window owner, Aborter browser_aborter, Logger logger)
     //**********************************************************
     {
         String txt = My_I18n.get_I18n_string("Show_5_similar_images", owner,logger);
@@ -499,7 +514,7 @@ public class Item_file_with_icon extends Item_file
 
         if ( (image_and_rotation.image().getHeight()  < 1) || (image_and_rotation.image().getWidth() < 1))
         {
-            logger.log(Stack_trace_getter.get_stack_trace("❗ WARNING: empty image, not set "+get_item_path().toAbsolutePath()));
+            logger.log(Stack_trace_getter.get_stack_trace("❗ WARNING: empty image, not set "+path.toAbsolutePath()));
             Jfx_batch_injector.inject(this::you_are_invisible,logger);
             return;
         }
@@ -541,22 +556,22 @@ public class Item_file_with_icon extends Item_file
             Rotation rotation = image_and_properties.properties().rotation();
             if (rotation == null)
             {
-                if (Files.exists(get_item_path()))
-                {
-                    if (
-                            (Guess_file_type.is_this_path_a_video(get_item_path(),owner,logger)) || (Guess_file_type.is_this_path_a_pdf(get_item_path(),owner,logger))
-                    ) {
-                        if (dbg) logger.log("✅ PDF or video => rot=0");
-                        local_rot = 0;
+                Optional<Path> op = get_item_path();
+                if (op.isPresent()) {
+                    if (Files.exists(op.get())) {
+                        if (
+                                (Guess_file_type.is_this_path_a_video(op.get(), owner, logger)) || (Guess_file_type.is_this_path_a_pdf(op.get(), owner, logger))
+                        ) {
+                            if (dbg) logger.log("✅ PDF or video => rot=0");
+                            local_rot = 0;
+                        } else {
+                            local_rot = Fast_rotation_from_exif_metadata_extractor.get_rotation(op.get(), true, owner, aborter, logger).orElse(0.0);
+                        }
                     } else {
-                        local_rot = Fast_rotation_from_exif_metadata_extractor.get_rotation(get_item_path(), true, owner, aborter, logger).orElse(0.0);
+                        logger.log(Stack_trace_getter.get_stack_trace("❌ Bad"));
+                        you_are_invisible();
+                        return;
                     }
-                }
-                else
-                {
-                    logger.log(Stack_trace_getter.get_stack_trace("❌ Bad"));
-                    you_are_invisible();
-                    return;
                 }
 
             }
@@ -689,6 +704,8 @@ public class Item_file_with_icon extends Item_file
     public String get_string()
     //**********************************************************
     {
-        return "is item_file_with_icon for : " + get_item_path().toAbsolutePath();
+
+        if ( get_item_path().isEmpty() ) return "item_file_with_icon NP PATH ?";
+        return "is item_file_with_icon for : " + get_item_path().get().toAbsolutePath();
     }
 }

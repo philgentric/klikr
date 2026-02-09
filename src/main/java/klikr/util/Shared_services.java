@@ -21,7 +21,9 @@ public class Shared_services
     private static Logger logger;
     private static File_storage main_properties;
 
+    //**********************************************************
     public static Logger logger()
+    //**********************************************************
     {
         return logger;
     }

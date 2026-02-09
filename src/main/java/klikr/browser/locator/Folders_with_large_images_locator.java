@@ -5,8 +5,8 @@
 package klikr.browser.locator;
 
 import javafx.stage.Window;
+import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.Instructions;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
-
-import static klikr.util.Shared_services.aborter;
 
 //**********************************************************
 public class Folders_with_large_images_locator
@@ -409,7 +407,7 @@ public class Folders_with_large_images_locator
             if ( count < MAX_WINDOWS)
             {
                 String final_S = s;
-                Jfx_batch_injector.inject(()-> Instructions.additional_no_past(
+                Jfx_batch_injector.inject(()-> Window_builder.additional_no_past(
                         Window_type.File_system_2D,
                         new Path_list_provider_for_file_system(key_to_path(final_S),owner,logger),
                         owner,

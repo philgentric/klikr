@@ -8,10 +8,12 @@ import klikr.browser.virtual_landscape.Image_found;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.Move_provider;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 //**********************************************************
 public interface Path_list_provider
@@ -19,9 +21,10 @@ public interface Path_list_provider
 {
     // an abstract interface to provide a list of paths (files)
     // could be in a disk folder OR in a 'playlist'
-    Path get_folder_path();
-    String get_name(); // absolute path of *folder* or *playlist file*
-    Path resolve(String string);
+    String get_key(); // never null (absolute path of *folder*) or (absolute path of *playlist file*)
+
+    Optional<Path> get_folder_path();
+    Optional<Path> resolve(String string);
 
     Change get_Change();
 
@@ -44,7 +47,14 @@ public interface Path_list_provider
 
     default boolean has_parent()
     {
-        Path parent = get_folder_path().getParent();
+        Optional<Path> op = get_folder_path();
+        if (op.isEmpty())
+        {
+            System.out.println(Stack_trace_getter.get_stack_trace(""));
+            return false;
+        }
+
+        Path parent = op.get().getParent();
         return parent != null;
     }
 

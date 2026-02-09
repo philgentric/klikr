@@ -1,13 +1,14 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.simple_player;
 
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.media.*;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import klikr.audio.Song_play_status;
 import klikr.properties.File_storage;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;

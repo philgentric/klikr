@@ -7,13 +7,11 @@ package klikr.browser.items;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Window;
+import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.Instructions;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
@@ -53,7 +51,7 @@ public class Item_folder extends Item implements Icon_destination
     public Button button;
     public Label label;
     public final boolean is_trash;
-    public final Path is_parent_of;
+    public final Path is_parent_of; // can be null
     public String text;
     private static DateTimeFormatter date_time_formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
@@ -98,22 +96,13 @@ public class Item_folder extends Item implements Icon_destination
         text = text_;
         is_trash = is_trash_;
         this.is_parent_of = is_parent_of;
-        /*
-        if (path == null) {
-            is_dir = false;
-            button = new Button("----------");
-            button.setPrefWidth(Control.USE_COMPUTED_SIZE);
-            button.setTextOverrun(OverrunStyle.ELLIPSIS);
-            button.setGraphicTextGap(20);
-            Look_and_feel_manager.set_button_look(button,false);
-            return;
-        }*/
+
 
         double button_width = Non_booleans_properties.get_column_width(owner);
         if ( button_width < Virtual_landscape.MIN_COLUMN_WIDTH) button_width = Virtual_landscape.MIN_COLUMN_WIDTH;
 
-        Path local = get_item_path();
-        if ( local == null)
+        Optional<Path> local = get_item_path();
+        if ( local.isEmpty())
         {
             if ( text.isEmpty())
             {
@@ -125,7 +114,7 @@ public class Item_folder extends Item implements Icon_destination
             }
             return;
         }
-        if (Files.isDirectory(local))
+        if (Files.isDirectory(local.get()))
         {
             button_for_a_directory(text, is_trash, button_width, height, color);
         }
@@ -138,14 +127,21 @@ public class Item_folder extends Item implements Icon_destination
         button.setManaged(true); // means the parent tells the button its layout
         button.setMnemonicParsing(false);// avoid suppression of first underscore in names
         button.setTextOverrun(OverrunStyle.ELLIPSIS);
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
         if (Feature_cache.get(Feature.Show_file_names_as_tooltips))
         {
-            if (get_item_path().getFileName() != null)
+
+            if (op.get().getFileName() != null)
             {
-                Tooltip.install(button, new Tooltip(get_item_path().getFileName().toString()));
+                Tooltip.install(button, new Tooltip(op.get().getFileName().toString()));
             }
         }
-        Drag_and_drop.init_drag_and_drop_sender_side(get_Node(),selection_handler,get_item_path(),logger);
+        Drag_and_drop.init_drag_and_drop_sender_side(get_Node(),selection_handler,op.get(),logger);
 
     }
 
@@ -163,12 +159,12 @@ public class Item_folder extends Item implements Icon_destination
     }
 
     @Override
-    public Path get_item_path() {
+    public Optional<Path> get_item_path() {
         return path_list_provider.get_folder_path();
     }
 
-    public ImageView get_image_view(){return null;}
-    public Pane get_pane(){return null;}
+    //public ImageView get_image_view(){return null;}
+    //public Pane get_pane(){return null;}
 
     //**********************************************************
     @Override // Item
@@ -213,14 +209,14 @@ public class Item_folder extends Item implements Icon_destination
 
 
     //**********************************************************
-    public Path get_true_path()
+    public Optional<Path> get_true_path()
     //**********************************************************
     {
         return get_item_path();
     }
 
     @Override // Icon_destination
-    public Path get_path_for_display_icon_destination()
+    public Optional<Path> get_path_for_display_icon_destination()
     {
         logger.log("✅ Item_button get_path_for_display_icon_destination DEEP !???");
         return get_path_for_display(true);
@@ -230,22 +226,31 @@ public class Item_folder extends Item implements Icon_destination
     // in the icon factory as
     //**********************************************************
     @Override // Item
-    public Path get_path_for_display(boolean try_deep)
+    public Optional<Path> get_path_for_display(boolean try_deep)
     //**********************************************************
     {
-        if (is_trash) return null;
-        if (is_parent_of!=null) return null;
+        if (is_trash) return Optional.empty();
+        if (is_parent_of!=null) return Optional.empty();
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return op;
+        }
         // for a file the displayed icon is built from the file itself, if supported:
-        if ( !get_item_path().toFile().isDirectory()) return get_item_path();
+        if ( !op.get().toFile().isDirectory())
+        {
+            return get_item_path();
+        }
 
-        if ( !try_deep) return null;
+        if ( !try_deep) return Optional.empty();
 
         // for a folder we have 2 ways to provide an icon
         // 1) an image is taken from the folder and used as icon
         // 2) multiple images are taken from the folder to form an animated gif icon
 
         // try to find an icon for the folder
-        return get_an_image_down_in_the_tree_files(get_item_path());
+        return get_an_image_down_in_the_tree_files(op.get());
         /*
         no recursive madness please!
         if ( returned != null) return returned;
@@ -260,21 +265,21 @@ public class Item_folder extends Item implements Icon_destination
 
     boolean make_animated_gif = true;
     //**********************************************************
-    Path get_an_image_down_in_the_tree_files(Path local_path)
+    Optional<Path> get_an_image_down_in_the_tree_files(Path local_path)
     //**********************************************************
     {
-        if ( Files.isSymbolicLink(local_path)) return null;
+        if ( Files.isSymbolicLink(local_path)) return Optional.empty();
         File dir = local_path.toFile();
         File[] files = dir.listFiles();
         if ( files == null)
         {
             if ( dbg) logger.log("❗ WARNING: dir is access denied: "+local_path);
-            return null;
+            return Optional.empty();
         }
         if ( files.length == 0)
         {
             if ( dbg) logger.log("✅ dir is empty: "+local_path);
-            return null;
+            return Optional.empty();
         }
         Arrays.sort(files);
         List<File> images_in_folder = null;
@@ -292,7 +297,7 @@ public class Item_folder extends Item implements Icon_destination
             }
             else
             {
-                return f.toPath();
+                return Optional.of(f.toPath());
             }
         }
         if( make_animated_gif)
@@ -301,20 +306,20 @@ public class Item_folder extends Item implements Icon_destination
 
             if ( Objects.requireNonNull(images_in_folder).isEmpty())
             {
-                return null;
+                return Optional.empty();
             }
 
-            Path returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
+            Optional<Path> returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
                     owner,
                     new Path_list_provider_for_file_system(local_path,owner,logger),
                     path_comparator_source,
                     images_in_folder,
                     image_properties_cache,
                     aborter, logger);
-            if ( returned == null)
+            if ( returned.isEmpty())
             {
                 logger.log("❌ make_animated_gif_from_all_images_in_folder fails");
-                if (!images_in_folder.isEmpty()) return images_in_folder.get(0).toPath();
+                if (!images_in_folder.isEmpty()) return Optional.of(images_in_folder.get(0).toPath());
             }
             else
             {
@@ -324,7 +329,7 @@ public class Item_folder extends Item implements Icon_destination
             }
         }
 
-        return null; // no image found
+        return Optional.empty(); // no image found
     }
 
 
@@ -353,9 +358,11 @@ public class Item_folder extends Item implements Icon_destination
     //**********************************************************
     {
         String extended_text = text;
-        if ( get_item_path() != null)
+        Optional<Path> op = get_item_path();
+        if ( op.isPresent())
         {
-            if (Files.isSymbolicLink(get_item_path())) {
+            if (Files.isSymbolicLink(op.get()))
+            {
                 extended_text += " **Symbolic link** ";
             }
         }
@@ -366,7 +373,7 @@ public class Item_folder extends Item implements Icon_destination
         button.setTextAlignment(TextAlignment.RIGHT);
         //double computed_text_width = icons_width + estimate_text_width(text2);
 
-        if (get_item_path() == null)
+        if (op.isEmpty())
         {
             // protect crash when going up: root has no parent
             if ( !text.isEmpty()) logger.log("✅ WARNING no action for folder ->"+text+"<-");
@@ -381,8 +388,8 @@ public class Item_folder extends Item implements Icon_destination
 
         button.setOnAction(event -> {
             if ( dbg) logger.log("Button pressed for folder:"+text);
-
-            if (get_item_path() == null)
+            Optional<Path> optional_of_item_path = get_item_path();
+            if (optional_of_item_path.isEmpty())
             {
                 // protect crash when going up: root has no parent
                 logger.log("❗ WARNING no action for folder:"+text);
@@ -395,24 +402,25 @@ public class Item_folder extends Item implements Icon_destination
             if( dbg) logger.log("Item_folder button setOnAction calling replace_different_folder");
 
             // this works when going "down", path is the new target path, therefore going back is the parent of that
-            Path old_folder_path = get_item_path().getParent();
-            if ( is_parent_of()!=null)
+            Path old_folder_path = optional_of_item_path.get().getParent();
+            if ( is_parent_of().isPresent())
             {
                 if ( dbg) logger.log("is_up_button");
-                old_folder_path = is_parent_of();
+                old_folder_path = is_parent_of().get();
             }
-            Scroll_position_cache.scroll_position_cache_write(old_folder_path,top_left_provider.get_top_left());
+            Optional<Path> lop = top_left_provider.get_top_left();
+            lop.ifPresent((Path tl)-> Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),tl.toAbsolutePath().normalize().toString()));
 
-            Instructions.replace_different_folder(
+            Window_builder.replace_different_folder(
                     shutdown_target,
                     Window_type.File_system_2D,
-                    new Path_list_provider_for_file_system(get_item_path(),owner,logger),
+                    new Path_list_provider_for_file_system(optional_of_item_path.get(),owner,logger),
                     owner,
                     logger);
 
         });
 
-        Drag_and_drop.init_drag_and_drop_receiver_side(path_list_provider.get_move_provider(),get_Node(),owner,get_item_path(),is_trash(),logger);
+        Drag_and_drop.init_drag_and_drop_receiver_side(path_list_provider.get_move_provider(),get_Node(),owner,op.get(),is_trash(),logger);
 
         give_a_menu_to_the_button(button,label);
     }
@@ -534,10 +542,11 @@ public class Item_folder extends Item implements Icon_destination
 
     //**********************************************************
     @Override
-    public Path is_parent_of()
+    public Optional<Path> is_parent_of()
     //**********************************************************
     {
-        return is_parent_of;
+        if (is_parent_of == null) return Optional.empty();
+        return Optional.of(is_parent_of);
     }
 
     //**********************************************************
@@ -545,7 +554,13 @@ public class Item_folder extends Item implements Icon_destination
     public String get_string()
     //**********************************************************
     {
-        return "is dir: " + get_item_path().toAbsolutePath();
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return "Folder has no path ?";
+        }
+        return "is dir: " + op.get().toAbsolutePath();
     }
 
 

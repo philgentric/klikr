@@ -8,6 +8,7 @@ import klikr.Klikr_application;
 import klikr.Launcher;
 import klikr.properties.More_settings_stage;
 import klikr.util.Shared_services;
+import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
 
 import java.util.*;
@@ -177,7 +178,7 @@ public class Feature_cache
     {
         logger.log("\n\nFeature_cache::send_UI_changed "+msg+" " +new_lang);
 
-        Klikr_application.klikr_communicator.broadcast(msg+" "+new_lang);
+        Klikr_communicator.instance.broadcast(msg+" "+new_lang);
 
     }
 

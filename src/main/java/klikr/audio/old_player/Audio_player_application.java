@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.old_player;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -34,15 +34,15 @@ public class Audio_player_application extends Application
         Start_context context = Start_context.get_context_and_args(this);
 
         Integer reply_port = context.extract_reply_port();
-        klikr_communicator = new Klikr_communicator("Audio_player",stage_,logger);
+        klikr_communicator = new Klikr_communicator("Audio_player_app",stage_,logger);
         if (klikr_communicator.start_as_singleton())
         {
-            Audio_player.init(true,context.extract_path(),stage_,logger);
+            Audio_player_with_playlist.init(true,context.extract_path(),stage_,logger);
             if ( reply_port != null) klikr_communicator.send_request(reply_port,"/started","POST","started");
             Consumer<String> on_appearance_changed = new Consumer<String>() {
                 @Override
                 public void accept(String s) {
-                    Audio_player.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
+                    Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
                 }
             };
             klikr_communicator.set_on_appearance_changed(on_appearance_changed);

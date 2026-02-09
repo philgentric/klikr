@@ -17,7 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.look.Font_size;
 import klikr.look.Look_and_feel_manager;
@@ -62,7 +62,7 @@ public class Menu_items
                     //logger.log("Browse_in_new_window");
                     Path local = path;
                     if (!local.toFile().isDirectory()) local = local.getParent();
-                    Instructions.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(local, owner, logger), owner, logger);
+                    Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(local, owner, logger), owner, logger);
                 }, context_menu, owner, logger);
     }
 

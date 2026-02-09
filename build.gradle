@@ -150,6 +150,13 @@ tasks.register('song_playlist_app', JavaExec) {
     return
 }
 
+tasks.register('simple_audio', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.audio.new_player.Simple_audio_player_application'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+    return
+}
 
 tasks.register('image_playlist_app', JavaExec) {
     dependsOn 'classes'

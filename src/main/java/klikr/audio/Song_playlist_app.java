@@ -110,7 +110,6 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import klikr.*;
 import klikr.path_lists.Path_list_provider_for_playlist;
-import klikr.properties.Non_booleans_properties;
 import klikr.properties.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
@@ -150,11 +149,13 @@ public class Song_playlist_app extends Application
     //**********************************************************
     {
         application = this;
+        Shared_services.init("audio_playlist_app",primary_stage_);
         Logger logger = Shared_services.logger();
         //Perf.monitor(logger);
 
         primary_stage = primary_stage_;
         Start_context context = Start_context.get_context_and_args(this);
+        Klikr_communicator.build(context,primary_stage,logger);
 
         logger.log("Klik_application Start_context= " + context.args());
 
@@ -180,7 +181,7 @@ public class Song_playlist_app extends Application
             }
         }
         logger.log("Starting playlist browser on path ->" + path+"<-");
-        Instructions.additional_no_past(Window_type.Song_playlist_1D,new Path_list_provider_for_playlist(path,  primary_stage, logger),primary_stage_,logger);
+        Window_builder.additional_no_past(Window_type.Song_playlist_1D,new Path_list_provider_for_playlist(path,  primary_stage, logger),primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()-> primary_stage, logger).start();
 
         Klikr_communicator klikr_communicator = new Klikr_communicator("Song playlist app",primary_stage,logger);

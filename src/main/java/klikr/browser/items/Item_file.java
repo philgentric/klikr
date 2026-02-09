@@ -13,8 +13,10 @@ import klikr.path_lists.Path_list_provider;
 import klikr.browser.virtual_landscape.Selection_handler;
 import klikr.properties.Non_booleans_properties;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 //**********************************************************
 public abstract class Item_file extends Item
@@ -40,8 +42,17 @@ public abstract class Item_file extends Item
     //**********************************************************
     {
         super(scene, selection_handler, icon_factory_actor, color, path_list_provider, path_comparator_source, owner, aborter, logger);
+        if ( path_ == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("path_ == null ???"));
+        }
         this.path = path_;
-        item_type = Iconifiable_item_type.determine(get_item_path(),owner,aborter,logger);
+        Optional<Path> optional_of_item_path = get_item_path();
+        if ( optional_of_item_path.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+        }
+        item_type = Iconifiable_item_type.determine(optional_of_item_path.get(),owner,aborter,logger);
         icon_size = Non_booleans_properties.get_icon_size(owner);
     }
 

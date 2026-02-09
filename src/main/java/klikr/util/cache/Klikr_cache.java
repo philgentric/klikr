@@ -16,6 +16,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
@@ -70,9 +71,14 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
         this.internal_string_key_maker = internal_string_key_maker;
         logger = logger_;
         name = cache_name_;
-        String local = name + path_list_provider.get_name();
+        String local = name + path_list_provider.get_key();
         if ( dbg) logger.log(name +" local ="+local);
-        String cache_file_name = path_list_provider.get_folder_path().getFileName().toString()+"_"+UUID.nameUUIDFromBytes(local.getBytes());
+        Optional<Path> op = path_list_provider.get_folder_path();
+
+        String cache_file_name = "default_cache_file_name";
+        if ( op.isPresent() ) {
+            cache_file_name = op.get().getFileName().toString()+"_"+UUID.nameUUIDFromBytes(local.getBytes());
+        }
         if ( dbg) logger.log(name +" cache_file_name ="+cache_file_name);
         Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(name, false,owner, logger);
         if ( dbg) logger.log(name +" dir ="+dir.toAbsolutePath().toString());

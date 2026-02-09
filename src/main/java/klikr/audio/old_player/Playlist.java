@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.old_player;
 //SOURCES ../change/undo/Undo_core.java
 
 import javafx.application.Platform;
@@ -1173,7 +1173,7 @@ public class Playlist
 
     Aborter previous;
     //**********************************************************
-    void change_song(String new_song, long start, boolean first_time)
+    public void change_song(String new_song, long start, boolean first_time)
     //**********************************************************
     {
         if ( previous != null)

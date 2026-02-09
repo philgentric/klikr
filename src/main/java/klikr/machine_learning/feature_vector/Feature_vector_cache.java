@@ -276,7 +276,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         try( Perf p = new Perf("preload_all_feature_vector_in_cache"))
         {
             logger.log("\n\n✅ Going to preload_all_feature_vector_in_cache\n\n");
-            Feature_vector_cache feature_vector_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_name());
+            Feature_vector_cache feature_vector_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_key());
             AtomicInteger in_flight = new AtomicInteger(1); // '1' to keep it alive until update settles the final count
 
             if ( feature_vector_cache == null)
@@ -292,9 +292,9 @@ public class Feature_vector_cache implements Clearable_RAM_cache
                         logger);
 
 
-                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_name(), fvs,logger);
+                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_key(), fvs,logger);
                 feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, browser_aborter,logger);
-                RAM_caches.fv_cache_of_caches.put(path_list_provider.get_name(),feature_vector_cache);
+                RAM_caches.fv_cache_of_caches.put(path_list_provider.get_key(),feature_vector_cache);
                 hourglass.ifPresent(Hourglass::close);
                 return feature_vector_cache;
             }

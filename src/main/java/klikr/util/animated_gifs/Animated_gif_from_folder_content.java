@@ -26,10 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /*
 animated-GIF making utility:
@@ -52,7 +49,7 @@ public class Animated_gif_from_folder_content
 
 
     //**********************************************************
-    public static Path make_animated_gif_from_images_in_folder(
+    public static Optional<Path> make_animated_gif_from_images_in_folder(
             Window owner,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
@@ -69,16 +66,16 @@ public class Animated_gif_from_folder_content
 
         int icon_size = Non_booleans_properties.get_icon_size(owner);
 
-        String output_animated_gif_name = Icon_caching.make_cache_name(path_list_provider.get_name(), "ANIMATED_FOLDER_" + icon_size, "gif");
+        String output_animated_gif_name = Icon_caching.make_cache_name(path_list_provider.get_key(), "ANIMATED_FOLDER_" + icon_size, "gif");
         Path folder_icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.folder_icon_cache,owner,logger);
         Path returned_path_of_animated_gif = Path.of(folder_icon_cache_dir.toAbsolutePath().toString(), output_animated_gif_name);
         if (Files.exists(returned_path_of_animated_gif)) {
             if (dbg) logger.log(" make_animated_gif_from_all_images_in_folder found in cache ");
-            return returned_path_of_animated_gif;
+            return Optional.of(returned_path_of_animated_gif);
         }
-        if (dbg) logger.log(" make_animated_gif_from_all_images_in_folder in = " + path_list_provider.get_name() + " target out = " + returned_path_of_animated_gif);
+        if (dbg) logger.log(" make_animated_gif_from_all_images_in_folder in = " + path_list_provider.get_key() + " target out = " + returned_path_of_animated_gif);
 
-        if ( aborter.should_abort()) return null;
+        if ( aborter.should_abort()) return Optional.empty();
 
         Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,owner, logger);
         //List<Path> to_be_cleaned_up = new ArrayList<>();
@@ -93,7 +90,7 @@ public class Animated_gif_from_folder_content
         for (int i = 0; i < Math.min(HOW_MANY_IMAGES_SAMPLED_IN_FOLDER_TO_MAKE_ANIMATED_GIF,paths.size()); i++)
         {
             Path p = paths.get(i);
-            String local = Icon_caching.make_cache_name(path_list_provider.get_name(), FRAME1 + i, Icon_caching.png_extension);
+            String local = Icon_caching.make_cache_name(path_list_provider.get_key(), FRAME1 + i, Icon_caching.png_extension);
             Path destination = Path.of(icon_cache_dir.toAbsolutePath().toString(),local);
             generate_padded_icon(p,icon_size,destination,owner,logger);
             //to_be_cleaned_up.add(destination);
@@ -106,7 +103,7 @@ public class Animated_gif_from_folder_content
             graphicsMagick_command_line.add("convert");
             graphicsMagick_command_line.add("-delay");
             graphicsMagick_command_line.add("30"); // in centiseconds
-            String frames = Icon_caching.make_cache_name_raw(path_list_provider.get_name()) + FRAME2 + "*" + PNG;
+            String frames = Icon_caching.make_cache_name_raw(path_list_provider.get_key()) + FRAME2 + "*" + PNG;
             graphicsMagick_command_line.add(frames);
             graphicsMagick_command_line.add(returned_path_of_animated_gif.toAbsolutePath().toString());
 
@@ -141,7 +138,7 @@ public class Animated_gif_from_folder_content
 
         if ( dbg) logger.log(" make_animated_gif_from_all_images_in_folder DONE "+returned_path_of_animated_gif.toAbsolutePath().toString());
 
-        return returned_path_of_animated_gif;
+        return Optional.of(returned_path_of_animated_gif);
     }
 
     //**********************************************************

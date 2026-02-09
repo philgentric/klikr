@@ -7,18 +7,21 @@ import klikr.browser.Image_and_properties;
 import klikr.browser.items.Iconifiable_item_type;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
+//**********************************************************
 public interface Icon_destination
+//**********************************************************
 {
     void receive_icon(Image_and_properties icon);
 
     Iconifiable_item_type get_item_type();
 
-    Path get_path_for_display_icon_destination();
+    Optional<Path> get_path_for_display_icon_destination();
 
     String get_string();
 
-    Path get_item_path();
+    Optional<Path> get_item_path();
 
     boolean get_icon_fabrication_requested(); // this is to prevent more than 1 request per icon
 

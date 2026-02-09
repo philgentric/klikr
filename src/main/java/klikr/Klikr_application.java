@@ -66,7 +66,7 @@
 //SOURCES ./System_info.java
 //SOURCES actor/Aborter.java
 //SOURCES browser/classic/Browser.java
-//SOURCES Instructions.java
+//SOURCES Window_builder.java
 //SOURCES browser/My_Stage.java
 //SOURCES change/history/History_auto_clean.java
 //SOURCES look/Look_and_feel_manager.java
@@ -108,12 +108,10 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import javafx.stage.Window;
-import klikr.audio.Audio_player;
+import klikr.audio.old_player.Audio_player_with_playlist;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.properties.Non_booleans_properties;
 import klikr.properties.String_constants;
 import klikr.properties.boolean_features.Booleans;
 import klikr.properties.boolean_features.Feature;
@@ -139,12 +137,11 @@ public class Klikr_application extends Application
 {
 
     public static Application application;
-    public static Audio_player audio_player;
+    public static Audio_player_with_playlist audio_player;
     public static long start_time; // used to compute the time since the application started
     private final static String name = "Klik_application";
     public static Stage primary_stage;
 
-    public static Klikr_communicator klikr_communicator;
     //**********************************************************
     public static void main(String[] args)
     //**********************************************************
@@ -229,15 +226,9 @@ public class Klikr_application extends Application
         {
             path = Paths.get(System.getProperty(String_constants.USER_HOME));
         }
-        klikr_communicator = new Klikr_communicator("Klikr",primary_stage,logger);
-        klikr_communicator.start_as_multi_instance();
-        Integer reply_port = context.extract_reply_port();
-        if ( reply_port != null)
-        {
-            klikr_communicator.send_request(reply_port,"/started","POST","started");
-        }
+        Klikr_communicator.build(context,primary_stage_,logger);
 
-        Window_provider window_provider = Instructions.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage_,logger),primary_stage_,logger);
+        Window_provider window_provider = Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage_,logger),primary_stage_,logger);
 
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
@@ -246,7 +237,7 @@ public class Klikr_application extends Application
 
         if ( Feature_cache.get(Feature.Play_music))
         {
-            audio_player = new Audio_player(null,logger);
+            audio_player = new Audio_player_with_playlist(null,logger);
         }
 
         int count = 0;
@@ -271,5 +262,7 @@ public class Klikr_application extends Application
 
 
     }
+
+
 
 }

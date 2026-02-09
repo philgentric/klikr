@@ -40,7 +40,7 @@ public class Image_playlist_browser extends Abstract_browser
 
         init_abstract_browser(Window_type.Image_playlist_2D,shutdown_target, rectangle,this,"playlist");
 
-        logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAY LIST "+path_list_provider.get_name());
+        logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAY LIST "+path_list_provider.get_key());
 
     }
 
@@ -64,7 +64,7 @@ public class Image_playlist_browser extends Abstract_browser
     {
         logger.log("Image_playlist_browser.get_name() ID="+ID);
 
-        return path_list_provider.get_name();
+        return path_list_provider.get_key();
     }
 
     //**********************************************************
@@ -84,7 +84,7 @@ public class Image_playlist_browser extends Abstract_browser
     {
         logger.log("Image_playlist_browser.signature() ID="+ID);
 
-        return path_list_provider.get_name();
+        return path_list_provider.get_key();
     }
 
     //**********************************************************
@@ -103,7 +103,7 @@ public class Image_playlist_browser extends Abstract_browser
     {
         logger.log("Image_playlist_browser.set_title() ID="+ID);
 
-        my_Stage.the_Stage.setTitle("Image PLAY LIST (Not a folder): "+ path_list_provider.get_name());
+        my_Stage.the_Stage.setTitle("Image PLAY LIST (Not a folder): "+ path_list_provider.get_key());
     }
 
     //**********************************************************

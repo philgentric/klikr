@@ -218,7 +218,7 @@ application {
 
  tasks.register('audio_player', JavaExec) {
      dependsOn 'classes'
-     mainClass = 'klikr.audio.Audio_player_application'
+     mainClass = 'klikr.audio.old_player.Audio_player_application'
      classpath = sourceSets.main.runtimeClasspath
      group = 'applications'
      return

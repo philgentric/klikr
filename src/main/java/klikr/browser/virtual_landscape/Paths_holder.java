@@ -9,6 +9,7 @@ package klikr.browser.virtual_landscape;
 
 import javafx.stage.Window;
 import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.path_lists.Path_list_provider;
 import klikr.properties.Sort_files_by;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
@@ -58,7 +59,7 @@ public class Paths_holder
 
 
     //**********************************************************
-    void add_file(Path path, boolean show_icons_instead_of_text, Window owner)
+    void add_file(Path_list_provider path_list_provider, Path path, boolean show_icons_instead_of_text, Window owner)
     //**********************************************************
     {
         if ( !show_icons_instead_of_text )
@@ -112,7 +113,7 @@ public class Paths_holder
 
         if (Guess_file_type.is_this_extension_an_image(extension))
         {
-            if ( Sort_files_by.need_image_properties(path.getParent(),owner))
+            if ( Sort_files_by.need_image_properties(path_list_provider.get_key(),owner))
             {
                 if (dbg) logger.log("calling image properties cache prefill from path holder");
                 // calling this will pre-populate the property cache

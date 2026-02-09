@@ -11,11 +11,13 @@ import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 //**********************************************************
 public class Path_list_provider_for_file_system implements Path_list_provider
@@ -30,16 +32,21 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     //**********************************************************
     {
         this.folder_path = folder_path;
+        if( folder_path == null)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+        }
         this.logger = logger;
         this.owner = owner;
     }
 
     //**********************************************************
     @Override
-    public Path get_folder_path()
+    public Optional<Path> get_folder_path()
     //**********************************************************
     {
-        return folder_path;
+        if ( folder_path == null) return Optional.empty();
+        return Optional.of(folder_path);
     }
 
     //**********************************************************
@@ -199,7 +206,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public String get_name()
+    public String get_key()
     //**********************************************************
     {
         return folder_path.toAbsolutePath().toString();
@@ -218,10 +225,11 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Path resolve(String string)
+    public Optional<Path> resolve(String string)
     //**********************************************************
     {
-        return folder_path.resolve(string);
+        if (folder_path == null) return Optional.empty();
+        return Optional.of(folder_path.resolve(string));
     }
 
     @Override
@@ -272,8 +280,8 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public Move_provider get_move_provider()
     //**********************************************************
     {
-        return ( destination_dir, destination_is_trash, the_list, owner, x, y,aborter, logger) -> Moving_files.safe_move_files_or_dirs(
-                destination_dir,
+        return ( destination_folder, destination_is_trash, the_list, owner, x, y,aborter, logger) -> Moving_files.safe_move_files_or_dirs(
+                destination_folder,
                 destination_is_trash,
                 the_list,
                 owner, x, y,

@@ -12,26 +12,29 @@ import klikr.browser.classic.Browser;
 import klikr.browser.comparators.Last_access_comparator;
 import klikr.browser.virtual_landscape.Scroll_position_cache;
 import klikr.browser.virtual_landscape.Shutdown_target;
+import klikr.experimental.image_playlist.Image_playlist_browser;
 import klikr.in3D.Circle_3D;
 import klikr.path_lists.Path_list_provider;
+import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 //**********************************************************
-public class Instructions
+public class Window_builder
 //**********************************************************
 {
     private static final boolean dbg = false;
-    public final Window_type context_type;
+    public final Window_type window_type;
     public final Path_list_provider path_list_provider;
     public final Rectangle2D rectangle;
     public final Shutdown_target shutdown_target; // if null, there is no previous guy to shutdown
     public final Window owner;
 
     //**********************************************************
-    private Instructions(
-            Window_type context_type,
+    private Window_builder(
+            Window_type window_type,
             Path_list_provider path_list_provider,
             Rectangle2D rectangle,
             Shutdown_target shutdown_target,
@@ -39,7 +42,7 @@ public class Instructions
             Logger logger)
     //**********************************************************
     {
-        this.context_type = context_type;
+        this.window_type = window_type;
         this.rectangle = rectangle;
         this.shutdown_target = shutdown_target;
         this.owner = owner;
@@ -56,77 +59,78 @@ public class Instructions
 
 
     //**********************************************************
-    public static Window_provider additional_no_past(Window_type context_type, Path_list_provider path_list_provider, Window owner, Logger logger)
+    public static Window_provider additional_no_past(Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
     //**********************************************************
     {
-        Last_access_comparator.set_last_access(path_list_provider.get_folder_path(),logger);
-        Instructions context = new Instructions(
-                context_type,
+        Optional<Path> op = path_list_provider.get_folder_path();
+        op.ifPresent(path -> Last_access_comparator.set_last_access(path, logger));
+        Window_builder window_builder = new Window_builder(
+                window_type,
                 path_list_provider,
                 null,
                 null,
                 owner,
                 logger);
-        if ( dbg) logger.log(("\nadditional_no_past\n"+ context.to_string() ));
-        return get_one_new(context,logger);
+        if ( dbg) logger.log(("\nadditional_no_past\n"+ window_builder.to_string() ));
+        return get_one_new(window_builder,logger);
     }
 
     //**********************************************************
     public static void additional_same_folder(
-            Window_type context_type, Path_list_provider path_list_provider,
-            Path top_left,
+            Window_type window_type, Path_list_provider path_list_provider,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
         // make sure the new window is scrolled at the same position
-        Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_folder_path(),top_left);
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX()+100,originator.getY()+100,originator.getWidth()-100,originator.getHeight()-100);
 
-        Instructions context =  new Instructions(
-                context_type,
+        Window_builder window_builder =  new Window_builder(
+                window_type,
                 path_list_provider,
                 rectangle,
                 null,
                 originator,
                 logger);
-        if ( dbg) logger.log(("\nadditional_same_folder\n"+ context.to_string() ));
-        get_one_new(context,logger);
+        if ( dbg) logger.log(("\nadditional_same_folder\n"+ window_builder.to_string() ));
+        get_one_new(window_builder,logger);
     }
 
 
     //**********************************************************
     public static void additional_same_folder_fat_tall(
-            Window_type context_type, Path_list_provider path_list_provider,
-            Path top_left,
+            Window_type window_type, Path_list_provider path_list_provider,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        additional_same_folder_ratio(context_type,path_list_provider,5,top_left,originator ,logger);
+        additional_same_folder_ratio(window_type,path_list_provider,5,top_left,originator ,logger);
 
     }
     //**********************************************************
     public static void additional_same_folder_twin(
-            Window_type context_type, Path_list_provider path_list_provider,
-            Path top_left,
+            Window_type window_type, Path_list_provider path_list_provider,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        additional_same_folder_ratio(context_type,path_list_provider,2,top_left,originator,logger);
+        additional_same_folder_ratio(window_type,path_list_provider,2,top_left,originator,logger);
     }
     //**********************************************************
     public static void additional_same_folder_ratio(
-            Window_type context_type, Path_list_provider path_list_provider,
+            Window_type window_type, Path_list_provider path_list_provider,
             int ratio,
-            Path top_left,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_folder_path(),top_left);
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
 
         ObservableList<Screen> intersecting_screens = Screen.getScreensForRectangle(originator.getX(), originator.getY(), originator.getWidth(), originator.getHeight());
 
@@ -148,85 +152,93 @@ public class Instructions
         double w2 = s.getBounds().getWidth() * ratio_tall;
         rectangle = new Rectangle2D(rectangle.getMinX()+w_fat, rectangle.getMinY(), w2, h);
 
-        Instructions context = new Instructions(
-                context_type,
+        Window_builder window_builder = new Window_builder(
+                window_type,
                 path_list_provider,
                 rectangle,
                 null,
                 originator,
                 logger);
-        if (dbg) logger.log(("\nadditional_same_folder\n" + context.to_string()));
-        get_one_new(context,logger);
+        if (dbg) logger.log(("\nadditional_same_folder\n" + window_builder.to_string()));
+        get_one_new(window_builder,logger);
     }
 
 
     //**********************************************************
     public static void replace_same_folder(
             Shutdown_target shutdown_target,
-            Window_type context_type,
+            Window_type window_type,
             Path_list_provider path_list_provider,
-            Path top_left,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_folder_path(),top_left);
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
-        Instructions context =  new Instructions(
-                context_type,
+        Window_builder window_builder =  new Window_builder(
+                window_type,
                 path_list_provider,
                 rectangle,
                 shutdown_target,
                 originator,
                 logger);
-        if ( dbg) logger.log(("\nreplace_same_folder\n"+ context.to_string() ));
-        get_one_new(context,logger);
+        if ( dbg) logger.log(("\nreplace_same_folder\n"+ window_builder.to_string() ));
+        get_one_new(window_builder,logger);
     }
 
     //**********************************************************
     public static void replace_different_folder(
             Shutdown_target shutdown_target,
-            Window_type context_type, Path_list_provider path_list_provider,
+            Window_type window_type, Path_list_provider path_list_provider,
             Window originator,
             Logger logger)
     //**********************************************************
     {
+        Optional<Path> op = path_list_provider.get_folder_path();
+        op.ifPresent((Path folder_path)->
+                {
+                    if ( dbg)
+                        logger.log("replace_different_folder new path: " + folder_path.toAbsolutePath());
+                    Last_access_comparator.set_last_access(folder_path,logger);
+                });
 
-        Last_access_comparator.set_last_access(path_list_provider.get_folder_path(),logger);
-
-        if ( dbg)
-            logger.log("replace_different_folder new path: " + path_list_provider.get_folder_path().toAbsolutePath());
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
-        Instructions context =  new Instructions(
-                context_type,
+        Window_builder window_builder =  new Window_builder(
+                window_type,
                 path_list_provider,
                 rectangle,
                 shutdown_target,
                 originator,
                 logger);
         if ( dbg)
-            logger.log(("\nreplace_different_folder\n"+ context.to_string() ));
-        get_one_new(context,logger);
+            logger.log(("\nreplace_different_folder\n"+ window_builder.to_string() ));
+        get_one_new(window_builder,logger);
 
     }
 
     //**********************************************************
-    private static Window_provider get_one_new(Instructions context, Logger logger)
+    private static Window_provider get_one_new(Window_builder window_builder, Logger logger)
     //**********************************************************
     {
-        switch (context.context_type)
+        switch (window_builder.window_type)
         {
+            case Image_playlist_2D -> {
+                Path_list_provider_for_playlist pp = (Path_list_provider_for_playlist) window_builder.path_list_provider;
+                return new Image_playlist_browser(pp.the_playlist_file_path,window_builder.shutdown_target,null,null,logger);
+            }
+
             case File_system_2D -> {
-                return new Browser(context,logger);
+                return new Browser(window_builder,logger);
             }
             case File_system_3D ->
                     {
-                        return new Circle_3D(context,logger);
+                        return new Circle_3D(window_builder,logger);
                     }
             case Song_playlist_1D ->
                     {
-                        return new Song_playlist_browser(context,logger);
+                        return new Song_playlist_browser(window_builder,logger);
                     }
 
         }

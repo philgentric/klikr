@@ -8,7 +8,7 @@ import javafx.print.PrinterJob;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 import klikr.Window_type;
-import klikr.Instructions;
+import klikr.Window_builder;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.System_open_actor;
@@ -270,7 +270,7 @@ public class Menus_for_image_window
         return Menu_items.make_menu_item(button_text_key,null,
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-             Instructions.additional_no_past(
+             Window_builder.additional_no_past(
                      context_type,
                       new Path_list_provider_for_file_system(image_window.image_display_handler.get_image_context().get().path.getParent(), image_window.stage,image_window.logger),
                      image_window.stage,

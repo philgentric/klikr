@@ -24,11 +24,10 @@ import javafx.stage.Window;
 import klikr.experimental.deduplicate.manual.Againor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.audio.Audio_player_gradle_start;
+import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.items.Item_file_with_icon;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.files_and_paths.old_and_new.Command;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.files_and_paths.old_and_new.Status;
@@ -81,11 +80,9 @@ public class Stage_with_2_images
         this.aborter = private_aborter;
 
 		// there was an obscure bug with random order?
-		if ( Sort_files_by.get_sort_files_by(path_list_provider.get_folder_path(),owner) == Sort_files_by.RANDOM_ASPECT_RATIO)
-		{
-			Sort_files_by.set_sort_files_by(path_list_provider.get_folder_path(), Sort_files_by.FILE_NAME,owner,logger);
+		if (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner) == Sort_files_by.RANDOM_ASPECT_RATIO) {
+				Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, owner, logger);
 		}
-
 		logger.log("Stage_with_2_images !");
 
         this.againor = againor;

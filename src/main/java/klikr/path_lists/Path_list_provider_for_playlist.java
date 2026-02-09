@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 //**********************************************************
 public class Path_list_provider_for_playlist implements Path_list_provider
@@ -39,7 +40,8 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     Change change = new Change();
 
     //**********************************************************
-    public Path_list_provider_for_playlist(Path the_playlist_file_path, Window owner, Logger logger)
+    public Path_list_provider_for_playlist(
+            Path the_playlist_file_path, Window owner, Logger logger)
     //**********************************************************
     {
         this.logger = logger;
@@ -55,34 +57,27 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Path get_folder_path()
+    public Optional<Path> get_folder_path()
     //**********************************************************
     {
-        return the_playlist_file_path;
+        // does not have a meaning for a playlist
+        return  Optional.empty();
+        /*
+        if ( the_playlist_file_path == null)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL ERROR: the_playlist_file_path is null!"));
+        }
+        return Optional.of(the_playlist_file_path);*/
     }
 
 
     //**********************************************************
     @Override
-    public String get_name()
+    public String get_key()
     //**********************************************************
     {
         return the_playlist_file_path.toAbsolutePath().toString();
     }
-/*
-    //**********************************************************
-    @Override
-    public List<Path> get_all()
-    //**********************************************************
-    {
-        List<Path> returned = new ArrayList<>();
-        for ( String s : paths)
-        {
-            returned.add(Path.of(s));
-        }
-        return returned;
-    }
-*/
     //**********************************************************
     @Override
     public List<File> only_files(boolean consider_also_hidden_files)
@@ -210,10 +205,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     }
     //**********************************************************
     @Override
-    public Path resolve(String string)
+    public Optional<Path> resolve(String string)
     //**********************************************************
     {
-        return null;
+        return Optional.empty();
     }
 
 
@@ -242,7 +237,8 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public Move_provider get_move_provider()
     //**********************************************************
     {
-        return (destination_dir, destination_is_trash, the_list,owner, x, y,  aborter, logger) ->
+        return (destination, destination_is_trash,
+                the_list,owner, x, y,  aborter, logger) ->
         {
             for ( File f : the_list)
             {

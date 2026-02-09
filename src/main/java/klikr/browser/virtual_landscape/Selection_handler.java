@@ -293,7 +293,7 @@ public class Selection_handler
         for (Item i : items)
         {
             i.set_is_selected(); // show visible feedback to user AND add to list
-            if (Drag_and_drop.drag_and_drop_dbg) logger.log("extract_selected_files: "+i.get_item_path().toAbsolutePath());
+            if (Drag_and_drop.drag_and_drop_dbg) logger.log("extract_selected_files: "+i.get_string());
         }
         if (Drag_and_drop.drag_and_drop_dbg) logger.log("===================================");
 

@@ -2,6 +2,7 @@ package klikr.util.http;
 
 import com.sun.net.httpserver.HttpServer;
 import javafx.stage.Window;
+import klikr.Start_context;
 import klikr.properties.Non_booleans_properties;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Executor;
@@ -20,6 +21,8 @@ import java.util.function.Consumer;
 public class Klikr_communicator
 //**********************************************************
 {
+    public static Klikr_communicator instance;
+
     private static Path REGISTRY_DIR;
 
 
@@ -36,6 +39,22 @@ public class Klikr_communicator
     private Consumer<String> on_appearance_changed;
     private List<Runnable> on_started_received = new ArrayList<>();
     private Runnable on_play_received;
+
+
+    //**********************************************************
+    public static void build(Start_context context, Window owner, Logger logger)
+    //**********************************************************
+    {
+        if ( instance != null ) return;
+        Klikr_communicator klikr_communicator = new Klikr_communicator("Klikr",owner, logger);
+        klikr_communicator.start_as_multi_instance();
+        Integer reply_port = context.extract_reply_port();
+        if ( reply_port != null)
+        {
+            klikr_communicator.send_request(reply_port,"/started","POST","started");
+        }
+        instance = klikr_communicator;
+    }
 
     //**********************************************************
     public void set_on_play_received(Runnable on_play_received)

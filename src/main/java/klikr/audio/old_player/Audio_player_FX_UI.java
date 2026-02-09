@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.audio;
+package klikr.audio.old_player;
 //SOURCES ./Playlist.java
 
 //SOURCES ./Song.java
@@ -26,6 +26,9 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import klikr.audio.simple_player.Media_callbacks;
+import klikr.audio.simple_player.Media_instance;
+import klikr.audio.simple_player.Media_instance_statics;
 import klikr.properties.File_storage;
 import klikr.properties.String_constants;
 import klikr.util.External_application;

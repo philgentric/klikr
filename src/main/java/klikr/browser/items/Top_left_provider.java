@@ -4,7 +4,8 @@
 package klikr.browser.items;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 public interface Top_left_provider {
-    Path get_top_left();
+    Optional<Path> get_top_left();
 }

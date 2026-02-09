@@ -9,16 +9,15 @@ package klikr.browser.items;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Window;
+import klikr.audio.simple_player.Basic_audio_player;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.audio.Audio_player_gradle_start;
+import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.Drag_and_drop;
 import klikr.browser.Image_and_properties;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -118,18 +117,21 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         Drag_and_drop.init_drag_and_drop_sender_side(get_Node(),selection_handler,path,logger);
     }
 
+    //**********************************************************
     @Override
     void set_new_path(Path newPath) {
         path = newPath;
     }
+    //**********************************************************
 
+    //**********************************************************
     @Override
-    public Path get_item_path() {
-        return path;
+    public Optional<Path> get_item_path()
+    //**********************************************************
+    {
+        if (path == null) return Optional.empty();
+        return Optional.of(path);
     }
-
-    public ImageView get_image_view(){return null;}
-    public Pane get_pane(){return null;}
 
     //**********************************************************
     @Override // Item
@@ -174,14 +176,14 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
 
     //**********************************************************
-    public Path get_true_path()
+    public Optional<Path> get_true_path()
     //**********************************************************
     {
         return get_item_path();
     }
 
     @Override // Icon_destination
-    public Path get_path_for_display_icon_destination()
+    public Optional<Path> get_path_for_display_icon_destination()
     {
         logger.log("Item_button get_path_for_display_icon_destination DEEP !???");
         return get_path_for_display(true);
@@ -191,20 +193,28 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     // in the icon factory as
     //**********************************************************
     @Override // Item
-    public Path get_path_for_display(boolean try_deep)
+    public Optional<Path> get_path_for_display(boolean try_deep)
     //**********************************************************
     {
+        Optional<Path> optional_of_item_path = get_item_path();
+        if ( optional_of_item_path.isEmpty())
+        {
+            return Optional.empty();
+        }
         // for a file the displayed icon is built from the file itself, if supported:
-        if ( !get_item_path().toFile().isDirectory()) return get_item_path();
+        if ( !optional_of_item_path.get().toFile().isDirectory())
+        {
+            return get_item_path();
+        }
 
-        if ( !try_deep) return null;
+        if ( !try_deep) return Optional.empty();
 
         // for a folder we have 2 ways to provide an icon
         // 1) an image is taken from the folder and used as icon
         // 2) multiple images are taken from the folder to form an animated gif icon
 
         // try to find an icon for the folder
-        return get_an_image_down_in_the_tree_files(get_item_path());
+        return get_an_image_down_in_the_tree_files(optional_of_item_path.get());
         /*
         no recursive madness please!
         if ( returned != null) return returned;
@@ -218,7 +228,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
 
     //**********************************************************
-    Path get_an_image_down_in_the_tree_files(Path local_path)
+    Optional<Path> get_an_image_down_in_the_tree_files(Path local_path)
     //**********************************************************
     {
         if ( Files.isSymbolicLink(local_path)) return null;
@@ -227,12 +237,12 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         if ( files == null)
         {
             if ( dbg) logger.log("❗ WARNING: dir is access denied: "+local_path);
-            return null;
+            return Optional.empty();
         }
         if ( files.length == 0)
         {
             if ( dbg) logger.log("❗ dir is empty: "+local_path);
-            return null;
+            return Optional.empty();
         }
         Arrays.sort(files);
         List<File> images_in_folder = null;
@@ -251,7 +261,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             else
             {
                 // use the first image as icon
-                return f.toPath();
+                return Optional.of(f.toPath());
             }
         }
         if( make_animated_gif)
@@ -260,21 +270,21 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
             if ( images_in_folder.isEmpty())
             {
-                return null;
+                return Optional.empty();
             }
 
-            Path returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
+            Optional<Path> returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
                     owner,
                     new Path_list_provider_for_file_system(local_path,owner,logger),
                     path_comparator_source,
                     images_in_folder,
                     image_properties_cache,
                     aborter, logger);
-            if ( returned == null)
+            if ( returned.isEmpty())
             {
                 if (dbg) logger.log("❗ make_animated_gif_from_all_images_in_folder fails");
                 // use the first image as icon, if any
-                if (!images_in_folder.isEmpty()) return images_in_folder.get(0).toPath();
+                if (!images_in_folder.isEmpty()) return Optional.of(images_in_folder.get(0).toPath());
             }
             else
             {
@@ -283,7 +293,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             }
         }
 
-        return null; // no image found
+        return Optional.empty(); // no image found
     }
 
 
@@ -310,18 +320,24 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     private void button_for_a_non_image_file(String text, double width)
     //**********************************************************
     {
-
+        Optional<Path> optional_of_item_path = get_item_path();
+        if ( optional_of_item_path.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
         if ( Feature_cache.get(Feature.Show_single_column_with_details))
         {
             StringBuilder sb = new StringBuilder();
             try {
-                FileTime x = Files.readAttributes(get_item_path(), BasicFileAttributes.class).creationTime();
+
+                FileTime x = Files.readAttributes(optional_of_item_path.get(), BasicFileAttributes.class).creationTime();
                 LocalDateTime ldt = x.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                 sb.append(ldt.format(date_time_formatter));
                 sb.append("                 ");
-                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(get_item_path().toFile().length(),owner,logger));
+                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(optional_of_item_path.get().toFile().length(),owner,logger));
                 sb.append("                 ");
-                if (!get_item_path().toFile().canWrite())
+                if (!optional_of_item_path.get().toFile().canWrite())
                 {
                     sb.append("❗ Not Writable!                 ");
                 }
@@ -348,19 +364,19 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
         button.setOnAction(event -> {
 
-            logger.log("✅ ON ACTION " + get_item_path().toAbsolutePath());
+            logger.log("✅ ON ACTION " + optional_of_item_path.get().toAbsolutePath());
 
-            if ( Guess_file_type.is_this_path_a_text(get_item_path(),owner,logger))
+            if ( Guess_file_type.is_this_path_a_text(optional_of_item_path.get(),owner,logger))
             {
-                logger.log("✅ opening text: " + get_item_path().toAbsolutePath());
-                Text_frame.show(get_item_path(),logger);
+                logger.log("✅ opening text: " + optional_of_item_path.get().toAbsolutePath());
+                Text_frame.show(optional_of_item_path.get(),logger);
                 return;
             }
-            if ( Guess_file_type.is_this_path_an_audio_playlist(get_item_path(),owner,logger))
+            if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),owner,logger))
             {
-                logger.log("✅ opening audio playlist: " + get_item_path().toAbsolutePath());
+                logger.log("✅ opening audio playlist: " + optional_of_item_path.get().toAbsolutePath());
                 //UI_instance_holder.play_playlist(get_item_path().toFile(),logger);
-                Audio_player_gradle_start.play_play_list_in_separate_process(get_item_path().toFile(),logger);
+                Audio_player_gradle_start.play_play_list_in_separate_process(optional_of_item_path.get().toFile(),logger);
                 return;
             }
             /*
@@ -372,17 +388,21 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                     return;
                 }
             }*/
-            if ( Guess_file_type.is_this_path_a_music(get_item_path(),owner,logger))
+            if ( Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),owner,logger))
             {
-                if ( Guess_file_type.does_this_file_contain_an_audio_track(get_item_path(),owner,logger))
+                if ( Guess_file_type.does_this_file_contain_an_audio_track(optional_of_item_path.get(),owner,logger))
                 {
-                    logger.log("✅ Item_button, opening audio file: " + get_item_path().toAbsolutePath());
-                    Audio_player_gradle_start.play_song_in_separate_process(get_item_path().toFile(),logger);
+                    logger.log("✅ Item_button, opening audio file: " + optional_of_item_path.get().toAbsolutePath());
+
+                    Basic_audio_player bap = new Basic_audio_player(null,aborter,logger);
+                    bap.define_ui();
+                    bap.play_song(optional_of_item_path.get().toAbsolutePath().toString(),true);
+                    Audio_player_gradle_start.play_song_in_separate_process(optional_of_item_path.get().toFile(),logger);
                     return;
                 }
             }
-            logger.log("✅ asking the system to open: " + get_item_path().toAbsolutePath());
-            System_open_actor.open_with_system(get_item_path(), owner,aborter,logger);
+            logger.log("✅ asking the system to open: " + optional_of_item_path.get().toAbsolutePath());
+            System_open_actor.open_with_system(optional_of_item_path.get(), owner,aborter,logger);
         });
 
         give_a_menu_to_the_button(button,label);
@@ -550,10 +570,10 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
     //**********************************************************
     @Override
-    public Path is_parent_of()
+    public Optional<Path> is_parent_of()
     //**********************************************************
     {
-        return null;
+        return Optional.empty();
     }
 
     //**********************************************************
@@ -561,7 +581,14 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     public String get_string()
     //**********************************************************
     {
-        return "is file: " + get_item_path().toAbsolutePath();
+
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return "Item_file_no_icon no path ?" ;
+        }
+        return "Item_file_no_icon, file: " + op.get().toAbsolutePath();
     }
 
 

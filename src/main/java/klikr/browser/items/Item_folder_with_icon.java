@@ -39,10 +39,7 @@ import klikr.util.ui.Jfx_batch_injector;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 
 //**********************************************************
@@ -74,8 +71,6 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
             String text_,
             int column_width_,
             double height,
-            boolean is_trash_,
-            Path is_parent_of,
             Klikr_cache<Path, Image_properties> image_properties_cache,
             Shutdown_target shutdown_target,
             Path_list_provider path_list_provider,
@@ -92,8 +87,8 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
                 color,
                 text_,
                 height,
-                is_trash_,
-                is_parent_of,
+                false,
+                null,
                 image_properties_cache,
                 shutdown_target,
                 path_list_provider,
@@ -133,16 +128,18 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     public Iconifiable_item_type get_item_type() {
         return Iconifiable_item_type.folder;
     }
+
     //**********************************************************
     @Override
     void set_new_path(Path newPath)
     //**********************************************************
     {
+        logger.log(Stack_trace_getter.get_stack_trace(""));
     }
 
     //**********************************************************
     @Override
-    public Path get_item_path()
+    public Optional<Path> get_item_path()
     //**********************************************************
     {
         return path_list_provider.get_folder_path();
@@ -240,8 +237,13 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
             if (rotation == null)
             {
                 logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
-                Path local = get_path_for_display(false);
-                local_rot = Fast_rotation_from_exif_metadata_extractor.get_rotation(local, dbg, owner, aborter, logger).orElse(0.0);
+                Optional<Path> op = get_path_for_display(false);
+                if ( op.isEmpty())
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace(""));
+                    return;
+                }
+                local_rot = Fast_rotation_from_exif_metadata_extractor.get_rotation(op.get(), dbg, owner, aborter, logger).orElse(0.0);
                 the_image_pane.setRotate(local_rot);
             }
             else
@@ -254,7 +256,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
 
     //**********************************************************
     @Override // Icon_destination
-    public Path get_path_for_display_icon_destination()
+    public Optional<Path> get_path_for_display_icon_destination()
     //**********************************************************
     {
         return get_path_for_display(true);
@@ -263,7 +265,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     // this call is intended only from a working thread typically: in the icon factory 
     //**********************************************************
     @Override // Item
-    public Path get_path_for_display(boolean try_deep)
+    public Optional<Path> get_path_for_display(boolean try_deep)
     //**********************************************************
     {
         if ( !try_deep)
@@ -273,7 +275,13 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         }
 
         // try to find an icon for the folder
-        File dir = get_item_path().toFile();
+        Optional<Path> op = get_item_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return op;
+        }
+        File dir = op.get().toFile();
         File[] files = dir.listFiles();
         if ( files == null)
         {
@@ -298,7 +306,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
             {
                 if (Guess_file_type.is_this_path_a_animated_gif(f.toPath(), owner, aborter, logger))
                 {
-                    return f.toPath();
+                    return Optional.of(f.toPath());
                 }
                 continue; // ignore not animated gifs
             }
@@ -309,32 +317,32 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
             for (File folder : files) {
                 if (folder.isDirectory()) {
                     File[] files2 = folder.listFiles();
-                    if (files2 == null) return null;
+                    if (files2 == null) return Optional.empty();
                     Arrays.sort(files2);
                     for (File f2 : files2) {
                         if (f2.isDirectory()) continue; // ignore folders
                         if (!Guess_file_type.is_this_file_an_image(f2,owner,logger)) continue; // ignore non images
                         if (Guess_file_type.is_this_path_a_gif(f2.toPath(),owner,logger)) {
                             if (Guess_file_type.is_this_path_a_animated_gif(f2.toPath(), owner,aborter, logger)) {
-                                return f2.toPath();
+                                return Optional.of(f2.toPath());
                             }
                             continue; // ignore not animated gifs
                         }
-                        return f2.toPath();
+                        return Optional.of(f2.toPath());
                     }
                 }
             }
             create_label_for_sizes("...computing sizes...");
-            launch_disk_foot_print_thread(this, get_item_path(), aborter, owner, logger);
-            return null;
+            launch_disk_foot_print_thread(this, op.get(), aborter, owner, logger);
+            return Optional.empty();
         }
 
-        Path returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
+        Optional<Path> returned = Animated_gif_from_folder_content.make_animated_gif_from_images_in_folder(
                 owner,
-                new Path_list_provider_for_file_system(get_item_path(),owner,logger),
+                new Path_list_provider_for_file_system(op.get(),owner,logger),
                 path_comparator_source,
                 images_in_folder, image_properties_cache, aborter,logger);
-        if ( returned != null)
+        if ( returned.isPresent())
         {
             if (dbg) logger.log("✅ animated gif made");
             return returned;
@@ -342,12 +350,12 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         if (images_in_folder.isEmpty())
         {
             if (dbg) logger.log("✅ no images");
-            return null;
+            return Optional.empty();
         }
         else
         {
             if (dbg) logger.log("✅ picking first image");
-            return images_in_folder.get(0).toPath();
+            return Optional.of(images_in_folder.get(0).toPath());
         }
     }
 
@@ -363,27 +371,6 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         },logger);
     }
 
-    //**********************************************************
-    @Override // Item
-    public void set_is_unselected_internal()
-    {
-        Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
-    }
-
-    //**********************************************************
-    @Override // Item
-    public void set_is_selected_internal()
-    //**********************************************************
-    {
-        Look_and_feel_manager.give_button_a_selected_file_style(button,owner,logger);
-    }
-
-
-
-    @Override
-    public Node get_Node() {
-        return button;
-    }
 
     //**********************************************************
     @Override
@@ -391,14 +378,6 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     //**********************************************************
     {
         return false;
-    }
-
-    //**********************************************************
-    @Override
-    public Path is_parent_of()
-    //**********************************************************
-    {
-        return is_parent_of;
     }
 
 
@@ -427,7 +406,10 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     //**********************************************************
     {
         // only used for debug logging
-        return "Item_folder_with_icon for: " + get_item_path().toAbsolutePath();
+        if ( get_item_path().isPresent() ) {
+            return "Item_folder_with_icon for: " + get_item_path().get().toAbsolutePath();
+        }
+        return "Item_folder_with_icon: NO PATH for icon";
     }
 
 

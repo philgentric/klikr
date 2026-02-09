@@ -89,9 +89,13 @@ public class Finder_frame implements Search_receiver
 		this.path_comparator_source = path_comparator_source;
 		this.logger = logger;
 		this.look_only_for_images = look_only_for_images;
-		if ( !path_list_provider.get_folder_path().toFile().isDirectory())
-		{
-			logger.log(Stack_trace_getter.get_stack_trace("Not a directory: "+ path_list_provider.get_name()));
+		Optional<Path> op = path_list_provider.get_folder_path();
+		if( op.isPresent()) {
+			target_path = op.get();
+			if (!op.get().toFile().isDirectory())
+			{
+				logger.log(Stack_trace_getter.get_stack_trace("Not a directory: " + path_list_provider.get_key()));
+			}
 		}
 		stage = new Stage();
         stage.initOwner(owner);
@@ -172,7 +176,6 @@ public class Finder_frame implements Search_receiver
 	{
 		VBox settings_vbox = new VBox();
 		{
-			target_path = path_list_provider.get_folder_path();
 			Label target_folder_label = new Label(target_path.toAbsolutePath().toString());
 			settings_vbox.getChildren().add(target_folder_label);
 			Button up = new Button(My_I18n.get_I18n_string("Search_Parent_Folder", stage,logger));
