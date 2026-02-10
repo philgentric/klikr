@@ -5,6 +5,7 @@
 //SOURCES ./Registered_applications.java
 package klikr.util.execute;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.util.execute.actor.Aborter;
@@ -30,6 +31,7 @@ public class System_open_actor implements Actor
 
     //**********************************************************
     public static void open_with_system(
+            Application application,
             Path path,
             Window window,
             Aborter aborter,
@@ -38,7 +40,7 @@ public class System_open_actor implements Actor
     {
     Actor_engine.run(
             System_open_actor.get(),
-            new System_open_message(false, Klikr_application.application,window, path, aborter,logger),null,logger);
+            new System_open_message(false, application,window, path, aborter,logger),null,logger);
     }
 
 

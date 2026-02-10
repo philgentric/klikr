@@ -6,6 +6,7 @@
 //SOURCES ../../../audio/UI_instance_holder.java
 package klikr.util.ui;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
@@ -21,6 +22,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.audio.simple_player.Basic_audio_player;
 import klikr.experimental.deduplicate.manual.Againor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -59,9 +61,11 @@ public class Stage_with_2_images
 	VBox the_big_vbox;
 	Againor againor;
 	private final LongAdder count_deleted;
+	private final Application application;
 
 	//**********************************************************
 	public Stage_with_2_images(
+			Application application,
 			String title,
 			File_pair pair,
 			Againor againor,
@@ -74,6 +78,7 @@ public class Stage_with_2_images
 			)
 	//**********************************************************
 	{
+		this.application = application;
 		this.owner = owner;
         this.logger = logger;
         this.count_deleted = count_deleted;
@@ -196,11 +201,12 @@ public class Stage_with_2_images
 			{
 				if ( Guess_file_type.is_this_extension_an_audio(Extensions.get_extension(file.getName())))
 				{
-					Audio_player_gradle_start.play_song_in_separate_process(file,logger);
+					Basic_audio_player.get(null,aborter,logger);
+					Basic_audio_player.play_song(file.getAbsolutePath(),true);
 				}
 				else
 				{
-					System_open_actor.open_with_system(file.toPath(), owner, aborter, logger);
+					System_open_actor.open_with_system(application,file.toPath(), owner, aborter, logger);
 				}
             }
         });

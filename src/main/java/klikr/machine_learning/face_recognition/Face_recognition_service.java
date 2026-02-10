@@ -17,6 +17,7 @@
 
 package klikr.machine_learning.face_recognition;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -79,17 +80,19 @@ public class Face_recognition_service
     long last_report;
     private static final int MAX_THREADS = 50;
     Window owner;
+    Application application;
 
     //**********************************************************
-    private Face_recognition_service(String name, Window owner,Logger logger)
+    private Face_recognition_service(Application application, String name, Window owner, Logger logger)
     //**********************************************************
     {
+        this.application = application;
         face_recognizer_name = name;
         this.owner = owner;
         this.logger = logger;
         Path face_reco_folder = Static_files_and_paths_utilities.get_face_reco_folder(owner,logger);
         face_recognizer_path = Path.of(face_reco_folder.toAbsolutePath().toString(),face_recognizer_name);
-        Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(face_recognizer_path,owner,logger),owner,logger);
+        Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(face_recognizer_path,owner,logger),owner,logger);
 
         last_report = System.currentTimeMillis();
         recognition_stats = new Recognition_stats();
@@ -99,7 +102,7 @@ public class Face_recognition_service
 
 
     //**********************************************************
-    public static Face_recognition_service get_instance(Window owner,Logger logger)
+    public static Face_recognition_service get_instance(Application application,Window owner,Logger logger)
     //**********************************************************
     {
         if (instance == null)
@@ -108,7 +111,7 @@ public class Face_recognition_service
             {
                 if (instance == null)
                 {
-                    start_new(owner,logger);
+                    start_new(application,owner,logger);
                 }
             }
         }
@@ -116,12 +119,12 @@ public class Face_recognition_service
     }
 
     //**********************************************************
-    public static void start_new(Window owner, Logger logger)
+    public static void start_new(Application application, Window owner, Logger logger)
     //**********************************************************
     {
         Optional<String> localo = get_Face_recognition_model_name(owner,logger);
         if ( localo.isEmpty()) return;
-        instance = new Face_recognition_service(localo.get(), owner,logger);
+        instance = new Face_recognition_service(application,localo.get(), owner,logger);
         instance.load_internal();
     }
 
@@ -133,11 +136,11 @@ public class Face_recognition_service
     }
 
     //**********************************************************
-    public static void load(Window owner, Logger logger)
+    public static void load(Application application,Window owner, Logger logger)
     //**********************************************************
     {
         if ( instance != null) instance.load_internal();
-        else start_new(owner,logger);
+        else start_new(application,owner,logger);
     }
 
 
@@ -177,19 +180,19 @@ public class Face_recognition_service
     }
 
     //**********************************************************
-    public static void auto(Path displayed_folder_path, Window owner,Logger logger)
+    public static void auto(Application application,Path displayed_folder_path, Window owner,Logger logger)
     //**********************************************************
     {
-        Face_recognition_service fr = Face_recognition_service.get_instance(owner,logger);
+        Face_recognition_service fr = Face_recognition_service.get_instance(application,owner,logger);
         Actor_engine.execute(() -> fr.auto_internal(displayed_folder_path, logger), "face recognition auto",fr.logger);
     }
 
 
     //**********************************************************
-    public static void do_folder(Path folder, Window owner, Logger logger)
+    public static void do_folder(Application application,Path folder, Window owner, Logger logger)
     //**********************************************************
     {
-        Face_recognition_service fr = Face_recognition_service.get_instance(owner,logger);
+        Face_recognition_service fr = Face_recognition_service.get_instance(application,owner,logger);
         Actor_engine.execute(() -> fr.do_folder_internal(folder), "face recognition do 1 folder",logger);
     }
 
@@ -405,15 +408,16 @@ public class Face_recognition_service
         if (Platform.isFxApplicationThread())
         {
             logger.log("HAPPENS1 show_face_recognition_window");
-            show_Face_recognition_window_internal(size,face,eval_result,owner);
+            show_Face_recognition_window_internal(application,size,face,eval_result,owner);
         }
         else {
             int size2 = size;
-            Jfx_batch_injector.inject(()->show_Face_recognition_window_internal(size2,face,eval_result,owner),logger);
+            Jfx_batch_injector.inject(()->show_Face_recognition_window_internal(application,size2,face,eval_result,owner),logger);
         }
     }
     //**********************************************************
     public void show_Face_recognition_window_internal(
+            Application application,
             int size,
             Image face_image,
             Face_recognition_actor.Eval_results eval_result,
@@ -536,7 +540,7 @@ public class Face_recognition_service
                 Look_and_feel_manager.set_region_look(comboBox,stage,logger);
                 if (eval_result != null) comboBox.setDisable(!eval_result.adding());
 
-                comboBox.getItems().addAll(Face_recognition_service.get_instance(stage,logger).get_prototype_labels());
+                comboBox.getItems().addAll(Face_recognition_service.get_instance(application,stage,logger).get_prototype_labels());
                 if (eval_result != null) {
                     if (eval_result.label() != null) {
                         comboBox.setValue(eval_result.label());

@@ -1,5 +1,6 @@
 package klikr.util.ui;
 
+import javafx.application.Application;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.input.ContextMenuEvent;
@@ -41,8 +42,10 @@ public class Scrollable_text_field extends Region
     private final Logger logger;
     private final Path path;
     private final Aborter aborter;
+    private final Application application;
     //**********************************************************
     public Scrollable_text_field(
+            Application application,
             String text,
             Path path, // maybe null
             Button button,
@@ -51,6 +54,7 @@ public class Scrollable_text_field extends Region
             Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.logger = logger;
         this.path = path;
         this.aborter = aborter;
@@ -93,7 +97,7 @@ public class Scrollable_text_field extends Region
         if ( path == null) return;
         Menu_items.add_menu_item_for_context_menu("Open_With_System",null,
                 actionEvent -> {
-                    System_open_actor.open_with_system(path, owner,Shared_services.aborter(),logger);
+                    System_open_actor.open_with_system(application, path, owner,Shared_services.aborter(),logger);
                 },context_menu,owner,logger);
         Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application",null,
                 actionEvent -> {
@@ -112,7 +116,7 @@ public class Scrollable_text_field extends Region
                     (new KeyCodeCombination(KeyCode.N, KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
                         if (dbg) logger.log("Browse in new window!");
-                        Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
                     }, context_menu, owner, logger);
 
             if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name()))
@@ -121,7 +125,7 @@ public class Scrollable_text_field extends Region
                         "Browse_in_new_3D_window", null,
                         event4 -> {
                             if (dbg) logger.log("Browse in new window!");
-                            Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
+                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
                         }, context_menu, owner, logger);
             }
         }
@@ -132,7 +136,7 @@ public class Scrollable_text_field extends Region
                     (new KeyCodeCombination(KeyCode.N,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
                         if (dbg) logger.log("Browse in new window!");
-                        Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
                     }, context_menu, owner, logger);
 
             if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name())) {
@@ -140,7 +144,7 @@ public class Scrollable_text_field extends Region
                         "Browse_in_new_3D_window",null,
                         event4 -> {
                             if (dbg) logger.log("Browse in new window!");
-                            Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
+                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
                         }, context_menu, owner, logger);
             }
         }

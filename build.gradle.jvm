@@ -110,7 +110,7 @@ tasks.register('audio_player', JavaExec) {
 
 tasks.register('in3D', JavaExec) {
     dependsOn 'classes'
-    mainClass = 'klikr.in3D.The_main_circular_3'
+    mainClass = 'klikr.in3D.The_main_circular_3D'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return

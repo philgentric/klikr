@@ -48,7 +48,7 @@ public class Finder_message implements Message
     public String to_string()
     //**********************************************************
     {
-        return "Finder : "+search_config.path();
+        return "Finder : "+search_config.path_list_provider().get_key();
     }
 
     //**********************************************************

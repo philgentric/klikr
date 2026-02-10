@@ -224,7 +224,7 @@ public class Folder_chooser
             for (Path p : ds) {
                 try {
                     if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
-                        if (also_hidden || !Guess_file_type.should_ignore(p,owner,logger))
+                        if (also_hidden || !Guess_file_type.should_ignore(p,logger))
                         {
                             out.add(p);
                         }

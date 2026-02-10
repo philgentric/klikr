@@ -1,5 +1,6 @@
 package klikr.audio.old_player;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import klikr.util.Shared_services;
@@ -22,9 +23,10 @@ public class Audio_player_with_playlist
     private Stage stage;
     private Logger logger;
     Klikr_communicator klikr_communicator;
+    Application application;
 
     //**********************************************************
-    public Audio_player_with_playlist(Path path, Logger logger)
+    public Audio_player_with_playlist(Application application,Path path, Logger logger)
     //**********************************************************
     {
         this.logger = logger;
@@ -33,7 +35,7 @@ public class Audio_player_with_playlist
         klikr_communicator = new Klikr_communicator("Audio_player_with_playlist",stage,logger);
         if (klikr_communicator.start_as_singleton())
         {
-            init(false,path,stage,logger);
+            init(application,false,path,stage,logger);
         }
         else
         {
@@ -59,40 +61,41 @@ public class Audio_player_with_playlist
         Actor_engine.execute(r, "Redefining UI upon TCP message", logger);
     }
 
+    /*
     //**********************************************************
     public static void on_play(String received, Aborter aborter, Stage stage, Logger logger)
     //**********************************************************
     {
         long start = System.currentTimeMillis();
-        UI_instance_holder.play_this(received, start, false, stage,logger);
+        UI_instance_holder.play_this(application, received, start, false, stage,logger);
     }
-
+*/
 
 
 
 
     //**********************************************************
-    public static void init(boolean as_app,Path path, Stage stage, Logger logger)
+    public static void init(Application application,boolean as_app,Path path, Stage stage, Logger logger)
     //**********************************************************
     {
         logger.log("Audio_player_with_playlist starts");
         if ( as_app) {
-            System_info.print(stage,logger);
+            System_info.print(logger);
             String music = My_I18n.get_I18n_string(Look_and_feel_manager.MUSIC, stage, logger);
             Look_and_feel_manager.set_icon_for_main_window(stage, music, Look_and_feel_manager.Icon_type.MUSIC, stage, logger);
         }
 
-        UI_instance_holder.init_ui(Shared_services.aborter(), logger);
+        UI_instance_holder.init_ui(application, Shared_services.aborter(), logger);
         long start = System.currentTimeMillis();
         if (path == null)
         {
             logger.log("✅ Audio_player_with_playlist, NO audio file found in context");
-            UI_instance_holder.play_this(null, start,true,stage, logger);
+            UI_instance_holder.play_this(application,null, start,true,stage, logger);
         }
         else
         {
             logger.log("✅ Audio_player_with_playlist, opening audio file = " + path.toAbsolutePath());
-            UI_instance_holder.play_this(path.toAbsolutePath().toString(), start,true,stage, logger);
+            UI_instance_holder.play_this(application,path.toAbsolutePath().toString(), start,true,stage, logger);
         }
     }
 

@@ -7,6 +7,7 @@ package klikr.images;
 import javafx.print.PrinterJob;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
+import klikr.Klikr_application;
 import klikr.Window_type;
 import klikr.Window_builder;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -271,6 +272,7 @@ public class Menus_for_image_window
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
              Window_builder.additional_no_past(
+                     Klikr_application.application,
                      context_type,
                       new Path_list_provider_for_file_system(image_window.image_display_handler.get_image_context().get().path.getParent(), image_window.stage,image_window.logger),
                      image_window.stage,
@@ -289,7 +291,9 @@ public class Menus_for_image_window
         {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
             Path path = image_window.image_display_handler.get_image_context().get().path;
-            System_open_actor.open_with_system(path, image_window.stage,image_window.aborter, image_window.logger);
+            System_open_actor.open_with_system(
+                    Klikr_application.application,
+                    path, image_window.stage,image_window.aborter, image_window.logger);
         }, image_window.stage, image_window.logger);
     }
 
@@ -313,7 +317,7 @@ public class Menus_for_image_window
     //**********************************************************
     {
         if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-        Face_recognition_service recognition_services = Face_recognition_service.get_instance(image_window.stage, image_window.logger);
+        Face_recognition_service recognition_services = Face_recognition_service.get_instance(Klikr_application.application,image_window.stage, image_window.logger);
         if ( recognition_services == null) return;
 
         //AtomicInteger count_for_label = new AtomicInteger(0);// not used
@@ -338,7 +342,7 @@ public class Menus_for_image_window
     //**********************************************************
     {
         if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-        Face_recognition_service recognition_services = Face_recognition_service.get_instance(image_window.stage, image_window.logger);
+        Face_recognition_service recognition_services = Face_recognition_service.get_instance(Klikr_application.application,image_window.stage, image_window.logger);
         if (recognition_services == null) return;
 
         Face_recognition_actor actor = new Face_recognition_actor(recognition_services);
@@ -510,7 +514,7 @@ public class Menus_for_image_window
 
         if (image_window.image_display_handler.get_image_context().isPresent())
         {
-            if (Guess_file_type.is_this_path_a_gif(image_window.image_display_handler.get_image_context().get().path, image_window.stage, logger))
+            if (Guess_file_type.is_this_path_a_gif(image_window.image_display_handler.get_image_context().get().path, logger))
             {
                 context_menu.getItems().add(get_gif_repair_menu_item(true,image_window, image_window.image_display_handler, image_window.aborter));
                 context_menu.getItems().add(get_gif_repair_menu_item(false,image_window, image_window.image_display_handler, image_window.aborter));
@@ -520,7 +524,7 @@ public class Menus_for_image_window
         if (Booleans.get_boolean_defaults_to_false(Feature.Enable_alternate_image_scaling.name()))
         {
             Path p = image_window.image_display_handler.get_image_context().get().path;
-            if(!Guess_file_type.is_this_path_a_gif(p, image_window.stage, logger))
+            if(!Guess_file_type.is_this_path_a_gif(p, logger))
             {
                 // javafx Image for GIF does not support pixelReader
                 context_menu.getItems().add(get_rescaler_menu(image_window,logger));

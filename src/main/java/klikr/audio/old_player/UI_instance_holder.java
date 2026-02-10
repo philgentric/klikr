@@ -3,6 +3,7 @@
 
 package klikr.audio.old_player;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Window;
 import klikr.util.Shared_services;
@@ -25,10 +26,10 @@ public class UI_instance_holder
 
 
     //**********************************************************
-    public static void init_ui(Aborter aborter, Logger logger)
+    public static void init_ui(Application application, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        ui = new Audio_player_FX_UI(aborter, logger);
+        ui = new Audio_player_FX_UI(application, aborter, logger);
         define_ui();
     }
 
@@ -43,7 +44,7 @@ public class UI_instance_holder
 
 
     //**********************************************************
-    public static void play_this(String file, long start, boolean first_time, Window owner, Logger logger)
+    public static void play_this(Application application, String file, long start, boolean first_time, Window owner, Logger logger)
     //**********************************************************
     {
         if ( file == null)
@@ -53,28 +54,28 @@ public class UI_instance_holder
             return;
         }
 
-        if (Guess_file_type.is_this_path_a_music(Path.of(file),owner, logger))
+        if (Guess_file_type.is_this_path_a_music(Path.of(file), logger))
         {
             logger.log("audio player going to play song:"+file);
             play_this_song(file,start,first_time,logger);
             return;
         }
-        if (Guess_file_type.is_this_path_an_audio_playlist(Path.of(file),owner, logger))
+        if (Guess_file_type.is_this_path_an_audio_playlist(Path.of(file), logger))
         {
             logger.log("audio player going to play playlist:"+file);
-            play_playlist(new File(file),logger);
+            play_playlist(application,new File(file),logger);
             return;
         }
         logger.log("audio player ignoring this:"+file);
 
     }
     //**********************************************************
-    private static void play_playlist(File file, Logger logger)
+    private static void play_playlist(Application application, File file, Logger logger)
     //**********************************************************
     {
         if ( ui == null)
         {
-            init_ui(Shared_services.aborter(),logger);
+            init_ui(application, Shared_services.aborter(),logger);
         }
         ui.play_playlist_internal(file);
     }

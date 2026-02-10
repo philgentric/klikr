@@ -134,17 +134,17 @@ tasks.register('klikr', JavaExec) {
 }
 
 
-tasks.register('audio_player', JavaExec) {
+tasks.register('old_audio_player', JavaExec) {
     dependsOn 'classes'
-    mainClass = 'klikr.audio.Audio_player_application'
+    mainClass = 'klikr.audio.old_player.Audio_player_application'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return
 }
 
-tasks.register('song_playlist_app', JavaExec) {
+tasks.register('song_playlist_application', JavaExec) {
     dependsOn 'classes'
-    mainClass = 'klikr.audio.Song_playlist_app'
+    mainClass = 'klikr.audio.Song_playlist_application'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return
@@ -152,7 +152,7 @@ tasks.register('song_playlist_app', JavaExec) {
 
 tasks.register('simple_audio', JavaExec) {
     dependsOn 'classes'
-    mainClass = 'klikr.audio.new_player.Simple_audio_player_application'
+    mainClass = 'klikr.audio.simple_player.Simple_audio_player_application'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return

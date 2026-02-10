@@ -478,7 +478,7 @@ public class More_settings_stage
         dialog.setHeight(800);
         dialog.setTitle("Java VM max RAM length");
         dialog.setHeaderText("This is the max RAM that the java VM will be allowed to reserve THE NEXT TIME you run klik.");
-        int max = System_info.get_total_machine_RAM_in_GBytes(owner, logger).orElse(4);
+        int max = System_info.get_total_machine_RAM_in_GBytes(logger).orElse(4);
         dialog.setContentText("This machine RAM length is: "+max+ "GB.\nEnter JVM max RAM in GB: ");
         Node old = dialog.getDialogPane().getContent();
         Label lab = new Label(

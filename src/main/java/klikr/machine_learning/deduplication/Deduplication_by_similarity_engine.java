@@ -9,6 +9,7 @@
 
 package klikr.machine_learning.deduplication;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Klikr_cache;
@@ -60,9 +61,10 @@ public class Deduplication_by_similarity_engine implements Againor, Abortable
     private final double too_far_away;
     private final Path_list_provider path_list_provider;
     private final Path_comparator_source path_comparator_source;
-
+    private final Application application;
     //**********************************************************
     public Deduplication_by_similarity_engine(
+            Application application,
             boolean looking_for_images, // if false, we look for songs
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
@@ -74,6 +76,7 @@ public class Deduplication_by_similarity_engine implements Againor, Abortable
             Logger logger_)
     //**********************************************************
     {
+        this.application = application;
         this.looking_for_images = looking_for_images;
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
@@ -236,7 +239,7 @@ public class Deduplication_by_similarity_engine implements Againor, Abortable
         Againor local_againor = this;
         Jfx_batch_injector.inject(() -> {
             String similarity = ""+sim_file_pair.similarity();
-            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(similarity,sim_file_pair.file_pair(), local_againor, console_window.count_deleted, path_list_provider, path_comparator_source,private_aborter, owner, logger);
+            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(application,similarity,sim_file_pair.file_pair(), local_againor, console_window.count_deleted, path_list_provider, path_comparator_source,private_aborter, owner, logger);
             else stage_with_2_images.set_pair(similarity,sim_file_pair.file_pair(),path_list_provider, path_comparator_source, private_aborter);
         },logger);
     }
@@ -326,7 +329,7 @@ public class Deduplication_by_similarity_engine implements Againor, Abortable
         for (File f : files)
         {
             //if ( !Guess_file_type.is_this_a_song(f.toPath(),owner,logger)) continue; too expensive
-            if ( !Guess_file_type.is_this_path_a_music(f.toPath(),owner, logger)) continue;
+            if ( !Guess_file_type.is_this_path_a_music(f.toPath(), logger)) continue;
             File_with_a_few_bytes mf = new File_with_a_few_bytes(f,logger);
             returned.add(mf);
         }

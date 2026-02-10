@@ -4,6 +4,7 @@
 //SOURCES ./Disk_foot_print_receiver.java
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -63,6 +64,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
 
     //**********************************************************
     public Item_folder_with_icon(
+            Application application,
             Window owner,
             Scene scene,
             Selection_handler selection_handler,
@@ -81,6 +83,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     //**********************************************************
     {
         super(
+                application,
                 scene,
                 selection_handler,
                 icon_factory_actor,
@@ -302,7 +305,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         {
             if (f.isDirectory()) continue; // ignore folders
             if (!Guess_file_type.is_this_file_an_image(f,owner,logger)) continue; // ignore non images
-            if (Guess_file_type.is_this_path_a_gif(f.toPath(),owner,logger))
+            if (Guess_file_type.is_this_path_a_gif(f.toPath(),logger))
             {
                 if (Guess_file_type.is_this_path_a_animated_gif(f.toPath(), owner, aborter, logger))
                 {
@@ -322,7 +325,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
                     for (File f2 : files2) {
                         if (f2.isDirectory()) continue; // ignore folders
                         if (!Guess_file_type.is_this_file_an_image(f2,owner,logger)) continue; // ignore non images
-                        if (Guess_file_type.is_this_path_a_gif(f2.toPath(),owner,logger)) {
+                        if (Guess_file_type.is_this_path_a_gif(f2.toPath(),logger)) {
                             if (Guess_file_type.is_this_path_a_animated_gif(f2.toPath(), owner,aborter, logger)) {
                                 return Optional.of(f2.toPath());
                             }

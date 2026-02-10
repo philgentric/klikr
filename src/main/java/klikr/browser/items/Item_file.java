@@ -3,6 +3,7 @@
 
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
@@ -29,6 +30,7 @@ public abstract class Item_file extends Item
 
     //**********************************************************
     public Item_file(
+            Application application,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -41,7 +43,7 @@ public abstract class Item_file extends Item
             Logger logger)
     //**********************************************************
     {
-        super(scene, selection_handler, icon_factory_actor, color, path_list_provider, path_comparator_source, owner, aborter, logger);
+        super(application,scene, selection_handler, icon_factory_actor, color, path_list_provider, path_comparator_source, owner, aborter, logger);
         if ( path_ == null )
         {
             logger.log(Stack_trace_getter.get_stack_trace("path_ == null ???"));

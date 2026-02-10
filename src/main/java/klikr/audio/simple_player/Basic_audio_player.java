@@ -14,6 +14,7 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
@@ -25,6 +26,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import klikr.audio.old_player.UI_instance_holder;
+import klikr.change.Change_gang;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
 import klikr.properties.File_storage;
@@ -33,7 +35,6 @@ import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +42,8 @@ import java.util.List;
 public class Basic_audio_player implements Media_callbacks
 // **********************************************************
 {
+    static Basic_audio_player instance;
+
     private static final boolean dbg = false;
     private static final boolean ultra_dbg = false;
     static final boolean keyword_dbg = false;
@@ -49,7 +52,7 @@ public class Basic_audio_player implements Media_callbacks
     static final String AUDIO_PLAYER_EQUALIZER_BAND_ = "AUDIO_PLAYER_EQUALIZER_BAND_";
     static final String AUDIO_PLAYER_VOLUME = "AUDIO_PLAYER_VOLUME";
 
-    public static final int WIDTH = 500;
+    public static final int WIDTH = 800;
     public static final String AUDIO_PLAYER = "AUDIO_PLAYER";
     private static final String PAUSE = "Pause";
     private static final String PLAY = "Play";
@@ -67,6 +70,8 @@ public class Basic_audio_player implements Media_callbacks
     Label the_status_label;
     Button previous;
     Button next;
+    CheckBox auto_next_cb;
+    private volatile boolean auto_next = true;
 
     Logger logger;
     Aborter aborter;
@@ -77,13 +82,31 @@ public class Basic_audio_player implements Media_callbacks
 
     String pause_string;
     String play_string;
-    Navigator externor;
+    Navigator navigator; // may be null !
 
     // **********************************************************
-    public Basic_audio_player(Navigator externor, Aborter aborter, Logger logger)
+    public static Basic_audio_player get(Navigator navigator, Aborter aborter, Logger logger)
     // **********************************************************
     {
-        this.externor = externor;
+        if (instance == null)
+        {
+            synchronized (Change_gang.class)
+            {
+                if (instance == null)
+                {
+                    instance = new Basic_audio_player(navigator, aborter, logger);
+                    instance.define_ui();
+                }
+            }
+        }
+        return instance;
+    }
+
+    // **********************************************************
+    private Basic_audio_player(Navigator navigator, Aborter aborter, Logger logger)
+    // **********************************************************
+    {
+        this.navigator = navigator;
         this.aborter = aborter;
         this.logger = logger;
         stage = new Stage();
@@ -111,23 +134,38 @@ public class Basic_audio_player implements Media_callbacks
 
     }
 
-
     // **********************************************************
-    public void play_song(String new_song, boolean first_time)
+    public static void play_song(String new_song, boolean and_seek)
     // **********************************************************
     {
+        if (instance == null)
+        {
+            System.out.println("Error: Basic_audio_player instance is null");
+            return;
+        }
+        instance.play_song_internal(new_song,and_seek);
+    }
+
+    // **********************************************************
+    private void play_song_internal(String new_song, boolean and_seek)
+    // **********************************************************
+    {
+        logger.log("Basic_audio_player ->"+new_song+"<-");
         Media_instance_statics.stop();
 
-        String encoded = (new File(new_song)).toURI().toString();
 
-        Media_instance_statics.play_this(encoded, this, first_time, stage, logger);
+        Media_instance_statics.play_this(new_song, this, and_seek, stage, logger);
 
-        Platform.runLater(() -> play_pause_button.setText(pause_string));
+        Platform.runLater(() ->
+                {
+                    play_pause_button.setText(pause_string);
+                    stage.setTitle(new_song);
+                });
     }
 
 
     // **********************************************************
-    public void define_ui()
+    private void define_ui()
     // **********************************************************
     {
 
@@ -169,30 +207,35 @@ public class Basic_audio_player implements Media_callbacks
 
         previous = new Button(My_I18n.get_I18n_string("Jump_To_Previous_Song", stage, logger));
         Look_and_feel_manager.set_button_look(previous, true, stage, logger);
-        previous.setOnAction((ActionEvent e) -> externor.jump_to_previous());
+        previous.setOnAction((ActionEvent e) ->{
+            if ( navigator!=null) navigator.previous();
+        } );
         returned.getChildren().add(previous);
 
         next = new Button(My_I18n.get_I18n_string("Jump_To_Next_Song", stage, logger));
         Look_and_feel_manager.set_button_look(next, true, stage, logger);
-        next.setOnAction((ActionEvent e) -> externor.jump_to_next());
+        next.setOnAction((ActionEvent e) ->{
+            if ( navigator!=null) navigator.next();
+        } );
         returned.getChildren().add(next);
 
-        Button search = new Button(My_I18n.get_I18n_string("Search_For_A_Song", stage, logger) + " (press s or k)");
-        Look_and_feel_manager.set_button_look(search, true, stage, logger);
-        returned.getChildren().add(search);
-        search.setOnAction(actionEvent -> externor.search());
+        auto_next_cb = new CheckBox("Auto next");
+        auto_next_cb.setSelected(auto_next);
+        Look_and_feel_manager.set_region_look(auto_next_cb, stage, logger);
+        auto_next_cb.setOnAction((ActionEvent e) -> {
+            auto_next = auto_next_cb.isSelected();
+        });
+        returned.getChildren().add(auto_next_cb);
 
         return returned;
     }
 
     // **********************************************************
     private BorderPane define_bottom_pane(Pane top_pane)
-            //, ScrollPane scroll_pane)
     // **********************************************************
     {
         BorderPane returned = new BorderPane();
         returned.setTop(top_pane);
-        //returned.setCenter(scroll_pane);
 
         VBox the_status_bar = new VBox();
 
@@ -444,6 +487,7 @@ public class Basic_audio_player implements Media_callbacks
     // **********************************************************
     {
         save_current_time_in_song(0, null);
+        navigator.next();
     }
 
     // **********************************************************
@@ -614,19 +658,12 @@ public class Basic_audio_player implements Media_callbacks
         Platform.runLater(r);
     }
 
-
-
-
-
-
     // **********************************************************
     void handle_keyboard(final KeyEvent key_event, Logger logger)
     // **********************************************************
     {
         if (keyword_dbg)
             logger.log("Audio_player_FX_UI KeyEvent=" + key_event);
-
-
 
         switch (key_event.getCode()) {
             case F7:
@@ -651,7 +688,7 @@ public class Basic_audio_player implements Media_callbacks
             case RIGHT:
                 if (keyword_dbg)
                     logger.log("right");
-                externor.jump_to_next();
+                navigator.next();
                 break;
 
             case UP:
@@ -660,7 +697,7 @@ public class Basic_audio_player implements Media_callbacks
             case LEFT:
                 if (keyword_dbg)
                     logger.log("left");
-                externor.jump_to_previous();
+                navigator.previous();
                 break;
 
             default:
@@ -675,19 +712,7 @@ public class Basic_audio_player implements Media_callbacks
             return;
         }
 
-        switch (key_event.getText()) {
-            case "=" -> {
-                if (keyword_dbg)
-                    logger.log("=");
-                return;
-            }
-            case "s", "k" -> {
-                if (keyword_dbg)
-                    logger.log("s or k");
-                externor.search();
-                return;
-            }
-        }
+
 
         key_event.consume();
 
@@ -733,7 +758,9 @@ public class Basic_audio_player implements Media_callbacks
 
 
 
+    //**********************************************************
     public void die()
+    //**********************************************************
     {
         stage.close();
         Media_instance_statics.dispose();

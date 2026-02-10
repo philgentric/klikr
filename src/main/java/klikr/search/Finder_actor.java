@@ -4,6 +4,8 @@
 package klikr.search;
 
 import javafx.stage.Window;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.files_and_paths.Ding;
@@ -67,10 +69,15 @@ public class Finder_actor implements Actor
         }
         visited_files = 0;
         visited_folders =0;
-        logger.log("Finder::search() in folder: "+fm.search_config.path().toAbsolutePath());
+        logger.log("Finder::search() in folder: "+fm.search_config.path_list_provider().get_key());
         print_keywords(fm.search_config.keywords(),fm.extension);
 
-        fm.callback.has_ended(find_similar_files(fm));
+        if( fm.search_config.path_list_provider() instanceof Path_list_provider_for_file_system) {
+            fm.callback.has_ended(find_similar_files(fm));
+        }
+        else if( fm.search_config.path_list_provider() instanceof Path_list_provider_for_playlist) {
+            fm.callback.has_ended(find_similar_strings(fm));
+        }
         return "search done";
     }
 
@@ -81,15 +88,53 @@ public class Finder_actor implements Actor
     //**********************************************************
     {
         //logger.log("find_similar_files()");
-        Path dir = fm.search_config.path();
-        if ( !Files.isDirectory(fm.search_config.path()))
+        Path dir = fm.search_config.path_list_provider().get_folder_path().get();
+        if ( !Files.isDirectory(dir))
         {
-            dir = fm.search_config.path().getParent();
+            dir = dir.getParent();
         }
         start = System.currentTimeMillis();
         return extract_dir( dir, fm);
 
     }
+
+
+    //**********************************************************
+    private Search_status find_similar_strings(Finder_message fm)
+    //**********************************************************
+    {
+        start = System.currentTimeMillis();
+        if ( ultra_dbg) logger.log("finder find_similar_strings");
+        if ( fm.aborter.should_abort() )
+        {
+            if ( ultra_dbg) logger.log("finder abort");
+            return Search_status.interrupted;
+        }
+
+        List<Path> paths = fm.search_config.path_list_provider().only_song_paths(false);
+        for ( Path path : paths)
+        {
+            //logger.log("looking at:"+f.getAbsolutePath());
+            if ( fm.aborter.should_abort() )
+            {
+                if ( ultra_dbg) logger.log("finder abort");
+                return Search_status.interrupted;
+            }
+            check_if_name_matches_keywords(path, fm);
+            long now = System.currentTimeMillis();
+            if ( (now-start) > 300)
+            {
+                if ( fm.callback != null)
+                {
+                    fm.callback.on_the_fly_stats(null,new Search_statistics(visited_folders, visited_files,matched_keyword_counts));
+                    start = now;
+                }
+            }
+        }
+
+        return Search_status.done;
+    }
+
 
 
     //**********************************************************
@@ -108,7 +153,7 @@ public class Finder_actor implements Actor
         }
         if ( fm.search_config.ignore_hidden())
         {
-            if( Guess_file_type.should_ignore(dir,fm.owner,logger))
+            if( Guess_file_type.should_ignore(dir,logger))
             {
                 //if ( dbg)
                     logger.log("ignoring hidden folder:"+dir.toAbsolutePath());
@@ -170,7 +215,7 @@ public class Finder_actor implements Actor
                         boolean do_this_file = true;
                         if ( fm.search_config.ignore_hidden())
                         {
-                            if( Guess_file_type.should_ignore(path,owner,logger))
+                            if( Guess_file_type.should_ignore(path,logger))
                             {
                                 if ( dbg) logger.log("ignoring hidden file:"+path.toAbsolutePath());
                                 do_this_file = false;

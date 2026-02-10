@@ -9,6 +9,7 @@
 
 package klikr.search;
 
+import javafx.application.Application;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -50,7 +51,7 @@ public class Finder_frame implements Search_receiver
 	Logger logger;
 	private final Aborter aborter;
 
-	private Path target_path;
+	private Path target_folder_path;
 
 	final private Map<String, Keyword_slot> keyword_to_slot =  new HashMap<>(); // this is the textfield to report the number of matches
 	final Stage stage;
@@ -70,11 +71,12 @@ public class Finder_frame implements Search_receiver
 	private boolean new_keyword_textfield_is_red = false;
 	private final Path_list_provider path_list_provider;
 	private final Path_comparator_source path_comparator_source;
-
+	private final Application application;
     private Optional<Hourglass> hourglass;
 
 	//**********************************************************
 	public Finder_frame(
+			Application application,
 			List<String> input_keywords,
 			boolean look_only_for_images,
 			Path_list_provider path_list_provider,
@@ -84,6 +86,7 @@ public class Finder_frame implements Search_receiver
 			Logger logger)
 	//**********************************************************
 	{
+		this.application = application;
 		this.aborter = aborter;
 		this.path_list_provider = path_list_provider;
 		this.path_comparator_source = path_comparator_source;
@@ -91,11 +94,16 @@ public class Finder_frame implements Search_receiver
 		this.look_only_for_images = look_only_for_images;
 		Optional<Path> op = path_list_provider.get_folder_path();
 		if( op.isPresent()) {
-			target_path = op.get();
+			target_folder_path = op.get();
 			if (!op.get().toFile().isDirectory())
 			{
 				logger.log(Stack_trace_getter.get_stack_trace("Not a directory: " + path_list_provider.get_key()));
 			}
+		}
+		else
+		{
+			// this is a playlist !
+			target_folder_path = null;
 		}
 		stage = new Stage();
         stage.initOwner(owner);
@@ -176,23 +184,26 @@ public class Finder_frame implements Search_receiver
 	{
 		VBox settings_vbox = new VBox();
 		{
-			Label target_folder_label = new Label(target_path.toAbsolutePath().toString());
+			Label target_folder_label = new Label(path_list_provider.get_key());
 			settings_vbox.getChildren().add(target_folder_label);
-			Button up = new Button(My_I18n.get_I18n_string("Search_Parent_Folder", stage,logger));
-			Look_and_feel_manager.set_button_look(up,true,stage,logger);
 
-			settings_vbox.getChildren().add(up);
+			if ( target_folder_path != null)
+			{
+				Button up = new Button(My_I18n.get_I18n_string("Search_Parent_Folder", stage, logger));
+				Look_and_feel_manager.set_button_look(up, true, stage, logger);
 
-			up.setOnAction((ActionEvent e) -> {
-                session.stop_search();
-                Path parent = target_path.getParent();
-                if (parent != null)
-                {
-                    target_path = parent;
-                    target_folder_label.setText(target_path.toAbsolutePath().toString());
-                    start_search();
-                }
-            });
+				settings_vbox.getChildren().add(up);
+
+				up.setOnAction((ActionEvent e) -> {
+					session.stop_search();
+					Path parent = target_folder_path.getParent();
+					if (parent != null) {
+						target_folder_path = parent;
+						target_folder_label.setText(target_folder_path.toAbsolutePath().toString());
+						start_search();
+					}
+				});
+			}
 		}
 		{
 			CheckBox search_folder_names_cb = new CheckBox(My_I18n.get_I18n_string("Search_Folder_names", stage,logger));
@@ -490,7 +501,7 @@ public class Finder_frame implements Search_receiver
 
         hourglass = Progress_window.show("Searching",10*60*60,x,y,stage,logger);
 		List<String> keywords = new ArrayList<>(keyword_to_slot.keySet());
-        logger.log("Finder_frame::start_search() "+keywords+" in: "+target_path);
+        logger.log("Finder_frame::start_search() "+keywords+" in: "+ path_list_provider.get_key());
 
 		String local_extension = null;
 		if ( use_extension)
@@ -506,8 +517,9 @@ public class Finder_frame implements Search_receiver
 				}
 			}
 		}
-		Search_config search_config = new Search_config(target_path,keywords,look_only_for_images,local_extension, search_folders_names,search_files_names, ignore_hidden, check_case);
+		Search_config search_config = new Search_config(path_list_provider,keywords,look_only_for_images,local_extension, search_folders_names,search_files_names, ignore_hidden, check_case);
 		session = new Search_session(
+				application,
 				path_list_provider,
 				path_comparator_source,
 				search_config,

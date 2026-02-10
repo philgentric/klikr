@@ -4,6 +4,7 @@
 //SOURCES ../../util/ui/Text_frame_with_labels.java
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -62,6 +63,7 @@ public class Item_folder extends Item implements Icon_destination
 
     //**********************************************************
     public Item_folder(
+            Application application,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -81,6 +83,7 @@ public class Item_folder extends Item implements Icon_destination
     //**********************************************************
     {
         super(
+                application,
                 scene,
                 selection_handler,
                 icon_factory_actor,
@@ -412,6 +415,7 @@ public class Item_folder extends Item implements Icon_destination
             lop.ifPresent((Path tl)-> Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),tl.toAbsolutePath().normalize().toString()));
 
             Window_builder.replace_different_folder(
+                    application,
                     shutdown_target,
                     Window_type.File_system_2D,
                     new Path_list_provider_for_file_system(optional_of_item_path.get(),owner,logger),

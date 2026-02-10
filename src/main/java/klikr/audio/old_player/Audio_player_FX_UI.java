@@ -6,6 +6,7 @@ package klikr.audio.old_player;
 
 //SOURCES ./Song.java
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
@@ -104,13 +105,13 @@ public class Audio_player_FX_UI implements Media_callbacks
     private final Playlist playlist;
 
     // **********************************************************
-    Audio_player_FX_UI(Aborter aborter, Logger logger)
+    Audio_player_FX_UI(Application application, Aborter aborter, Logger logger)
     // **********************************************************
     {
         this.aborter = aborter;
         this.logger = logger;
         stage = new Stage();
-        this.playlist = new Playlist(this, aborter,stage, logger);
+        this.playlist = new Playlist(application,this, aborter,stage, logger);
 
         pause_string = My_I18n.get_I18n_string(PAUSE, stage, logger);
         play_string = My_I18n.get_I18n_string(PLAY, stage, logger);
@@ -940,12 +941,11 @@ public class Audio_player_FX_UI implements Media_callbacks
     }
 
     // **********************************************************
-    public void play_song_with_new_media_player(String new_song, boolean first_time)
+    public void play_song_with_new_media_player(String new_song, boolean and_seek)
     // **********************************************************
     {
-        String encoded = (new File(new_song)).toURI().toString();
 
-        Media_instance_statics.play_this(encoded, this, first_time, stage, logger);
+        Media_instance_statics.play_this(new_song, this, and_seek, stage, logger);
 
         Platform.runLater(() -> play_pause_button.setText(pause_string));
     }
@@ -974,21 +974,6 @@ public class Audio_player_FX_UI implements Media_callbacks
         Platform.runLater(r);
     }
 
-    /*
-     * //**********************************************************
-     * public void add_one_song(Song song)
-     * //**********************************************************
-     * {
-     * Runnable r = () ->
-     * {
-     * the_vertical_box.getChildren().add(song.node);
-     * the_vertical_box.requestLayout();
-     * //the_vertical_box.layout();
-     * //process_scroll(null); // Calculate visibility after layout
-     * };
-     * Platform.runLater(r);
-     * }
-     */
     // **********************************************************
     public void remove_song(Song song)
     // **********************************************************

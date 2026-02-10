@@ -4,6 +4,7 @@
 //SOURCES ./Finder_frame.java
 package klikr.search;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.virtual_landscape.Path_comparator_source;
@@ -18,6 +19,7 @@ public class Finder
 {
     //**********************************************************
     public static void find(
+            Application application,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
             List<String> keywords,
@@ -28,6 +30,7 @@ public class Finder
     //**********************************************************
     {
         Finder_frame popup = new Finder_frame(
+                application,
                     keywords,
                     search_only_images,
                     path_list_provider,

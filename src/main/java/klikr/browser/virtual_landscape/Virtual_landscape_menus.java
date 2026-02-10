@@ -18,6 +18,7 @@
 
 package klikr.browser.virtual_landscape;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -28,6 +29,9 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Window;
 import klikr.Window_builder;
+import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.Navigator;
+import klikr.audio.simple_player.Navigator_auto;
 import klikr.util.External_application;
 import klikr.Klikr_application;
 import klikr.Window_type;
@@ -246,7 +250,7 @@ public class Virtual_landscape_menus
     //**********************************************************
     {
         Optional<Path> top = virtual_landscape.path_list_provider.get_folder_path();
-        top.ifPresent(path -> Folders_with_large_images_locator.locate(path, 10, 200_000, owner, logger));
+        top.ifPresent(path -> Folders_with_large_images_locator.locate(virtual_landscape.application, path, 10, 200_000, owner, logger));
     }
 
     //**********************************************************
@@ -409,7 +413,7 @@ public class Virtual_landscape_menus
             else
             {
                 logger.log("✅ contact sheet generated : "+ CONTACT_SHEET_FILE_NAME);
-                System_open_actor.open_with_system(Path.of(op.get().toAbsolutePath().toString(), CONTACT_SHEET_FILE_NAME),owner,virtual_landscape.aborter,logger);
+                System_open_actor.open_with_system(virtual_landscape.application,Path.of(op.get().toAbsolutePath().toString(), CONTACT_SHEET_FILE_NAME),owner,virtual_landscape.aborter,logger);
 
                 Platform.runLater(() ->virtual_landscape.set_status("Contact sheet generated : "+ CONTACT_SHEET_FILE_NAME));
             }
@@ -541,7 +545,8 @@ public class Virtual_landscape_menus
                     else
                     {
                         logger.log("starting new audio player");
-                        Klikr_application.audio_player = new Audio_player_with_playlist(null, logger);
+                        Navigator navigator = new Navigator_auto(null, virtual_landscape.path_list_provider, logger);
+                        Klikr_application.audio_player = Basic_audio_player.get(navigator,virtual_landscape.aborter, logger);
                     }
                 }
                 else
@@ -605,7 +610,7 @@ public class Virtual_landscape_menus
                 event -> {
                     //logger.log("Deduplicate manually");
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
-                    op.ifPresent(folder_path -> (new Deduplication_by_similarity_engine(
+                    op.ifPresent(folder_path -> (new Deduplication_by_similarity_engine(virtual_landscape.application,
                             true,
                             virtual_landscape.path_list_provider,
                             virtual_landscape,
@@ -625,6 +630,7 @@ public class Virtual_landscape_menus
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
                     op.ifPresent(folder_path ->
                     (new Deduplication_by_similarity_engine(
+                            virtual_landscape.application,
                             true,
                             virtual_landscape.path_list_provider,
                             virtual_landscape,
@@ -655,7 +661,8 @@ public class Virtual_landscape_menus
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
                     op.ifPresent(folder_path ->
                             (new Deduplication_by_similarity_engine(
-                            false,
+                                    virtual_landscape.application,
+                                    false,
                             virtual_landscape.path_list_provider,
                             virtual_landscape,
                             too_far_away_song/10,
@@ -672,7 +679,8 @@ public class Virtual_landscape_menus
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
                     op.ifPresent(folder_path ->
                             (new Deduplication_by_similarity_engine(
-                            false,
+                                    virtual_landscape.application,
+                                    false,
                             virtual_landscape.path_list_provider,
                             virtual_landscape,
                             too_far_away_song,
@@ -739,13 +747,13 @@ public class Virtual_landscape_menus
                 event -> {
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
                     op.ifPresent(folder_path ->
-                            (new Deduplication_engine(owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).count(false));
+                            (new Deduplication_engine(virtual_landscape.application, owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).count(false));
                 },menu,owner,logger);
         Menu_items.add_menu_item_for_menu("Deduplicate_manual", null,event -> {
             //logger.log("Deduplicate manually");
             Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
             op.ifPresent(folder_path ->
-                    (new Deduplication_engine(owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).do_your_job(false));
+                    (new Deduplication_engine(virtual_landscape.application, owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).do_your_job(false));
         },menu,owner,logger);
 
 
@@ -757,7 +765,7 @@ public class Virtual_landscape_menus
 
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
                     op.ifPresent(folder_path ->
-                            (new Deduplication_engine(owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).do_your_job(true));
+                            (new Deduplication_engine(virtual_landscape.application, owner, folder_path.toFile(), virtual_landscape.path_list_provider,virtual_landscape,logger)).do_your_job(true));
                 },menu,owner,logger);
 
 
@@ -781,6 +789,7 @@ public class Virtual_landscape_menus
     {
         // we make a Item_button but are only interested in the button...
         Item_folder dummy = new Item_folder(
+                virtual_landscape.application,
                 virtual_landscape.the_Scene,
                 virtual_landscape.selection_handler,
                 virtual_landscape.icon_factory_actor,
@@ -840,7 +849,7 @@ public class Virtual_landscape_menus
         String key = "Add_all_images_to_face_recognition_training_set";
         MenuItem item = Menu_items.make_menu_item(key,null,
         event -> {
-            Face_recognition_service i = Face_recognition_service.get_instance(owner,logger);
+            Face_recognition_service i = Face_recognition_service.get_instance(virtual_landscape.application, owner,logger);
             logger.log("❌ NOT IMPLEMENTED add_all_pictures_to_training_set for "+virtual_landscape.path_list_provider.get_key());
 
         },owner,logger);
@@ -864,7 +873,7 @@ public class Virtual_landscape_menus
     {
         return Menu_items.make_menu_item(
                 "Load_Face_Recognition",null,
-                event -> Face_recognition_service.load(owner,logger),
+                event -> Face_recognition_service.load(virtual_landscape.application, owner,logger),
                 owner,logger);
 
     }
@@ -876,7 +885,7 @@ public class Virtual_landscape_menus
     {
         return Menu_items.make_menu_item(
                 "Start_New_Face_Recognition",null,
-                event -> Face_recognition_service.start_new(owner,logger),
+                event -> Face_recognition_service.start_new(virtual_landscape.application, owner,logger),
                 owner,logger);
     }
 
@@ -887,7 +896,7 @@ public class Virtual_landscape_menus
     {
         return Menu_items.make_menu_item(
                 "Auto_Face_Recognition",null,
-                event -> Face_recognition_service.auto(Path.of(virtual_landscape.path_list_provider.get_key()),owner,logger),
+                event -> Face_recognition_service.auto(virtual_landscape.application, Path.of(virtual_landscape.path_list_provider.get_key()),owner,logger),
                 owner,logger);
 
     }
@@ -901,7 +910,7 @@ public class Virtual_landscape_menus
 
         return Optional.of(Menu_items.make_menu_item(
                 "Do_Face_Recognition_On_Whole_Folder",null,
-                event -> Face_recognition_service.do_folder(op.get(),owner,logger),
+                event -> Face_recognition_service.do_folder(virtual_landscape.application, op.get(),owner,logger),
                 owner,logger));
 
     }
@@ -980,6 +989,7 @@ public class Virtual_landscape_menus
 
     //**********************************************************
     public static Menu make_history_menu(
+            Application application,
             Map<LocalDateTime,String> the_whole_history,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
@@ -992,23 +1002,24 @@ public class Virtual_landscape_menus
         Menu history_menu = new Menu(text);
         Look_and_feel_manager.set_menu_item_look(history_menu,owner, logger);
 
-        create_history_menu(the_whole_history,path_list_provider, top_left, shutdown_target, history_menu, context_type, owner,logger);
+        create_history_menu(application,the_whole_history,path_list_provider, top_left, shutdown_target, history_menu, context_type, owner,logger);
         return history_menu;
     }
 
     //**********************************************************
-    public static Menu make_bookmarks_menu(Path path, Optional<Path> top_left, Shutdown_target shutdown_target, Window_type context_type, Window owner, Logger logger)
+    public static Menu make_bookmarks_menu(Application application,Path path, Optional<Path> top_left, Shutdown_target shutdown_target, Window_type context_type, Window owner, Logger logger)
     //**********************************************************
     {
         String text = My_I18n.get_I18n_string("Bookmarks",owner,logger);
         Menu bookmarks_menu = new Menu(text);
         Look_and_feel_manager.set_menu_item_look(bookmarks_menu,owner, logger);
 
-        create_bookmarks_menu(bookmarks_menu, path, top_left, shutdown_target, context_type,owner,logger);
+        create_bookmarks_menu(application,bookmarks_menu, path, top_left, shutdown_target, context_type,owner,logger);
         return bookmarks_menu;
     }
     //**********************************************************
     public static Menu make_roots_menu(
+            Application application,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
             Shutdown_target shutdown_target,
@@ -1021,6 +1032,7 @@ public class Virtual_landscape_menus
         Look_and_feel_manager.set_menu_item_look(roots_menu,owner, logger);
 
         create_roots_menu(
+                application,
                 roots_menu,
                 path_list_provider,
                 top_left,
@@ -1046,7 +1058,8 @@ public class Virtual_landscape_menus
 
     //**********************************************************
     public static void create_history_menu(
-            Map<LocalDateTime,String> the_whole_history,
+            Application application,
+            Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
             Shutdown_target shutdown_target,
@@ -1060,7 +1073,7 @@ public class Virtual_landscape_menus
                     event -> {
                         logger.log("clearing history");
                         History_engine.get(owner).clear();
-                        Window_builder.replace_same_folder(shutdown_target, window_type,path_list_provider,top_left,owner,logger);
+                        Window_builder.replace_same_folder(application, shutdown_target, window_type,path_list_provider,top_left,owner,logger);
                     },history_menu,owner,logger);
 
 
@@ -1102,7 +1115,7 @@ public class Virtual_landscape_menus
                 {
                     Path path = Path.of(hi.value);
                     Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(), path.toAbsolutePath().normalize().toString());
-                    Window_builder.replace_different_folder( shutdown_target, window_type,new Path_list_provider_for_file_system(path,owner,logger), owner,logger);
+                    Window_builder.replace_different_folder(application, shutdown_target, window_type,new Path_list_provider_for_file_system(path,owner,logger), owner,logger);
                 });
                 path_already_done.put(hi.value,hi);
                 history_menu.getItems().add(item);
@@ -1118,6 +1131,7 @@ public class Virtual_landscape_menus
 
                     history_menu.getItems().add(more);
                     more.setOnAction(actionEvent -> pop_up_whole_history(
+                            application,
                             the_whole_history,
                              path_list_provider,
                              top_left,
@@ -1142,6 +1156,7 @@ public class Virtual_landscape_menus
 
     //**********************************************************
     private static void pop_up_whole_history(
+            Application application,
             Map<LocalDateTime,String> the_whole_history,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
@@ -1153,7 +1168,7 @@ public class Virtual_landscape_menus
         Active_list_stage_action action = text -> {
             top_left.ifPresent((Path top_left_path)->
                 Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_path.toAbsolutePath().normalize().toString()));
-            Window_builder.replace_different_folder( shutdown_target, window_type, new Path_list_provider_for_file_system(Path.of(text),owner,logger), owner, logger);
+            Window_builder.replace_different_folder(application, shutdown_target, window_type, new Path_list_provider_for_file_system(Path.of(text),owner,logger), owner, logger);
         };
         Datetime_to_signature_source source = new Datetime_to_signature_source() {
             @Override
@@ -1166,6 +1181,7 @@ public class Virtual_landscape_menus
 
     //**********************************************************
     public static void create_bookmarks_menu(
+            Application application,
             Menu bookmarks_menu,
             Path path,
             Optional<Path> top_left,
@@ -1191,7 +1207,7 @@ public class Virtual_landscape_menus
             item.setOnAction(event -> {
                 top_left.ifPresent((Path top_left_path)->
                         Scroll_position_cache.scroll_position_cache_write(path.toAbsolutePath().normalize().toString(),top_left_path.toAbsolutePath().normalize().toString()));
-                Window_builder.replace_different_folder( shutdown_target, context_type, new Path_list_provider_for_file_system(Path.of(hi),owner,logger), owner,logger);
+                Window_builder.replace_different_folder(application, shutdown_target, context_type, new Path_list_provider_for_file_system(Path.of(hi),owner,logger), owner,logger);
             });
             bookmarks_menu.getItems().add(item);
 
@@ -1221,6 +1237,7 @@ public class Virtual_landscape_menus
 
     //**********************************************************
     public static void create_roots_menu(
+            Application application,
             Menu roots_menu,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
@@ -1238,7 +1255,7 @@ public class Virtual_landscape_menus
             item.setOnAction(event -> {
                 top_left.ifPresent((Path top_left_path)->
                         Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_path.toAbsolutePath().normalize().toString()));
-                Window_builder.replace_different_folder( shutdown_target,window_type, new Path_list_provider_for_file_system(f.toPath(),owner,logger),owner,logger);
+                Window_builder.replace_different_folder(application, shutdown_target,window_type, new Path_list_provider_for_file_system(f.toPath(),owner,logger),owner,logger);
             });
             roots_menu.getItems().add(item);
         }
@@ -1583,7 +1600,7 @@ public class Virtual_landscape_menus
                 {
                     Sort_files_by.set_sort_files_by(virtual_landscape.path_list_provider.get_key(),sort_by,owner,logger);
                     logger.log("new file/image sorting order= "+sort_by);
-                    Window_builder.replace_same_folder(virtual_landscape.shutdown_target, Window_type.File_system_2D, virtual_landscape.path_list_provider, virtual_landscape.get_top_left(), owner, logger);
+                    Window_builder.replace_same_folder(virtual_landscape.application,virtual_landscape.shutdown_target, Window_type.File_system_2D, virtual_landscape.path_list_provider, virtual_landscape.get_top_left(), owner, logger);
                 }
             }
         });

@@ -37,7 +37,7 @@ public class Audio_player_application extends Application
         klikr_communicator = new Klikr_communicator("Audio_player_app",stage_,logger);
         if (klikr_communicator.start_as_singleton())
         {
-            Audio_player_with_playlist.init(true,context.extract_path(),stage_,logger);
+            Audio_player_with_playlist.init(this,true,context.extract_path(),stage_,logger);
             if ( reply_port != null) klikr_communicator.send_request(reply_port,"/started","POST","started");
             Consumer<String> on_appearance_changed = new Consumer<String>() {
                 @Override

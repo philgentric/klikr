@@ -177,7 +177,7 @@ public class Installers
             String cmd = app.get_command_string_to_install(owner, logger);
             if (cmd == null) continue;
             boolean dbg = Feature_cache.get(Feature.Enable_install_debug);
-            Script_executor.execute(List.of(cmd),Path.of("."), dbg,owner, logger);
+            Script_executor.execute(List.of(cmd),Path.of("."), dbg, logger);
         }
     }
 

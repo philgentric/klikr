@@ -162,7 +162,7 @@ public class Image_playlist_app extends Application
             System.exit(0);
         });
 
-        System_info.print(primary_stage,logger);
+        System_info.print(logger);
 
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
@@ -192,7 +192,7 @@ public class Image_playlist_app extends Application
 
         Klikr_communicator.build(context,primary_stage_,logger);
 
-        Window_builder.additional_no_past(Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,logger),primary_stage_,logger);
+        Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,logger),primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()->primary_stage, logger).start();
 
 

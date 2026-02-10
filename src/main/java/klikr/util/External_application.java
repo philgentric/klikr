@@ -45,7 +45,7 @@ public enum External_application
             boolean enable_install_debug = Feature_cache.get(Feature.Enable_install_debug);
             String line = get_command_string_to_install(owner,logger);
             if ( line == null) return;
-            Script_executor.execute(List.of(line),Path.of("."),enable_install_debug, owner,logger);
+            Script_executor.execute(List.of(line),Path.of("."),enable_install_debug,logger);
         };
 
         return Items_with_explanation.make_hbox_with_button_and_explanation(
@@ -64,7 +64,7 @@ public enum External_application
     public String get_command_string_to_install(Window owner, Logger logger)
     //**********************************************************
     {
-        switch(Guess_OS.guess(owner, logger))
+        switch(Guess_OS.guess(logger))
         {
             case MacOS -> {return get_macOS_install_command();}
             case Linux -> {return get_Linux_install_command(owner,logger);}
@@ -176,7 +176,7 @@ public enum External_application
     public String get_command(Window owner, Logger logger)
     //**********************************************************
     {
-        switch(Guess_OS.guess(owner, logger))
+        switch(Guess_OS.guess(logger))
         {
             case MacOS -> {return get_macOS_command();}
             case Linux -> {return get_Linux_command(owner,logger);}

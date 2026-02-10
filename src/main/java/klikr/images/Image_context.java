@@ -13,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.Klikr_application;
 import klikr.properties.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -230,7 +231,7 @@ public class Image_context
         logger.log("asking desktop to open: " + path.getFileName());
         //try
         {
-            System_open_actor.open_with_system(path, owner,new Aborter("dummy",logger), logger);
+            System_open_actor.open_with_system(Klikr_application.application,path, owner,new Aborter("dummy",logger), logger);
 
             //Desktop desktop = Desktop.getDesktop();
             //desktop.edit(path.toFile());
@@ -391,6 +392,7 @@ public class Image_context
         logger.log("--------------------------------");
 
         Finder.find(
+                Klikr_application.application,
                 path_list_provider,
                 path_comparator_source,
                 keywords,true,aborter,owner,logger);
@@ -453,6 +455,7 @@ public class Image_context
                     }
 
                     Finder.find(
+                            Klikr_application.application,
                             path_list_provider,
                             path_comparator_source,
                             keywords,search_only_for_images,aborter,owner,logger);

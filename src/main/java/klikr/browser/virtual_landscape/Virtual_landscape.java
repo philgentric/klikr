@@ -17,6 +17,7 @@
 
 package klikr.browser.virtual_landscape;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.*;
@@ -35,6 +36,9 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
+import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.Navigator;
+import klikr.audio.simple_player.Navigator_auto;
 import klikr.browser.icons.image_properties_cache.Rotation;
 import klikr.change.bookmarks.Bookmarks;
 import klikr.change.history.History_engine;
@@ -128,6 +132,7 @@ public class Virtual_landscape
     private Landscape_height_listener landscape_height_listener;
     private Scroll_to_listener scroll_to_listener;
     final Paths_holder paths_holder;
+    final Application application;
 
     // otherwise there are 2 sorted lists
     public Comparator<Path> image_file_comparator;
@@ -181,6 +186,7 @@ public class Virtual_landscape
 
     //**********************************************************
     public Virtual_landscape(
+            Application application,
             Window_type context_type,
             Path_list_provider path_list_provider,
             Window owner,
@@ -193,6 +199,7 @@ public class Virtual_landscape
             Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.context_type = context_type;
         this.background_provider = background_provider;
         this.full_screen_handler = full_screen_handler;
@@ -207,6 +214,12 @@ public class Virtual_landscape
         Feature_cache.register_for_all(this);
         Feature_cache.string_register_for(String_constants.LANGUAGE_KEY, this);
         Feature_cache.string_register_for(String_constants.STYLE_KEY, this);
+
+        if ( Feature_cache.get(Feature.Play_music))
+        {
+            Navigator navigator = new Navigator_auto(null, path_list_provider, logger);
+            Klikr_application.audio_player = Basic_audio_player.get(navigator,aborter, logger);
+        }
 
         the_Pane = new Pane();
 
@@ -253,10 +266,10 @@ public class Virtual_landscape
         Optional<Path> top_left = get_top_left();
         if (key.equals(String_constants.LANGUAGE_KEY))
         {
-            Window_builder.replace_same_folder(shutdown_target, context_type, path_list_provider, top_left, owner,
+            Window_builder.replace_same_folder(application,shutdown_target, context_type, path_list_provider, top_left, owner,
                     logger);
         } else if (key.equals(String_constants.STYLE_KEY)) {
-            Window_builder.replace_same_folder(shutdown_target, context_type, path_list_provider, top_left, owner,
+            Window_builder.replace_same_folder(application,shutdown_target, context_type, path_list_provider, top_left, owner,
                     logger);
         }
     }
@@ -431,7 +444,7 @@ public class Virtual_landscape
             new_twin_window = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(new_twin_window, () -> {
                 if (Browser.kbd_dbg) logger.log("character is ctrl or meta N = clone");
-                Window_builder.additional_same_folder_twin(context_type, path_list_provider, get_top_left(), owner, logger);
+                Window_builder.additional_same_folder_twin(application,context_type, path_list_provider, get_top_left(), owner, logger);
             });
         }
 
@@ -952,6 +965,7 @@ public class Virtual_landscape
                 getting_image_properties_from_cache += System.currentTimeMillis() - local_incr;
 
                 Item item = new Item_file_with_icon(
+                        application,
                         the_Scene,
                         selection_handler,
                         icon_factory_actor,
@@ -1213,15 +1227,17 @@ public class Virtual_landscape
                     logger.log("✅ Virtual_landscape process_non_iconized_files " + path.toAbsolutePath());
                 String text = path.getFileName().toString();
                 long size = path.toFile().length() / 1000_000L;
-                if (Guess_file_type.is_this_path_a_video(path, owner, logger))
+                if (Guess_file_type.is_this_path_a_video(path, logger))
                     text = size + "MB VIDEO: " + text;
                 Item item = all_items_map.get(path);
                 if (item == null) {
                     // logger.log("Item_file_no_icon (3) path="+path);
 
                     item = new Item_file_no_icon(
+                            application,
                             the_Scene,
                             selection_handler,
+                            this,
                             icon_factory_actor,
                             null,
                             text,
@@ -1361,6 +1377,7 @@ public class Virtual_landscape
                     logger.log("✅ WARNING:Item_folder_with_icon NO path for" + folder_path);
 
                 folder_item = new Item_folder_with_icon(
+                        application,
                         owner,
                         the_Scene,
                         selection_handler,
@@ -1427,6 +1444,7 @@ public class Virtual_landscape
                 }
 
                 folder_item = new Item_folder(
+                        application,
                         the_Scene,
                         selection_handler,
                         icon_factory_actor,
@@ -2094,7 +2112,7 @@ public class Virtual_landscape
              * returned.setBottom(the_status_bar);
              */
 
-            scrollable_text_field = new Scrollable_text_field(get_status(), null,null,owner, aborter,logger);
+            scrollable_text_field = new Scrollable_text_field(application,get_status(), null,null,owner, aborter,logger);
             the_status_bar.getChildren().add(scrollable_text_field);
             returned.setBottom(the_status_bar);
 
@@ -2139,6 +2157,7 @@ public class Virtual_landscape
     {
         {
             Button undo_bookmark_history_button = make_button_undo_and_bookmark_and_history(
+                    application,
                     the_whole_history,
                     path_list_provider,
                     top_left,
@@ -2195,6 +2214,7 @@ public class Virtual_landscape
         if (back_string == null) return;
         logger.log("BACK");
         Window_builder.replace_same_folder(
+                application,
                 shutdown_target,
                 Window_type.File_system_2D,
                 new Path_list_provider_for_file_system(Path.of(back_string), owner, logger), top_left, owner, logger);
@@ -2202,6 +2222,7 @@ public class Virtual_landscape
 
     //**********************************************************
     public static Button make_button_undo_and_bookmark_and_history(
+            Application application,
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
@@ -2215,6 +2236,7 @@ public class Virtual_landscape
         undo_bookmark_history += " & " + My_I18n.get_I18n_string("History", owner, logger);
         Button undo_bookmark_history_button = new Button(undo_bookmark_history);
         undo_bookmark_history_button.setOnAction(e -> button_undo_and_bookmark_and_history(
+                application,
                 e,
                 the_whole_history,
                 path_list_provider,
@@ -2229,6 +2251,7 @@ public class Virtual_landscape
 
     //**********************************************************
     private static void button_undo_and_bookmark_and_history(
+            Application application,
             ActionEvent e,
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
@@ -2237,6 +2260,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         ContextMenu undo_and_bookmark_and_history = define_contextmenu_undo_bookmark_history(
+                application,
                 the_whole_history,
                 path_list_provider,
                 top_left,
@@ -2298,6 +2322,7 @@ public class Virtual_landscape
 
     //**********************************************************
     private static ContextMenu define_contextmenu_undo_bookmark_history(
+            Application application,
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
             Optional<Path> top_left,
@@ -2311,8 +2336,9 @@ public class Virtual_landscape
 
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_undos_menu(owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_bookmarks_menu(
-                Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
+                application, Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
+                application,
                 the_whole_history,
                 path_list_provider,
                 top_left,
@@ -2320,6 +2346,7 @@ public class Virtual_landscape
                 window_type,
                 owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_roots_menu(
+                application,
                 path_list_provider,
                 top_left,
                 shutdown_target,
@@ -2337,12 +2364,18 @@ public class Virtual_landscape
 
         // Rectangle2D rectangle = new
         // Rectangle2D(owner.getX(),owner.getY(),owner.getWidth(),owner.getHeight());
-        Menu_items.add_menu_item_for_context_menu("New_Window", null,event -> Window_builder.additional_same_folder(context_type,
+        Menu_items.add_menu_item_for_context_menu("New_Window", null,event -> Window_builder.additional_same_folder(
+                application,
+                context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),event -> Window_builder.additional_same_folder_twin(context_type,
+        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),event -> Window_builder.additional_same_folder_twin(
+                application,
+                context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
         Menu_items.add_menu_item_for_context_menu("New_Double_Window", null,event -> Window_builder
-                .additional_same_folder_fat_tall(context_type, path_list_provider, get_top_left(), owner, logger),
+                .additional_same_folder_fat_tall(
+                        application,
+                        context_type, path_list_provider, get_top_left(), owner, logger),
                 context_menu, owner, logger);
 
         {
@@ -2497,7 +2530,9 @@ public class Virtual_landscape
     public void update(Feature feature, boolean new_val)
     //**********************************************************
     {
-        redraw_fx("the Feature ->" + feature + "<- has new value:" + new_val, true);
+        String text = "the Feature ->" + feature + "<- has new value:" + new_val;
+        if ( feature == null) text = "refresh";
+        redraw_fx(text, true);
     }
 
     //**********************************************************

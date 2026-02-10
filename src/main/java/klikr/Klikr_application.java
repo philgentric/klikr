@@ -109,6 +109,9 @@ package klikr;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import klikr.audio.old_player.Audio_player_with_playlist;
+import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.Navigator;
+import klikr.audio.simple_player.Navigator_auto;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -137,7 +140,7 @@ public class Klikr_application extends Application
 {
 
     public static Application application;
-    public static Audio_player_with_playlist audio_player;
+    public static Basic_audio_player audio_player;
     public static long start_time; // used to compute the time since the application started
     private final static String name = "Klik_application";
     public static Stage primary_stage;
@@ -168,7 +171,7 @@ public class Klikr_application extends Application
             Check_remaining_RAM.low_memory.set(true);
         }
 
-        if (Guess_OS.guess(primary_stage_,logger) == Operating_system.Windows)
+        if (Guess_OS.guess(logger) == Operating_system.Windows)
         {
             System.setProperty("java.net.debug", "all");
             System.setProperty("java.net.preferIPv4Stack", "true");
@@ -197,7 +200,7 @@ public class Klikr_application extends Application
             System.exit(0);
         });
 
-        System_info.print(primary_stage,logger);
+        System_info.print(logger);
 
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
@@ -228,17 +231,10 @@ public class Klikr_application extends Application
         }
         Klikr_communicator.build(context,primary_stage_,logger);
 
-        Window_provider window_provider = Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage_,logger),primary_stage_,logger);
+        Window_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage_,logger),primary_stage_,logger);
 
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
-
-
-
-        if ( Feature_cache.get(Feature.Play_music))
-        {
-            audio_player = new Audio_player_with_playlist(null,logger);
-        }
 
         int count = 0;
         String how_many_times = Shared_services.main_properties().get("HOW_MANY_TIMES");

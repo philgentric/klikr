@@ -142,7 +142,7 @@ public class Keyboard_handling_for_Image_window
                 {
                     if (keyboard_dbg) logger.log("UP = previous rescaler");
                     Path p = image_window.image_display_handler.get_image_context().get().path;
-                    if (!Guess_file_type.is_this_path_a_gif(p,owner,logger)) {
+                    if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
                         // JAVAFX Image for GIF does not support PixelReader
                         image_window.rescaler = image_window.rescaler.previous();
                         image_window.redisplay(true);
@@ -155,7 +155,7 @@ public class Keyboard_handling_for_Image_window
                 {
                     if (keyboard_dbg) logger.log("DOWN = next rescaler");
                     Path p = image_window.image_display_handler.get_image_context().get().path;
-                    if (!Guess_file_type.is_this_path_a_gif(p,owner,logger)) {
+                    if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
                         // JAVAFX Image for GIF does not support PixelReader
                         image_window.rescaler = image_window.rescaler.next();
                         image_window.redisplay(true);

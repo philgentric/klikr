@@ -109,6 +109,7 @@ package klikr.audio;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import klikr.*;
+import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.properties.String_constants;
 import klikr.util.Shared_services;
@@ -122,13 +123,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 //**********************************************************
-public class Song_playlist_app extends Application
+public class Song_playlist_application extends Application
 //**********************************************************
 {
 
     public static Application application;
     public static long start_time; // used to compute the time since the application started
-    private final static String name = "Song_playlist_app (song playlists)";
+    private final static String name = "Song_playlist_application (song playlists)";
 
     //public static Integer ui_change_report_port_at_launcher; // port on which the launcher will LISTEN for UI_CHANGED messages
     public static Stage primary_stage;
@@ -164,7 +165,7 @@ public class Song_playlist_app extends Application
             System.exit(0);
         });
 
-        System_info.print(primary_stage,logger);
+        System_info.print(logger);
 
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
@@ -181,7 +182,10 @@ public class Song_playlist_app extends Application
             }
         }
         logger.log("Starting playlist browser on path ->" + path+"<-");
-        Window_builder.additional_no_past(Window_type.Song_playlist_1D,new Path_list_provider_for_playlist(path,  primary_stage, logger),primary_stage_,logger);
+
+        Path_list_provider path_list_provider = new Path_list_provider_for_playlist(path,  primary_stage, logger);
+
+        Window_builder.additional_no_past(this,Window_type.Song_playlist_browser,path_list_provider,primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()-> primary_stage, logger).start();
 
         Klikr_communicator klikr_communicator = new Klikr_communicator("Song playlist app",primary_stage,logger);

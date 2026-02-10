@@ -15,19 +15,20 @@ import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 //**********************************************************
 public class Simple_audio_player_application extends Application
 //**********************************************************
 {
     Klikr_communicator klikr_communicator;
-    private final static String name = "Audio_player_application";
+    private final static String name = "Simple_audio_player_application";
     Logger logger;
-    Basic_audio_player basic_audio_player;
-    File current;
+    Path current;
 
     //**********************************************************
     public static void main(String[] args) {launch(args);}
@@ -46,49 +47,8 @@ public class Simple_audio_player_application extends Application
         klikr_communicator = new Klikr_communicator("Audio_player_app",stage_,logger);
         if (klikr_communicator.start_as_singleton())
         {
-            Navigator externor = new Navigator() {
-                @Override
-                public void search() {
 
-                }
-
-                @Override
-                public void jump_to_previous() {
-                    if ( current == null) return;
-                    File folder = current.getParentFile();
-                    File[] files = folder.listFiles();
-                    if ( files != null && files.length > 0 )
-                    {
-                        List<File> list = Arrays.asList(files);
-                        int index = list.indexOf(current);
-                        if (index > 1) index = index - 1;
-                        else index = list.size()-1;
-                        File f = list.get(index);
-                        play(f);
-                    }
-                }
-
-                @Override
-                public void jump_to_next()
-                {
-                    if ( current == null) return;
-                    File folder = current.getParentFile();
-                    File[] files = folder.listFiles();
-                    if ( files != null && files.length > 0 )
-                    {
-                        List<File> list = Arrays.asList(files);
-                        int index = list.indexOf(current);
-                        if (index < list.size()-1) index = index + 1;
-                        else index = 0;
-                        File f = list.get(index);
-                        play(f);
-                    }
-
-                }
-            };
             Aborter aborter = new Aborter("new audio",logger);
-            basic_audio_player = new Basic_audio_player(externor,aborter,logger);
-            basic_audio_player.define_ui();
 
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Open File");
@@ -98,8 +58,10 @@ public class Simple_audio_player_application extends Application
             File selectedFile = fileChooser.showOpenDialog(stage_);
             if (selectedFile != null) {
                 String song = selectedFile.getAbsolutePath();
-                basic_audio_player.play_song(song,true);
-                current = selectedFile;
+                Navigator navigator = new Folder_navigator(() -> current,this::play,logger);
+                Basic_audio_player.get(navigator,aborter,logger);
+                Basic_audio_player.play_song(song,true);
+                current = selectedFile.toPath();
             } else {
                 current = null;
             }
@@ -127,9 +89,13 @@ public class Simple_audio_player_application extends Application
         }
     }
 
-    private void play(File f) {
-        current = f;
-        basic_audio_player.play_song(f.getAbsolutePath(),false);
+
+    //**********************************************************
+    private void play(Path p)
+    //**********************************************************
+    {
+        current = p;
+        Basic_audio_player.play_song(p.toAbsolutePath().toString(),false);
     }
 
 

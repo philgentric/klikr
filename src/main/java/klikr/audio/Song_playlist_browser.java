@@ -46,7 +46,7 @@ public class Song_playlist_browser extends Abstract_browser
                 return "";
             }
         };
-        init_abstract_browser(Window_type.Song_playlist_1D,window_builder.shutdown_target,window_builder.rectangle, cr, "song_playlist");
+        init_abstract_browser(window_builder.application, Window_type.Song_playlist_browser,window_builder.shutdown_target,window_builder.rectangle, cr, "song_playlist");
     }
 
     @Override

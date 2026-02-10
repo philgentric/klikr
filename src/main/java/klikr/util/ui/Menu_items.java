@@ -3,6 +3,7 @@
 
 package klikr.util.ui;
 
+import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -52,7 +53,7 @@ public class Menu_items
 
 
     //**********************************************************
-    public static void create_browse_in_new_window_menu_item(ContextMenu context_menu, Path path, Window owner, Logger logger)
+    public static void create_browse_in_new_window_menu_item(Application application, ContextMenu context_menu, Path path, Window owner, Logger logger)
     //**********************************************************
     {
         KeyCodeCombination kc = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
@@ -62,7 +63,7 @@ public class Menu_items
                     //logger.log("Browse_in_new_window");
                     Path local = path;
                     if (!local.toFile().isDirectory()) local = local.getParent();
-                    Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(local, owner, logger), owner, logger);
+                    Window_builder.additional_no_past(application, Window_type.File_system_2D, new Path_list_provider_for_file_system(local, owner, logger), owner, logger);
                 }, context_menu, owner, logger);
     }
 

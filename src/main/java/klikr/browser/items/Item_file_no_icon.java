@@ -6,18 +6,24 @@
 
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Window;
+import klikr.Window_builder;
+import klikr.Window_type;
 import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.Folder_navigator;
+import klikr.audio.simple_player.Navigator_auto;
 import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.path_lists.Path_list_provider_for_playlist;
+import klikr.properties.boolean_features.Feature_change_target;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.Drag_and_drop;
 import klikr.browser.Image_and_properties;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -68,14 +74,17 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
     private final Klikr_cache<Path, Image_properties> image_properties_cache;
 
-    private final Shutdown_target shutdown_target;
-    private final Top_left_provider top_left_provider;
+    //private final Shutdown_target shutdown_target;
+    //private final Top_left_provider top_left_provider;
     private final Path_comparator_source path_comparator_source;
+    private final Feature_change_target feature_change_target;
 
     //**********************************************************
     public Item_file_no_icon(
+            Application application,
             Scene scene,
             Selection_handler selection_handler,
+            Feature_change_target feature_change_target,
             Icon_factory_actor icon_factory_actor,
             Color color,
             String text_,
@@ -90,10 +99,11 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             Logger logger)
     //**********************************************************
     {
-        super(scene,selection_handler,icon_factory_actor,color, path, path_list_provider,path_comparator_source,owner,aborter, logger);
+        super(application,scene,selection_handler,icon_factory_actor,color, path, path_list_provider,path_comparator_source,owner,aborter, logger);
+        this.feature_change_target = feature_change_target;
         this.image_properties_cache = image_properties_cache;
-        this.shutdown_target = shutdown_target;
-        this.top_left_provider = top_left_provider;
+        //this.shutdown_target = shutdown_target;
+        //this.top_left_provider = top_left_provider;
         this.path_comparator_source = path_comparator_source;
         text = text_;
         if (path == null) {
@@ -372,37 +382,29 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                 Text_frame.show(optional_of_item_path.get(),logger);
                 return;
             }
-            if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),owner,logger))
+            if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),logger))
             {
                 logger.log("✅ opening audio playlist: " + optional_of_item_path.get().toAbsolutePath());
-                //UI_instance_holder.play_playlist(get_item_path().toFile(),logger);
-                Audio_player_gradle_start.play_play_list_in_separate_process(optional_of_item_path.get().toFile(),logger);
+                Window_builder.additional_no_past(application,Window_type.Song_playlist_browser,new Path_list_provider_for_playlist(path,  owner, logger),owner,logger);
                 return;
             }
-            /*
-            if (Feature_cache.get(Feature.Enable_image_playlists))
-            {
-                if (Guess_file_type.is_this_path_an_image_playlist(get_item_path())) {
-                    logger.log("NOT IMPLEMENTED opening image playlist: " + get_item_path().toAbsolutePath());
-                    //New_file_browser_context.open_new_image_playlist(get_item_path(), owner, get_item_path().getParent(),top_left_provider.get_top_left(),logger);
-                    return;
-                }
-            }*/
-            if ( Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),owner,logger))
+
+            if ( Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),logger))
             {
                 if ( Guess_file_type.does_this_file_contain_an_audio_track(optional_of_item_path.get(),owner,logger))
                 {
-                    logger.log("✅ Item_button, opening audio file: " + optional_of_item_path.get().toAbsolutePath());
+                    logger.log("✅ Item_file_no_icn, opening audio file: " + optional_of_item_path.get().toAbsolutePath());
+                    logger.log("path_list_provider="+path_list_provider.to_string());
 
-                    Basic_audio_player bap = new Basic_audio_player(null,aborter,logger);
-                    bap.define_ui();
-                    bap.play_song(optional_of_item_path.get().toAbsolutePath().toString(),true);
-                    Audio_player_gradle_start.play_song_in_separate_process(optional_of_item_path.get().toFile(),logger);
+                    path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update(null,true));
+
+                    Basic_audio_player.get(new Navigator_auto(optional_of_item_path.get(),path_list_provider,logger),aborter,logger);
+                    Basic_audio_player.play_song(optional_of_item_path.get().toAbsolutePath().toString(),true);
                     return;
                 }
             }
             logger.log("✅ asking the system to open: " + optional_of_item_path.get().toAbsolutePath());
-            System_open_actor.open_with_system(optional_of_item_path.get(), owner,aborter,logger);
+            System_open_actor.open_with_system(application, optional_of_item_path.get(), owner,aborter,logger);
         });
 
         give_a_menu_to_the_button(button,label);

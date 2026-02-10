@@ -21,6 +21,9 @@ public interface Path_list_provider
 {
     // an abstract interface to provide a list of paths (files)
     // could be in a disk folder OR in a 'playlist'
+
+    String to_string();
+
     String get_key(); // never null (absolute path of *folder*) or (absolute path of *playlist file*)
 
     Optional<Path> get_folder_path();

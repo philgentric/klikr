@@ -19,6 +19,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.browser.classic.Browser;
@@ -541,7 +542,7 @@ public class Image_window
             // browse the folder
             KeyCombination kc = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                Window_builder.additional_no_past( Window_type.File_system_2D,
+                Window_builder.additional_no_past(Klikr_application.application, Window_type.File_system_2D,
                         new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(),stage,logger),
                         stage,logger);
             });

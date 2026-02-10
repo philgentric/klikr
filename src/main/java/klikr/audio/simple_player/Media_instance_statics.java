@@ -9,10 +9,12 @@ import javafx.scene.media.EqualizerBand;
 import javafx.scene.media.MediaPlayer;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import klikr.change.Change_gang;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
+import java.io.File;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -23,8 +25,19 @@ public class Media_instance_statics
     private static ConcurrentLinkedQueue<Aborter> aborters = new ConcurrentLinkedQueue<>();
     private static volatile Media_instance instance;
 
+    // **********************************************************
+    public static Media_instance get(Aborter aborter, Logger logger)
+    // **********************************************************
+    {
+        synchronized (Change_gang.class)
+        {
+            instance = new Media_instance(aborter,logger);
+            return instance;
+        }
+    }
+
     //**********************************************************
-    public static void play_this(String encoded, Media_callbacks media_callbacks, boolean first_time, Window owner, Logger logger)
+    public static void play_this(String new_song, Media_callbacks media_callbacks, boolean and_seek, Window owner, Logger logger)
     //**********************************************************
     {
         for(;;)
@@ -40,10 +53,16 @@ public class Media_instance_statics
         }
 
         //logger.log("no more aborters");
+        // make sure we pass a valid URI
+        String encoded = (new File(new_song)).toURI().toString();
+        logger.log("Media_instance_statics encoded=->"+encoded+"<-");
+
+        // make a (specific-for-playing-this-song) aborter :
         Aborter aborter = new Aborter("playing "+encoded,logger);
         aborters.add(aborter);
-        instance = new Media_instance(aborter,logger);
-        Actor_engine.execute(() -> instance.play_this(encoded, media_callbacks,first_time,owner),"play song "+encoded,logger);
+
+        instance = get(aborter,logger);
+        Actor_engine.execute(() -> instance.play_this(encoded, media_callbacks,and_seek,owner),"play song "+encoded,logger);
     }
 
     //**********************************************************
@@ -119,6 +138,7 @@ public class Media_instance_statics
     {
         if ( instance == null) return;
         instance.dispose_internal();
+        instance = null;
 
     }
 

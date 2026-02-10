@@ -8,13 +8,17 @@ package klikr.browser;
 //SOURCES ../Window_provider.java
 //SOURCES ./Title_target.java
 //SOURCES ../UI_change_target.java
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
+import klikr.audio.simple_player.Navigator;
+import klikr.audio.simple_player.Navigator_auto;
 import klikr.look.my_i18n.My_I18n;
+import klikr.properties.boolean_features.Feature;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.virtual_landscape.*;
@@ -39,8 +43,6 @@ import java.util.function.Consumer;
 public abstract class Abstract_browser implements Change_receiver, Shutdown_target, Title_target, Full_screen_handler, Window_provider, UI_change_target, Background_provider
 //**********************************************************
 {
-
-
     public static final boolean dbg = false;
     public static final boolean kbd_dbg = false;
 
@@ -83,6 +85,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
 
     //**********************************************************
     public void init_abstract_browser(
+            Application application,
             Window_type context_type,
             Shutdown_target shutdown_target,
             Rectangle2D rectangle,
@@ -104,7 +107,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
 
         my_Stage = new My_Stage(new Stage(), logger);
 
-        Consumer<String> xx = new Consumer<String>() {
+        Consumer<String> on_appearance_changed = new Consumer<String>() {
             @Override
             public void accept(String s) {
                 Non_booleans_properties.force_reload_from_disk(my_Stage.the_Stage);
@@ -115,7 +118,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
                 Platform.runLater(() -> define_UI());
             }
         };
-        Klikr_communicator.instance.set_on_appearance_changed(xx);
+        Klikr_communicator.instance.set_on_appearance_changed(on_appearance_changed);
 
         my_Stage.the_Stage.setOnCloseRequest(event -> {
             //System.out.println("Klik browser window exit");
@@ -176,7 +179,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
 
         if ( dbg) logger.log("Browser init");
         monitor();
-        virtual_landscape = new Virtual_landscape(context_type,get_Path_list_provider(),my_Stage.the_Stage,this,this,this,this,this,aborter, logger);
+        virtual_landscape = new Virtual_landscape(application,context_type,get_Path_list_provider(),my_Stage.the_Stage,this,this,this,this,this,aborter, logger);
         virtual_landscape.redraw_fx("Browser constructor", true);
 
         my_Stage.the_Stage.widthProperty().addListener((observable, oldValue, newValue) -> {

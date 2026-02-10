@@ -10,6 +10,7 @@
 
 package klikr.experimental.deduplicate;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.System_info;
 import klikr.util.execute.actor.Aborter;
@@ -58,12 +59,15 @@ public class Deduplication_engine implements Againor, Abortable
     Stage_with_2_images stage_with_2_images;
     Path_list_provider path_list_provider;
     Path_comparator_source path_comparator_source;
+    private final Application application;
     //**********************************************************
     public Deduplication_engine(
+            Application application,
             Window owner,
             File target_dir_, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source,Logger logger_)
     //*************************************w********************
     {
+        this.application = application;
         this.owner = owner;
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
@@ -336,7 +340,7 @@ public class Deduplication_engine implements Againor, Abortable
         Againor local_againor = this;
         Jfx_batch_injector.inject(() -> {
             File_pair local = new File_pair(file_pair.f1.my_file.file, file_pair.f2.my_file.file);
-            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(title, local, local_againor, console_window.count_deleted,path_list_provider,path_comparator_source,private_aborter, owner, logger);
+            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(application,title, local, local_againor, console_window.count_deleted,path_list_provider,path_comparator_source,private_aborter, owner, logger);
             else stage_with_2_images.set_pair(title,local,path_list_provider,path_comparator_source,private_aborter);
         },logger);
     }

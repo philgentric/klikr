@@ -4,6 +4,7 @@
 package klikr.audio.old_player;
 
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -48,10 +49,12 @@ public class Song
 {
     public final String path;
     public final  Node node;
+    private final Application application;
     //**********************************************************
-    Song(String path, Node node)
+    Song(Application application, String path, Node node)
     //**********************************************************
     {
+        this.application = application;
         this.path = path;
         this.node = node;
     }
@@ -106,7 +109,7 @@ public class Song
     {
         node.setOnContextMenuRequested((ContextMenuEvent event) ->
                 {
-                    ContextMenu context_menu = get_context_menu_for_a_song(playlist, path,aborter, owner,logger);
+                    ContextMenu context_menu = get_context_menu_for_a_song(application, playlist, path,aborter, owner,logger);
                     context_menu.show(node, event.getScreenX(), event.getScreenY());
                 });
 
@@ -114,6 +117,7 @@ public class Song
 
     //**********************************************************
     public static ContextMenu get_context_menu_for_a_song(
+            Application application,
             Playlist playlist,
             String full_path,
             Aborter aborter,
@@ -135,7 +139,7 @@ public class Song
             "Browse_in_new_window",
                 null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                 (ActionEvent e) ->
-                        Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(Path.of(full_path).getParent(), owner, logger), owner, logger),
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(Path.of(full_path).getParent(), owner, logger), owner, logger),
                 context_menu,
                 owner, logger);
 

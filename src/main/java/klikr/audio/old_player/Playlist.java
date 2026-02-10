@@ -4,6 +4,7 @@
 package klikr.audio.old_player;
 //SOURCES ../change/undo/Undo_core.java
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -56,7 +57,7 @@ public class Playlist
     private final static boolean dbg = false;
 
     private final Logger logger;
-    static final String AUDIO_PLAYER_CURRENT_SONG = "AUDIO_PLAYER_CURRENT_SONG";
+    public static final String AUDIO_PLAYER_CURRENT_SONG = "AUDIO_PLAYER_CURRENT_SONG";
     static final String PLAYLIST_FILE_NAME = "PLAYLIST_FILE_NAME";
 
     private List<String> the_playlist = new ArrayList<>();
@@ -72,12 +73,13 @@ public class Playlist
     private final Window owner;
     public static Klikr_cache<Path,Double> duration_cache;
     public static Klikr_cache<Path,Double> bitrate_cache;
-
+    private final Application application;
 
     //**********************************************************
-    public Playlist(Audio_player_FX_UI the_music_ui, Aborter aborter, Window owner, Logger logger)
+    public Playlist(Application application, Audio_player_FX_UI the_music_ui, Aborter aborter, Window owner, Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.the_music_ui = the_music_ui;
         this.owner = owner;
         this.logger = logger;
@@ -222,7 +224,7 @@ public class Playlist
         Optional<Node> op = define_node_for_a_song(file_path);
         if ( op.isEmpty()) return;
         Node node = op.get();
-        Song local = new Song(file_path,node);
+        Song local = new Song(application, file_path,node);
         local.init(this,aborter,owner,logger);
         path_to_Song.put(file_path, local);
         update_display();
@@ -239,7 +241,7 @@ public class Playlist
             Optional<Node> op = define_node_for_a_song(file_path);
             if ( op.isEmpty() ) continue;
             Node node = op.get();
-            Song local = new Song(file_path, node);
+            Song local = new Song(application,file_path, node);
             local.init(this,aborter,owner,logger);
             path_to_Song.put(file_path, local);
             //logger.log("added "+file_path);
@@ -267,7 +269,7 @@ public class Playlist
         node.setPrefWidth(2000);
         node.getStyleClass().add("unselected_song");
         // the node active part is set when is becomes visible
-        Song local = new Song(file_path, node);
+        Song local = new Song(application,file_path, node);
         local.init(this,aborter,owner,logger);
         path_to_Song.put(file_path, local);
         return Optional.of(node);
@@ -1061,7 +1063,7 @@ public class Playlist
 
         b.setOnContextMenuRequested((ContextMenuEvent event) -> {
             //logger.log("show context menu of button:"+ song.path);
-            ContextMenu context_menu = Song.get_context_menu_for_a_song(this, song.path, aborter,  owner, logger);
+            ContextMenu context_menu = Song.get_context_menu_for_a_song(application,this, song.path, aborter,  owner, logger);
             context_menu.show(b, event.getScreenX(), event.getScreenY());
         });
 

@@ -8,6 +8,7 @@
 
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
@@ -76,6 +77,7 @@ public class Item_file_with_icon extends Item_file
 
     //**********************************************************
     public Item_file_with_icon(
+            Application application,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -92,6 +94,7 @@ public class Item_file_with_icon extends Item_file
     //**********************************************************
     {
         super(
+                application,
                 scene,
                 selection_handler,
                 icon_factory_actor,
@@ -193,7 +196,7 @@ public class Item_file_with_icon extends Item_file
         }
         else
         {
-            System_open_actor.open_with_system(op.get(), owner,aborter,logger);
+            System_open_actor.open_with_system(application,op.get(), owner,aborter,logger);
         }
     }
 
@@ -330,7 +333,7 @@ public class Item_file_with_icon extends Item_file
                     null,
                     event -> {
                         if (dbg) logger.log("Opening with system: "+path);
-                        System_open_actor.open_with_system(path, owner,aborter,logger);
+                        System_open_actor.open_with_system(application,path, owner,aborter,logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -342,7 +345,7 @@ public class Item_file_with_icon extends Item_file
                     null,//(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event -> {
                         if (dbg) logger.log("Editing " + path);
-                        System_open_actor.open_with_system(path, owner, aborter, logger);
+                        System_open_actor.open_with_system(application,path, owner, aborter, logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -352,7 +355,7 @@ public class Item_file_with_icon extends Item_file
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     (ActionEvent e) ->
-                            Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger),
+                            Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger),
                     owner, logger);
             returned.getItems().add(mi);
         }
@@ -363,7 +366,7 @@ public class Item_file_with_icon extends Item_file
                     null,
                             event -> {
                                 if (dbg) logger.log("Browse in new window!");
-                                Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
+                                Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
                             }, owner, logger);
             returned.getItems().add(mi);
         }
@@ -560,7 +563,7 @@ public class Item_file_with_icon extends Item_file
                 if (op.isPresent()) {
                     if (Files.exists(op.get())) {
                         if (
-                                (Guess_file_type.is_this_path_a_video(op.get(), owner, logger)) || (Guess_file_type.is_this_path_a_pdf(op.get(), owner, logger))
+                                (Guess_file_type.is_this_path_a_video(op.get(), logger)) || (Guess_file_type.is_this_path_a_pdf(op.get(), logger))
                         ) {
                             if (dbg) logger.log("✅ PDF or video => rot=0");
                             local_rot = 0;

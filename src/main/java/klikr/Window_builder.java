@@ -3,6 +3,7 @@
 
 package klikr;
 
+import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
@@ -31,9 +32,11 @@ public class Window_builder
     public final Rectangle2D rectangle;
     public final Shutdown_target shutdown_target; // if null, there is no previous guy to shutdown
     public final Window owner;
+    public final Application application;
 
     //**********************************************************
     private Window_builder(
+            Application application,
             Window_type window_type,
             Path_list_provider path_list_provider,
             Rectangle2D rectangle,
@@ -42,6 +45,7 @@ public class Window_builder
             Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.window_type = window_type;
         this.rectangle = rectangle;
         this.shutdown_target = shutdown_target;
@@ -59,12 +63,13 @@ public class Window_builder
 
 
     //**********************************************************
-    public static Window_provider additional_no_past(Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
+    public static Window_provider additional_no_past(Application application,Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
     //**********************************************************
     {
         Optional<Path> op = path_list_provider.get_folder_path();
         op.ifPresent(path -> Last_access_comparator.set_last_access(path, logger));
         Window_builder window_builder = new Window_builder(
+                application,
                 window_type,
                 path_list_provider,
                 null,
@@ -77,7 +82,9 @@ public class Window_builder
 
     //**********************************************************
     public static void additional_same_folder(
-            Window_type window_type, Path_list_provider path_list_provider,
+            Application application,
+            Window_type window_type,
+            Path_list_provider path_list_provider,
             Optional<Path> top_left,
             Window originator,
             Logger logger)
@@ -89,6 +96,7 @@ public class Window_builder
         Rectangle2D rectangle = new Rectangle2D(originator.getX()+100,originator.getY()+100,originator.getWidth()-100,originator.getHeight()-100);
 
         Window_builder window_builder =  new Window_builder(
+                application,
                 window_type,
                 path_list_provider,
                 rectangle,
@@ -102,28 +110,34 @@ public class Window_builder
 
     //**********************************************************
     public static void additional_same_folder_fat_tall(
-            Window_type window_type, Path_list_provider path_list_provider,
+            Application application,
+            Window_type window_type,
+            Path_list_provider path_list_provider,
             Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        additional_same_folder_ratio(window_type,path_list_provider,5,top_left,originator ,logger);
+        additional_same_folder_ratio(application,window_type,path_list_provider,5,top_left,originator ,logger);
 
     }
     //**********************************************************
     public static void additional_same_folder_twin(
-            Window_type window_type, Path_list_provider path_list_provider,
+            Application application,
+            Window_type window_type,
+            Path_list_provider path_list_provider,
             Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        additional_same_folder_ratio(window_type,path_list_provider,2,top_left,originator,logger);
+        additional_same_folder_ratio(application,window_type,path_list_provider,2,top_left,originator,logger);
     }
     //**********************************************************
     public static void additional_same_folder_ratio(
-            Window_type window_type, Path_list_provider path_list_provider,
+            Application application,
+            Window_type window_type,
+            Path_list_provider path_list_provider,
             int ratio,
             Optional<Path> top_left,
             Window originator,
@@ -153,6 +167,7 @@ public class Window_builder
         rectangle = new Rectangle2D(rectangle.getMinX()+w_fat, rectangle.getMinY(), w2, h);
 
         Window_builder window_builder = new Window_builder(
+                application,
                 window_type,
                 path_list_provider,
                 rectangle,
@@ -166,6 +181,7 @@ public class Window_builder
 
     //**********************************************************
     public static void replace_same_folder(
+            Application application,
             Shutdown_target shutdown_target,
             Window_type window_type,
             Path_list_provider path_list_provider,
@@ -178,6 +194,7 @@ public class Window_builder
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
         Window_builder window_builder =  new Window_builder(
+                application,
                 window_type,
                 path_list_provider,
                 rectangle,
@@ -190,6 +207,7 @@ public class Window_builder
 
     //**********************************************************
     public static void replace_different_folder(
+            Application application,
             Shutdown_target shutdown_target,
             Window_type window_type, Path_list_provider path_list_provider,
             Window originator,
@@ -206,6 +224,7 @@ public class Window_builder
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
         Window_builder window_builder =  new Window_builder(
+                application,
                 window_type,
                 path_list_provider,
                 rectangle,
@@ -226,7 +245,7 @@ public class Window_builder
         {
             case Image_playlist_2D -> {
                 Path_list_provider_for_playlist pp = (Path_list_provider_for_playlist) window_builder.path_list_provider;
-                return new Image_playlist_browser(pp.the_playlist_file_path,window_builder.shutdown_target,null,null,logger);
+                return new Image_playlist_browser(window_builder.application, pp.the_playlist_file_path,window_builder.shutdown_target,null,null,logger);
             }
 
             case File_system_2D -> {
@@ -236,7 +255,7 @@ public class Window_builder
                     {
                         return new Circle_3D(window_builder,logger);
                     }
-            case Song_playlist_1D ->
+            case Song_playlist_browser ->
                     {
                         return new Song_playlist_browser(window_builder,logger);
                     }

@@ -4,6 +4,7 @@
 //SOURCES ./Monitor.java
 package klikr.browser.locator;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
@@ -44,24 +45,28 @@ public class Folders_with_large_images_locator
 
     private Monitor monitor = null;
     private final Aborter private_aborter = null;
+    private final Application application;
 
     //**********************************************************
-    public static void locate(Path top, int minimum_count, int min_bytes, 
+    public static void locate(
+            Application application,
+            Path top, int minimum_count, int min_bytes,
                               Window owner,
                               Logger logger)
     //**********************************************************
     {
-        instance = new Folders_with_large_images_locator(top,minimum_count,min_bytes, owner,logger);
+        instance = new Folders_with_large_images_locator(application,top,minimum_count,min_bytes, owner,logger);
         instance.search();
     }
 
 
     //**********************************************************
-    private Folders_with_large_images_locator(Path top, int minimum_count, int min_bytes, 
+    private Folders_with_large_images_locator(Application application, Path top, int minimum_count, int min_bytes,
                                               Window owner,
                                               Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.top = top;
         this.minimum_count = minimum_count;
         this.min_bytes = min_bytes;
@@ -408,6 +413,7 @@ public class Folders_with_large_images_locator
             {
                 String final_S = s;
                 Jfx_batch_injector.inject(()-> Window_builder.additional_no_past(
+                        application,
                         Window_type.File_system_2D,
                         new Path_list_provider_for_file_system(key_to_path(final_S),owner,logger),
                         owner,

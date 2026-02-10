@@ -124,7 +124,7 @@ public class Per_folder_mini_console
         {
             if (!f.isDirectory())
             {
-                if (!Guess_file_type.should_ignore(f.toPath(),the_stage,logger))
+                if (!Guess_file_type.should_ignore(f.toPath(),logger))
                 {
                     target_file_count++;
                 }

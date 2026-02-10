@@ -116,7 +116,7 @@ public class Media_instance
     //**********************************************************
     {
         if ( the_media_player == null) return;
-        logger.log(Stack_trace_getter.get_stack_trace("seek_internal"));
+        //logger.log(Stack_trace_getter.get_stack_trace("seek_internal"));
 
         the_media_player.seek(target);
     }
@@ -155,8 +155,9 @@ public class Media_instance
     }
 
 
+    // String song MUST be a URL
     //**********************************************************
-    Song_play_status play_this(String song, Media_callbacks media_callbacks, boolean first_time, Window owner)
+    Song_play_status play_this(String song, Media_callbacks media_callbacks, boolean and_seek, Window owner)
     //**********************************************************
     {
         //logger.log("\n\nplay_this : "+song);
@@ -174,7 +175,7 @@ public class Media_instance
         }
         catch (MediaException e)
         {
-            logger.log("\n\nInvalid media, unlisted: "+song+"\n\n");
+            logger.log(Stack_trace_getter.get_stack_trace("\n\nInvalid media, unlisted: "+song+"\n\n"));
             //playlist.remove(new_song);
             return Song_play_status.song_should_be_removed_from_playlist_as_path_is_invalid;
         }
@@ -186,7 +187,7 @@ public class Media_instance
         }
         if ( aborter.should_abort())
         {
-            logger.log("player aborted before previous MediaPlayer dispose "+ aborter.reason());
+            logger.log("player aborted before previous MediaPlayer dispose REASON: "+ aborter.reason());
             return Song_play_status.aborted;
         }
         if ( the_media_player !=null)
@@ -225,7 +226,7 @@ public class Media_instance
                 logger.log("❗ player aborted in setOnPlaying "+ aborter.reason());
                 return;
             }
-            if ( first_time) {
+            if ( and_seek) {
                 Integer current_time_s = get_current_time(song, owner);
                 //if ( dbg)
                 logger.log("✅ seeking song to " + current_time_s + " s");

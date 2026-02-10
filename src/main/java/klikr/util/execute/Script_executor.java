@@ -57,10 +57,10 @@ public class Script_executor
     public static void execute(List<String> lines,
                                Path tmp_folder,
                                boolean debug_mode,
-                               Window owner, Logger logger)
+                               Logger logger)
     //**********************************************************
     {
-        Actor_engine.execute(()->execute_internal(lines,tmp_folder, debug_mode, owner,logger),"Script_executor "+String.join(" ",lines),logger);
+        Actor_engine.execute(()->execute_internal(lines,tmp_folder, debug_mode,logger),"Script_executor "+String.join(" ",lines),logger);
     }
 
 
@@ -68,7 +68,7 @@ public class Script_executor
     private static void execute_internal(List<String> lines,
                                          Path tmp_folder,
                                          boolean debug_mode,
-                                         Window owner, Logger logger)
+                                         Logger logger)
     //**********************************************************
     {
 
@@ -94,7 +94,7 @@ public class Script_executor
 
         Path script_path = null;
         try {
-            Operating_system os = Guess_OS.guess(owner, logger);
+            Operating_system os = Guess_OS.guess(logger);
 
             String script_name = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + "_" + UUID.randomUUID();
             if ( os == Operating_system.Windows)

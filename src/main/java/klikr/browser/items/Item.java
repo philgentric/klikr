@@ -14,6 +14,7 @@
 
 package klikr.browser.items;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
@@ -103,9 +104,10 @@ public abstract class Item implements Icon_destination
     // not final because renaming a folder requires to change the path_list_provider
     // this is ok as long as there is no other browser open on that folder: the change_gang manages this
     protected final Path_comparator_source path_comparator_source;
-
+    protected final Application application;
     //**********************************************************
     public Item(
+            Application application,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -117,6 +119,7 @@ public abstract class Item implements Icon_destination
             Logger logger)
     //**********************************************************
     {
+        this.application = application;
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
         this.aborter = aborter;
@@ -282,7 +285,7 @@ public abstract class Item implements Icon_destination
                             null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                             event -> {
                                 if (dbg) logger.log("Browse in new window!");
-                                Window_builder.additional_no_past(Window_type.File_system_2D,new Path_list_provider_for_file_system(finalTarget,owner,logger), owner, logger);
+                                Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(finalTarget,owner,logger), owner, logger);
                             }, context_menu, owner, logger);
 
                     if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name())) {
@@ -291,7 +294,7 @@ public abstract class Item implements Icon_destination
                                 null,
                                 event -> {
                                     if (dbg) logger.log("Browse in new window!");
-                                    Window_builder.additional_no_past(Window_type.File_system_3D, new Path_list_provider_for_file_system(finalTarget, owner, logger), owner, logger);
+                                    Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(finalTarget, owner, logger), owner, logger);
                                 }, context_menu, owner, logger);
                     }
                 }
@@ -324,7 +327,7 @@ public abstract class Item implements Icon_destination
             if (Guess_file_type.is_this_path_an_image(optional_of_item_path.get(), owner, logger)) {
                 create_open_exif_frame_menu_item(optional_of_item_path, context_menu);
             }
-            if (Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),owner,logger)) {
+            if (Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),logger)) {
                 create_open_mediainfo_frame_menu_item(optional_of_item_path.get(), context_menu);
                 create_edit_metadata_frame_menu_item(optional_of_item_path.get(), context_menu);
             }
@@ -504,7 +507,7 @@ public abstract class Item implements Icon_destination
         Menu_items.add_menu_item_for_context_menu("Open_With_System",null,
                 actionEvent -> {
             if (dbg) logger.log("button in item: System Open");
-            System_open_actor.open_with_system(path, owner,aborter,logger);
+            System_open_actor.open_with_system(application,path, owner,aborter,logger);
         },context_menu,owner,logger);
     }
 

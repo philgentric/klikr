@@ -55,6 +55,15 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         reload();
     }
 
+
+    //**********************************************************
+    @Override
+    public String to_string()
+    //**********************************************************
+    {
+        return "Path_list_provider_for_playlist, "+how_many_files_and_folders(true,true);
+    }
+
     //**********************************************************
     @Override
     public Optional<Path> get_folder_path()
@@ -89,7 +98,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if ( (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned.add(new File(s));
         }
@@ -107,14 +116,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_folders)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
                     returned++;
                     continue;
                 }
             }
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned++;
         }
@@ -134,7 +143,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if ( (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned.add(Path.of(s));
         }
@@ -146,7 +155,18 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public List<Path> only_song_paths(boolean consider_also_hidden_files)
     //**********************************************************
     {
-        return new ArrayList<>();
+        List<Path> returned = new ArrayList<>();
+        for ( String s : paths)
+        {
+            if ( (new File(s)).isDirectory()) continue;
+            if( !Guess_file_type.is_this_path_a_music(Path.of(s),logger)) continue;
+            if (! consider_also_hidden_files)
+            {
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+            }
+            returned.add(Path.of(s));
+        }
+        return returned;
     }
 
     //**********************************************************
@@ -161,7 +181,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if( !Guess_file_type.is_this_path_an_image(Path.of(s),owner,logger)) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned.add(Path.of(s));
         }
@@ -179,7 +199,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if (! (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_folders)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned.add(new File(s));
         }
@@ -197,7 +217,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if ( ! (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_folders)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
             }
             returned.add(Path.of(s));
         }
@@ -355,7 +375,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_folders)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
                 }
                 folders.add(Path.of(s));
             }
@@ -363,7 +383,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_files)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),owner,logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
                 }
                 files.add(Path.of(s));
             }

@@ -3,6 +3,7 @@
 
 package klikr.in3D;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -97,11 +98,12 @@ public class Circle_3D implements Window_provider, Shutdown_target
     private static final long UPDATE_INTERVAL_MS = 50; // Update every 50ms max
     private final List<Box_and_angle> boxes_to_update = new ArrayList<>();
     private final List<PhongMaterial> materials_to_apply = new ArrayList<>();
-
+    private final Application application;
     //*******************************************************
     public Circle_3D(Window_builder window_builder, Logger logger)
     //*******************************************************
     {
+        this.application = window_builder.application;
         this.path_list_provider = window_builder.path_list_provider;
         this.large_icon_size = (int) CORRIDOR_HEIGHT;
         this.small_icon_size = 64;
@@ -227,7 +229,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("Up");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Window_builder.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),stage,logger);
+                Window_builder.replace_different_folder(application,this, Window_type.File_system_3D,new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -235,13 +237,14 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("2D");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Window_builder.replace_same_folder(this, Window_type.File_system_2D,path_list_provider,null,stage,logger);
+                Window_builder.replace_same_folder(application,this, Window_type.File_system_2D,path_list_provider,null,stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
 
         {
             Button undo_and_bookmark_and_history = Virtual_landscape.make_button_undo_and_bookmark_and_history(
+                    application,
                     the_whole_history,
                     path_list_provider,
                     null,
@@ -571,7 +574,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
                 if (Files.isDirectory(p))
                 {
                     logger.log("is folder: "+p);
-                    Window_builder.replace_different_folder(this, Window_type.File_system_3D,new Path_list_provider_for_file_system(p,stage,logger),stage,logger);
+                    Window_builder.replace_different_folder(application,this, Window_type.File_system_3D,new Path_list_provider_for_file_system(p,stage,logger),stage,logger);
                 }
                 else 
                 {

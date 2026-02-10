@@ -89,7 +89,12 @@ public class Browser extends Abstract_browser implements Feature_change_target
         path_list_provider = window_builder.path_list_provider;
         if ( dbg) logger.log("\n\n\n\n\n\nNEW BROWSER "+path_list_provider.get_folder_path());
 
-        init_abstract_browser(Window_type.File_system_2D, window_builder.shutdown_target,window_builder.rectangle,this, "klikr");
+        init_abstract_browser(
+                window_builder.application,
+                Window_type.File_system_2D,
+                window_builder.shutdown_target,
+                window_builder.rectangle,
+                this, "klikr");
 
 
     }

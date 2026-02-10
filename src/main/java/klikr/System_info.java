@@ -37,10 +37,10 @@ public class System_info
 
 
     //**********************************************************
-    public static void print(Window owner, Logger logger)
+    public static void print( Logger logger)
     //**********************************************************
     {
-        print_machine_properties(owner,logger);
+        print_machine_properties(logger);
 
         print_java_system_properties();
         //show_environement_variables();
@@ -50,10 +50,10 @@ public class System_info
 
     private static final boolean use_JMX_for_RAM = false;
     //**********************************************************
-    public static Optional<Integer> get_total_machine_RAM_in_GBytes(Window owner, Logger logger)
+    public static Optional<Integer> get_total_machine_RAM_in_GBytes(Logger logger)
     //**********************************************************
     {
-        Operating_system os = Guess_OS.guess(owner,logger);
+        Operating_system os = Guess_OS.guess(logger);
         switch (os)
         {
             case MacOS ->
@@ -129,10 +129,10 @@ public class System_info
     }
 
     //**********************************************************
-    private static void print_machine_properties(Window owner, Logger logger)
+    private static void print_machine_properties(Logger logger)
     //**********************************************************
     {
-        System.out.println("Physical RAM on this machine: "+ get_total_machine_RAM_in_GBytes( owner, logger).orElse(4)+" GBytes");
+        System.out.println("Physical RAM on this machine: "+ get_total_machine_RAM_in_GBytes(logger).orElse(4)+" GBytes");
         System.out.println("\n\nNumber of cores: "+ how_many_cores());
         System.out.println("Java VM max RAM for Klikr: "+(int)(Runtime.getRuntime().maxMemory()/1_000_000_000.0)+" GBytes (reported by Runtime.maxMemory()");
         //System.out.println("Java VM current RAM for klik: "+(int)(Runtime.getRuntime().totalMemory()/1_000_000_000.0)+" GBytes");

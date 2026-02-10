@@ -8,7 +8,7 @@ public class Guess_OS
 //**********************************************************
 {
     //**********************************************************
-    public static Operating_system guess(Window owner, Logger logger)
+    public static Operating_system guess(Logger logger)
     //**********************************************************
     {
         String os_name = System.getProperty("os.name");

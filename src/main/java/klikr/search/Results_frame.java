@@ -3,6 +3,7 @@
 
 package klikr.search;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
@@ -19,6 +20,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.audio.simple_player.Basic_audio_player;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Scrollable_text_field;
@@ -61,9 +63,10 @@ public class Results_frame
 	private final Path_list_provider path_list_provider;
 	private final Path_comparator_source path_comparator_source;
     private final static boolean use_scrollable_textfield = true;
-
+	private final Application application;
     //**********************************************************
 	public Results_frame(
+			Application application,
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
 			Aborter aborter,
@@ -71,6 +74,7 @@ public class Results_frame
 			Logger logger)
 	//**********************************************************
 	{
+		this.application = application;
 		this.path_list_provider = path_list_provider;
 		this.path_comparator_source = path_comparator_source;
 		this.aborter = aborter;
@@ -128,7 +132,7 @@ public class Results_frame
         Node graphic = null;
         if ( use_scrollable_textfield)
         {
-            graphic = new Scrollable_text_field(displayed_text,path, b,owner,aborter,logger);
+            graphic = new Scrollable_text_field(application,displayed_text,path, b,owner,aborter,logger);
         }
         else
 		{
@@ -172,7 +176,7 @@ public class Results_frame
 			Look_and_feel_manager.set_context_menu_look(context_menu,stage,logger);
 
 
-			Menu_items.create_browse_in_new_window_menu_item(context_menu,path,owner,logger);
+			Menu_items.create_browse_in_new_window_menu_item(application, context_menu,path,owner,logger);
 
 			if (! path.toFile().isDirectory())
 			{
@@ -218,7 +222,7 @@ public class Results_frame
 	{
 		if (Files.isDirectory(path))
 		{
-			Window_builder.additional_no_past(Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
+			Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
 		}
 		else if (Guess_file_type.is_this_file_an_image(path.toFile(), owner, logger))
 		{
@@ -230,14 +234,16 @@ public class Results_frame
 					owner,
 					logger);
 			//Image_window is = Image_window.get_Image_window(the_browser, path, logger);
-		} else if (Guess_file_type.is_this_path_a_music(path, owner, logger)) {
+		} else if (Guess_file_type.is_this_path_a_music(path, logger)) {
 			logger.log("opening audio file: " + path.toAbsolutePath());
-			Audio_player_gradle_start.play_song_in_separate_process(path.toFile(), logger);
+			Basic_audio_player.get(null,aborter,logger);
+			Basic_audio_player.play_song(path.toAbsolutePath().toString(),true);
+			//Audio_player_gradle_start.play_song_in_separate_process(path.toFile(), logger);
 		} else if (Guess_file_type.is_this_path_a_text(path, owner, logger)) {
 			logger.log("opening text file: " + path.toAbsolutePath());
 			Text_frame.show(path, logger);
 		} else {
-			System_open_actor.open_with_system(path, stage, aborter, logger);
+			System_open_actor.open_with_system(application,path, stage, aborter, logger);
 		}
 	}
 

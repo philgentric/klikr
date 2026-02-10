@@ -3,10 +3,12 @@
 
 package klikr.search;
 
+import klikr.path_lists.Path_list_provider;
+
 import java.nio.file.Path;
 import java.util.List;
 
-public record Search_config(Path path,
+public record Search_config(Path_list_provider path_list_provider,
                             List<String> keywords,
                             boolean look_only_for_images,
                             String extension,

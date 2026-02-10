@@ -99,7 +99,7 @@ public class Launcher extends Application implements UI_change_target
         aborter = Shared_services.aborter();
 
         logger.log("Launcher starting");
-        System_info.print(stage,logger);
+        System_info.print(logger);
 
         Consumer<String> on_appearance_changed = msg -> {
             define_UI();
@@ -128,7 +128,7 @@ public class Launcher extends Application implements UI_change_target
 
         long current = Non_booleans_properties.get_java_VM_max_RAM(stage,logger);
 
-        if ( current > 0.8*System_info.get_total_machine_RAM_in_GBytes(stage,logger).orElse(4) )
+        if ( current > 0.8*System_info.get_total_machine_RAM_in_GBytes(logger).orElse(4) )
         {
             // not realistic
             use_default_max_RAM(stage,logger);
@@ -147,7 +147,7 @@ public class Launcher extends Application implements UI_change_target
     private void use_default_max_RAM(Stage stage, Logger logger)
     //**********************************************************
     {
-        long current = System_info.get_total_machine_RAM_in_GBytes(stage,logger).orElse(4);
+        long current = System_info.get_total_machine_RAM_in_GBytes(logger).orElse(4);
         current = (current * 8) / 10; // use 80% of the physical RAM
         if ( current < 1) current = 1; // minimum 1GB
         Non_booleans_properties.save_java_VM_max_RAM((int)current, stage, logger);
@@ -188,7 +188,7 @@ public class Launcher extends Application implements UI_change_target
                 right.getChildren().add(b);
                 look_and_feel.set_Button_look(b, WIDTH, icon_size, Icon_type.MUSIC, stage, logger);
                 b.setOnAction(event -> {
-                    start_app_with_gradle_and_listen("audio_player", stage, logger);
+                    start_app_with_gradle_and_listen("old_audio_player", stage, logger);
                     //propagate_to.add(Audio_player_gradle_start.AUDIO_PLAYER_PORT);
                 });
             }
@@ -232,7 +232,7 @@ public class Launcher extends Application implements UI_change_target
                 logger).orElse(null);
 
         String cmd = "gradle "+app_name+ " "+com.get_port();
-        Script_executor.execute(List.of(cmd),Path.of("."),true,stage,logger);
+        Script_executor.execute(List.of(cmd),Path.of("."),true,logger);
 
     }
 

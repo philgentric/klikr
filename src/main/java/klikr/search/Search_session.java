@@ -9,6 +9,7 @@
 //SOURCES ./Finder_message.java
 package klikr.search;
 
+import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -41,10 +42,12 @@ public class Search_session implements Callback_for_file_found_publish
 
 
 	//**********************************************************
-	public Search_session(Path_list_provider path_list_provider,
-                          Path_comparator_source path_comparator_source,
-                          Search_config search_config,
-                          Search_receiver search_receiver, Window owner, Logger logger)
+	public Search_session(
+			Application application,
+			Path_list_provider path_list_provider,
+			Path_comparator_source path_comparator_source,
+			Search_config search_config,
+			Search_receiver search_receiver, Window owner, Logger logger)
 	//**********************************************************
 	{
 		this.owner = owner;
@@ -55,6 +58,7 @@ public class Search_session implements Callback_for_file_found_publish
 		this.search_receiver = search_receiver;
 		//this.the_browser = browser;
 		this.find_result_frame = new Results_frame(
+				application,
 				path_list_provider,
 				path_comparator_source,
 				local_aborter, owner, logger);
@@ -65,7 +69,7 @@ public class Search_session implements Callback_for_file_found_publish
 	//**********************************************************
 	{
 		status = Search_status.searching;
-		if ( dbg) logger.log("launching search actor on path:"+search_config.path());
+		if ( dbg) logger.log("launching search actor on path:"+search_config.path_list_provider().get_key());
 
 		Actor_engine.run(new Finder_actor(owner,logger),new Finder_message(search_config,this,local_aborter, owner),null,logger);
 	}

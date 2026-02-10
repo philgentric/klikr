@@ -414,7 +414,7 @@ public class ML_registry_discovery
 
 
     //**********************************************************
-    public int check_processes(String server_python_name, Window owner, Logger logger)
+    public int check_processes(String server_python_name, Logger logger)
     //**********************************************************
     {
         try {
@@ -423,7 +423,7 @@ public class ML_registry_discovery
             throw new RuntimeException(e);
         }
         List<String> list = new ArrayList<>();
-        if (Guess_OS.guess(owner,logger)== Operating_system.Windows)
+        if (Guess_OS.guess(logger)== Operating_system.Windows)
         {
             list.add("powershell.exe");
             list.add("-Command");

@@ -3,6 +3,7 @@
 
 package klikr.experimental.image_playlist;
 
+import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
@@ -30,7 +31,7 @@ public class Image_playlist_browser extends Abstract_browser
     public final Path_list_provider_for_playlist path_list_provider;
 
     //**********************************************************
-    public Image_playlist_browser(Path target_path, Shutdown_target shutdown_target, Rectangle2D rectangle, Window owner, Logger logger)
+    public Image_playlist_browser(Application application, Path target_path, Shutdown_target shutdown_target, Rectangle2D rectangle, Window owner, Logger logger)
     //**********************************************************
     {
         super(logger);
@@ -38,7 +39,7 @@ public class Image_playlist_browser extends Abstract_browser
         path_list_provider = new Path_list_provider_for_playlist(target_path, owner,logger);
 
 
-        init_abstract_browser(Window_type.Image_playlist_2D,shutdown_target, rectangle,this,"playlist");
+        init_abstract_browser(application, Window_type.Image_playlist_2D,shutdown_target, rectangle,this,"playlist");
 
         logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAY LIST "+path_list_provider.get_key());
 
