@@ -87,11 +87,8 @@ public class Image_decoding_actor_for_3D_cache implements Actor
         Image local_image = op.get();
         if ( local_image.isError())
         {
-            Image broken = Jar_utils.get_broken_icon(300,owner,logger_);
-            return Optional.of(broken);
+            return Jar_utils.get_broken_icon(300,owner,logger_);
         }
-
-        Optional<Image> returned = Optional.of(local_image);
-        return returned;
+        return Optional.of(local_image);
     }
 }

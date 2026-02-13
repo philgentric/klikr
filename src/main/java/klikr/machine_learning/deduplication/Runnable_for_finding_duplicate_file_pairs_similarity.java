@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 public class Runnable_for_finding_duplicate_file_pairs_similarity implements Runnable
 //**********************************************************
 {
-	private static final boolean dbg = false;
+	private static final boolean dbg = true;
 	Logger logger;
 	private final List<File_with_a_few_bytes> all_files;
 	BlockingQueue<Similarity_file_pair> output_queue_of_same_in_pairs;
@@ -93,6 +93,7 @@ public class Runnable_for_finding_duplicate_file_pairs_similarity implements Run
 			return;
 		}
 
+		if ( dbg) logger.log("image_properties_cache = "+image_properties_cache);
 		for (File_with_a_few_bytes f : all_files)
 		{
 			if ( private_aborter.should_abort()) return;
@@ -130,7 +131,7 @@ public class Runnable_for_finding_duplicate_file_pairs_similarity implements Run
 		}
 
 
-		logger.log("found duplicates:  "+deduplication_by_similarity_engine.duplicates_found.doubleValue());
+		logger.log(Stack_trace_getter.get_stack_trace("found duplicates:  "+deduplication_by_similarity_engine.duplicates_found.doubleValue()));
         deduplication_by_similarity_engine.threads_in_flight.decrement();
         double remaining = deduplication_by_similarity_engine.threads_in_flight.doubleValue();
 		if ( remaining != 0)

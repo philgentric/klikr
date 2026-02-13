@@ -126,7 +126,7 @@ public class Icon_factory_actor implements Actor
         Icon_destination destination = icon_factory_request.destination;
         if (destination == null) {
             logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory : cancel! destination==null"));
-            return null;
+            return "should not happen";
         }
 
         Optional<Image_and_properties> image_and_properties;
@@ -136,7 +136,14 @@ public class Icon_factory_actor implements Actor
             if ( image_and_properties.isEmpty())
             {
                 // = no retry
-                return "no icon";
+                //logger.log("returning BROKEN");
+                Optional<Image> op = Jar_utils.get_broken_icon(icon_factory_request.icon_size, owner, logger);
+                if ( op.isPresent())
+                {
+                    Image_properties ip = new Image_properties(op.get().getWidth(),op.get().getHeight(),Rotation.normal);
+                    image_and_properties = Optional.of(new Image_and_properties(op.get(),ip));
+                    break;
+                }
             }
             if (image_and_properties.get().image() != null) {
                 double w = image_and_properties.get().image().getWidth();
@@ -510,7 +517,7 @@ TODO:
                     }
                     else
                     {
-                        logger.log("Icon caching, mzaking icon FAILED for:"+ original_path);
+                        logger.log("Icon caching, making icon FAILED for:"+ original_path);
                     }
                 }
                 return op;

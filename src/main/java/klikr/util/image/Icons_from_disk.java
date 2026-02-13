@@ -62,7 +62,7 @@ public class Icons_from_disk
         if (Check_remaining_RAM.RAM_running_low("icon creation",owner,logger)) {
 
             logger.log("read_original_image_from_disk_and_return_icon NOT DONE because running low on memory ! ");
-            return Optional.of(Jar_utils.get_broken_icon(300, owner, logger));
+            return Jar_utils.get_broken_icon(icon_size, owner, logger);
         }
 
         switch (item_type) {

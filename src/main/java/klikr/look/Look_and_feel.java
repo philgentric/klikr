@@ -379,7 +379,7 @@ public abstract class Look_and_feel
 
 
             String icon_path = Look_and_feel_manager.get_main_window_icon_path(this, icon_type);
-            Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, icon_size, owner,logger);
+            Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, icon_size, owner,logger).orElse(null);
 
             the_image_view.setImage(icon);
             the_image_view.setPreserveRatio(true);

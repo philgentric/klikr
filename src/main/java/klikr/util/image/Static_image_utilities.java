@@ -85,9 +85,9 @@ public class Static_image_utilities
         if (op.isEmpty()) return Optional.empty();
         Image local_image = op.get();
         if (local_image.isError()) {
-            javafx.scene.image.Image broken = Jar_utils.get_broken_icon(300, owner, logger_);
+            Optional<Image> broken = Jar_utils.get_broken_icon(300, owner, logger_);
 
-            return Optional.of(new Image_context(path_, path_, broken, logger_));
+            return Optional.of(new Image_context(path_, path_, broken.orElse(null), logger_));
         }
         logger_.log("using alternate rescaling : "+filter.name());
 

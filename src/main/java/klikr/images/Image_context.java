@@ -112,8 +112,8 @@ public class Image_context
         Image local_image = op.get();
         if ( local_image.isError())
         {
-            Image broken = Jar_utils.get_broken_icon(300,owner,logger_);
-            return Optional.of(new Image_context(path,path,broken,logger_));
+            Optional<Image> broken = Jar_utils.get_broken_icon(300,owner,logger_);
+            return Optional.of(new Image_context(path,path,broken.orElse(null),logger_));
         }
 
         Optional<Image_context> returned = Optional.of(new Image_context(path, path, local_image,logger_));

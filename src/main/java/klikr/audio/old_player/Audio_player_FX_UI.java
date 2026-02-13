@@ -455,10 +455,10 @@ public class Audio_player_FX_UI implements Media_callbacks
         mute.setOnAction((ActionEvent e) -> {
             if (Media_instance_statics.toggle_mute()) {
                 mute.setText(mute_string);
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
             } else {
                 mute.setText(My_I18n.get_I18n_string("Unmute", stage, logger)); // "Unmute");
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger).orElse(null));
             }
         });
         returned.getChildren().add(mute);
@@ -473,7 +473,7 @@ public class Audio_player_FX_UI implements Media_callbacks
     {
         HBox volume_hbox = new HBox();
 
-        speaker_image_view = new ImageView(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
+        speaker_image_view = new ImageView(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
         speaker_image_view.setFitHeight(60);
         speaker_image_view.setFitWidth(60);
         volume_hbox.getChildren().add(speaker_image_view);
@@ -487,9 +487,9 @@ public class Audio_player_FX_UI implements Media_callbacks
             Media_instance_statics.set_volume(volume);
             save_audio_volume(volume, stage);
             if (volume >= 0.01) {
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
             } else {
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger).orElse(null));
             }
         });
         return volume_hbox;

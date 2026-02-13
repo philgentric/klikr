@@ -617,12 +617,12 @@ public class Circle_3D implements Window_provider, Shutdown_target
         allFloorTiles.clear();
         PhongMaterial redMaterial = new PhongMaterial(Color.RED);
 
-        Image floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
+        Optional<Image> floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
 
         PhongMaterial floorMaterial = null;
-        if ( floor_image != null)
+        if ( floor_image.isPresent() )
         {
-            Image finalFloor_image = floor_image;
+            Image finalFloor_image = floor_image.get();
             floorMaterial =new PhongMaterial() {{setDiffuseMap(finalFloor_image); }};
         }
         else {
@@ -943,11 +943,11 @@ public class Circle_3D implements Window_provider, Shutdown_target
         dome.setCullFace(CullFace.FRONT); // Render inside only
 
         // Load night sky texture
-        Image nightSkyImage = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
+        Optional<Image> nightSkyImage = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
 
         PhongMaterial domeMaterial;
-        if (nightSkyImage != null) {
-            Image finalNightSkyImage = nightSkyImage;
+        if (nightSkyImage.isPresent()) {
+            Image finalNightSkyImage = nightSkyImage.get();
             domeMaterial = new PhongMaterial() {{
                 setDiffuseMap(finalNightSkyImage);
                 setSpecularColor(Color.BLACK); // No reflections

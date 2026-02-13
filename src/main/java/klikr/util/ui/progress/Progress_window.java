@@ -7,6 +7,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -185,10 +186,13 @@ public class Progress_window implements Hourglass
         switch(Look_and_feel_manager.get_instance(owner,logger).get_look_and_feel_style())
         {
             case light, dark, wood:
-                iv = new ImageView(Look_and_feel_manager.get_running_film_icon(owner,logger));
-                iv.setFitHeight(100);
-                iv.setPreserveRatio(true);
-                vbox.getChildren().add(iv);
+				Optional<Image> op = Look_and_feel_manager.get_running_film_icon(owner,logger);
+				if( op.isPresent() ) {
+					iv = new ImageView(op.get());
+					iv.setFitHeight(100);
+					iv.setPreserveRatio(true);
+					vbox.getChildren().add(iv);
+				}
                 break;
             case modena:
             case materiol:
@@ -285,7 +289,8 @@ public class Progress_window implements Hourglass
             in_flight_label.setText(message);
             if (iv != null)
             {
-                iv.setImage(Look_and_feel_manager.get_the_end_icon(stage, logger));
+				Optional<Image> op = Look_and_feel_manager.get_the_end_icon(stage, logger);
+                op.ifPresent((Image icon)->iv.setImage(icon));
             }
 		},logger);
 

@@ -27,8 +27,7 @@ public enum Language
 
     public Image get_icon(Window owner, Logger logger)
     {
-        Image icon = Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, owner,logger);
-        return icon;
+        return Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, owner,logger).orElse(null);
     }
     //**********************************************************
     public Locale get_locale()

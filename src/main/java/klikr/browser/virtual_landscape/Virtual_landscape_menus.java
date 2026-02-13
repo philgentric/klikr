@@ -507,7 +507,6 @@ public class Virtual_landscape_menus
 
         context_menu.getItems().add(make_file_sort_method_menu());
 
-        context_menu.getItems().add(create_menu_item_for_show_details(virtual_landscape,owner,logger));
 
         context_menu.getItems().add(make_icon_size_menu());
         if ( Feature_cache.get(Feature.Show_icons_for_folders))
@@ -605,12 +604,13 @@ public class Virtual_landscape_menus
         Look_and_feel_manager.set_menu_item_look(menu,owner,logger);
         clean.getItems().add(menu);
 
-        // quasi similar means same image length
-        Menu_items.add_menu_item_for_menu("Deduplicate_with_confirmation_quasi_similar_images",null,
+        // quasi similar means same image dimensions (w & h)
+        Menu_items.add_menu_item_for_menu("Deduplicate_with_confirmation_similar_images_of_same_size",null,
                 event -> {
                     //logger.log("Deduplicate manually");
                     Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
-                    op.ifPresent(folder_path -> (new Deduplication_by_similarity_engine(virtual_landscape.application,
+                    op.ifPresent(folder_path -> (new Deduplication_by_similarity_engine(
+                            virtual_landscape.application,
                             true,
                             virtual_landscape.path_list_provider,
                             virtual_landscape,
@@ -623,7 +623,7 @@ public class Virtual_landscape_menus
                 },menu,owner,logger);
 
 
-        Menu_items.add_menu_item_for_menu("Deduplicate_with_confirmation_images_looking_a_bit_the_same",null,
+        Menu_items.add_menu_item_for_menu("Deduplicate_with_confirmation_similar_images",null,
                 event ->
                 {
                     //logger.log("Deduplicate manually");
@@ -636,7 +636,7 @@ public class Virtual_landscape_menus
                             virtual_landscape,
                             too_far_away_image,
                             folder_path.toFile(),
-                            null, // does not check image length
+                            null, // does not check image sizes
                             get_image_fv_cache,
                             owner,
                             logger)).do_your_job());

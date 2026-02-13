@@ -417,7 +417,7 @@ public class Mouse_handling_for_Image_window
                 logger.log("bad image length");
             }
             logger.log("setting image view as broken icon");
-            local.the_image_view.setImage(Jar_utils.get_broken_icon(300, image_window.stage, logger));
+            local.the_image_view.setImage(Jar_utils.get_broken_icon(300, image_window.stage, logger).orElse(null));
             return true;
         }
         return false;

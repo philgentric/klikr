@@ -56,7 +56,7 @@ public class Moving_files
             Path new_Path_ = Paths.get(destination_dir.toAbsolutePath().toString(), the_file_being_moved.getName());
 
             if (old_Path_.compareTo(new_Path_) == 0) {
-                logger.log("WARNING illegal move ignored" + old_Path_.toAbsolutePath() + " == " + new_Path_.toAbsolutePath());
+                logger.log("❗ WARNING illegal move ignored" + old_Path_.toAbsolutePath() + " == " + new_Path_.toAbsolutePath());
                 popup = true;
                 continue;
             }
@@ -260,7 +260,7 @@ public class Moving_files
     // it does not check for overwrite etc
     // prefer Moving_files.actual_safe_moves
     //**********************************************************
-    public static boolean move_file(Path old_path, Path new_path, Logger logger)
+    public static boolean move_file(Path old_path, Path new_path, Window owner, Logger logger)
     //**********************************************************
     {
         if (! old_path.toFile().exists())
@@ -286,7 +286,9 @@ public class Moving_files
         }
         catch (FileAlreadyExistsException e)
         {
-            logger.log("FileAlreadyExistsException Files.move() cannot move "+old_path+" => "+ new_path);
+            String text = "❗  Warning! \"FileAlreadyExistsException Files.move() cannot move \"+old_path+\" => \"+ new_path";
+            logger.log(text+" "+e);
+            Popups.popup_warning("Move/Rename failed",text,false,owner,logger);
             return false;
         }
         catch (IOException e)
@@ -687,9 +689,12 @@ public class Moving_files
                 logger.log(local_string + "<-\n" + e0);
                 return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, Command.command_copy, Status.copy_done,false);
             }
-            catch (FileAlreadyExistsException ex) {
-                logger.log("❌ FATAL! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
-                        "<- into ->" + oandn.new_Path.toAbsolutePath() + "<-\n" + ex);
+            catch (FileAlreadyExistsException ex)
+            {
+                String text = "❗  Warning! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
+                        "<- into ->" + oandn.new_Path.toAbsolutePath();
+                logger.log(text+" "+ex);
+                Popups.popup_warning("Move/Rename failed",text,false,owner,logger);
             }
             catch (IOException ex) {
                 logger.log("❌ FATAL! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
@@ -743,7 +748,7 @@ public class Moving_files
         Path new_path = Paths.get(old_path.getParent().toString(), new_name);
         //Files.move(path, new_path);
         //FileUtils.moveDirectory(old_path.toFile(),new_path.toFile());
-        if ( !move_file(old_path,new_path,logger))
+        if ( !move_file(old_path,new_path,owner,logger))
         {
             return null;
         }

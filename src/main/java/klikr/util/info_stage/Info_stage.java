@@ -25,7 +25,8 @@ public class Info_stage
     //**********************************************************
     public static void show_info_stage(String title,
                                        List<Line_for_info_stage> lines,
-                                       Image icon, Runnable on_window_close)
+                                       Image icon,
+                                       Runnable on_window_close)
     //**********************************************************
     {
         TextFlow textFlow = new TextFlow();

@@ -177,7 +177,7 @@ public class Full_image_from_disk
         if (Check_remaining_RAM.RAM_running_low("running low",owner,logger))
         {
             logger.log("load_native_resolution_image_from_disk NOT DONE because running low on memory ! ");
-            return Optional.of(Jar_utils.get_broken_icon(300,owner,logger));
+            return Jar_utils.get_broken_icon(300,owner,logger);
         }
         /*
         if ( Guess_file_type.use_nasa_fits_java_lib)
@@ -209,13 +209,13 @@ public class Full_image_from_disk
         {
             Check_remaining_RAM.RAM_running_low(""+e,owner, logger);
             logger.log("OutOfMemoryError when loading image from disk: "+original_image_file.toAbsolutePath()+" : "+e);
-            return Optional.of(Jar_utils.get_broken_icon(300,owner,logger));
+            return Jar_utils.get_broken_icon(300,owner,logger);
         }
         catch (Exception e)
         {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
             Popups.popup_Exception(e,100,"An error occurred while loading an image from disk",owner,logger);
-            return Optional.of(Jar_utils.get_broken_icon(300,owner,logger));
+            return Jar_utils.get_broken_icon(300,owner,logger);
         }
         try {
             input_stream.close();
@@ -315,7 +315,7 @@ public class Full_image_from_disk
         {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        return Optional.of(Jar_utils.get_broken_icon(300,owner,logger));
+        return Jar_utils.get_broken_icon(300,owner,logger);
     }
 
 

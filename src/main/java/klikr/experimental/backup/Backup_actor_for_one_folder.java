@@ -64,7 +64,7 @@ public class Backup_actor_for_one_folder implements Actor
         this.owner = owner;
 
         // allocate a dedicated actor per folder since a folder maybe in its own thread and file comparator is not re-entrant
-        file_actor = new Backup_actor_for_one_file(stats, logger);
+        file_actor = new Backup_actor_for_one_file(stats, owner,logger);
 
     }
 

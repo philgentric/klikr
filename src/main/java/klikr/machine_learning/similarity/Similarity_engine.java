@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 public class Similarity_engine implements Clearable_RAM_cache
 //**********************************************************
 {
-    private final static boolean dbg = false;
+    private final static boolean dbg = true;
 
 
     public static final double W = 300;
@@ -117,7 +117,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         if ( fv0 ==null)
         {
             hourglass.ifPresent(Hourglass::close);
-            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: fv not acquired"));
+            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: fv0 not acquired"));
             return new ArrayList<>();
         }
 
@@ -185,6 +185,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, owner, browser_aborter);
         if ( fv0 ==null)
         {
+            logger.log(Stack_trace_getter.get_stack_trace("fv0 not acquired"));
             hourglass.ifPresent(Hourglass::close);
             return new ArrayList<>();
         }
@@ -335,10 +336,10 @@ public class Similarity_engine implements Clearable_RAM_cache
     {
         List<Most_similar> returned =  new ArrayList<>();
         double min = Double.MAX_VALUE;
-        Image_properties ip0 = null;
+        Image_properties image_properties_0 = null;
         if ( image_properties_cache != null)
         {
-            ip0 = image_properties_cache.get(path0,aborter,null,owner);
+            image_properties_0 = image_properties_cache.get(path0,aborter,null,owner);
         }
         for(Path path1 : targets)
         {
@@ -346,14 +347,30 @@ public class Similarity_engine implements Clearable_RAM_cache
             if ( image_properties_cache != null)
             {
                 // skip images of different length
-                Image_properties ip1 = image_properties_cache.get(path1,aborter,null,owner);
-                if ( ip1 == null) continue;
-                if ( ip0.w() != ip1.w()) continue;
-                if ( ip0.h() != ip1.h()) continue;
+                Image_properties image_properties_1 = image_properties_cache.get(path1,aborter,null,owner);
+                if ( image_properties_1 == null)
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("image_properties_1 == null"));
+                    continue;
+                }
+                if ( image_properties_0.w() != image_properties_1.w())
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("different image width"));
+                    continue;
+                }
+                if ( image_properties_0.h() != image_properties_1.h())
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("different image height"));
+                    continue;
+                }
             }
 
             Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, owner, browser_aborter);
-            if (fv1 == null) continue; // server failure
+            if (fv1 == null)
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: fv1 not acquired"));
+                continue; // server failure
+            }
 
             Double distance = null;
             distance = read_similarity_from_cache(path0, path1);
@@ -368,12 +385,14 @@ public class Similarity_engine implements Clearable_RAM_cache
                 if ( distance > 0) // ignore if not zero
                 {
                     // we will return only images that are at zero distance
+                    if (dbg) logger.log("SKIPPING distance " + distance + " because image_properties_cache!= null" );
                     continue;
                 }
             }
             if ( distance > too_far_away) // ignore if too far
             {
                 // we will not return images that are too far away
+                if (dbg) logger.log("SKIPPING distance > too_far_away : " + distance + " > "+ too_far_away );
                 continue;
             }
 

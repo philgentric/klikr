@@ -47,7 +47,7 @@ public class Popups
             }
 
             logger.log("Going to popup exception(2): " + e);
-            alert.setGraphic(new ImageView(Look_and_feel_manager.get_denied_icon(icon_size,owner,logger)));
+            alert.setGraphic(new ImageView(Look_and_feel_manager.get_denied_icon(icon_size,owner,logger).orElse(null)));
             alert.showAndWait();
 
         },logger);

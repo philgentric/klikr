@@ -8,6 +8,7 @@
 //SOURCES ./File_copier.java
 package klikr.experimental.backup;
 
+import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
@@ -27,6 +28,7 @@ public class Backup_actor_for_one_file implements Actor
     File_comparator file_comparator;
     private static final boolean verbose = false;
     Logger logger;
+    Window owner;
     Backup_stats stats;
     long last;
 
@@ -35,9 +37,10 @@ public class Backup_actor_for_one_file implements Actor
 
 
     //**********************************************************
-    public Backup_actor_for_one_file(Backup_stats stats, Logger logger)
+    public Backup_actor_for_one_file(Backup_stats stats, Window owner, Logger logger)
     //**********************************************************
     {
+        this.owner = owner;
         this.logger = logger;
         this.stats = stats;
         //if ( file_concurency_limiter == null)
@@ -219,7 +222,7 @@ public class Backup_actor_for_one_file implements Actor
                 //try {
                     //Files.move(obsolete_name, source.resolveSibling(file_backup_job_request.file_to_be_copied.getName()));
                     logger.log("renaming a destination file: " + obsolete_name.toFile().getName() + " to " + file_backup_job_request.file_to_be_copied.getName());
-                    if ( !Moving_files.move_file(obsolete_name, source.resolveSibling(file_backup_job_request.file_to_be_copied.getName()),logger))
+                    if ( !Moving_files.move_file(obsolete_name, source.resolveSibling(file_backup_job_request.file_to_be_copied.getName()),owner,logger))
                 //} catch (IOException e)
                 {
                     logger.log("WARNING: attempt to rename failed ");
@@ -371,7 +374,7 @@ public class Backup_actor_for_one_file implements Actor
             if ( x.toFile().exists()) continue;
             //try {
                 //FileUtils.moveFile(destination_file,x.toFile());
-                if (!Moving_files.move_file(destination_file.toPath(),x,logger))
+                if (!Moving_files.move_file(destination_file.toPath(),x,owner,logger))
         //    } catch (IOException e)
         {
                 logger.log_stack_trace("rename failed");

@@ -117,7 +117,7 @@ public class About_klikr_stage
         //l.add(new Line_for_info_stage(false,pref_string));
 
         String icon_path = Look_and_feel_manager.get_main_window_icon_path(Look_and_feel_manager.get_instance(owner,logger), Look_and_feel_manager.Icon_type.KLIK);
-        Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, 128, owner,logger);
+        Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, 128, owner,logger).orElse(null);
         Info_stage.show_info_stage("About Klikr",l, icon, null);
 
     }

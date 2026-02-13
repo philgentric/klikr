@@ -9,6 +9,7 @@ import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.File_with_a_few_bytes;
 import klikr.util.files_and_paths.Name_cleaner;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -96,7 +97,7 @@ public class Runnable_for_finding_duplicate_file_pairs implements Runnable
 		}
 
 
-		logger.log("found duplicates:  "+deduplication_engine.duplicates_found.doubleValue());
+		logger.log(Stack_trace_getter.get_stack_trace("found duplicates:  "+deduplication_engine.duplicates_found.doubleValue()));
 		deduplication_engine.threads_in_flight.decrement();
         double remaining = deduplication_engine.threads_in_flight.doubleValue();
         if ( remaining != 0)
