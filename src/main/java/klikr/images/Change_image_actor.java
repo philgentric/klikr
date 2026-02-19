@@ -3,13 +3,10 @@
 
 package klikr.images;
 
-import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.change.Change_gang;
 import klikr.path_lists.Indexer;
-import klikr.util.files_and_paths.Static_files_and_paths_utilities;
-import klikr.util.mmap.Mmap;
 import klikr.util.perf.Perf;
 import klikr.util.ui.Jfx_batch_injector;
 
@@ -109,7 +106,8 @@ public class Change_image_actor implements Actor
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        change_image_message.logger.log(""+e);
+                        return "interrupted";
                     }
                 }
 

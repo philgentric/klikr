@@ -243,7 +243,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
             try {
                 cdl.await();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                logger.log(""+e);
             }
 
             if (dbg) logger.log("primary_stage closing GOING TO CALL Platform.exit()");

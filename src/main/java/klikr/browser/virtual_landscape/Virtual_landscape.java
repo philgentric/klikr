@@ -2764,8 +2764,10 @@ public class Virtual_landscape
                     }
                     if (rc != null) redraw_all_internal(rc, owner, owner.getX() + 100, owner.getY() + 100);
 
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } catch (InterruptedException e)
+                {
+                    logger.log("redraw_engine interrupted"+e);
+                    return;
                 }
             }
         };

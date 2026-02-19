@@ -183,7 +183,8 @@ public class Media_instance
         {
             Thread.sleep(10);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            logger.log(""+e);
+            return Song_play_status.aborted;
         }
         if ( aborter.should_abort())
         {

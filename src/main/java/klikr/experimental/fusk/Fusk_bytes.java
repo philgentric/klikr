@@ -146,8 +146,10 @@ public class Fusk_bytes implements Pin_code_client
                 } else {
                     logger.log("Fusk: using default passphrase");
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException e)
+            {
+                logger.log("Fusk: could not read passphrase file"+e);
+                return false;
             }
         }
 

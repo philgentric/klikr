@@ -146,7 +146,7 @@ public class Klikr_communicator
         return true;
     }
 
-    // --- Mode 2: App B (Multi-Instance) Startup ---
+    // --- Mode 2: Diskview_application B (Multi-Instance) Startup ---
     //**********************************************************
     public void start_as_multi_instance()
     //**********************************************************

@@ -297,6 +297,14 @@ public abstract class Item implements Icon_destination
                                     Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(finalTarget, owner, logger), owner, logger);
                                 }, context_menu, owner, logger);
                     }
+
+                    Menu_items.add_menu_item_for_context_menu(
+                            "Disk_View",
+                            null,
+                            event -> {
+                                if (dbg) logger.log("Show disk view");
+                                Window_builder.additional_no_past(application,Window_type.File_system_diskview, new Path_list_provider_for_file_system(finalTarget, owner, logger), owner, logger);
+                            }, context_menu, owner, logger);
                 }
                 create_open_with_system_menu_item(optional_of_item_path.get(),context_menu);
                 /*if (Feature_cache.get(Feature.Enable_tags))

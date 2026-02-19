@@ -4,7 +4,6 @@
 //SOURCES ./Simple_logger.java
 package klikr.util.log;
 
-import javafx.stage.Window;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 

@@ -13,6 +13,7 @@ import klikr.browser.classic.Browser;
 import klikr.browser.comparators.Last_access_comparator;
 import klikr.browser.virtual_landscape.Scroll_position_cache;
 import klikr.browser.virtual_landscape.Shutdown_target;
+import klikr.diskview.Disk_footprint;
 import klikr.experimental.image_playlist.Image_playlist_browser;
 import klikr.in3D.Circle_3D;
 import klikr.path_lists.Path_list_provider;
@@ -251,14 +252,15 @@ public class Window_builder
             case File_system_2D -> {
                 return new Browser(window_builder,logger);
             }
-            case File_system_3D ->
-                    {
-                        return new Circle_3D(window_builder,logger);
-                    }
-            case Song_playlist_browser ->
-                    {
-                        return new Song_playlist_browser(window_builder,logger);
-                    }
+            case File_system_3D -> {
+                return new Circle_3D(window_builder,logger);
+            }
+            case File_system_diskview -> {
+                return new Disk_footprint(window_builder,logger);
+            }
+            case Song_playlist_browser -> {
+                return new Song_playlist_browser(window_builder,logger);
+            }
 
         }
         return null;

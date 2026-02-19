@@ -163,7 +163,8 @@ public class Icon_factory_actor implements Actor
                 try {
                     Thread.sleep(100*icon_factory_request.retry_count);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    logger.log(""+e);
+                    return "failed";
                 }
                 continue;
             }

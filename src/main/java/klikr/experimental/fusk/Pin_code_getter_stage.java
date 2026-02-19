@@ -58,7 +58,8 @@ public class Pin_code_getter_stage
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        logger.log(""+e);
+                        return;
                     }
                     if ( get_pin_code() != null)
                     {

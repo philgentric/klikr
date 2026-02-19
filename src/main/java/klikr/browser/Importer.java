@@ -109,7 +109,8 @@ public class Importer
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    logger.log(""+e);
+                    return;
                 }
                 if ( done.get()) return;
                 logger.log("Importation: "+counter.doubleValue()+ " images copied");

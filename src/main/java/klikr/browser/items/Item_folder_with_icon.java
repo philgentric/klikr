@@ -486,7 +486,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
             try {
                 Thread.sleep(50+random.nextInt(300));
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                logger.log(""+e);
             }
             if ( aborter.should_abort()) return;
             Sizes sizes = Static_files_and_paths_utilities.get_sizes_on_disk_deep(path, aborter, owner, logger);

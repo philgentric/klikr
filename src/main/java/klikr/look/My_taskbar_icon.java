@@ -8,6 +8,9 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritablePixelFormat;
 import klikr.util.log.Logger;
 
+import java.awt.image.BufferedImage;
+import java.util.Optional;
+
 /*
 about the copyright notice below:
 this is extracted from Module javafx.swing source
@@ -107,8 +110,8 @@ public class My_taskbar_icon
                 java.awt.Taskbar task_bar = java.awt.Taskbar.getTaskbar();
                 if (task_bar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE))
                 {
-                    java.awt.image.BufferedImage bim = fromFXImage(taskbar_icon, null, logger);
-                    task_bar.setIconImage(bim);
+                    Optional<BufferedImage> op = fromFXImage(taskbar_icon, null, logger);
+                    op.ifPresent(task_bar::setIconImage);
                 }
                 if (task_bar.isSupported(java.awt.Taskbar.Feature.ICON_BADGE_TEXT)) {
                     task_bar.setIconBadge(badge_text);
@@ -118,13 +121,13 @@ public class My_taskbar_icon
     }
 
     //**********************************************************
-    public static java.awt.image.BufferedImage fromFXImage(javafx.scene.image.Image img, java.awt.image.BufferedImage bimg, Logger logger)
+    public static Optional<java.awt.image.BufferedImage> fromFXImage(javafx.scene.image.Image img, java.awt.image.BufferedImage bimg, Logger logger)
     //**********************************************************
     {
         PixelReader pr = img.getPixelReader();
         if (pr == null) {
             logger.log("❌ fromFXImage FATAL: getPixelReader() failed");
-            return null;
+            return Optional.empty();
         }
         int iw = (int) img.getWidth();
         int ih = (int) img.getHeight();
@@ -178,14 +181,16 @@ public class My_taskbar_icon
             scan = ((java.awt.image.SinglePixelPackedSampleModel)sm).getScanlineStride();
         }
 
-        WritablePixelFormat pf = getAssociatedPixelFormat(bimg);
+        Optional<WritablePixelFormat> op = get_PixelFormat(bimg, logger);
+        if ( op.isEmpty()) return Optional.empty();
+        WritablePixelFormat pf = op.get();
         pr.getPixels(0, 0, iw, ih, pf, data, offset, scan);
         //logger.log("fromFXImage END!");
-        return bimg;
+        return Optional.of(bimg);
     }
 
     //**********************************************************
-    private static WritablePixelFormat getAssociatedPixelFormat(java.awt.image.BufferedImage bimg)
+    private static Optional<WritablePixelFormat> get_PixelFormat(java.awt.image.BufferedImage bimg, Logger logger)
     //**********************************************************
     {
         switch (bimg.getType()) {
@@ -195,12 +200,13 @@ public class My_taskbar_icon
             // PixelReader happens to not know the data is opaque.
             case java.awt.image.BufferedImage.TYPE_INT_RGB:
             case java.awt.image.BufferedImage.TYPE_INT_ARGB_PRE:
-                return PixelFormat.getIntArgbPreInstance();
+                return Optional.of(PixelFormat.getIntArgbPreInstance());
             case java.awt.image.BufferedImage.TYPE_INT_ARGB:
-                return PixelFormat.getIntArgbInstance();
+                return Optional.of(PixelFormat.getIntArgbInstance());
             default:
                 // Should not happen...
-                throw new InternalError("Failed to validate BufferedImage type");
+                logger.log("Failed to validate BufferedImage type");
+                return Optional.empty();
         }
     }
 
