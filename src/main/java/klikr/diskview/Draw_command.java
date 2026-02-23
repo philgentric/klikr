@@ -1,5 +1,6 @@
 package klikr.diskview;
 
+import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
@@ -10,14 +11,24 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.stage.Window;
+import klikr.Window_builder;
+import klikr.Window_type;
+import klikr.images.Image_window;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.util.execute.actor.Aborter;
+import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
+import klikr.util.ui.Menu_items;
 
 import java.io.File;
+import java.nio.file.Path;
 
 //*******************************************************
 public class Draw_command
 //*******************************************************
 {
+    private static final boolean dbg = true;
     final Logger logger;
     public final File_node node;
     public final Rectangle2D bounds;
@@ -100,7 +111,7 @@ public class Draw_command
 
     /** Create full interactive Rectangle node (gradient, shadow, hover, tooltip, menu, labels). */
     //*******************************************************
-    public void execute(Pane pane)
+    public void execute(Pane pane, Application application, Window owner)
     //*******************************************************
     {
         double bw = bounds.getWidth();
@@ -182,7 +193,7 @@ public class Draw_command
         // ── Left-click on directory → navigate into it ──
         rect.setOnMousePressed(ev -> {
             if (ev.isSecondaryButtonDown()) {
-                ContextMenu contextMenu = create_ContextMenu(node, rescan_callback,logger);
+                ContextMenu contextMenu = create_ContextMenu(node, rescan_callback,application, owner, logger);
                 contextMenu.show(rect, ev.getScreenX(), ev.getScreenY());
                 ev.consume();
             }
@@ -246,62 +257,97 @@ public class Draw_command
     }
 
     //*******************************************************
-    private static ContextMenu create_ContextMenu(File_node node, Runnable rescan_callback, Logger logger)
+    private static ContextMenu create_ContextMenu(File_node node, Runnable rescan_callback, Application application, Window owner, Logger logger)
     //*******************************************************
     {
-        ContextMenu contextMenu = new ContextMenu();
-        String os = System.getProperty("os.name", "").toLowerCase();
-        String reveal_label = os.contains("mac") ? "Reveal in Finder"
-                : os.contains("win") ? "Show in Explorer" : "Show in File Manager";
-        MenuItem reveal_item = new MenuItem(reveal_label);
-        reveal_item.setOnAction(ev -> {
-            try {
-                File target = node.get_file();
-                if (os.contains("mac")) {
-                    new ProcessBuilder("open", "-R", target.getAbsolutePath()).start();
-                } else if (os.contains("win")) {
-                    new ProcessBuilder("explorer", "/select,", target.getAbsolutePath()).start();
-                } else {
-                    File folder = target.isDirectory() ? target : target.getParentFile();
-                    if (folder != null) {
-                        new ProcessBuilder("xdg-open", folder.getAbsolutePath()).start();
-                    }
-                }
-            } catch (Exception ex) {
-                logger.log("" + ex);
-            }
-        });
+        ContextMenu context_menu = new ContextMenu();
 
-        MenuItem delete_item = new MenuItem("Delete");
-        delete_item.setOnAction(ev -> {
-            File target = node.get_file();
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Delete \"" + target.getName() + "\"?\n"
-                            + format_size(node.get_size()) + "\n\n"
-                            + target.getAbsolutePath(),
-                    ButtonType.OK, ButtonType.CANCEL);
-            confirm.setTitle("Confirm Delete");
-            confirm.setHeaderText("This cannot be undone.");
-            confirm.showAndWait().ifPresent(btn -> {
-                if (btn == ButtonType.OK) {
-                    boolean deleted;
-                    if (target.isDirectory()) {
-                        deleted = delete_recursively(target);
+        {
+            if ( !node.is_this_a_directory())
+            {
+                Path p = node.get_file().toPath();
+                if (Guess_file_type.is_this_path_an_image(p,owner,logger))
+                {
+                    Menu_items.add_menu_item_for_context_menu(
+                        "Show_Image",
+                        null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
+                        event -> {
+                            Image_window.get_Image_window(p, new Path_list_provider_for_file_system(p.getParent(),owner,logger),null, owner,new Aborter("Image_viewer",logger),logger);
+                        }, context_menu, owner, logger);
+
+
+
+                }
+
+            }
+        }
+        {
+            Menu_items.add_menu_item_for_context_menu(
+                    "Browse_in_new_window",
+                    null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
+                    event -> {
+                        if (dbg) logger.log("Browse in new window!");
+                        Path folder_path = node.get_file().toPath().getParent();
+                        Window_builder.additional_no_past(application, Window_type.File_system_2D,new Path_list_provider_for_file_system(folder_path,owner,logger), owner, logger);
+                    }, context_menu, owner, logger);
+
+        }
+        {
+            String os = System.getProperty("os.name", "").toLowerCase();
+            String reveal_label = os.contains("mac") ? "Reveal in Finder"
+                    : os.contains("win") ? "Show in Explorer" : "Show in File Manager";
+            MenuItem reveal_item = new MenuItem(reveal_label);
+            reveal_item.setOnAction(ev -> {
+                try {
+                    File target = node.get_file();
+                    if (os.contains("mac")) {
+                        new ProcessBuilder("open", "-R", target.getAbsolutePath()).start();
+                    } else if (os.contains("win")) {
+                        new ProcessBuilder("explorer", "/select,", target.getAbsolutePath()).start();
                     } else {
-                        deleted = target.delete();
+                        File folder = target.isDirectory() ? target : target.getParentFile();
+                        if (folder != null) {
+                            new ProcessBuilder("xdg-open", folder.getAbsolutePath()).start();
+                        }
                     }
-                    if (deleted) {
-                        if (rescan_callback != null) rescan_callback.run();
-                    } else {
-                        new Alert(Alert.AlertType.ERROR, "Failed to delete:\n" + target.getAbsolutePath())
-                                .showAndWait();
-                    }
+                } catch (Exception ex) {
+                    logger.log("" + ex);
                 }
             });
-        });
+            context_menu.getItems().add(reveal_item);
+        }
+        {
+            MenuItem delete_item = new MenuItem("Delete");
+            delete_item.setOnAction(ev -> {
+                File target = node.get_file();
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                        "Delete \"" + target.getName() + "\"?\n"
+                                + format_size(node.get_size()) + "\n\n"
+                                + target.getAbsolutePath(),
+                        ButtonType.OK, ButtonType.CANCEL);
+                confirm.setTitle("Confirm Delete");
+                confirm.setHeaderText("This cannot be undone.");
+                confirm.showAndWait().ifPresent(btn -> {
+                    if (btn == ButtonType.OK) {
+                        boolean deleted;
+                        if (target.isDirectory()) {
+                            deleted = delete_recursively(target);
+                        } else {
+                            deleted = target.delete();
+                        }
+                        if (deleted) {
+                            if (rescan_callback != null) rescan_callback.run();
+                        } else {
+                            new Alert(Alert.AlertType.ERROR, "Failed to delete:\n" + target.getAbsolutePath())
+                                    .showAndWait();
+                        }
+                    }
+                });
+            });
+            context_menu.getItems().add(delete_item);
+        }
 
-        contextMenu.getItems().addAll(reveal_item, new SeparatorMenuItem(), delete_item);
-        return contextMenu;
+        return context_menu;
     }
 
     //*******************************************************

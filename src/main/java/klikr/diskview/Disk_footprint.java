@@ -13,10 +13,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_provider;
 import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.look.Look_and_feel_manager;
+import klikr.look.my_i18n.My_I18n;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
@@ -33,7 +35,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     private File_node current_root;    // currently displayed root (may be a subfolder)
     private File_node scan_root;       // the original scanned tree root
     private Label status_label;
-    private Button back_button;
+    private Button up_button;
     public final Logger logger;
 
 
@@ -50,20 +52,20 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
         ToolBar toolBar = new ToolBar();
         Look_and_feel_manager.set_region_look(toolBar,stage,logger);
-        Button refresh_button = new Button("Refresh");
+        Button refresh_button = new Button(My_I18n.get_I18n_string("Refresh",stage,logger));
         Look_and_feel_manager.set_button_look(refresh_button,true,stage,logger);
-        back_button = new Button("⬆ Up");
-        Look_and_feel_manager.set_button_look(back_button,true,stage,logger);
-        status_label = new Label("Ready");
+        up_button = new Button(My_I18n.get_I18n_string("Parent_Folder",stage,logger));
+        Look_and_feel_manager.set_button_look(up_button,true,stage,logger);
+        status_label = new Label("OK");
         Look_and_feel_manager.set_region_look(status_label,stage,logger);
 
-        toolBar.getItems().addAll(refresh_button, back_button, new Separator(), status_label);
+        toolBar.getItems().addAll(refresh_button, up_button, new Separator(), status_label);
         root.setTop(toolBar);
 
         drawing_pane = new Pane();
         drawing_pane.setStyle("-fx-background-color: #1e1e1e;");
-        drawing_pane.widthProperty().addListener((obs, oldVal, newVal) -> refreshLayout());
-        drawing_pane.heightProperty().addListener((obs, oldVal, newVal) -> refreshLayout());
+        drawing_pane.widthProperty().addListener((obs, oldVal, newVal) -> refresh());
+        drawing_pane.heightProperty().addListener((obs, oldVal, newVal) -> refresh());
 
         root.setCenter(drawing_pane);
 
@@ -73,16 +75,16 @@ public class Disk_footprint implements Window_provider, Shutdown_target
             }
         });
 
-        back_button.setOnAction(e -> {
+        up_button.setOnAction(e -> {
             if (current_root == null) return;
 
             // Case 1: navigated into a subfolder of the scan tree → go up within the tree
             if (scan_root != null && current_root != scan_root) {
-                File_node parent = findParent(scan_root, current_root);
+                File_node parent = find_parent(scan_root, current_root);
                 if (parent != null) {
-                    navigateTo(parent);
+                    navigate_to(parent);
                 } else {
-                    navigateTo(scan_root);
+                    navigate_to(scan_root);
                 }
                 return;
             }
@@ -95,7 +97,6 @@ public class Disk_footprint implements Window_provider, Shutdown_target
         });
 
         Scene scene = new Scene(root, 800, 600);
-        stage.setTitle("Disk Size Viz");
         stage.setScene(scene);
         stage.show();
         stage.setScene(scene);
@@ -116,21 +117,25 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
     }
 
-    /** Disable Up only when browsing the filesystem root '/'. */
-    private void updateBackButton() {
+    //*******************************************************
+    private void update_up_button()
+    //*******************************************************
+    {
         if (current_root == null) {
-            back_button.setDisable(true);
+            up_button.setDisable(true);
             return;
         }
-        back_button.setDisable(current_root.get_file().getParentFile() == null);
+        up_button.setDisable(current_root.get_file().getParentFile() == null);
     }
 
-    /** Navigate the display to show a subfolder of the scanned tree. No rescan needed. */
-    private void navigateTo(File_node node) {
+    //*******************************************************
+    private void navigate_to(File_node node)
+    //*******************************************************
+    {
         current_root = node;
-        updateBackButton();
+        update_up_button();
         status_label.setText(node.get_file().getAbsolutePath() + " — " + format_size_internal(node.get_size()));
-        refreshLayout();
+        refresh();
         stage.setTitle("Disk footprint of: "+node.get_file().getAbsolutePath());
 
     }
@@ -140,19 +145,25 @@ public class Disk_footprint implements Window_provider, Shutdown_target
      * and navigate into that child. If the clicked node IS a direct child, navigate
      * into it (if it's a directory). Files at top level are ignored.
      */
-    private void navigateToChild(File_node clickedNode) {
+    //*******************************************************
+    private void navigate_to_child(File_node clickedNode)
+    //*******************************************************
+    {
         if (current_root == null) return;
 
         // Is clickedNode itself a direct child of currentRoot?
-        File_node topChild = findTopLevelChild(current_root, clickedNode);
+        File_node topChild = find_top_level_child(current_root, clickedNode);
         if (topChild != null && topChild.is_this_a_directory()) {
-            navigateTo(topChild);
+            navigate_to(topChild);
         }
         // If topChild is a file (not a directory), or not found, do nothing
     }
 
     /** Find the parent of 'target' in the tree rooted at 'root', using file paths. */
-    private static File_node findParent(File_node root, File_node target) {
+    //*******************************************************
+    private static File_node find_parent(File_node root, File_node target)
+    //*******************************************************
+    {
         File parentFile = target.get_file().getParentFile();
         if (parentFile == null) return null;
         String parentPath = parentFile.getAbsolutePath();
@@ -177,7 +188,10 @@ public class Disk_footprint implements Window_provider, Shutdown_target
      * Find which direct child of 'root' is the ancestor of (or is) 'target'.
      * Uses file paths — O(1), no tree traversal.
      */
-    private static File_node findTopLevelChild(File_node root, File_node target) {
+    //*******************************************************
+    private static File_node find_top_level_child(File_node root, File_node target)
+    //*******************************************************
+    {
         if (target == root) return null;
         String rootPath = root.get_file().getAbsolutePath();
         String targetPath = target.get_file().getAbsolutePath();
@@ -192,7 +206,11 @@ public class Disk_footprint implements Window_provider, Shutdown_target
         return root.find_child(childName);
     }
 
-    private void start_scan(File folder) {
+    //*******************************************************
+    private void start_scan(File folder)
+    //*******************************************************
+    {
+        stage.setTitle("Disk footprint of: "+folder.getAbsolutePath());
         status_label.setText("Scanning " + folder.getAbsolutePath() + "...");
         scan_root = null;  // will be set when scan/cache completes
 
@@ -211,7 +229,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
                 if (cached != null && cached.get_size() > 0 && w > 0 && h > 0) {
                     int prevCount = 0;
                     for (int depth = 1; depth <= 30; depth++) {
-                        List<Draw_command> cmds = buildDrawCommands(cached, w, h, depth);
+                        List<Draw_command> cmds = build_Draw_commands2(cached, w, h, depth);
                         if (cmds.size() == prevCount) break;
                         prevCount = cmds.size();
 
@@ -222,10 +240,10 @@ public class Disk_footprint implements Window_provider, Shutdown_target
                             try {
                                 current_root = cached;
                                 if (scan_root == null) scan_root = cached;
-                                updateBackButton();
+                                update_up_button();
                                 status_label.setText("Depth " + d + "… " + frame.size()
                                         + " items — " + format_size_internal(cached.get_size()));
-                                applyDrawCommands(frame);
+                                apply_Draw_commands(frame);
                             } finally {
                                 latch.countDown();
                             }
@@ -253,18 +271,18 @@ public class Disk_footprint implements Window_provider, Shutdown_target
                 double w2 = drawing_pane.getWidth();
                 double h2 = drawing_pane.getHeight();
                 if (w2 > 0 && h2 > 0) {
-                    List<Draw_command> freshCmds = buildDrawCommands(root, w2, h2);
+                    List<Draw_command> freshCmds = build_Draw_commands(root, w2, h2);
                     Platform.runLater(() -> {
                         current_root = root;
                         scan_root = root;
-                        updateBackButton();
+                        update_up_button();
                         String msg = String.format("Scanned %d folders in %d ms — %s",
                                 scanned + cacheHits, elapsed, format_size_internal(root.get_size()));
                         if (cacheHits > 0) {
                             msg += String.format("  [%d cached, %d rescanned]", cacheHits, scanned);
                         }
                         status_label.setText(msg);
-                        applyDrawCommands(freshCmds);
+                        apply_Draw_commands(freshCmds);
                     });
                 }
             } catch (Exception e) {
@@ -274,7 +292,10 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     }
 
     /** Async version: computes layout on a virtual thread, draws via Platform.runLater. Good for resize events. */
-    private void refreshLayout() {
+    //*******************************************************
+    private void refresh()
+    //*******************************************************
+    {
         if (current_root == null) return;
         if (drawing_pane.getWidth() <= 0 || drawing_pane.getHeight() <= 0) return;
 
@@ -284,8 +305,8 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
         Actor_engine.execute(() -> {
             try {
-                List<Draw_command> commands = buildDrawCommands(root, w, h);
-                Platform.runLater(() -> applyDrawCommands(commands));
+                List<Draw_command> commands = build_Draw_commands(root, w, h);
+                Platform.runLater(() -> apply_Draw_commands(commands));
             } catch (Throwable e) {
                 logger.log(""+e);
             }
@@ -293,18 +314,27 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     }
 
 
-    private List<Draw_command> buildDrawCommands(File_node root, double w, double h) {
-        return buildDrawCommands(root, w, h, Integer.MAX_VALUE);
+    //*******************************************************
+    private List<Draw_command> build_Draw_commands(File_node root, double w, double h)
+    //*******************************************************
+    {
+        return build_Draw_commands2(root, w, h, Integer.MAX_VALUE);
     }
 
-    private List<Draw_command> buildDrawCommands(File_node root, double w, double h, int maxDepth) {
+    //*******************************************************
+    private List<Draw_command> build_Draw_commands2(File_node root, double w, double h, int maxDepth)
+    //*******************************************************
+    {
         long root_total_size = root.get_size();
         List<Draw_command> commands = new java.util.ArrayList<>();
         compute_layout(root, 0, 0, w, h, 0, -1, root_total_size, maxDepth, commands);
         return commands;
     }
 
-    private void applyDrawCommands(List<Draw_command> commands) {
+    //*******************************************************
+    private void apply_Draw_commands(List<Draw_command> commands)
+    //*******************************************************
+    {
         drawing_pane.getChildren().clear();
 
         double pw = drawing_pane.getWidth();
@@ -351,7 +381,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
                 }
             }
             if (hit != null && current_root != null) {
-                navigateToChild(hit.node);
+                navigate_to_child(hit.node);
             }
         });
 
@@ -361,11 +391,11 @@ public class Disk_footprint implements Window_provider, Shutdown_target
         Runnable rescan = () -> {
             if (current_root != null) start_scan(current_root.get_file());
         };
-        java.util.function.Consumer<File_node> navigate = this::navigateToChild;
+        java.util.function.Consumer<File_node> navigate = this::navigate_to_child;
         for (Draw_command cmd : interactiveItems) {
             cmd.rescan_callback = rescan;
             cmd.navigate_callback = navigate;
-            cmd.execute(drawing_pane);
+            cmd.execute(drawing_pane, Klikr_application.application,stage);
         }
     }
 
@@ -374,9 +404,12 @@ public class Disk_footprint implements Window_provider, Shutdown_target
      *                     at depth 0→1 each top-level child gets its own family index.
      * max_depth     stop recursing at this depth — folders beyond are drawn as solid leaves.
      */
+    //*******************************************************
     private void compute_layout(File_node node, double x, double y, double w, double h,
                                 int depth, int color_family, long root_total_size, int max_depth,
-                                List<Draw_command> commands) {
+                                List<Draw_command> commands)
+    //*******************************************************
+    {
         if (w <= 0 || h <= 0) return;
 
         Treemap_layout.Layout_result layout = Treemap_layout.calculateAt(node, x, y, w, h);
@@ -415,7 +448,9 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
 
 
+    //*******************************************************
     private String format_size_internal(long size)
+    //*******************************************************
     {
         if (size <= 0) return "0 B";
         final String[] units = { "B", "KB", "MB", "GB", "TB" };

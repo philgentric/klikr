@@ -78,6 +78,7 @@ public class Finder_frame implements Search_receiver
 	public Finder_frame(
 			Application application,
 			List<String> input_keywords,
+			String extension,
 			boolean look_only_for_images,
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
@@ -121,7 +122,7 @@ public class Finder_frame implements Search_receiver
 					}
 				});
 
-		Pane main_vbox = define_main_vbox(input_keywords);
+		Pane main_vbox = define_main_vbox(input_keywords,extension);
         ScrollPane sp = new ScrollPane(main_vbox);
         sp.setFitToWidth(true);
 		Scene scene = new Scene(sp);
@@ -136,11 +137,11 @@ public class Finder_frame implements Search_receiver
 	}
 
 	//**********************************************************
-	private Pane define_main_vbox(List<String> input_keywords)
+	private Pane define_main_vbox(List<String> input_keywords, String extension)
 	//**********************************************************
 	{
 		VBox the_main_pane = new VBox();
-		Pane settings = define_settings_pane(input_keywords);
+		Pane settings = define_settings_pane(input_keywords, extension);
 		the_main_pane.getChildren().add(settings);
 
 		{
@@ -179,9 +180,15 @@ public class Finder_frame implements Search_receiver
 	}
 
 	//**********************************************************
-	private Pane define_settings_pane(List<String> input_keywords)
+	private Pane define_settings_pane(List<String> input_keywords, String extension)
 	//**********************************************************
 	{
+		extension_tf = new TextField("");
+		if ( !extension.trim().isEmpty())
+		{
+			use_extension = true;
+			extension_tf.setText(extension.trim());
+		}
 		VBox settings_vbox = new VBox();
 		{
 			Label target_folder_label = new Label(path_list_provider.get_key());
@@ -281,7 +288,6 @@ public class Finder_frame implements Search_receiver
                 }
             });
 			hb.getChildren().add(use_extension_cb);
-			extension_tf = new TextField("");
 			extension_tf.setMaxWidth(100);
 			extension_tf.setOnAction((ActionEvent e) -> {
 				extension_textfield_is_red = false;

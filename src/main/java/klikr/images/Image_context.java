@@ -373,6 +373,7 @@ public class Image_context
             logger.log("❌ FATAL null keywords ??? ");
             return;
         }
+        String extension = Extensions.get_extension(path.getFileName().toString());
         if (keywords_set.isEmpty())
         {
             // this happens when the image name does not contain text at all
@@ -395,7 +396,7 @@ public class Image_context
                 Klikr_application.application,
                 path_list_provider,
                 path_comparator_source,
-                keywords,true,aborter,owner,logger);
+                keywords,extension,true,aborter,owner,logger);
     }
 
 
@@ -440,10 +441,17 @@ public class Image_context
             dialog.setContentText("Keywords:");
 
             //logger.log("dialog !");
-            Optional<String> result = dialog.showAndWait();
-            if (result.isPresent())
+            String extension = "";
+            Optional<String> op = dialog.showAndWait();
+            if (op.isPresent())
             {
-                String[] splited = result.get().split("\\s+");// split by any space
+                String result = op.get();
+                if ( result.contains("."))
+                {
+                    extension = Extensions.get_extension(result);
+                    result = Extensions.get_base_name(result);
+                }
+                String[] splited = result.split("\\s+");// split by any space
                 if ( splited.length > 0)
                 {
                     keywords.clear();
@@ -458,7 +466,9 @@ public class Image_context
                             Klikr_application.application,
                             path_list_provider,
                             path_comparator_source,
-                            keywords,search_only_for_images,aborter,owner,logger);
+                            keywords,
+                            extension,
+                            search_only_for_images,aborter,owner,logger);
                 }
             }
 

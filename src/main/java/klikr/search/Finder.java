@@ -23,6 +23,7 @@ public class Finder
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
             List<String> keywords,
+            String extension,
             boolean search_only_images,
             Aborter aborter,
             Window owner,
@@ -32,6 +33,7 @@ public class Finder
         Finder_frame popup = new Finder_frame(
                 application,
                     keywords,
+                    extension,
                     search_only_images,
                     path_list_provider,
                     path_comparator_source,

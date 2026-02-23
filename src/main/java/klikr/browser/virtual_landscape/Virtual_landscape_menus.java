@@ -1567,13 +1567,14 @@ public class Virtual_landscape_menus
         List<CheckMenuItem> all_check_menu_items = new ArrayList<>();
         for ( Sort_files_by sort_by : Sort_files_by.values())
         {
+            /*
             if (( sort_by == Sort_files_by.SIMILARITY_BY_PAIRS)||(sort_by == Sort_files_by.SIMILARITY_BY_PURSUIT))
             {
                 if ( !Booleans.get_boolean_defaults_to_false(Feature.Enable_image_similarity.name()))
                 {
                     continue;
                 }
-            }
+            }*/
             create_menu_item_for_one_file_sort_method(menu, sort_by, all_check_menu_items);
         }
         return menu;

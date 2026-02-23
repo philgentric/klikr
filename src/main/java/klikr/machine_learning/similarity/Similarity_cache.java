@@ -307,13 +307,13 @@ public class Similarity_cache implements Clearable_RAM_cache
         int i = paths.indexOf(p1);
         if ( i < 0)
         {
-            logger.log("❌ PANIC "+p1+" not in paths!");
+            logger.log("❌ PANIC not in paths!"+p1);
             return 0.0;
         }
         int j = paths.indexOf(p2);
         if ( j < 0)
         {
-            logger.log("❌ PANIC "+p2+" not in paths!");
+            logger.log("❌ PANIC not in paths!"+p2);
             return 0.0;
         }
         Integer_pair integer_pair = Integer_pair.build(i,j);

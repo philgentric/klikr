@@ -185,7 +185,9 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, owner, browser_aborter);
         if ( fv0 ==null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("fv0 not acquired"));
+            logger.log(
+                    //Stack_trace_getter.get_stack_trace
+                            ("fv0 not acquired"));
             hourglass.ifPresent(Hourglass::close);
             return new ArrayList<>();
         }

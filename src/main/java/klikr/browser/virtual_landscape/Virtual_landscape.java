@@ -1666,13 +1666,14 @@ public class Virtual_landscape
     //**********************************************************
     {
 
+        /*
         if ((Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
                 owner) == Sort_files_by.SIMILARITY_BY_PAIRS)
                 ||
                 (Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
                         owner) == Sort_files_by.SIMILARITY_BY_PURSUIT)) {
             Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, owner, logger);
-        }
+        }*/
         show_how_many_files_deep_in_each_folder_done = false;
         folder_total_sizes_cache = new HashMap<>();
         logger.log("✅ Virtual_landscape: show_total_size_deep_in_each_folder");

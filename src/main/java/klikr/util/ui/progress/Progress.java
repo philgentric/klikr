@@ -18,12 +18,13 @@ import java.util.Optional;
 public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Window owner, Logger logger)
 //**********************************************************
 {
+    private final static boolean dbg = false;
     //**********************************************************
     public static Progress start(Pane pane, Window owner, Logger logger)
     //**********************************************************
     {
         if ( Look_and_feel_manager.get_instance(owner,logger).get_look_and_feel_style() != Look_and_feel_style.materiol) {
-            logger.log("Progress: starting a 'film'");
+            if ( dbg) logger.log("Progress: starting an animation");
             Optional<Image> op = Look_and_feel_manager.get_running_film_icon(owner, logger);
             if (op.isPresent()) {
                 ImageView iv = new ImageView(op.get());

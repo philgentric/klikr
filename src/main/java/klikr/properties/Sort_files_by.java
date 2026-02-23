@@ -34,10 +34,10 @@ public enum Sort_files_by {
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
     RANDOM,
-    RANDOM_ASPECT_RATIO,
-    NAME_GIFS_FIRST,
-    SIMILARITY_BY_PAIRS,
-    SIMILARITY_BY_PURSUIT,;
+    RANDOM_ASPECT_RATIO;
+    //NAME_GIFS_FIRST
+    //SIMILARITY_BY_PAIRS,
+    //SIMILARITY_BY_PURSUIT,
 
   public static final String SORT_FILES_BY = "sort_files_by";
 
@@ -51,8 +51,8 @@ public enum Sort_files_by {
 
         switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
         {
-            case NAME_GIFS_FIRST, ASPECT_RATIO, RANDOM_ASPECT_RATIO, IMAGE_HEIGHT , IMAGE_WIDTH, SIMILARITY_BY_PURSUIT, SIMILARITY_BY_PAIRS,
-                 FILE_NAME:
+            case //NAME_GIFS_FIRST, SIMILARITY_BY_PURSUIT, SIMILARITY_BY_PAIRS,
+                 ASPECT_RATIO, RANDOM_ASPECT_RATIO, IMAGE_HEIGHT , IMAGE_WIDTH, FILE_NAME:
                 return new Alphabetical_file_name_comparator();
             case RANDOM:
                 return new Random_comparator();
@@ -78,6 +78,7 @@ public enum Sort_files_by {
     {
         switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
         {
+            /*
             case SIMILARITY_BY_PURSUIT: {
                 Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
                 return get_similarity_comparator_by_pursuit(fvs, path_list_provider, path_comparator_source, image_properties_cache, owner, x, y, aborter, logger);
@@ -85,7 +86,7 @@ public enum Sort_files_by {
             case SIMILARITY_BY_PAIRS: {
                 Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
                 return get_similarity_comparator_pairs_of_closests(fvs, path_list_provider, owner, x, y, aborter, logger);
-            }
+            }*/
             case FILE_NAME:
                 return new Alphabetical_file_name_comparator();
             case ASPECT_RATIO:
@@ -104,8 +105,8 @@ public enum Sort_files_by {
                 return new Last_access_comparator(logger);
             case FILE_SIZE:
                 return new Decreasing_disk_footprint_comparator(aborter,owner);
-            case NAME_GIFS_FIRST:
-                return new Alphabetical_file_name_comparator_gif_first();
+            //case NAME_GIFS_FIRST:
+            //    return new Alphabetical_file_name_comparator_gif_first();
             }
         return null;
     }
@@ -178,10 +179,12 @@ public enum Sort_files_by {
     {
         switch(Sort_files_by.get_sort_files_by(key, owner))
         {
+            /*case NAME_GIFS_FIRST:
+                return false;
             case SIMILARITY_BY_PURSUIT:
                 return false;
             case SIMILARITY_BY_PAIRS:
-                return false;
+                return false;*/
             case FILE_NAME:
                 return false;
             case ASPECT_RATIO:
@@ -198,8 +201,7 @@ public enum Sort_files_by {
                 return false;
             case FILE_SIZE:
                 return false;
-            case NAME_GIFS_FIRST:
-                return false;
+
         }
         return false;
     }
@@ -247,17 +249,18 @@ public enum Sort_files_by {
     //**********************************************************
     {
         cached.put(key, b);
-
+        /*
         if ( b == Sort_files_by.SIMILARITY_BY_PAIRS)
         {
             logger.log("warning: SIMILARITY_BY_PAIRS not saved to properties");
             return;
         }
+
         if ( b == Sort_files_by.SIMILARITY_BY_PURSUIT)
         {
             logger.log("warning: SIMILARITY_BY_PURSUIT not saved to properties");
             return;
-        }
+        }*/
         Shared_services.main_properties().set_and_save(SORT_FILES_BY, b.name());
     }
 

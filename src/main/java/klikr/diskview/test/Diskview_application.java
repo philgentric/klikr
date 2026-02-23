@@ -26,6 +26,7 @@ public class Diskview_application extends Application {
     private Label status_label;
     private Button back_button;
     public final Logger logger;
+    private Stage stage;
 
 
     public Diskview_application(Logger logger) {
@@ -33,7 +34,9 @@ public class Diskview_application extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage)
+    {
+        this.stage = stage;
         BorderPane root = new BorderPane();
 
         ToolBar toolBar = new ToolBar();
@@ -349,7 +352,7 @@ public class Diskview_application extends Application {
         for (Draw_command cmd : interactiveItems) {
             cmd.rescan_callback = rescan;
             cmd.navigate_callback = navigate;
-            cmd.execute(drawing_pane);
+            cmd.execute(drawing_pane, this,stage);
         }
     }
 
