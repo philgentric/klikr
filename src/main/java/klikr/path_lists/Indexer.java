@@ -7,13 +7,11 @@ package klikr.path_lists;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.properties.String_constants;
 import klikr.util.execute.actor.Aborter;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.log.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /*
@@ -62,7 +60,7 @@ public class Indexer
     private final State state;
 
     //**********************************************************
-    public static Indexer get_Image_indexer(
+    public static Indexer build(
             Type type,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
@@ -82,7 +80,7 @@ public class Indexer
     }
 
     //**********************************************************
-    public Path get_new_path_relative(Path previous_path, int delta, boolean ultimate)
+    public Path get_new_path_relative(Path previous_path, int delta, boolean ultimate, Aborter aborter)
     //**********************************************************
     {
         int target = 0;
@@ -91,7 +89,7 @@ public class Indexer
         if ( current_index == null)
         {
             if ( dbg) logger.log("unknown path:" + previous_path);
-            state.rescan("get_new_path_relative failed");
+            state.rescan("get_new_path_relative failed",aborter);
             current_index = state.index_from_path(previous_path);
             if ( current_index == null)
             {
@@ -142,7 +140,7 @@ public class Indexer
             else
             {
                 if ( dbg) logger.log("file does not exist anymore :"+returned+" ... rescan !");
-                state.rescan("A file does not exists anymore");
+                state.rescan("A file does not exists anymore",aborter);
             }
             target = increment(target);
         }
@@ -204,19 +202,19 @@ public class Indexer
     }
 
     //**********************************************************
-    public boolean distance_larger_than(int max_distance, Path ref, Path other)
+    public boolean distance_larger_than(int max_distance, Path ref, Path other, Aborter aborter)
     //**********************************************************
     {
         Integer i1 = state.index_from_path(ref);
         if ( i1 == null)
         {
-            state.rescan("distance_larger_than error 1");
+            state.rescan("distance_larger_than error 1",aborter);
             return true;
         }
         Integer i2 = state.index_from_path(other);
         if ( i2 == null)
         {
-            state.rescan("distance_larger_than error 2");
+            state.rescan("distance_larger_than error 2",aborter);
             return true;
         }
 
@@ -242,17 +240,17 @@ public class Indexer
     }
 
     //**********************************************************
-    public void signal_deleted_file(Path to_be_deleted)
+    public void signal_deleted_file(Path to_be_deleted, Aborter aborter)
     //**********************************************************
     {
-        state.rescan("signal_deleted_file");
+        state.rescan("signal_deleted_file",aborter);
     }
 
     //**********************************************************
-    public void signal_file_copied()
+    public void signal_file_copied(Aborter aborter)
     //**********************************************************
     {
-        state.rescan("signal_file_copied");
+        state.rescan("signal_file_copied",aborter);
     }
 
     //**********************************************************
@@ -264,8 +262,8 @@ public class Indexer
         return i;
     }
 
-    public void rescan(String reason) {
-        state.rescan(reason);
+    public void rescan(String reason, Aborter aborter) {
+        state.rescan(reason,aborter);
     }
 
     public int get_max() {

@@ -208,14 +208,14 @@ public class Basic_audio_player implements Media_callbacks
         previous = new Button(My_I18n.get_I18n_string("Jump_To_Previous_Song", stage, logger));
         Look_and_feel_manager.set_button_look(previous, true, stage, logger);
         previous.setOnAction((ActionEvent e) ->{
-            if ( navigator!=null) navigator.previous();
+            if ( navigator!=null) navigator.previous(aborter);
         } );
         returned.getChildren().add(previous);
 
         next = new Button(My_I18n.get_I18n_string("Jump_To_Next_Song", stage, logger));
         Look_and_feel_manager.set_button_look(next, true, stage, logger);
         next.setOnAction((ActionEvent e) ->{
-            if ( navigator!=null) navigator.next();
+            if ( navigator!=null) navigator.next(aborter);
         } );
         returned.getChildren().add(next);
 
@@ -487,7 +487,7 @@ public class Basic_audio_player implements Media_callbacks
     // **********************************************************
     {
         save_current_time_in_song(0, null);
-        navigator.next();
+        navigator.next(aborter);
     }
 
     // **********************************************************
@@ -688,7 +688,7 @@ public class Basic_audio_player implements Media_callbacks
             case RIGHT:
                 if (keyword_dbg)
                     logger.log("right");
-                navigator.next();
+                navigator.next(aborter);
                 break;
 
             case UP:
@@ -697,7 +697,7 @@ public class Basic_audio_player implements Media_callbacks
             case LEFT:
                 if (keyword_dbg)
                     logger.log("left");
-                navigator.previous();
+                navigator.previous(aborter);
                 break;
 
             default:

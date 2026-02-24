@@ -395,7 +395,7 @@ public class Virtual_landscape
             scene.getAccelerators().put(select_all_files, () -> {
                 if (Browser.kbd_dbg)
                     logger.log("character is ctrl +a  = select all");
-                selection_handler.select_all_files_in_folder(path_list_provider);
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
         }
         {
@@ -404,7 +404,7 @@ public class Virtual_landscape
             scene.getAccelerators().put(select_all_folders, () -> {
                 if (Browser.kbd_dbg)
                     logger.log("character is ctrl +a  = select all");
-                selection_handler.select_all_files_in_folder(path_list_provider);
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
         }
 
@@ -880,7 +880,7 @@ public class Virtual_landscape
                 double y = owner.getY() + 230;
 
                 Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner,logger);
-                List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+                List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
                 fv_cache = Feature_vector_cache
                         .preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter,
                                 logger);
@@ -1975,7 +1975,7 @@ public class Virtual_landscape
     }
 
     //**********************************************************
-    public List<File> get_folder_list()
+    public List<Path> get_folder_list()
     //**********************************************************
     {
         return paths_holder.get_folder_list();

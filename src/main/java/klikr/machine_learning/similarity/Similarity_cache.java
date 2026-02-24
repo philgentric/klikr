@@ -71,7 +71,7 @@ public class Similarity_cache implements Clearable_RAM_cache
         }
         //similarity_cache_file_path = Path.of(folder_path.toAbsolutePath().toString(), name);
 
-        paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+        paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
         Feature_vector_cache fv_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_key());
         if ( fv_cache == null)
         {

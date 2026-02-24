@@ -12,7 +12,10 @@ import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.perf.Perf;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +31,7 @@ class State
     private final Path_list_provider path_list_provider;
     private final Path_comparator_source path_comparator_source;
     private final Type type;
+
     //**********************************************************
     public State(Type type, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source, Aborter aborter,Logger logger)
     //**********************************************************
@@ -39,7 +43,7 @@ class State
         this.path_comparator_source = path_comparator_source;
         path_to_index = new HashMap<>();
         index_to_path = new HashMap<>();
-        Actor_engine.execute(()->rescan("constructor"),"Indexer rescan",logger);
+        Actor_engine.execute(()->rescan("constructor",aborter),"Indexer rescan",logger);
     }
     //**********************************************************
     public int how_many_images()
@@ -48,9 +52,14 @@ class State
         return index_to_path.size();
     }
     //**********************************************************
-    public void rescan(String reason)
+    public void rescan(String reason, Aborter aborter)
     //**********************************************************
     {
+        if ( !path_list_provider.is_rescan_needed())
+        {
+            logger.log("rescan skipped");
+            return;
+        }
         try ( Perf perf = new Perf("State::rescan "+reason)) {
             //long start = System.currentTimeMillis();
             //logger.log(Stack_trace_getter.get_stack_trace("image file source scan"));
@@ -58,11 +67,11 @@ class State
             List<Path> path_list = null;
             switch (type) {
                 case images ->
-                        path_list = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+                        path_list = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
                 case songs ->
-                        path_list = path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files));
+                        path_list = path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
                 case all_files ->
-                        path_list = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files));
+                        path_list = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
             }
             if (path_list == null) {
                 logger.log(Stack_trace_getter.get_stack_trace("rescan failed"));
@@ -109,6 +118,7 @@ class State
             }
         }
     }
+
 
     public Integer index_from_path(Path path) {
         return path_to_index.get(path);

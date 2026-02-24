@@ -14,6 +14,7 @@ import klikr.machine_learning.similarity.Similarity_cache;
 import klikr.properties.boolean_features.Feature;
 import klikr.properties.boolean_features.Feature_cache;
 import klikr.util.cache.Size_;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
 import java.io.File;
@@ -36,15 +37,17 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
     protected final Logger logger;
     protected final Similarity_cache similarity_cache;
     protected final List<Path> images;
+    protected final Aborter aborter;
 
     //**********************************************************
-    public Similarity_comparator(Supplier<Feature_vector_cache> fv_cache_supplier, Similarity_cache similarity_cache, Path_list_provider path_list_provider, Logger logger)
+    public Similarity_comparator(Supplier<Feature_vector_cache> fv_cache_supplier, Similarity_cache similarity_cache, Path_list_provider path_list_provider, Aborter aborter, Logger logger)
     //**********************************************************
     {
+        this.aborter = aborter;
         this.fv_cache_supplier = fv_cache_supplier;
         this.logger = logger;
         this.similarity_cache = similarity_cache;
-        this.images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+        this.images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
         shuffle();
     }
 
@@ -130,11 +133,11 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
 
     protected void add_non_images(Path_list_provider path_list_provider, int i) {
         // then we add the non-images
-        for ( File f : path_list_provider.only_files(Feature_cache.get(Feature.Show_hidden_files)))
+        for ( Path path : path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter))
         {
-            if ( images.contains(f.toPath())) continue;
-            dummy_names.put(f.toPath(), i);
-            //logger.log(f.toPath()+" -> "+i);
+            if ( images.contains(path)) continue;
+            dummy_names.put(path, i);
+            //logger.log(path+" -> "+i);
             i++;
         }
     }

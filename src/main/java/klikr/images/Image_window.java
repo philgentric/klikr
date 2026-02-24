@@ -215,7 +215,7 @@ public class Image_window
             {
                 if (fv_cache == null) {
                     Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(stage,logger);
-                    List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+                    List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
                     fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, stage, x, y, aborter, logger);
                 }
                 return fv_cache;
@@ -552,7 +552,8 @@ public class Image_window
             copy = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(copy, () -> {
                 if ( image_display_handler.get_image_context().isEmpty()) return;
-                Runnable after = image_display_handler.image_indexer::signal_file_copied;
+                Runnable after = () ->
+                        image_display_handler.image_indexer.signal_file_copied(aborter);
                 image_display_handler.get_image_context().get().copy(
                         path_list_provider,
                         path_comparator_source,

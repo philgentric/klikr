@@ -78,6 +78,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
 
     private final Image_source item_source;
     private final Logger logger;
+    private final Aborter aborter;
     private final Stage stage;
     private final Path  the_path;
     double inner_box_size;
@@ -110,6 +111,8 @@ public class Circle_3D implements Window_provider, Shutdown_target
         this.stage = (Stage)window_builder.owner;
         this.logger = logger;
 
+        aborter = new Aborter("Circle_3D", logger);
+
         String title = "Circle 3D";
         if( window_builder.path_list_provider.get_folder_path().isEmpty())
         {
@@ -120,10 +123,10 @@ public class Circle_3D implements Window_provider, Shutdown_target
         else {
             this.the_path = window_builder.path_list_provider.get_folder_path().get();
             History_engine.get(get_owner()).add(the_path.toAbsolutePath().toString());
-            this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,stage,logger);
+            this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,stage,aborter,logger);
             title = the_path.toAbsolutePath().toString();
         }
-        material_cache_large = new Image_cache_cafeine_for_3D(400,new Aborter("i3D image cache",logger),logger);
+        material_cache_large = new Image_cache_cafeine_for_3D(400,aborter,logger);
         //image_source = new Dummy_text_image_source(icon_size,30000);
 
 
@@ -520,7 +523,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
         List<Path> list = new ArrayList<>();
         // files are in alpha order
 
-        List<Path> images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+        List<Path> images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
         Collections.sort(images);
 
         int i = images.indexOf(path);
@@ -579,7 +582,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
                 else 
                 {
                     logger.log("is not folder : "+p);
-                    Image_window image_stage = Image_window.get_Image_window(p, new Path_list_provider_for_file_system(p.getParent(),stage,logger), null,scene.getWindow(),new Aborter("dummy",logger),logger);
+                    Image_window image_stage = Image_window.get_Image_window(p, new Path_list_provider_for_file_system(p.getParent(),stage,logger), null,scene.getWindow(),aborter,logger);
                 }
             }
             else

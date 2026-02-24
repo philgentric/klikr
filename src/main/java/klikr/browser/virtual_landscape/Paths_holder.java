@@ -155,16 +155,10 @@ public class Paths_holder
 
 
     //**********************************************************
-    public List<File> get_folder_list()
+    public List<Path> get_folder_list()
     //**********************************************************
     {
-        List<File> returned = new ArrayList<>();
-        //for (Path p : folders.keySet())
-        for (Path p : folders)
-        {
-            returned.add(p.toFile());
-        }
-        return returned;
+        return new ArrayList<>(folders);
     }
 
     //**********************************************************

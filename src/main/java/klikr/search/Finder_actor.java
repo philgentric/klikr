@@ -111,7 +111,7 @@ public class Finder_actor implements Actor
             return Search_status.interrupted;
         }
 
-        List<Path> paths = fm.search_config.path_list_provider().only_song_paths(false);
+        List<Path> paths = fm.search_config.path_list_provider().only_song_paths(false,fm.aborter);
         for ( Path path : paths)
         {
             //logger.log("looking at:"+f.getAbsolutePath());

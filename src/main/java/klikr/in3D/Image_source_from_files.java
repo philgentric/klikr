@@ -7,6 +7,7 @@ import javafx.stage.Window;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.properties.boolean_features.Feature;
 import klikr.properties.boolean_features.Feature_cache;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.perf.Perf;
 
@@ -26,7 +27,7 @@ public class Image_source_from_files implements Image_source
     private final Logger logger;
     private final Window owner;
     //*******************************************************
-    public Image_source_from_files(Path folder, int small_icon_size, int large_icon_size, Window owner, Logger logger)
+    public Image_source_from_files(Path folder, int small_icon_size, int large_icon_size, Window owner, Aborter aborter, Logger logger)
     //*******************************************************
     {
         this.small_icon_size = small_icon_size;
@@ -38,11 +39,11 @@ public class Image_source_from_files implements Image_source
 
         try ( Perf p = new Perf("Image_source_from_files: sorting"))
         {
-            List<Path> folders = path_list_provider.only_folder_paths(Feature_cache.get(Feature.Show_hidden_folders));
+            List<Path> folders = path_list_provider.only_folder_paths(Feature_cache.get(Feature.Show_hidden_folders),aborter);
             Collections.sort(folders);
             paths.addAll(folders);
 
-            List<Path> files = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files));
+            List<Path> files = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
             Collections.sort(files);
             paths.addAll(files);
         }

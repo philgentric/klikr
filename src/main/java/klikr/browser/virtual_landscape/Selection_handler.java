@@ -17,6 +17,7 @@ import klikr.look.Look_and_feel_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.properties.boolean_features.Feature;
 import klikr.properties.boolean_features.Feature_cache;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 
@@ -37,7 +38,7 @@ public class Selection_handler
     private final Selection_reporter selection_reporter;
 
     // state:
-    private final List<File> selected_files = new ArrayList<>();
+    private final List<Path> selected_files = new ArrayList<>();
     double x0;
     double y0;
     double x1;
@@ -111,19 +112,19 @@ public class Selection_handler
             Popups.simple_alert(s,virtual_landscape.owner,logger);
             return false;
         }
-        selected_files.add(path.toFile());
+        selected_files.add(path);
         if (Drag_and_drop.drag_and_drop_dbg)  {
             logger.log("✅ 1 file added to selection = " + path.getFileName());
             logger.log("✅ all selected files =");
-            for (File p : selected_files) {
-                logger.log("        " + p.getName());
+            for (Path p : selected_files) {
+                logger.log("        " + p.getFileName());
             }
         }
         return true;
     }
 
     //**********************************************************
-    public List<File> get_selected_files()
+    public List<Path> get_selected_files()
     //**********************************************************
     {
         return selected_files;
@@ -323,18 +324,18 @@ public class Selection_handler
     }
 
     //**********************************************************
-    public void add_into_selected_files(List<File> ll)
+    public void add_into_selected_files(List<Path> ll)
     //**********************************************************
     {
         selected_files.addAll(ll);
     }
 
     //**********************************************************
-    public void select_all_files_in_folder(Path_list_provider path_list_provider)
+    public void select_all_files_in_folder(Path_list_provider path_list_provider, Aborter aborter)
     //**********************************************************
     {
         reset_selection();
-        add_into_selected_files(path_list_provider.only_files(Feature_cache.get(Feature.Show_hidden_files)));
+        add_into_selected_files(path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter));
         set_select_all_files(true);
     }
 }

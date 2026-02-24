@@ -211,7 +211,7 @@ public class Drag_and_drop
             //GLUON Dragboard db = node.startDragAndDrop(TransferMode.COPY);
             ClipboardContent content = new ClipboardContent();
 
-            List<File> ll = new ArrayList<>();
+            List<Path> ll = new ArrayList<>();
             if(selection_handler != null)
             {
                 logger.log("Item.init_drag_and_drop_SENDER_SIDE: selection_handler.isPresent()");
@@ -219,16 +219,16 @@ public class Drag_and_drop
             }
             logger.log("Item.init_drag_and_drop_SENDER_SIDE: " + ll.size() + " files selected");
             // if we are here it is because the user is dragging an item
-            if (!ll.contains(path.toFile()))
+            if (!ll.contains(path))
             {
-                ll.add(path.toFile());
+                ll.add(path);
                 logger.log("Item.init_drag_and_drop_SENDER_SIDE: added the ONE target file: " + path.toAbsolutePath() );
             }
             // this crashes the VM !!?? content.putFiles(ll);
             StringBuilder sb = new StringBuilder();
-            for (File f : ll)
+            for (Path f : ll)
             {
-                sb.append("\n").append(f.getAbsolutePath());
+                sb.append("\n").append(f.toAbsolutePath());
             }
             if ( Drag_and_drop.drag_and_drop_dbg) logger.log(" selected files: " + sb);
             content.put(DataFormat.PLAIN_TEXT, sb.toString());

@@ -59,6 +59,8 @@ repositories {
 }
 
 dependencies {
+    // MessagePack
+    implementation 'org.msgpack:msgpack-core:0.9.8'
     // EXIF reader
     implementation 'com.drewnoakes:metadata-extractor:2.19.0'
     // Cache

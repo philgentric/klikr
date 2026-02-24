@@ -28,6 +28,7 @@ public enum Cache_folder
 {
     mmap,
     logs,
+    folder_cache, // avoid listing folders too often
     icon_cache, // each image has a file
     folder_icon_cache, // each folder has a file
 

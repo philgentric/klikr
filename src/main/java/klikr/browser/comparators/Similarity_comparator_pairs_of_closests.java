@@ -29,10 +29,10 @@ public class Similarity_comparator_pairs_of_closests extends Similarity_comparat
             Path_list_provider path_list_provider,
             double x, double y,
             Aborter aborter,
-            Logger logger_)
+            Logger logger)
     //**********************************************************
     {
-        super(fv_cache_supplier,similarity_cache, path_list_provider, logger_);
+        super(fv_cache_supplier,similarity_cache, path_list_provider, aborter, logger);
 
         //logger.log("\n\nmin "+Similarity_cache_warmer_actor.min+" max "+Similarity_cache_warmer_actor.max);
         if ( aborter.should_abort()) return;

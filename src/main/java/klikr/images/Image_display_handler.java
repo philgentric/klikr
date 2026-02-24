@@ -94,7 +94,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         {
             // get the indexer in the background
             image_indexer = null;
-            Runnable r = () -> image_indexer = Optional.of(Indexer.get_Image_indexer(Type.images, path_list_provider, path_comparator_source, aborter, logger)).orElse(null);
+            Runnable r = () -> image_indexer = Optional.of(Indexer.build(Type.images, path_list_provider, path_comparator_source, aborter, logger)).orElse(null);
             Actor_engine.execute(r, "Get image indexer", logger);
         }
 
@@ -220,7 +220,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         if ( image_context == null) return;
         Path to_be_deleted = image_context.path;
         change_image_relative(1, image_window.ultim_mode);
-        Runnable r = () -> image_indexer.signal_deleted_file(to_be_deleted);
+        Runnable r = () -> image_indexer.signal_deleted_file(to_be_deleted,aborter);
         double x = image_window.stage.getX()+100;
         double y = image_window.stage.getY()+100;
 
@@ -371,7 +371,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
     public void rescan(String reason) {
         if ( image_indexer != null)
         {
-            image_indexer.rescan(reason);
+            image_indexer.rescan(reason,aborter);
         }
     }
 

@@ -2,6 +2,7 @@ package klikr.audio.simple_player;
 
 import klikr.search.Finder;
 import klikr.search.Finder_frame;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
 
@@ -33,7 +34,7 @@ public class Folder_navigator implements Navigator
 
     //**********************************************************
     @Override
-    public void previous()
+    public void previous(Aborter aborter)
     //**********************************************************
     {
         if ( get_current.get() == null) return;
@@ -42,7 +43,11 @@ public class Folder_navigator implements Navigator
         if ( files != null && files.length > 0 )
         {
             List<Path> list = new ArrayList<>();
-            for (File file : files) list.add(file.toPath());
+            for (File file : files)
+            {
+                if ( aborter.should_abort()) return;
+                list.add(file.toPath());
+            }
             int index = list.indexOf(get_current.get());
             previous(list, index,play,logger);
         }
@@ -51,7 +56,7 @@ public class Folder_navigator implements Navigator
 
     //**********************************************************
     @Override
-    public void next()
+    public void next(Aborter aborter)
     //**********************************************************
     {
         if ( get_current.get() == null) return;
@@ -60,7 +65,11 @@ public class Folder_navigator implements Navigator
         if ( files != null && files.length > 0 )
         {
             List<Path> list = new ArrayList<>();
-            for (File file : files) list.add(file.toPath());
+            for (File file : files)
+            {
+                if ( aborter.should_abort()) return;
+                list.add(file.toPath());
+            }
             int index = list.indexOf(get_current.get());
             next(list, index,play,logger);
         }

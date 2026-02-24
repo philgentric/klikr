@@ -113,7 +113,7 @@ public class Change_image_actor implements Actor
 
                 Indexer x = change_image_message.image_window.image_display_handler.image_indexer;
                 target_path = x.get_new_path_relative(
-                        change_image_message.input_image_context.previous_path, change_image_message.delta, change_image_message.ultimate);
+                        change_image_message.input_image_context.previous_path, change_image_message.delta, change_image_message.ultimate, change_image_message.aborter);
             } else {
                 target_path = change_image_message.input_image_context.path;
             }

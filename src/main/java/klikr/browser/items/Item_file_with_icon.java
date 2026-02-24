@@ -378,7 +378,7 @@ public class Item_file_with_icon extends Item_file
             Path image_path,
             Supplier<Feature_vector_cache> fv_cache_supplier,
             Path_comparator_source path_comparator_source,
-            Window owner, Aborter browser_aborter, Logger logger)
+            Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         String txt = My_I18n.get_I18n_string("Show_5_similar_images", owner,logger);
@@ -391,13 +391,13 @@ public class Item_file_with_icon extends Item_file
                 double x = owner.getX()+100;
                 double y = owner.getY()+100;
                 Path_list_provider path_list_provider = new Path_list_provider_for_file_system(image_path.getParent(),owner,logger);
-                List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+                List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
                 Similarity_engine image_similarity = new Similarity_engine(
                         paths,
                         path_list_provider,
                         path_comparator_source,
                         owner,
-                        browser_aborter,logger);
+                        aborter,logger);
                 image_similarity.find_similars_special(
                         true,
                         null,
@@ -407,7 +407,7 @@ public class Item_file_with_icon extends Item_file
                         true,
                         Double.MAX_VALUE, // MAGIC
                         fv_cache_supplier,
-                        owner, x,y,null,browser_aborter);
+                        owner, x,y,null,aborter);
             };
             Actor_engine.execute(r,"Find and display similar pictures",logger);
         });

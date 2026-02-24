@@ -126,7 +126,7 @@ public class Image_cache_cafeine implements Image_cache_interface
             String key = (String) e.getKey();
             Image_context local_image_context = (Image_context) e.getValue();
 
-            if ( image_context_owner.image_indexer.distance_larger_than(forward_size,image_context_owner.get_image_context().get().path,local_image_context.path))
+            if ( image_context_owner.image_indexer.distance_larger_than(forward_size,image_context_owner.get_image_context().get().path,local_image_context.path, aborter))
             {
                 cache.invalidate(key);
                 if (ultra_dbg) logger.log("       Evicted:" + key + ", distance too large from:" + image_context_owner.get_image_context().get().path + " to " + local_image_context.path.toAbsolutePath());

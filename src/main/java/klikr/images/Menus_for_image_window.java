@@ -187,7 +187,7 @@ public class Menus_for_image_window
                 image_window.copy.getDisplayText(),
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-            Runnable r = image_window.image_display_handler.image_indexer::signal_file_copied;
+            Runnable r = () -> image_window.image_display_handler.image_indexer.signal_file_copied(image_window.aborter);
             image_window.image_display_handler.get_image_context().get().copy(image_window.path_list_provider, image_window.path_comparator_source, r,image_window.stage);
         }, image_window.stage, image_window.logger);
     }

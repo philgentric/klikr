@@ -266,7 +266,7 @@ public class Virtual_landscape_menus
     public void dispatch_by(Virtual_landscape.Sort_by_time sort_by)
     //**********************************************************
     {
-        List<File> files = virtual_landscape.path_list_provider.only_files(Feature_cache.get(Feature.Show_hidden_files));
+        List<Path> files = virtual_landscape.path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
         if (files == null) {
             logger.log("❌ ERROR: cannot list files in " + virtual_landscape.path_list_provider.get_key());
         }
@@ -275,12 +275,12 @@ public class Virtual_landscape_menus
         }
         Map<String, Path> folders = new HashMap<>();
         List<Old_and_new_Path> moves = new ArrayList<>();
-        for (File f : files)
+        for (Path f : files)
         {
             BasicFileAttributes bfa;
             try
             {
-                bfa = Files.readAttributes(f.toPath(), BasicFileAttributes.class);
+                bfa = Files.readAttributes(f, BasicFileAttributes.class);
             }
             catch (IOException e)
             {
@@ -325,8 +325,8 @@ public class Virtual_landscape_menus
                 }
             }
             Old_and_new_Path oanp = new Old_and_new_Path(
-                    f.toPath(),
-                    Path.of(folder.toAbsolutePath().toString(), f.getName()),
+                    f,
+                    Path.of(folder.toAbsolutePath().toString(), f.getFileName().toString()),
                     Command.command_move,
                     Status.before_command, false);
             moves.add(oanp);
@@ -702,7 +702,7 @@ public class Virtual_landscape_menus
 
             Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
 
-            List<Path> paths = virtual_landscape.path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
+            List<Path> paths = virtual_landscape.path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
             return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
@@ -714,7 +714,7 @@ public class Virtual_landscape_menus
         public Feature_vector_cache get()
         {
             Feature_vector_source fvs = new Feature_vector_source_for_song_similarity(virtual_landscape.aborter);
-            List<Path> paths = virtual_landscape.path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files));
+            List<Path> paths = virtual_landscape.path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
             return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
@@ -967,7 +967,7 @@ public class Virtual_landscape_menus
         select_all_files_menu_item.setOnAction(event -> {
             if ( ((CheckMenuItem) event.getSource()).isSelected())
             {
-                virtual_landscape.selection_handler.select_all_files_in_folder(virtual_landscape.path_list_provider);
+                virtual_landscape.selection_handler.select_all_files_in_folder(virtual_landscape.path_list_provider, virtual_landscape.aborter);
             }
             else
             {

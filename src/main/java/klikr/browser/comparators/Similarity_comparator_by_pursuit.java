@@ -39,15 +39,15 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
             Klikr_cache<Path, Image_properties> image_properties_cache,
             Window owner,
             double x, double y,
-            Aborter browser_aborter,
-            Logger logger_)
+            Aborter aborter,
+            Logger logger)
     //**********************************************************
     {
-        super(fv_cache_supplier,similarity_cache, path_list_provider, logger_);
+        super(fv_cache_supplier,similarity_cache, path_list_provider, aborter, logger);
 
         //Collections.shuffle(images);
         //logger.log("\n\nmin "+Similarity_cache_warmer_actor.min+" max "+Similarity_cache_warmer_actor.max);
-        if ( browser_aborter.should_abort()) return;
+        if ( aborter.should_abort()) return;
 
         // "closest" is a relation that can be asymmetric
         // P2 is closest to P1, P1->P2
@@ -60,7 +60,7 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
         Map<Path, Closest_neighbor> map = new HashMap<>();
         for ( Path p1 : images)
         {
-            if ( browser_aborter.should_abort()) return;
+            if ( aborter.should_abort()) return;
 
             Closest_neighbor cn = Closest_neighbor.find_closest_of(p1, images, similarity_cache);
             if ( cn == null)
@@ -82,7 +82,7 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
         List<Closest_neighbor> done = new ArrayList<>();
         for( Closest_neighbor cn : candidates)
         {
-            if ( browser_aborter.should_abort()) return;
+            if ( aborter.should_abort()) return;
 
             //cn.closest is the closest of cn.p1
             Closest_neighbor cn2 = map.get(cn.closest());
@@ -102,15 +102,15 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
         }
 
         // we "extend" each pair by looking for the closest neighbors of each pair member
-        List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files));
-        Similarity_engine similarity = new Similarity_engine(paths,path_list_provider,path_comparator_source, owner,browser_aborter, logger);
+        List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files), aborter);
+        Similarity_engine similarity = new Similarity_engine(paths,path_list_provider,path_comparator_source, owner,aborter, logger);
 
         dummy_names.clear();
         int max_friend = 2;
         int i = 0;
         for ( Closest_neighbor cn : done)
         {
-            if ( browser_aborter.should_abort()) return;
+            if ( aborter.should_abort()) return;
 
             Path p1 = cn.p1();
             dummy_names.put(p1, i);
@@ -123,8 +123,8 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
             List<Path> excluded = new ArrayList<>();
             excluded.add(p1);
             excluded.add(p2);
-            i = extend(p1, excluded, similarity, remaining, i, max_friend, image_properties_cache, fv_cache_supplier, owner, browser_aborter);
-            i = extend(p2, excluded, similarity, remaining, i, max_friend, image_properties_cache, fv_cache_supplier, owner, browser_aborter);
+            i = extend(p1, excluded, similarity, remaining, i, max_friend, image_properties_cache, fv_cache_supplier, owner, aborter);
+            i = extend(p2, excluded, similarity, remaining, i, max_friend, image_properties_cache, fv_cache_supplier, owner, aborter);
         }
 
         // then we complete the fill 'blindly'
@@ -151,11 +151,11 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
                        int max_friend,
                        Klikr_cache<Path, Image_properties> image_properties_cache,
                        Supplier<Feature_vector_cache> fv_cache_supplier,
-                       Window owner, Aborter browser_aborter)
+                       Window owner, Aborter aborter)
     //**********************************************************
     {
         Feature_vector_cache fv_cache = fv_cache_supplier.get();
-        Feature_vector fv = fv_cache.get_from_cache_or_make(p1, null, true, owner, browser_aborter);
+        Feature_vector fv = fv_cache.get_from_cache_or_make(p1, null, true, owner, aborter);
         List<Most_similar> ms = similarity.find_similars_of_special(
                 image_properties_cache,
                 p1,
@@ -166,7 +166,7 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
                 remaining,
                 null,
                 owner,
-                browser_aborter);
+                aborter);
 
         int how_many = 0;
         for (Most_similar m : ms)

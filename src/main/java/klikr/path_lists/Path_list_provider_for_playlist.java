@@ -56,6 +56,21 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     }
 
 
+    @Override
+    public void set_cache_creation_time(long cache_creation_time) {
+
+    }
+
+    @Override
+    public Path get_cache_save_path() {
+        return null;
+    }
+
+    @Override
+    public boolean is_rescan_needed() {
+        return true;
+    }
+
     //**********************************************************
     @Override
     public String to_string()
@@ -87,9 +102,11 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     {
         return the_playlist_file_path.toAbsolutePath().toString();
     }
+
+    /*
     //**********************************************************
     @Override
-    public List<File> only_files(boolean consider_also_hidden_files)
+    public List<File> only_files(boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<File> returned = new ArrayList<>();
@@ -104,6 +121,8 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         }
         return returned;
     }
+
+     */
     //**********************************************************
     @Override
     public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders)
@@ -134,7 +153,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_file_paths(boolean consider_also_hidden_files)
+    public List<Path> only_file_paths(boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -152,7 +171,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_song_paths(boolean consider_also_hidden_files)
+    public List<Path> only_song_paths(boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -171,7 +190,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_image_paths(boolean consider_also_hidden_files)
+    public List<Path> only_image_paths(boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -188,9 +207,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         return returned;    }
 
 
+    /*
     //**********************************************************
     @Override
-    public List<File> only_folders(boolean consider_also_hidden_folders)
+    public List<File> only_folders(boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
         List<File> returned = new ArrayList<>();
@@ -205,10 +225,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         }
         return returned;
     }
-
+*/
     //**********************************************************
     @Override
-    public List<Path> only_folder_paths(boolean consider_also_hidden_folders)
+    public List<Path> only_folder_paths(boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
