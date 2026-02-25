@@ -22,12 +22,18 @@ public class System_open_message implements Message
     public final Logger logger;
     public final Aborter aborter;
     public final boolean with_click_registered_application;
+    public final boolean with_web_browser;
+
     //**********************************************************
-    public System_open_message(boolean special, Application application, Window window, Path path, Aborter aborter, Logger logger)
+    public System_open_message(
+            boolean with_click_registered_application,
+            boolean with_web_browser,
+            Application application, Window window, Path path, Aborter aborter, Logger logger)
     //**********************************************************
     {
         this.application = application;
-        this.with_click_registered_application = special;
+        this.with_web_browser = with_web_browser;
+        this.with_click_registered_application = with_click_registered_application;
         this.owner = window;
         this.path = path;
         this.logger = logger;

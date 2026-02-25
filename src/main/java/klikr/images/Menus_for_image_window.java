@@ -367,18 +367,19 @@ public class Menus_for_image_window
     //**********************************************************
     {
         return Menu_items.make_menu_item("Edit_File",
-                image_window.edit.getDisplayText(),
+                image_window.open.getDisplayText(),
         event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-            image_window.image_display_handler.get_image_context().get().edit(image_window.stage);
+            image_window.image_display_handler.get_image_context().get().open(image_window.stage, image_window.aborter);
         }, image_window.stage, image_window.logger);
     }
 
     //**********************************************************
-    private static MenuItem make_open_with_klik_registered_application_menu_item(Image_window image_window, Logger logger)
+    private static MenuItem make_open_with_registered_application_menu_item(Image_window image_window, Logger logger)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Open_With_Registered_Application",null,
+        return Menu_items.make_menu_item("Open_With_Registered_Application",
+                null,
                 event -> {
 
             if ( image_window.image_display_handler.get_image_context().isEmpty())
@@ -386,7 +387,7 @@ public class Menus_for_image_window
                 logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL no context"));
                 return;
             }
-            image_window.image_display_handler.get_image_context().get().edit_with_click_registered_application(image_window.stage, image_window.stage, image_window.aborter);
+            image_window.image_display_handler.get_image_context().get().open_with_registered_application(image_window.stage, image_window.stage, image_window.aborter);
         }, image_window.stage, image_window.logger);
     }
 
@@ -540,7 +541,7 @@ public class Menus_for_image_window
         String s = My_I18n.get_I18n_string("Open", image_window.stage, image_window.logger);
         Menu returned = new Menu(s);
         Look_and_feel_manager.set_menu_item_look(returned, image_window.stage, image_window.logger);
-        returned.getItems().add(make_open_with_klik_registered_application_menu_item(image_window,image_window.logger));
+        returned.getItems().add(make_open_with_registered_application_menu_item(image_window,image_window.logger));
         returned.getItems().add(make_open_with_system_file_menu_item(image_window));
         returned.getItems().add(make_edit_menu_item(image_window));
         returned.getItems().add(make_browse_2D_menu_item(image_window));

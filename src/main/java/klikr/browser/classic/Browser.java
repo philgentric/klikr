@@ -199,7 +199,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
         Runnable r = () -> {
             // can be super slow on network drives or slow drives
             // (e.g. USB)  ==> run in a thread
-            int how_many_files = path_list_provider.how_many_files_and_folders(Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders));
+            int how_many_files = path_list_provider.how_many_files_and_folders(Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders),aborter);
 
             Jfx_batch_injector.inject(() -> my_Stage.the_Stage.setTitle(name + " :     " + (long) how_many_files + " files & folders"), logger);
 

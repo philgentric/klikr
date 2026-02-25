@@ -26,7 +26,6 @@ import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Scrollable_text_field;
 import klikr.util.ui.progress.Progress;
 import klikr.util.execute.actor.Aborter;
-import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.Drag_and_drop;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.browser.items.Item_file_with_icon;
@@ -180,7 +179,7 @@ public class Results_frame
 
 			if (! path.toFile().isDirectory())
 			{
-				Menu_items.create_open_with_klik_registered_application_menu_item(context_menu,path,owner,aborter,logger);
+				Menu_items.create_open_with_registered_application_menu_item(context_menu,path,owner,aborter,logger);
 
 				Menu_items.add_menu_item_for_context_menu("Delete",
 						(new KeyCodeCombination(KeyCode.BACK_SPACE)).getDisplayText(),

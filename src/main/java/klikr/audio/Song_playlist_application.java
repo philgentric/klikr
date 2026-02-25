@@ -114,6 +114,7 @@ import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.properties.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Exceptions_in_threads_catcher;
@@ -150,10 +151,11 @@ public class Song_playlist_application extends Application
     //**********************************************************
     {
         application = this;
-        Shared_services.init("audio_playlist_app",primary_stage_);
+        Shared_services.init("Song_playlist_app",primary_stage_);
         Logger logger = Shared_services.logger();
         //Perf.monitor(logger);
 
+        Aborter aborter = new Aborter("Song_playlist_app",logger);
         primary_stage = primary_stage_;
         Start_context context = Start_context.get_context_and_args(this);
         Klikr_communicator.build(context,primary_stage,logger);
@@ -183,7 +185,7 @@ public class Song_playlist_application extends Application
         }
         logger.log("Starting playlist browser on path ->" + path+"<-");
 
-        Path_list_provider path_list_provider = new Path_list_provider_for_playlist(path,  primary_stage, logger);
+        Path_list_provider path_list_provider = new Path_list_provider_for_playlist(path,  primary_stage, aborter, logger);
 
         Window_builder.additional_no_past(this,Window_type.Song_playlist_browser,path_list_provider,primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()-> primary_stage, logger).start();

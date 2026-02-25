@@ -101,7 +101,7 @@ public class Scrollable_text_field extends Region
                 },context_menu,owner,logger);
         Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application",null,
                 actionEvent -> {
-                    System_open_actor.open_with_click_registered_application(path, owner,Shared_services.aborter(),logger);
+                    System_open_actor.open_with_registered_application(path, owner,Shared_services.aborter(),logger);
                 },context_menu,owner,logger);
         Menu_items.create_delete_menu_item(context_menu,path,owner,aborter,logger);
         if (Files.isDirectory(path))

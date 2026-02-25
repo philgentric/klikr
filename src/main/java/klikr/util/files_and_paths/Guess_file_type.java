@@ -106,7 +106,7 @@ public class Guess_file_type
     // since the ._zzzz file has the extension of the original file
     // it may be processed, say as an image ... causing all sorts of trouble
     //
-    // .DS_Store is similar: this is meta data for the MAC Finder (one file per folder)
+    // .DS_Store is similar: this is metadata for the MAC Finder (one file per folder)
     //
     // .color is klik specific: when present, it is the color tag for a folder
     private static final String[] invisible_if_starts_with = {".","._",".DS_Store",".color"};

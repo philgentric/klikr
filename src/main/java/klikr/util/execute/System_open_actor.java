@@ -40,9 +40,33 @@ public class System_open_actor implements Actor
     {
     Actor_engine.run(
             System_open_actor.get(),
-            new System_open_message(false, application,window, path, aborter,logger),null,logger);
+            new System_open_message(false,false, application,window, path, aborter,logger),null,logger);
     }
 
+    //**********************************************************
+    public static void open_with_web_browser(
+            Application application,
+            Path path,
+            Window window,
+            Aborter aborter,
+            Logger logger)
+    //**********************************************************
+    {
+        Actor_engine.run(
+                System_open_actor.get(),
+                new System_open_message(false,true, application,window, path, aborter,logger),null,logger);
+    }
+
+    //**********************************************************
+    public static void open_with_registered_application(
+            Path path, Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        logger.log("open_with_click_registered_application " + path);
+        Actor_engine.run(
+                System_open_actor.get(),
+                new System_open_message(true, false, Klikr_application.application, owner, path, aborter,logger),null,logger);
+    }
 
     //**********************************************************
     @Override
@@ -71,16 +95,6 @@ public class System_open_actor implements Actor
     }
 
 
-    //**********************************************************
-    public static void open_with_click_registered_application(
-            Path path, Window owner, Aborter aborter, Logger logger)
-    //**********************************************************
-    {
-        logger.log("open_with_click_registered_application " + path);
-        Actor_engine.run(
-                System_open_actor.get(),
-                new System_open_message(true, Klikr_application.application, owner, path, aborter,logger),null,logger);
-    }
 
 
     //**********************************************************
@@ -89,11 +103,30 @@ public class System_open_actor implements Actor
     //**********************************************************
     {
         System_open_message som = (System_open_message) m;
-        if (som.with_click_registered_application) return with_click_registered_application(som);
+        if (som.with_click_registered_application)
+        {
+            return with_registered_application(som);
+        }
+
+        if ( som.with_web_browser)
+        {
+            return open_with_web_browser(som);
+        }
+        // default:
+        call_os_specific_open(som,null);
+
+        return null;
+    }
+
+    //**********************************************************
+    private static String open_with_web_browser(System_open_message som)
+    //**********************************************************
+    {
         try
         {
-            ((System_open_message) m).logger.log("going to call showDocument for "+som.path);
+            som.logger.log("going to call showDocument for "+ som.path);
             som.application.getHostServices().showDocument(som.path.toUri().toString());
+            // dont use this, it is AWT
             //Desktop.getDesktop().open(som.path.toAbsolutePath().toFile());
         }
         catch (Exception e)
@@ -102,19 +135,20 @@ public class System_open_actor implements Actor
 
             if (e.toString().contains("doesn't exist."))
             {
-                Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Failed", "Your OS/GUI could not open this file, the error is:\n" + e,false,som.owner,som.logger), som.logger);
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Failed", "Your OS/GUI could not open this file, the error is:\n" + e,false, som.owner, som.logger), som.logger);
             }
             else
             {
-                Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Failed", "Your OS/GUI could not open this file, the error is:\n" + e + "\nMaybe it is just not properly configured e.g. most often the file extension has to be registered?",false,som.owner,som.logger), som.logger);
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Failed", "Your OS/GUI could not open this file, the error is:\n" + e + "\nMaybe it is just not properly configured e.g. most often the file extension has to be registered?",false, som.owner, som.logger), som.logger);
             }
+            return "failed";
         }
-        return null;
+        return "ok";
     }
 
 
     //**********************************************************
-    private String with_click_registered_application(System_open_message som)
+    private String with_registered_application(System_open_message som)
     //**********************************************************
     {
         String extension = Extensions.get_extension(som.path.toFile().getName());
@@ -127,39 +161,78 @@ public class System_open_actor implements Actor
         }
         som.logger.log("❗ open with click registered application for " + som.path + " with " + app);
 
-        call_macOS_open(som, app);
-        //call_exec(som, app));
+        call_os_specific_open(som,app);
 
         return "ok";
     }
 
     //**********************************************************
-    private boolean call_macOS_open(System_open_message som, String app)
+    private boolean call_os_specific_open(System_open_message som,
+                                          String app // can be null
+    )
     //**********************************************************
     {
-        Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Calling macOS to open: "+som.path, "Please wait ",true,som.owner,som.logger), som.logger);
+        Operating_system os = Guess_OS.guess(som.logger);
+
+        Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Calling "+os.name()+" to open: "+som.path, "Please wait ",true,som.owner,som.logger), som.logger);
 
         List<String> list = new ArrayList<>();
-        list.add("open");
-        list.add(som.path.toFile().getAbsolutePath());
-        list.add("-a");
-        list.add(app);
+        switch ( os)
+        {
+            case Linux:
+                if ( app == null) {
+                    list.add("xdg-open");
+                }
+                else
+                {
+                    list.add("gtk-launch");
+                    list.add(app);
+                }
+                list.add(som.path.toFile().getAbsolutePath());
+                break;
+            case MacOS :
+                list.add("open");
+                list.add(som.path.toFile().getAbsolutePath());
+                if ( app != null)
+                {
+                    list.add("-a");
+                    list.add(app);
+                }
+                break;
+            case Windows :
+                if ( app == null)
+                {
+                    list.add("cmd");
+                    list.add("/c");
+                    list.add("start");
+                }
+                else
+                {
+                    // app must be the full path i.e. c:\Program Files\AppName\app.exe
+                    list.add(app);
+                }
+                list.add(som.path.toFile().getAbsolutePath());
+                break;
+            default:
+                return false;
+        }
+
+
 
         if (som.aborter.should_abort())
         {
-            som.logger.log("open with macOS aborted");
+            som.logger.log("open with os-specific aborted");
             return false;
         }
-        // Output file is empty
         StringBuilder sb = new StringBuilder();
         File wd = som.path.toFile().getParentFile();
-        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, som.logger);
+        Execute_result res = Execute_command.execute_command_list_no_wait(list, wd, som.logger);
         if ( !res.status())
         {
-            som.logger.log("open with macOS failed:\n"+ sb +"\n\n\n");
+            som.logger.log("open with "+os.name()+" failed:\n"+ sb +"\n\n\n");
             return false;
         }
-        som.logger.log("\n\n\n open with macOS output :\n"+ sb +"\n\n\n");
+        som.logger.log("\n\n\n open with "+os.name()+" output :\n"+ sb +"\n\n\n");
         return true;
     }
 

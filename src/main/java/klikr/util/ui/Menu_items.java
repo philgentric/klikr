@@ -41,13 +41,14 @@ public class Menu_items
     static double yyy = 200;
 
     //**********************************************************
-    public static void create_open_with_klik_registered_application_menu_item(ContextMenu context_menu, Path path, Window owner, Aborter aborter, Logger logger)
+    public static void create_open_with_registered_application_menu_item(ContextMenu context_menu, Path path, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application","TBD",
+        Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application",
+                null,
                 e -> {
                     logger.log("Open_With_Registered_Application");
-                    System_open_actor.open_with_click_registered_application(path, owner, aborter, logger);
+                    System_open_actor.open_with_registered_application(path, owner, aborter, logger);
                 }, context_menu, owner, logger);
     }
 

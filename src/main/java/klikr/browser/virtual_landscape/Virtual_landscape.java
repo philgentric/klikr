@@ -304,7 +304,8 @@ public class Virtual_landscape
     KeyCodeCombination new_twin_window;
     KeyCodeCombination refresh;
     KeyCodeCombination undo;
-    KeyCodeCombination select_all_files;
+    KeyCodeCombination select_all_files1;
+    KeyCodeCombination select_all_files2;
     KeyCodeCombination select_all_folders;
     KeyCodeCombination show_details;
 
@@ -390,13 +391,20 @@ public class Virtual_landscape
 
 
         {
-            // select all files,  CTRL +a
-            select_all_files = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN);
-            scene.getAccelerators().put(select_all_files, () -> {
+            // select all files,  CTRL+a and pomme-A
+            select_all_files1 = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN);
+            select_all_files2 = new KeyCodeCombination(KeyCode.A, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(select_all_files1, () -> {
                 if (Browser.kbd_dbg)
-                    logger.log("character is ctrl +a  = select all");
+                    logger.log("character is "+select_all_files1.getDisplayText()+"  = select all");
                 selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
+            scene.getAccelerators().put(select_all_files2, () -> {
+                if (Browser.kbd_dbg)
+                    logger.log("character is "+select_all_files2.getDisplayText()+"  = select all");
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
+            });
+
         }
         {
             // select all folders,  ctrl + shift +a (only macOS)

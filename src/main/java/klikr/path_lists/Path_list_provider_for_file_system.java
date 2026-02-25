@@ -13,6 +13,10 @@ import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import klikr.util.perf.Perf;
+import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +34,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     private final Path folder_path;
     private final Logger logger;
     private final Window owner;
-    Change change = new Change();
+    private final Change change;
     long timestamp = -1;
     private Files_and_folders cached;
     private volatile long cache_creation_time;
@@ -45,6 +49,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             logger.log(Stack_trace_getter.get_stack_trace(""));
         }
         this.logger = logger;
+        change = new Change(logger);
         this.owner = owner;
     }
 
@@ -101,27 +106,27 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders)
+    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
-        File dir = folder_path.toFile();
-        File[] files = dir.listFiles();
-        if ( files == null) return 0;
+        Files_and_folders faf = get_faf(aborter);
+
         int returned = 0;
-        for (File file : files)
+        for (Path file : faf.files())
         {
-            if ( file.isDirectory() )
-            {
-                if (! consider_also_hidden_folders)
-                {
-                    if ( Guess_file_type.should_ignore(file.toPath(),logger)) continue;
-                }
-                returned++;
-                continue;
-            }
+            if ( aborter.should_abort()) return 0;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(file.toPath(),logger)) continue;
+                if ( Guess_file_type.should_ignore(file,logger)) continue;
+            }
+            returned++;
+        }
+        for (Path folder : faf.files())
+        {
+            if ( aborter.should_abort()) return 0;
+            if (! consider_also_hidden_folders)
+            {
+                if ( Guess_file_type.should_ignore(folder,logger)) continue;
             }
             returned++;
         }
@@ -166,33 +171,37 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         return returned;
     }
 
+    //**********************************************************
     private Files_and_folders get_faf(Aborter aborter)
+    //**********************************************************
     {
-        Files_and_folders faf = null;
-        if ( cached != null)
-        {
-            try
-            {
-                if (cache_creation_time > Files.getLastModifiedTime(folder_path).toMillis())
-                {
+        try (Perf p = new Perf("get Files_and_folders")) {
+            if (cached == null) {
+                cached = load_cache_from_disk(aborter, logger);
+                // cached may be null
+            }
+            Files_and_folders faf;
+            // is cache stale ?
+            try {
+                if (cache_creation_time > Files.getLastModifiedTime(folder_path).toMillis()) {
+                    // cache was created AFTER the last change, so OK
                     faf = cached;
+                } else {
+                    // cache is stale !
+                    faf = null;
                 }
+            } catch (IOException e) {
+                logger.log(Stack_trace_getter.get_stack_trace("" + e));
+                return new Files_and_folders(new ArrayList<>(), new ArrayList<>());
             }
-            catch (IOException e)
-            {
-                logger.log(Stack_trace_getter.get_stack_trace(""+e));
-                return new Files_and_folders(new ArrayList<>(),new ArrayList<>());
+
+
+            if (faf == null) {
+                faf = scan(aborter);
             }
+            cached = faf;
+            return faf;
         }
-        if ( faf == null)
-        {
-            faf = load_cache_from_disk(aborter,logger);
-        }
-        if ( faf == null )
-        {
-            faf = scan(aborter);
-        }
-        return faf;
     }
 
     //**********************************************************
@@ -302,7 +311,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public String to_string()
     //**********************************************************
     {
-        return "Path_list_provider_for_file_system, "+how_many_files_and_folders(true,true);
+        return "Path_list_provider_for_file_system+ "+folder_path;
     }
 
     //**********************************************************
@@ -316,11 +325,13 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public void reload()
+    public void reload(String origin, Aborter aborter)
     //**********************************************************
     {
-        // we dont keep an internal state, so nothing to do here
-        // just notify listeners
+        logger.log("Path_list_provider_for_file_system.reload(), reason ="+origin);
+
+        cached = get_faf(aborter);
+        // notify listeners
         change.call_change_listeners();
     }
 
@@ -339,55 +350,12 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     }
 
 
-/*
-    //**********************************************************
-    @Override
-    public List<File> only_files(boolean hidden_files)
-    //**********************************************************
-    {
-        File f = folder_path.toFile();
-        File[] files = f.listFiles();
-        if ( files == null) return new ArrayList<>();
-        List<File> returned = new ArrayList<>();
-        for (File file : files)
-        {
-            if( file.isDirectory() ) continue;
-            if (!hidden_files) if ( Guess_file_type.should_ignore(file.toPath(),logger)) continue;
-            returned.add(file);
-        }
-        return returned;
-    }
-
-    //**********************************************************
-    @Override
-    public List<File> only_folders(boolean consider_also_hidden_folders)
-    //**********************************************************
-    {
-        File f = folder_path.toFile();
-        File[] files = f.listFiles();
-        if ( files == null) return new ArrayList<>();
-        List<File> returned = new ArrayList<>();
-        for (File file : files)
-        {
-            if( !file.isDirectory() ) continue;
-            if (!consider_also_hidden_folders) if ( Guess_file_type.should_ignore(file.toPath(),logger)) continue;
-            returned.add(file);
-        }
-        return returned;
-    }
-*/
     //**********************************************************
     @Override
     public Move_provider get_move_provider()
     //**********************************************************
     {
-        return ( destination_folder, destination_is_trash, the_list, owner, x, y,aborter, logger) -> Moving_files.safe_move_files_or_dirs(
-                destination_folder,
-                destination_is_trash,
-                the_list,
-                owner, x, y,
-                aborter,
-                logger);
+        return Moving_files::safe_move_files_or_dirs;
     }
 
     //**********************************************************
@@ -406,5 +374,141 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         Static_files_and_paths_utilities.move_to_trash_multiple(paths,owner,x,y, null, aborter, logger);
     }
 
+
+    // returns null if the cache does not exist or is stale
+    //**********************************************************
+    Files_and_folders load_cache_from_disk(Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        Optional<Path> op = get_folder_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            return null;
+        }
+        Path folder_path = op.get();
+        byte[] bytes = null;
+        try {
+            bytes = Files.readAllBytes(get_cache_save_path());
+        }
+        catch (IOException e)
+        {
+            // happens the first time
+            // logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            return  null;
+        }
+        try {
+            MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(bytes);
+            String folder_path2 = unpacker.unpackString();
+            if ( !folder_path.toAbsolutePath().toString().equals(folder_path2))
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("PANIC different folder paths ?"));
+                unpacker.close();
+                return null;
+            }
+            long cache_creation_time = unpacker.unpackLong();
+
+            long folder_modification_time = Files.getLastModifiedTime(folder_path).toMillis();
+            if ( folder_modification_time > cache_creation_time)
+            {
+                logger.log("stale folder cache for "+get_folder_path().get());
+                unpacker.close();
+                return null;
+            }
+            set_cache_creation_time(cache_creation_time);
+            List<Path> files;
+            {
+                int files_count = unpacker.unpackArrayHeader();
+                files = new ArrayList<>(files_count);
+                for (int i = 0; i < files_count; i++)
+                {
+                    if ( aborter.should_abort())
+                    {
+                        unpacker.close();
+                        return null;
+                    }
+                    String path = unpacker.unpackString();
+                    files.add(Path.of(path));
+                }
+            }
+            List<Path> folders;
+            {
+                int folders_count = unpacker.unpackArrayHeader();
+                folders = new ArrayList<>(folders_count);
+                for (int i = 0; i < folders_count; i++)
+                {
+                    if ( aborter.should_abort())
+                    {
+                        unpacker.close();
+                        return null;
+                    }
+                    String path = unpacker.unpackString();
+                    folders.add(Path.of(path));
+                }
+            }
+            unpacker.close();
+            return new Files_and_folders(files,folders);
+        }
+        catch (IOException e)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            return  null;
+        }
+    }
+
+    //**********************************************************
+    boolean save_cache_to_disk(Files_and_folders faf, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        Optional<Path> op = get_folder_path();
+        if ( op.isEmpty())
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            return false;
+        }
+        Path folder_path = op.get();
+        try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+            packer.packString(folder_path.toAbsolutePath().toString());
+            long now = System.currentTimeMillis();
+            set_cache_creation_time(now);
+            packer.packLong(now);
+
+            {
+                List<Path> files = faf.files();
+                packer.packArrayHeader(files.size());
+                for (Path entry : files)
+                {
+                    if ( aborter.should_abort())
+                    {
+                        packer.close();
+                        return false;
+                    }
+                    packer.packString(entry.toAbsolutePath().toString());
+                }
+            }
+            {
+                List<Path> folders = faf.folders();
+                packer.packArrayHeader(folders.size());
+                for (Path entry : folders)
+                {
+                    if ( aborter.should_abort())
+                    {
+                        packer.close();
+                        return false;
+                    }
+                    packer.packString(entry.toAbsolutePath().toString());
+                }
+            }
+            Path cache_save_path = get_cache_save_path();
+            logger.log("get_cache_save_path()="+cache_save_path);
+            Files.write(cache_save_path, packer.toByteArray());
+        }
+        catch (IOException e)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            return false;
+        }
+        return true;
+    }
 
 }

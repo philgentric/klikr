@@ -385,7 +385,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),logger))
             {
                 logger.log("✅ opening audio playlist: " + optional_of_item_path.get().toAbsolutePath());
-                Window_builder.additional_no_past(application,Window_type.Song_playlist_browser,new Path_list_provider_for_playlist(path,  owner, logger),owner,logger);
+                Window_builder.additional_no_past(application,Window_type.Song_playlist_browser,new Path_list_provider_for_playlist(path,  owner, aborter, logger),owner,logger);
                 return;
             }
 

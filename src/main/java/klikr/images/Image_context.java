@@ -29,7 +29,6 @@ import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.files_and_paths.old_and_new.Status;
 import klikr.util.image.Full_image_from_disk;
 import klikr.util.image.Static_image_utilities;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.files_and_paths.*;
 import klikr.util.image.decoding.Fast_date_from_filesystem;
 import klikr.util.image.decoding.Fast_rotation_from_exif_metadata_extractor;
@@ -224,15 +223,16 @@ public class Image_context
 
 
     //**********************************************************
-    void edit(Window owner)
+    void open(Window owner, Aborter aborter)
     //**********************************************************
     {
         //logger.log("asking desktop to EDIT: " + path.getFileName());
         logger.log("asking desktop to open: " + path.getFileName());
         //try
         {
-            System_open_actor.open_with_system(Klikr_application.application,path, owner,new Aborter("dummy",logger), logger);
+            System_open_actor.open_with_registered_application(path, owner,aborter, logger);
 
+            // dont use this, it is AWT
             //Desktop desktop = Desktop.getDesktop();
             //desktop.edit(path.toFile());
 
@@ -261,10 +261,10 @@ public class Image_context
     }
 
     //**********************************************************
-    void edit_with_click_registered_application(Stage the_stage, Window owner, Aborter aborter)
+    void open_with_registered_application(Stage the_stage, Window owner, Aborter aborter)
     //**********************************************************
     {
-        System_open_actor.open_with_click_registered_application(path,the_stage,aborter,logger);
+        System_open_actor.open_with_registered_application(path,the_stage,aborter,logger);
 
             // we want the UI to refresh if the file is modified
             // we do not know when the edition will end so we need to start a watcher

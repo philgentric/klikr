@@ -272,6 +272,7 @@ public abstract class Item implements Icon_destination
 
             if (!is_trash() && (is_parent_of().isEmpty()))
             {
+                // this is for FOLDERS
                 {
                     Path target  = optional_of_item_path.get().getParent();
                     if ( this instanceof Item_folder)
@@ -307,6 +308,9 @@ public abstract class Item implements Icon_destination
                             }, context_menu, owner, logger);
                 }
                 create_open_with_system_menu_item(optional_of_item_path.get(),context_menu);
+                create_open_with_web_browser_menu_item(optional_of_item_path.get(),context_menu);
+                // does not make sense for a folder create_open_with_registered_application_menu_item(optional_of_item_path.get(),context_menu);
+
                 /*if (Feature_cache.get(Feature.Enable_tags))
                 {
                     create_edit_tag_menu_item(get_item_path(), context_menu, dbg, owner, aborter, logger);
@@ -332,6 +336,7 @@ public abstract class Item implements Icon_destination
         }
         else
         {
+            // this is for a FILE
             if (Guess_file_type.is_this_path_an_image(optional_of_item_path.get(), owner, logger)) {
                 create_open_exif_frame_menu_item(optional_of_item_path, context_menu);
             }
@@ -345,16 +350,12 @@ public abstract class Item implements Icon_destination
 
             // is a "plain" file
             create_open_with_system_menu_item(optional_of_item_path.get(),context_menu);
-
-            Menu_items.add_menu_item_for_context_menu(
-                    "Open_With_Registered_Application",null,
-                    actionEvent -> {
-                    if (dbg) logger.log("button in item: Open_With_Registered_Application");
-                    System_open_actor.open_with_click_registered_application(optional_of_item_path.get(), owner,aborter,logger);
-                },context_menu,owner,logger);
+            create_open_with_web_browser_menu_item(optional_of_item_path.get(),context_menu);
+            create_open_with_registered_application_menu_item(optional_of_item_path.get(),context_menu);
 
 
-            Menu_items.add_menu_item_for_context_menu("Open_With_Klik_Text_Frame",null,
+
+            Menu_items.add_menu_item_for_context_menu("Open_With_Klikr_Text_Frame",null,
                     actionEvent -> {
                     if (dbg) logger.log("button in item: Open_With_Klik_Text_Frame");
 
@@ -508,16 +509,41 @@ public abstract class Item implements Icon_destination
     }
 
 
+
+    //**********************************************************
+    public void create_open_with_registered_application_menu_item(Path path, ContextMenu context_menu)
+    //**********************************************************
+    {
+        Menu_items.add_menu_item_for_context_menu(
+                "Open_With_Registered_Application",null,
+                actionEvent -> {
+                    if (dbg) logger.log("button in item: Open_With_Registered_Application");
+                    System_open_actor.open_with_registered_application(path, owner,aborter,logger);
+                },context_menu,owner,logger);
+    }
+
+    //**********************************************************
+    public void create_open_with_web_browser_menu_item(Path path, ContextMenu context_menu)
+    //**********************************************************
+    {
+        Menu_items.add_menu_item_for_context_menu("Open_With_Web_Browser",null,
+                actionEvent -> {
+            if (dbg) logger.log("button in item: System Open");
+            System_open_actor.open_with_web_browser(application,path, owner,aborter,logger);
+        },context_menu,owner,logger);
+    }
+
     //**********************************************************
     public void create_open_with_system_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
         Menu_items.add_menu_item_for_context_menu("Open_With_System",null,
                 actionEvent -> {
-            if (dbg) logger.log("button in item: System Open");
-            System_open_actor.open_with_system(application,path, owner,aborter,logger);
-        },context_menu,owner,logger);
+                    if (dbg) logger.log("button in item: System Open");
+                    System_open_actor.open_with_system(application,path, owner,aborter,logger);
+                },context_menu,owner,logger);
     }
+
 
     //**********************************************************
     public void create_edit_color_menu_item(ContextMenu context_menu)
@@ -632,6 +658,7 @@ public abstract class Item implements Icon_destination
     protected void give_a_menu_to_the_button(Button local_button, Label local_label)
     //**********************************************************
     {
+        logger.log(Stack_trace_getter.get_stack_trace("YOP1"));
         local_button.setOnContextMenuRequested((ContextMenuEvent event) -> {
             if ( dbg)
             {
@@ -788,7 +815,7 @@ public abstract class Item implements Icon_destination
                         Font_size.apply_global_font_size_to_Node(local_label,owner,logger);
                         local_button.setGraphic(local_label);
                     }
-                    path_list_provider.reload();
+                    path_list_provider.reload("file name changed: "+new_path, aborter);
                 }
 
                 if (dbg) logger.log("rename done");

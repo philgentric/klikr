@@ -36,15 +36,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public final List<String> paths = new ArrayList<>();
     public final Logger logger;
     private final Window owner;
-
-    Change change = new Change();
+    private final Change change;
 
     //**********************************************************
-    public Path_list_provider_for_playlist(
-            Path the_playlist_file_path, Window owner, Logger logger)
+    public Path_list_provider_for_playlist(Path the_playlist_file_path, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         this.logger = logger;
+        change = new Change(logger);
         this.owner = owner;
         this.the_playlist_file_path = the_playlist_file_path;
         if ( the_playlist_file_path == null)
@@ -52,7 +51,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL ERROR: the_playlist_file_path is null!"));
             return;
         }
-        reload();
+        reload("constructor",aborter);
     }
 
 
@@ -76,7 +75,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public String to_string()
     //**********************************************************
     {
-        return "Path_list_provider_for_playlist, "+how_many_files_and_folders(true,true);
+        return "Path_list_provider_for_playlist "+the_playlist_file_path;
     }
 
     //**********************************************************
@@ -86,12 +85,6 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     {
         // does not have a meaning for a playlist
         return  Optional.empty();
-        /*
-        if ( the_playlist_file_path == null)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL ERROR: the_playlist_file_path is null!"));
-        }
-        return Optional.of(the_playlist_file_path);*/
     }
 
 
@@ -103,34 +96,15 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         return the_playlist_file_path.toAbsolutePath().toString();
     }
 
-    /*
     //**********************************************************
     @Override
-    public List<File> only_files(boolean consider_also_hidden_files, Aborter aborter)
-    //**********************************************************
-    {
-        List<File> returned = new ArrayList<>();
-        for ( String s : paths)
-        {
-            if ( (new File(s)).isDirectory()) continue;
-            if (! consider_also_hidden_files)
-            {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
-            }
-            returned.add(new File(s));
-        }
-        return returned;
-    }
-
-     */
-    //**********************************************************
-    @Override
-    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders)
+    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
         int returned = 0;
         for ( String s : paths)
         {
+            if ( aborter.should_abort()) return 0;
             if ( (new File(s)).isDirectory())
             {
                 if (! consider_also_hidden_folders)
@@ -204,28 +178,11 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             }
             returned.add(Path.of(s));
         }
-        return returned;    }
-
-
-    /*
-    //**********************************************************
-    @Override
-    public List<File> only_folders(boolean consider_also_hidden_folders, Aborter aborter)
-    //**********************************************************
-    {
-        List<File> returned = new ArrayList<>();
-        for ( String s : paths)
-        {
-            if (! (new File(s)).isDirectory()) continue;
-            if (! consider_also_hidden_folders)
-            {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
-            }
-            returned.add(new File(s));
-        }
         return returned;
     }
-*/
+
+
+
     //**********************************************************
     @Override
     public List<Path> only_folder_paths(boolean consider_also_hidden_folders, Aborter aborter)
@@ -349,9 +306,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public void reload()
+    public void reload(String origin, Aborter aborter)
     //**********************************************************
     {
+        logger.log("Path_list_provider_for_playlist.reload(), reason ="+origin);
         if ( the_playlist_file_path == null)
         {
             logger.log("❌ FATAL ERROR: the_playlist_file_path is null!");
@@ -361,6 +319,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             List<String> ss = Files.readAllLines(the_playlist_file_path,StandardCharsets.UTF_8);
             for ( String s : ss)
             {
+                if ( aborter.should_abort()) return;
                 if ( !paths.contains(s))
                 {
                     logger.log("Path_list_provider_for_playlist.reload(): adding "+s);
@@ -383,8 +342,11 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         return change;
     }
 
+    //**********************************************************
     @Override
-    public Files_and_folders files_and_folders(Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter) {
+    public Files_and_folders files_and_folders(Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
+    //**********************************************************
+    {
 
         List<Path> files = new ArrayList<>();
         List<Path> folders = new ArrayList<>();

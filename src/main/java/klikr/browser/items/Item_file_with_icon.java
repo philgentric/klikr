@@ -259,6 +259,8 @@ public class Item_file_with_icon extends Item_file
     public ContextMenu make_context_menu()
     //**********************************************************
     {
+        logger.log(Stack_trace_getter.get_stack_trace("YOP2"));
+
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu,owner,logger);
 
@@ -309,7 +311,9 @@ public class Item_file_with_icon extends Item_file
 
     }
 
+    //**********************************************************
     private Menu get_open_Menu(Path path, Window owner, double x, double y, Aborter aborter, Logger logger)
+    //**********************************************************
     {
         String s = My_I18n.get_I18n_string("Open", owner, logger);
         Menu returned = new Menu(s);
@@ -320,7 +324,7 @@ public class Item_file_with_icon extends Item_file
             null,
                     event -> {
                         if (dbg) logger.log("Opening with registered app: "+path);
-                        System_open_actor.open_with_click_registered_application(path, owner,aborter,logger);
+                        System_open_actor.open_with_registered_application(path, owner,aborter,logger);
                     },
                     owner, logger);
             returned.getItems().add(mi);
@@ -338,7 +342,7 @@ public class Item_file_with_icon extends Item_file
                     owner, logger);
             returned.getItems().add(mi);
         }
-
+/*
         {
             MenuItem mi = Menu_items.make_menu_item(
                     "Edit_File",
@@ -350,7 +354,7 @@ public class Item_file_with_icon extends Item_file
                     owner, logger);
             returned.getItems().add(mi);
         }
-        {
+ */       {
             MenuItem mi = Menu_items.make_menu_item(
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),

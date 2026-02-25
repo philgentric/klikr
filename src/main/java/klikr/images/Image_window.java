@@ -326,7 +326,7 @@ public class Image_window
     KeyCombination copy;
     KeyCombination rename;
     KeyCombination delete;
-    KeyCombination edit;
+    KeyCombination open;
     KeyCombination pix_for_pix;
     KeyCombination click_to_zoom;
     KeyCombination drag_and_drop;
@@ -500,12 +500,12 @@ public class Image_window
         }
 
         {
-            // EDIT
-            edit= new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN);
-            scene.getAccelerators().put(edit, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta E = edit");
+            // OPEN
+            open = new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(open, () -> {
+                if (Browser.kbd_dbg) logger.log("character is ctrl or meta O = open");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
-                image_display_handler.get_image_context().get().edit(stage);
+                image_display_handler.get_image_context().get().open(stage,aborter);
             });
         }
 

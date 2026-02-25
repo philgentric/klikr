@@ -113,6 +113,7 @@ import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.properties.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Exceptions_in_threads_catcher;
 import klikr.util.log.Logger;
@@ -151,6 +152,8 @@ public class Image_playlist_app extends Application
         Shared_services.init("image_playlist_app",primary_stage_);
         Logger logger = Shared_services.logger();
         //Perf.monitor(logger);
+
+        Aborter aborter = new Aborter("Image_playlist_app",logger);
 
         primary_stage = primary_stage_;
         Start_context context = Start_context.get_context_and_args(this);
@@ -192,7 +195,7 @@ public class Image_playlist_app extends Application
 
         Klikr_communicator.build(context,primary_stage_,logger);
 
-        Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,logger),primary_stage_,logger);
+        Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
         new Disk_usage_and_caches_monitor(()->primary_stage, logger).start();
 
 

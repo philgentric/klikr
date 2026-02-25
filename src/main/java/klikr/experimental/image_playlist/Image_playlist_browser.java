@@ -36,7 +36,7 @@ public class Image_playlist_browser extends Abstract_browser
     {
         super(logger);
         ID = id_generator.getAndIncrement();
-        path_list_provider = new Path_list_provider_for_playlist(target_path, owner,logger);
+        path_list_provider = new Path_list_provider_for_playlist(target_path, owner,aborter, logger);
 
 
         init_abstract_browser(application, Window_type.Image_playlist_2D,shutdown_target, rectangle,this,"playlist");
@@ -149,7 +149,7 @@ public class Image_playlist_browser extends Abstract_browser
                 if( oanp.new_Path.toAbsolutePath().toString().equals(s))
                 {
                     logger.log("Change Gang says : playlist changed !!");
-                    path_list_provider.reload();
+                    path_list_provider.reload("image playlist changed, according to Change Gang",aborter);
                     virtual_landscape.redraw_fx("change gang for dir: " + path_list_provider.the_playlist_file_path, true);
                 }
             }

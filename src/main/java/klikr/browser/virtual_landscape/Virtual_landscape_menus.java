@@ -961,7 +961,7 @@ public class Virtual_landscape_menus
     {
         String text = My_I18n.get_I18n_string("Select_all_files_for_drag_and_drop",virtual_landscape.owner,logger);
 
-        select_all_files_menu_item= new CheckMenuItem(text+ " "+virtual_landscape.select_all_files.getDisplayText());
+        select_all_files_menu_item= new CheckMenuItem(text+ " "+virtual_landscape.select_all_files1.getDisplayText());
         Look_and_feel_manager.set_menu_item_look(select_all_files_menu_item,virtual_landscape.owner,logger);
         select_all_files_menu_item.setSelected(false);
         select_all_files_menu_item.setOnAction(event -> {
