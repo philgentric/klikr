@@ -4,9 +4,9 @@
 package klikr.look.my_i18n;
 
 import javafx.stage.Window;
-import klikr.properties.Non_booleans_properties;
-import klikr.properties.String_constants;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.Non_booleans_properties;
+import klikr.settings.String_constants;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.Application_jar;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;

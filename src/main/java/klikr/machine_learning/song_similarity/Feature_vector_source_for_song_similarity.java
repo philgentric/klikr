@@ -4,14 +4,13 @@
 package klikr.machine_learning.song_similarity;
 
 import javafx.stage.Window;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.External_application;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.execute.Execute_command;
 import klikr.util.files_and_paths.Extensions;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;

@@ -96,7 +96,7 @@ public class Popups
     {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         Look_and_feel_manager.set_dialog_look(alert, owner,logger);
-        alert.initOwner(owner);
+        if ( owner != null) alert.initOwner(owner);
         alert.setTitle(My_I18n.get_I18n_string("Please_confirm", owner,logger));
         alert.setHeaderText(header);
         alert.setContentText(content);

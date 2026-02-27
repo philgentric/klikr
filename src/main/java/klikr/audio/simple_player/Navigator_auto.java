@@ -1,20 +1,15 @@
 package klikr.audio.simple_player;
 
-import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.File_storage;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
-import klikr.search.Finder;
+import klikr.settings.File_storage;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
-import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;

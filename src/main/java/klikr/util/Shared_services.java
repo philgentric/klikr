@@ -4,11 +4,11 @@
 package klikr.util;
 
 import javafx.stage.Stage;
-import klikr.properties.File_storage;
-import klikr.properties.File_storage_using_Properties;
+import klikr.settings.File_storage;
+import klikr.settings.File_storage_using_Properties;
 import klikr.util.execute.actor.Aborter;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
+import klikr.settings.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;

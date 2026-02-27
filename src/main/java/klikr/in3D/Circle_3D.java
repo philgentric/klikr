@@ -33,9 +33,9 @@ import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.browser.virtual_landscape.Virtual_landscape;
 import klikr.change.history.History_engine;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.Sort_files_by;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.Sort_files_by;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.images.Image_window;
@@ -232,7 +232,14 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("Up");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Window_builder.replace_different_folder(application,this, Window_type.File_system_3D,new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),stage,logger);
+                Window_builder.replace_different_folder(
+                        application,
+                        this,
+                        Window_type.File_system_3D,
+                        new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),
+                        null,
+                        Optional.empty(),
+                        stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -240,7 +247,14 @@ public class Circle_3D implements Window_provider, Shutdown_target
             Button up = new Button("2D");
             Look_and_feel_manager.set_button_look(up, true, stage, logger);
             up.setOnAction(event -> {
-                Window_builder.replace_same_folder(application,this, Window_type.File_system_2D,path_list_provider,null,stage,logger);
+                Window_builder.replace_same_folder(
+                        application,
+                        this,
+                        Window_type.File_system_2D,
+                        path_list_provider,
+                        null,
+                        Optional.empty(),
+                        stage,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -577,7 +591,14 @@ public class Circle_3D implements Window_provider, Shutdown_target
                 if (Files.isDirectory(p))
                 {
                     logger.log("is folder: "+p);
-                    Window_builder.replace_different_folder(application,this, Window_type.File_system_3D,new Path_list_provider_for_file_system(p,stage,logger),stage,logger);
+                    Window_builder.replace_different_folder(
+                            application,
+                            this,
+                            Window_type.File_system_3D,
+                            new Path_list_provider_for_file_system(p,stage,logger),
+                            null,
+                            Optional.empty(),
+                            stage,logger);
                 }
                 else 
                 {

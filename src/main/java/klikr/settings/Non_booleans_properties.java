@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 //SOURCES ../audio/Audio_player_FX_UI.java
-package klikr.properties;
+package klikr.settings;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -23,18 +22,13 @@ public class Non_booleans_properties
 {
     private static final boolean dbg = false;
     private static final int DEFAULT_SIZE_WARNING_MEGABYTES = 500;
-
-
     public static final int DEFAULT_ICON_SIZE = 256;
     public static final int DEFAULT_FOLDER_ICON_SIZE = 256;
     public static final int DEFAULT_VIDEO_LENGTH = 1;
-
-
-
+    public static final int DEFAULT_CACHE_FILE_MAX_LIFE = 7; // in days
     private static final int DEFAULT_NUMBER_OF_IMAGE_SIMILARITY_SERVERS = System_info.how_many_cores();
 
     // cached values
-
 
     private static double font_size_cache = -1.0;
     private static int icon_size = -1;
@@ -104,6 +98,27 @@ public class Non_booleans_properties
     {
         video_length = l;
         set_int(l,String_constants.VIDEO_SAMPLE_LENGTH, owner);
+    }
+
+
+    private static int cache_files_max_life_in_days;
+
+    //**********************************************************
+    public static int get_cache_files_max_life_in_days(Window owner)
+    //**********************************************************
+    {
+        if (cache_files_max_life_in_days > 0) return cache_files_max_life_in_days;
+        // first time, we look it up on disk
+        cache_files_max_life_in_days = get_int(String_constants.CACHE_FILE_MAX_LIFE,DEFAULT_CACHE_FILE_MAX_LIFE,owner);
+        return cache_files_max_life_in_days;
+    }
+
+    //**********************************************************
+    public static void set_cache_files_max_life_in_days(int l,Window owner)
+    //**********************************************************
+    {
+        cache_files_max_life_in_days = l;
+        set_int(l,String_constants.CACHE_FILE_MAX_LIFE, owner);
     }
 
 

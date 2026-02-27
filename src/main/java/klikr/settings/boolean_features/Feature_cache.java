@@ -1,12 +1,11 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.properties.boolean_features;
+package klikr.settings.boolean_features;
 //SOURCES ../../Launcher.java
 import javafx.stage.Window;
-import klikr.Klikr_application;
 import klikr.Launcher;
-import klikr.properties.More_settings_stage;
+import klikr.settings.More_settings_stage;
 import klikr.util.Shared_services;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
@@ -17,11 +16,7 @@ import java.util.*;
 public class Feature_cache
 //**********************************************************
 {
-    //public static Map<String,String> string_feature_cache = new HashMap<>();
-
-    private static final Map<String, List<String_change_target>> string_registered_for = new HashMap<>();
-
-
+    private static final Map<String, List<String_setting_change_target>> string_registered_for = new HashMap<>();
     private static final Map<Feature,List<Feature_change_target>> registered_for = new HashMap<>();
     private static final List<Feature_change_target> registered_for_any_boolean_change = new ArrayList<>();
     public static final Map<Feature,Boolean> boolean_feature_cache = new HashMap<>();
@@ -40,7 +35,7 @@ public class Feature_cache
         //System.out.println("Feature_cache init");
         // read from disk, the first time klik is run
         // there is nothing on disk, values are defaulted
-        // so to true, some to false
+        // some to true, some to false
         for (Feature f : Feature.values())
         {
             if ( default_to_true.contains(f))
@@ -79,10 +74,10 @@ public class Feature_cache
 
 
     //**********************************************************
-    public static void string_register_for(String key, String_change_target sct)
+    public static void string_register_for(String key, String_setting_change_target sct)
     //**********************************************************
     {
-        List<String_change_target> l = string_registered_for.get(key);
+        List<String_setting_change_target> l = string_registered_for.get(key);
         if (  l == null)
         {
             l = new ArrayList<>();
@@ -91,12 +86,12 @@ public class Feature_cache
         if ( !l.contains(sct)) l.add(sct);
     }
     //**********************************************************
-    public static void string_deregister_all(String_change_target sct)
+    public static void string_deregister_all(String_setting_change_target sct)
     //**********************************************************
     {
         for( String key : string_registered_for.keySet())
         {
-            List<String_change_target> l = string_registered_for.get(key);
+            List<String_setting_change_target> l = string_registered_for.get(key);
             if ( l == null) continue;
             l.remove(sct);
         }
@@ -165,10 +160,13 @@ public class Feature_cache
         System.out.println("Feature_cache: "+key+"=>"+new_value);
         Shared_services.main_properties().set_and_save(key, new_value);
         send_UI_changed(Launcher.UI_CHANGED,new_value, logger);
-        List<String_change_target> l = string_registered_for.get(key);
+        List<String_setting_change_target> l = string_registered_for.get(key);
         if ( l == null) return;
-        List<String_change_target> tmp_copy = new ArrayList<>(l); // avoid problems when update_config_string triggers the creation of new Virtaul_landscape, which registers...
-        for( String_change_target sct : tmp_copy) sct.update_config_string(key,new_value);
+        List<String_setting_change_target> tmp_copy = new ArrayList<>(l); // avoid problems when update_config_string triggers the creation of new Virtaul_landscape, which registers...
+        for( String_setting_change_target sct : tmp_copy)
+        {
+            sct.update_ui_config(key,new_value);
+        }
     }
 
 

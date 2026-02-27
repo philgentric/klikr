@@ -5,7 +5,7 @@
 package klikr.path_lists;
 
 import klikr.browser.virtual_landscape.Path_comparator_source;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 

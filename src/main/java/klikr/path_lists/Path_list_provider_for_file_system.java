@@ -31,7 +31,9 @@ import java.util.regex.Pattern;
 public class Path_list_provider_for_file_system implements Path_list_provider
 //**********************************************************
 {
+    private final static boolean cache_dbg = false;
     private final Path folder_path;
+    private final String key;
     private final Logger logger;
     private final Window owner;
     private final Change change;
@@ -51,6 +53,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         this.logger = logger;
         change = new Change(logger);
         this.owner = owner;
+        this.key = folder_path.toAbsolutePath().normalize().toString();
     }
 
     //**********************************************************
@@ -67,7 +70,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     //**********************************************************
     {
         Path folder_cache_dir = Cache_folder.get_cache_dir( Cache_folder.folder_cache,owner,logger);
-        logger.log("folder_cache_dir="+folder_cache_dir);
+        if ( cache_dbg) logger.log("folder_cache_dir="+folder_cache_dir);
         String local = folder_path.toAbsolutePath().toString();
         local = local.replace(File.separator,"_");
         return Path.of(folder_cache_dir.toAbsolutePath().toString(),local+".cache");
@@ -319,7 +322,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public String get_key()
     //**********************************************************
     {
-        return folder_path.toAbsolutePath().toString();
+        return key;
     }
 
 
@@ -500,7 +503,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 }
             }
             Path cache_save_path = get_cache_save_path();
-            logger.log("get_cache_save_path()="+cache_save_path);
+            if ( cache_dbg) logger.log("get_cache_save_path()="+cache_save_path);
             Files.write(cache_save_path, packer.toByteArray());
         }
         catch (IOException e)

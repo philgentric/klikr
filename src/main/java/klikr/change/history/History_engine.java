@@ -7,8 +7,8 @@ package klikr.change.history;
 //SOURCES ./Properties_for_history.java
 
 import javafx.stage.Window;
-import klikr.properties.File_storage;
-import klikr.properties.File_storage_using_Properties;
+import klikr.settings.File_storage;
+import klikr.settings.File_storage_using_Properties;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
@@ -44,7 +44,7 @@ public class History_engine
     //**********************************************************
     {
         File_storage ip = new File_storage_using_Properties("history","history",false, owner,aborter,logger);
-        properties_for_history = new Properties_for_history(ip,  300, logger);
+        properties_for_history = new Properties_for_history(ip,  100, logger);
     }
 
     //**********************************************************
@@ -69,6 +69,7 @@ public class History_engine
         properties_for_history.clear();
     }
 
+    // history item for the 'Back' button
     //**********************************************************
     public String get_back()
     //**********************************************************

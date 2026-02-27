@@ -1,4 +1,4 @@
-package klikr.properties;
+package klikr.settings;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -16,9 +16,8 @@ import klikr.System_info;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Installers;
 import klikr.util.cache.Cache_folder;
 import klikr.util.cache.RAM_caches;
@@ -29,7 +28,6 @@ import klikr.util.ui.Popups;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,7 +60,7 @@ public class More_settings_stage
             Feature.Enable_bit_level_deduplication,
             Feature.Enable_backup,
             Feature.Enable_recursive_empty_folders_removal,
-            Feature.Enable_auto_purge_disk_caches,
+            //Feature.Enable_auto_purge_disk_caches, replaced with a duration in days
             Feature.Play_ding_after_long_processes,
             //Feature.Max_RAM_is_defined_by_user,
             //Feature.Shift_d_is_sure_delete,
@@ -156,6 +154,19 @@ public class More_settings_stage
             for (Feature f : advanced_features)
             {
                 add_one_line(true,f, box);
+            }
+            {
+                String text = My_I18n.get_I18n_string("Max_Cache_Files_Life_In_Days",owner,logger);
+                MenuButton mb = new MenuButton(text);
+                Look_and_feel_manager.set_region_look(mb,owner, logger);
+
+                List<CheckMenuItem> all_check_menu_items = new ArrayList<>();
+                int[] possible_lenghts ={2,Non_booleans_properties.DEFAULT_CACHE_FILE_MAX_LIFE,30,365};
+                for ( int l : possible_lenghts)
+                {
+                    create_menu_item_for_one_max_cache_life(mb, l, all_check_menu_items);
+                }
+                box.getChildren().add(mb);
             }
             {
                 String text = My_I18n.get_I18n_string("Length_of_video_sample",owner,logger);
@@ -317,6 +328,29 @@ public class More_settings_stage
                 }
                 Non_booleans_properties.set_animated_gif_duration_for_a_video(length,owner);
                 Popups.popup_warning( "❗ Note well:","You have to clear the icon cache to see the effect for already visited folders",false,owner,logger);
+            }
+        });
+        menu.getItems().add(item);
+        all_check_menu_items.add(item);
+    }
+
+    //**********************************************************
+    public void create_menu_item_for_one_max_cache_life( MenuButton menu, int length, List<CheckMenuItem> all_check_menu_items)
+    //**********************************************************
+    {
+        String text = My_I18n.get_I18n_string("Life_Time_Of_Cache_Files",owner,logger);
+        CheckMenuItem item = new CheckMenuItem(text + " = " +length+" days");
+        Look_and_feel_manager.set_menu_item_look(item, owner, logger);
+        int actual_size = Non_booleans_properties.get_cache_files_max_life_in_days(owner);
+        item.setSelected(actual_size == length);
+        item.setOnAction(actionEvent -> {
+            CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
+            if (local.isSelected()) {
+                for ( CheckMenuItem cmi : all_check_menu_items)
+                {
+                    if ( cmi != local) cmi.setSelected(false);
+                }
+                Non_booleans_properties.set_cache_files_max_life_in_days(length,owner);
             }
         });
         menu.getItems().add(item);

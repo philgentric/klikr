@@ -1,7 +1,7 @@
 package klikr.machine_learning;
 
 import javafx.stage.Window;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 

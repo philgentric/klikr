@@ -9,7 +9,6 @@ import klikr.Klikr_application;
 import klikr.util.execute.Application_jar;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.image.Static_image_utilities;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 

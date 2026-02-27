@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.properties;
+package klikr.settings;
 
 import javafx.stage.Window;
 import klikr.util.Shared_services;
@@ -11,10 +11,9 @@ import klikr.path_lists.Path_list_provider;
 import klikr.browser.comparators.*;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
-import klikr.machine_learning.image_similarity.Feature_vector_source_for_image_similarity;
 import klikr.machine_learning.similarity.Similarity_cache;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.cache.RAM_caches;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.log.Logger;

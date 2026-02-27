@@ -11,7 +11,7 @@ import klikr.util.execute.actor.Aborter;
 import klikr.experimental.fusk.Fusk_static_core;
 //import klik.path_lists.Path_list_provider_for_playlist;
 import klikr.util.image.decoding.Exif_metadata_extractor;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.execute.Execute_command;
 import klikr.util.log.Logger;
 
@@ -110,7 +110,7 @@ public class Guess_file_type
     //
     // .color is klik specific: when present, it is the color tag for a folder
     private static final String[] invisible_if_starts_with = {".","._",".DS_Store",".color"};
-    private static final String[] invisible_if_ends_with = {".properties",".prototype"};
+    //private static final String[] invisible_if_ends_with = {".properties",".prototype"};
 
 /*
     static {
@@ -181,10 +181,11 @@ public class Guess_file_type
         {
             if (path.getFileName().toString().startsWith(i)) return true;
         }
+        /*
         for ( String i : invisible_if_ends_with)
         {
             if (path.getFileName().toString().endsWith(i)) return true;
-        }
+        }*/
         return false;
     }
 

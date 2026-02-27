@@ -15,13 +15,12 @@ import klikr.browser.items.Item;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;

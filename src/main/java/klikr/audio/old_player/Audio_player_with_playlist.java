@@ -7,7 +7,7 @@ import klikr.util.Shared_services;
 import klikr.System_info;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.http.Klikr_communicator;

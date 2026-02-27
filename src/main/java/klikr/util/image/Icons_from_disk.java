@@ -8,7 +8,6 @@
 package klikr.util.image;
 
 import javafx.stage.Window;
-import klikr.browser.icons.Icon_writer_actor;
 import klikr.util.External_application;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.items.Iconifiable_item_type;
@@ -16,15 +15,14 @@ import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
 
 import javafx.scene.image.Image;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.Execute_command;
 //import klik.util.image.decoding.FITS;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.util.mmap.Mmap;
 
 //import javax.imageio.ImageIO;
 //import java.awt.*;

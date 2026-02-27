@@ -4,7 +4,7 @@
 package klikr.util.cache;
 
 import javafx.stage.Window;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.image.icon_cache.Icon_caching;

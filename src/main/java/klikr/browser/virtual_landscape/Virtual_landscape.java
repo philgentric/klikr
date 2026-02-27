@@ -13,7 +13,7 @@
 //SOURCES ../../image_ml/image_similarity/Deduplication_by_similarity_engine.java
 //SOURCES ../items/Top_left_provider.java
 //SOURCES ./Path_comparator_source.java
-//SOURCES ../../properties/boolean_features/String_change_target.java
+//SOURCES ../../properties/boolean_features/String_setting_change_target.java
 
 package klikr.browser.virtual_landscape;
 
@@ -72,13 +72,14 @@ import klikr.look.my_i18n.My_I18n;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
 import klikr.machine_learning.image_similarity.Feature_vector_source_for_image_similarity;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.*;
-import klikr.properties.boolean_features.*;
+import klikr.settings.*;
+import klikr.settings.boolean_features.*;
 import klikr.util.files_and_paths.*;
 import klikr.util.image.Full_image_from_disk;
 import klikr.util.image.decoding.Fast_image_property_from_exif_metadata_extractor;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import klikr.util.mmap.Mmap;
 import klikr.util.perf.Perf;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
@@ -109,7 +110,7 @@ public class Virtual_landscape
         Top_left_provider,
         Path_comparator_source,
         Feature_change_target,
-        String_change_target
+        String_setting_change_target
 //**********************************************************
 {
     public static final boolean dbg = false;
@@ -257,19 +258,23 @@ public class Virtual_landscape
 
 
     //**********************************************************
-    @Override // String_change_target
-    public void update_config_string(String key, String new_value)
+    @Override // String_setting_change_target
+    public void update_ui_config(String key, String new_value)
     //**********************************************************
     {
         logger.log("virtual_landscape receiving update_config_string key=" + key + " val=" + new_value);
 
         Optional<Path> top_left = get_top_left();
-        if (key.equals(String_constants.LANGUAGE_KEY))
+        if (key.equals(String_constants.LANGUAGE_KEY) || key.equals(String_constants.STYLE_KEY))
         {
-            Window_builder.replace_same_folder(application,shutdown_target, context_type, path_list_provider, top_left, owner,
-                    logger);
-        } else if (key.equals(String_constants.STYLE_KEY)) {
-            Window_builder.replace_same_folder(application,shutdown_target, context_type, path_list_provider, top_left, owner,
+            Window_builder.replace_same_folder(
+                    application,
+                    shutdown_target,
+                    context_type,
+                    path_list_provider,
+                    path_list_provider.get_folder_path().get(),
+                    top_left,
+                    owner,
                     logger);
         }
     }
@@ -680,7 +685,7 @@ public class Virtual_landscape
     public boolean scroll_a_bit(double dy)
     //**********************************************************
     {
-        get_top_left().ifPresent((Path tl)->Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(), tl.toAbsolutePath().normalize().toString()));
+        get_top_left().ifPresent((Path top_left)->Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(), top_left.toAbsolutePath().normalize().toString(),"scroll a bit",logger));
         return vertical_slider.request_scroll_relative(dy);
     }
 
@@ -842,7 +847,18 @@ public class Virtual_landscape
     //**********************************************************
     {
         String scroll_to_s = Scroll_position_cache.scroll_position_cache_read(path_list_provider.get_key());
-        if ( scroll_to_s == null) return;
+        if ( scroll_to_s == null)
+        {
+            if ( Scroll_position_cache.scroll_cache_dbg) logger.log(("scroll_position_cache_read() returned null in scroll_to()"));
+            return;
+        }
+        if ( Scroll_position_cache.scroll_cache_dbg)
+        {
+            logger.log("Scrolling to memorized previous position in folder: "
+                    + "\n    key: "+path_list_provider.get_key()
+                    + "\n    value: "+scroll_to_s);
+        }
+
         Path scroll_to = Paths.get(scroll_to_s);
         current_vertical_offset = get_y_offset_of(scroll_to);
         if (scroll_to_listener == null) {
@@ -1500,7 +1516,9 @@ public class Virtual_landscape
     //**********************************************************
     {
         if (scroll_dbg)
+        {
             logger.log("✅ move_absolute reason= " + reason + " new_vertical_offset=" + new_vertical_offset);
+        }
         current_vertical_offset = new_vertical_offset;
         on_scroll("move_absolute");
     }
@@ -2227,7 +2245,10 @@ public class Virtual_landscape
                 application,
                 shutdown_target,
                 Window_type.File_system_2D,
-                new Path_list_provider_for_file_system(Path.of(back_string), owner, logger), top_left, owner, logger);
+                new Path_list_provider_for_file_system(Path.of(back_string), owner, logger),
+                path_list_provider.get_folder_path().get(),
+                top_left,
+                owner, logger);
     }
 
     //**********************************************************
@@ -2308,7 +2329,7 @@ public class Virtual_landscape
     private void button_view(ActionEvent e)
     //**********************************************************
     {
-        ContextMenu view = define_contextmenu_view();
+        ContextMenu view = define_ContextMenu_for_view_menu();
         Button b = (Button) e.getSource();
         view.show(b, Side.TOP, 0, 0);
     }
@@ -2345,7 +2366,8 @@ public class Virtual_landscape
         Look_and_feel_manager.set_context_menu_look(undo_bookmark_history_menu, owner, logger);
 
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_undos_menu(owner, logger));
-        undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_bookmarks_menu(
+        undo_bookmark_history_menu.getItems().add(
+                Virtual_landscape_menus.make_bookmarks_menu(
                 application, Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
                 application,
@@ -2357,7 +2379,7 @@ public class Virtual_landscape
                 owner, logger));
         undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_roots_menu(
                 application,
-                path_list_provider,
+                path_list_provider.get_folder_path().get(),
                 top_left,
                 shutdown_target,
                 window_type,
@@ -2366,7 +2388,7 @@ public class Virtual_landscape
     }
 
     //**********************************************************
-    private ContextMenu define_contextmenu_view()
+    private ContextMenu define_ContextMenu_for_view_menu()
     //**********************************************************
     {
         ContextMenu context_menu = new ContextMenu();
@@ -2374,11 +2396,13 @@ public class Virtual_landscape
 
         // Rectangle2D rectangle = new
         // Rectangle2D(owner.getX(),owner.getY(),owner.getWidth(),owner.getHeight());
-        Menu_items.add_menu_item_for_context_menu("New_Window", null,event -> Window_builder.additional_same_folder(
+        Menu_items.add_menu_item_for_context_menu("New_Window", null,
+                event -> Window_builder.additional_same_folder(
                 application,
                 context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),event -> Window_builder.additional_same_folder_twin(
+        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),
+                event -> Window_builder.additional_same_folder_twin(
                 application,
                 context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
@@ -2545,6 +2569,11 @@ public class Virtual_landscape
     {
         String text = "the Feature ->" + feature + "<- has new value:" + new_val;
         if ( feature == null) text = "refresh";
+
+        if (( feature == Feature.Show_hidden_files)||(( feature == Feature.Show_hidden_folders)))
+        {
+            Cache_folder.clear_disk_cache(Cache_folder.folder_cache,false,owner,aborter,logger);
+        }
         redraw_fx(text, true);
     }
 

@@ -6,9 +6,8 @@
 package klikr.experimental.fusk;
 
 import javafx.application.Platform;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 

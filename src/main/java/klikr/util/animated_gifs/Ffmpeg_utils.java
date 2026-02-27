@@ -10,13 +10,12 @@
 package klikr.util.animated_gifs;
 
 import javafx.stage.Window;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.External_application;
-import klikr.properties.Non_booleans_properties;
 import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.files_and_paths.*;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.execute.Execute_command;

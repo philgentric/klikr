@@ -26,7 +26,6 @@ import klikr.audio.simple_player.Basic_audio_player;
 import klikr.experimental.deduplicate.manual.Againor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.audio.old_player.Audio_player_gradle_start;
 import klikr.browser.items.Item_file_with_icon;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
@@ -37,7 +36,7 @@ import klikr.util.image.Full_image_from_disk;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.*;
 import klikr.look.Look_and_feel_manager;
-import klikr.properties.Sort_files_by;
+import klikr.settings.Sort_files_by;
 import klikr.util.log.Logger;
 
 import java.io.File;

@@ -68,7 +68,6 @@
 //SOURCES browser/classic/Browser.java
 //SOURCES Window_builder.java
 //SOURCES browser/My_Stage.java
-//SOURCES change/history/History_auto_clean.java
 //SOURCES look/Look_and_feel_manager.java
 //SOURCES properties/Non_booleans_properties.java
 //SOURCES util/log/Exceptions_in_threads_catcher.java
@@ -108,17 +107,13 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import klikr.audio.old_player.Audio_player_with_playlist;
 import klikr.audio.simple_player.Basic_audio_player;
-import klikr.audio.simple_player.Navigator;
-import klikr.audio.simple_player.Navigator_auto;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.properties.String_constants;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.String_constants;
+import klikr.settings.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Shared_services;
 import klikr.util.execute.Guess_OS;
@@ -159,10 +154,12 @@ public class Klikr_application extends Application
     public void start(Stage primary_stage_) throws Exception
     //**********************************************************
     {
-        application = this;
+
         Shared_services.init(name,primary_stage_);
         Logger logger = Shared_services.logger();
+        Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
+        application = this;
 
         if ( (Runtime.getRuntime()).maxMemory() <= 1073741824 )
         {
@@ -202,7 +199,6 @@ public class Klikr_application extends Application
 
         System_info.print(logger);
 
-        Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
         Path path = context.extract_path();
         if ( path != null)

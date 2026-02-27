@@ -33,24 +33,25 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public static final String KLIKR_IMAGE_PLAYLIST_EXTENSION = "klikr_image_playlist";
 
     public final Path the_playlist_file_path;
+    private final String key;
     public final List<String> paths = new ArrayList<>();
     public final Logger logger;
     private final Window owner;
     private final Change change;
 
     //**********************************************************
-    public Path_list_provider_for_playlist(Path the_playlist_file_path, Window owner, Aborter aborter, Logger logger)
+    public Path_list_provider_for_playlist(
+            Path the_playlist_file_path,
+            Window owner,
+            Aborter aborter,
+            Logger logger)
     //**********************************************************
     {
         this.logger = logger;
         change = new Change(logger);
         this.owner = owner;
         this.the_playlist_file_path = the_playlist_file_path;
-        if ( the_playlist_file_path == null)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL ERROR: the_playlist_file_path is null!"));
-            return;
-        }
+        this.key = the_playlist_file_path.toAbsolutePath().normalize().toString();
         reload("constructor",aborter);
     }
 
@@ -93,7 +94,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public String get_key()
     //**********************************************************
     {
-        return the_playlist_file_path.toAbsolutePath().toString();
+        return key;
     }
 
     //**********************************************************

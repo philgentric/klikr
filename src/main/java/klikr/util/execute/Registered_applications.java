@@ -6,8 +6,8 @@ package klikr.util.execute;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
-import klikr.properties.File_storage_using_Properties;
-import klikr.properties.String_constants;
+import klikr.settings.File_storage_using_Properties;
+import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static klikr.properties.File_storage_using_Properties.AGE;
+import static klikr.settings.File_storage_using_Properties.AGE;
 
 //**********************************************************
 public class Registered_applications

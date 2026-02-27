@@ -4,10 +4,9 @@
 package klikr.look;
 
 import javafx.scene.Node;
-import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.log.Logger;
 
 //**********************************************************

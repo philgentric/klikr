@@ -10,7 +10,7 @@ package klikr.browser.virtual_landscape;
 import javafx.stage.Window;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.Sort_files_by;
+import klikr.settings.Sort_files_by;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Extensions;

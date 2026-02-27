@@ -6,10 +6,9 @@
 package klikr.util.disk_cache_auto_clean;
 
 import klikr.Window_provider;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.Shared_services;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
 import klikr.util.log.Logger;
 
 //**********************************************************
@@ -25,10 +24,13 @@ public class Disk_usage_and_caches_monitor
     //**********************************************************
     {
         this.logger = logger;
+
+        // monitor cache folder SIZE
         disk_usage_monitor = new Disk_usage_monitor(window_provider.get_owner(), logger);
-        if (Booleans.get_boolean_defaults_to_false(Feature.Enable_auto_purge_disk_caches.name())) cache_auto_clean = new Disk_cache_auto_clean(window_provider.get_owner(), logger);
-        else cache_auto_clean = null;
-        //history_auto_clean = new History_auto_clean(logger);
+
+        // monitor cache files AGE
+        int cache_max_days = Non_booleans_properties.get_animated_gif_duration_for_a_video(window_provider.get_owner());
+        cache_auto_clean = new Disk_cache_auto_clean(cache_max_days,window_provider.get_owner(), logger);
     }
 
     //**********************************************************

@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 //SOURCES ../../audio/Audio_player_FX_UI.java
-package klikr.properties.boolean_features;
+package klikr.settings.boolean_features;
 
 import javafx.application.Platform;
 import javafx.stage.Window;
-import klikr.properties.File_storage;
+import klikr.settings.File_storage;
 import klikr.util.Shared_services;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;

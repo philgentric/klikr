@@ -61,10 +61,10 @@ import klikr.util.execute.actor.Actor_engine;
 import klikr.browser.*;
 import klikr.path_lists.Path_list_provider;
 import klikr.change.Change_gang;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature_cache;
-import klikr.properties.boolean_features.Feature_change_target;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature_change_target;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
@@ -249,7 +249,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
                         if (oan.new_Path.startsWith(op.get()))
                         {
                             // make sure the window will scroll to the landing point of the displaced file
-                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),oan.new_Path.toAbsolutePath().normalize().toString());
+                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),oan.new_Path.toAbsolutePath().normalize().toString(),"Change Gang event received = new item in folder",logger);
                         }
                     }
                 }

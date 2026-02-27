@@ -6,9 +6,9 @@ package klikr.util.disk_cache_auto_clean;
 import javafx.stage.Window;
 import klikr.util.Shared_services;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.Non_booleans_properties;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.Non_booleans_properties;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.cache.Cache_folder;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+// this monitors the footprint in MB of given folders
 //**********************************************************
 public class Disk_usage_monitor
 //**********************************************************
@@ -43,12 +44,11 @@ public class Disk_usage_monitor
 
         for (Cache_folder cache_folder : Cache_folder.values())
         {
-            if(dbg) logger.log("starting Disk_usage_monitor for :" + cache_folder);
+            if (dbg) logger.log("starting Disk_usage_monitor for :" + cache_folder);
             Path ff = Static_files_and_paths_utilities.get_cache_folder(cache_folder, owner, logger);
             Monitored_folder tt = new Monitored_folder(cache_folder.name(), ff, true);
             monitored_folders.add(tt);
         }
-
         for ( Path t : Static_files_and_paths_utilities.get_existing_trash_dirs(owner,logger))
         {
             monitored_folders.add(new Monitored_folder(TRASH_FOLDER, t, false));
@@ -93,7 +93,6 @@ public class Disk_usage_monitor
                     continue;
                 }
                 boolean cleared = false;
-                if (Booleans.get_boolean_defaults_to_true(Feature.Monitor_folders.name()))
                 {
                     for (Cache_folder cache_folder : Cache_folder.values())
                     {

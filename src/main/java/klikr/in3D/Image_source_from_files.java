@@ -5,8 +5,8 @@ package klikr.in3D;
 
 import javafx.stage.Window;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.perf.Perf;

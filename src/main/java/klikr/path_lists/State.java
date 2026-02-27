@@ -5,19 +5,15 @@ package klikr.path_lists;
 
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.util.execute.actor.Aborter;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.perf.Perf;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 //**********************************************************
 class State

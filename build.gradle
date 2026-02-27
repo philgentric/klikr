@@ -186,6 +186,16 @@ tasks.register('mmap', JavaExec) {
 }
 
 
+tasks.register('undo', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.change.undo.Undo_test_app'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+    return
+}
+
+
+
 application {
     mainClass = "klikr.Launcher"
 }

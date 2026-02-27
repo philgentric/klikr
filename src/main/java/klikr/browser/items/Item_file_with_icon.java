@@ -23,7 +23,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -43,8 +43,8 @@ import klikr.images.Image_window;
 import klikr.util.image.decoding.Fast_rotation_from_exif_metadata_extractor;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.*;
 import klikr.util.files_and_paths.old_and_new.Command;
@@ -259,7 +259,7 @@ public class Item_file_with_icon extends Item_file
     public ContextMenu make_context_menu()
     //**********************************************************
     {
-        logger.log(Stack_trace_getter.get_stack_trace("YOP2"));
+        logger.log(Stack_trace_getter.get_stack_trace("Item_file_with_icon make_context_menu"));
 
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu,owner,logger);

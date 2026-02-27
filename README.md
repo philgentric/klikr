@@ -158,7 +158,7 @@ Up button: the file will be moved into the parent folder
 
 You can easily rename things (folders and files). In Image mode type "r".
 
-Klikr remembers all settings (in a human-readable file called klikr.properties).
+Klikr remembers all settings (in a human-readable file called klikr.settings).
 
 Klikr tells you how many files, folders and pictures a folder contains, as well as the size on disk.
 
@@ -246,7 +246,7 @@ Q: Why should I edit the configuration file?
 A: To look for easter eggs (there used to be quite a few).
 
 Q: How can I edit the configuration file?  
-A: The file name is klikr.properties, it is located in the .klikr folder in your home folder.
+A: The file name is klikr.settings, it is located in the .klikr folder in your home folder.
 
 Q: When I start the audio player, all (or some of) my songs are gone?
 A: Typically, this happens because you moved your music to a different folder. Drop that folder on the audio player drop area, the songs will be reloaded and your playlists will be updated.

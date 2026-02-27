@@ -17,7 +17,7 @@ import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_double;
 import klikr.machine_learning.feature_vector.Feature_vector_mask;
 import klikr.look.Look_and_feel_manager;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.log.Logger;
 
 

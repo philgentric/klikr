@@ -18,8 +18,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.properties.File_storage;
-import klikr.properties.String_constants;
+import klikr.settings.File_storage;
+import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.cache.*;
@@ -820,7 +820,7 @@ public class Playlist
 
         save_playlist();
 
-        undo_core.remove_undo_item(last);
+        undo_core.remove_undo_item(last,true);
 
     }
 

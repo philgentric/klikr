@@ -16,8 +16,8 @@ import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.similarity.Most_similar;
 import klikr.machine_learning.similarity.Similarity_engine;
 import klikr.machine_learning.similarity.Similarity_cache;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;

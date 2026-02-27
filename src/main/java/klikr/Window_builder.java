@@ -58,8 +58,7 @@ public class Window_builder
     private String to_string()
     //**********************************************************
     {
-        String returned = "shutdown_target="+shutdown_target;
-        return returned;
+        return "Window builder for shutdown_target="+shutdown_target;
     }
 
 
@@ -67,8 +66,8 @@ public class Window_builder
     public static Window_provider additional_no_past(Application application,Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
     //**********************************************************
     {
-        Optional<Path> op = path_list_provider.get_folder_path();
-        op.ifPresent(path -> Last_access_comparator.set_last_access(path, logger));
+        record_last_access(path_list_provider, logger);
+
         Window_builder window_builder = new Window_builder(
                 application,
                 window_type,
@@ -81,6 +80,7 @@ public class Window_builder
         return get_one_new(window_builder,logger);
     }
 
+
     //**********************************************************
     public static void additional_same_folder(
             Application application,
@@ -92,7 +92,7 @@ public class Window_builder
     //**********************************************************
     {
         // make sure the new window is scrolled at the same position
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString(),"additional same folder",logger));
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX()+100,originator.getY()+100,originator.getWidth()-100,originator.getHeight()-100);
 
@@ -145,7 +145,7 @@ public class Window_builder
             Logger logger)
     //**********************************************************
     {
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString(),"additional same folder ratio",logger));
 
         ObservableList<Screen> intersecting_screens = Screen.getScreensForRectangle(originator.getX(), originator.getY(), originator.getWidth(), originator.getHeight());
 
@@ -185,19 +185,23 @@ public class Window_builder
             Application application,
             Shutdown_target shutdown_target,
             Window_type window_type,
-            Path_list_provider path_list_provider,
+            Path_list_provider what_to_browse,
+            Path key_for_scroll_position_cache,
             Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString()));
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(
+                key_for_scroll_position_cache.toAbsolutePath().normalize().toString(),
+                top_left_item.toAbsolutePath().normalize().toString(),
+                "replace same folder",logger));
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
         Window_builder window_builder =  new Window_builder(
                 application,
                 window_type,
-                path_list_provider,
+                what_to_browse,
                 rectangle,
                 shutdown_target,
                 originator,
@@ -210,11 +214,19 @@ public class Window_builder
     public static void replace_different_folder(
             Application application,
             Shutdown_target shutdown_target,
-            Window_type window_type, Path_list_provider path_list_provider,
+            Window_type window_type,
+            Path_list_provider path_list_provider,
+            Path key_for_scroll_position_cache,
+            Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
+        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(
+                key_for_scroll_position_cache.toAbsolutePath().normalize().toString(),
+                top_left_item.toAbsolutePath().normalize().toString(),
+                "replace_different_folder",logger));
+
         Optional<Path> op = path_list_provider.get_folder_path();
         op.ifPresent((Path folder_path)->
                 {
@@ -264,6 +276,14 @@ public class Window_builder
 
         }
         return null;
+    }
+
+    //**********************************************************
+    private static void record_last_access(Path_list_provider path_list_provider, Logger logger)
+    //**********************************************************
+    {
+        Optional<Path> op = path_list_provider.get_folder_path();
+        op.ifPresent(path -> Last_access_comparator.set_last_access(path, logger));
     }
 
 }

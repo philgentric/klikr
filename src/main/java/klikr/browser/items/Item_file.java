@@ -12,7 +12,7 @@ import klikr.browser.icons.Icon_factory_actor;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.browser.virtual_landscape.Selection_handler;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 

@@ -10,7 +10,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.look.Font_size;
@@ -18,8 +17,8 @@ import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.Look_and_feel_style;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
 
 //**********************************************************

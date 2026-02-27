@@ -9,7 +9,7 @@ import javafx.scene.media.*;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import klikr.audio.Song_play_status;
-import klikr.properties.File_storage;
+import klikr.settings.File_storage;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;

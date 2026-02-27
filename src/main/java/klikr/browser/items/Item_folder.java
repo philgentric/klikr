@@ -25,9 +25,9 @@ import klikr.util.animated_gifs.Animated_gif_from_folder_content;
 import klikr.browser.virtual_landscape.*;
 import klikr.look.Look_and_feel_manager;
 import klikr.path_lists.Path_list_provider;
-import klikr.properties.Non_booleans_properties;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.Non_booleans_properties;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Sizes;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -408,17 +408,21 @@ public class Item_folder extends Item implements Icon_destination
             Path old_folder_path = optional_of_item_path.get().getParent();
             if ( is_parent_of().isPresent())
             {
-                if ( dbg) logger.log("is_up_button");
+                // this works when gping up
+                //if ( dbg)
+                    logger.log("is_up_button");
                 old_folder_path = is_parent_of().get();
             }
-            Optional<Path> lop = top_left_provider.get_top_left();
-            lop.ifPresent((Path tl)-> Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),tl.toAbsolutePath().normalize().toString()));
+            logger.log("old_folder_path="+old_folder_path);
+            logger.log("top_left_provider.get_top_left()="+top_left_provider.get_top_left());
 
             Window_builder.replace_different_folder(
                     application,
                     shutdown_target,
                     Window_type.File_system_2D,
                     new Path_list_provider_for_file_system(optional_of_item_path.get(),owner,logger),
+                    old_folder_path,
+                    top_left_provider.get_top_left(),
                     owner,
                     logger);
 

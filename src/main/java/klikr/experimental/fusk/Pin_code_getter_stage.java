@@ -14,9 +14,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.log.Logger;
 

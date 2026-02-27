@@ -18,12 +18,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+// makes sure disk cache files are not older than X days
 //**********************************************************
 public class Disk_cache_auto_clean
 //**********************************************************
 {
     private static final boolean dbg = false;
-    private static final long AGE_LIMIT_IN_DAYS = 2;
+    private final int age_limit_in_days;
     public final Logger logger;
     private volatile boolean warning_issued = false;
 
@@ -33,10 +34,11 @@ public class Disk_cache_auto_clean
 
 
     //**********************************************************
-    public Disk_cache_auto_clean(Window owner, Logger logger_)
+    public Disk_cache_auto_clean(int age_limit_in_days, Window owner, Logger logger_)
     //**********************************************************
     {
         logger = logger_;
+        this.age_limit_in_days = age_limit_in_days;
 
         for(Cache_folder cache_folder : Cache_folder.values())
         {
@@ -79,7 +81,7 @@ public class Disk_cache_auto_clean
     {
         long age = Static_files_and_paths_utilities.get_file_age_in_days(f,logger);
         //logger.log(f.toPath().toAbsolutePath()+ " age = "+age+ " days");
-        if ( age > AGE_LIMIT_IN_DAYS)
+        if ( age > age_limit_in_days)
         {
             if ( dbg) logger.log(f.toPath().toAbsolutePath()+ " is too old at "+age+" days, deleting");
             try {

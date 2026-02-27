@@ -6,8 +6,8 @@ package klikr.browser;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import klikr.browser.classic.Browser;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 
 //**********************************************************
 public class Escape_keyboard_handler implements javafx.event.EventHandler<KeyEvent>

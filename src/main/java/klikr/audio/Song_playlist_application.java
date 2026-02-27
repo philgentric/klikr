@@ -111,7 +111,7 @@ import javafx.stage.Stage;
 import klikr.*;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_playlist;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
 import klikr.util.execute.actor.Aborter;

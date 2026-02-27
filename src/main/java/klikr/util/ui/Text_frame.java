@@ -17,7 +17,7 @@ import javafx.stage.Stage;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.files_and_paths.modifications.Filesystem_modification_reporter;
 import klikr.util.log.Logger;

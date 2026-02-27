@@ -19,7 +19,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
 

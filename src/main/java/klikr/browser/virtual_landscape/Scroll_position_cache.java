@@ -2,6 +2,8 @@ package klikr.browser.virtual_landscape;
 
 import klikr.util.cache.Clearable_RAM_cache;
 import klikr.util.cache.Size_;
+import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -12,6 +14,8 @@ import java.util.Optional;
 public class Scroll_position_cache implements Clearable_RAM_cache
 //**********************************************************
 {
+    public static final boolean scroll_cache_dbg = false;
+
     // when browsing disk, the key is the full folder path, as a string
     // for playlist, it is the playlist name
     // the value is always the full item path, as a string
@@ -29,10 +33,14 @@ public class Scroll_position_cache implements Clearable_RAM_cache
 
 
     //**********************************************************
-    public static void scroll_position_cache_write(String tag, String top_left)
+    public static void scroll_position_cache_write(String key, String top_left, String origin, Logger logger)
     //**********************************************************
     {
-        scroll_position_cache.put(tag, top_left);
+        if ( scroll_cache_dbg)
+        {
+            logger.log(("scroll_position_cache WRITE origin:\n     origin:"+origin+ "\n    key: "+key+ "\n    value: "+top_left));
+        }
+        scroll_position_cache.put(key, top_left);
     }
 
     //**********************************************************

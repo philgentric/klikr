@@ -115,9 +115,10 @@ public class Undo_for_moves implements Datetime_to_signature_source
         for ( String signature :to_be_deleted)
         {
             Undo_item ui = get_instance(owner,logger).get_undo_item_from_signature(signature,owner);
-            get_instance(owner,logger).core.remove_undo_item(ui);
+            get_instance(owner,logger).core.remove_undo_item(ui,false);
             if ( dbg) logger.log("out of age undo item removed: "+ui.signature());
         }
+        get_instance(owner,logger).core.save_to_disk();
 
     }
 
@@ -125,7 +126,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
     public static void remove_invalid_undo_item(Undo_item item,Window owner,  Logger logger)
     //**********************************************************
     {
-        get_instance(owner, logger).core.remove_undo_item(item);
+        get_instance(owner, logger).core.remove_undo_item(item, true);
     }
 
 
@@ -221,7 +222,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
 
         Moving_files.perform_safe_moves_in_a_thread(reverse_last_move, false, x, y, owner, Shared_services.aborter(), logger);
 
-        core.remove_undo_item(undo_item);
+        core.remove_undo_item(undo_item,true);
         refresh_UI();
         return true;
     }

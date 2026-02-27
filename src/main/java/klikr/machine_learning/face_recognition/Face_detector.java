@@ -10,8 +10,8 @@ import klikr.machine_learning.ML_server_type;
 import klikr.machine_learning.ML_servers_status;
 import klikr.machine_learning.ML_service_type;
 import klikr.machine_learning.feature_vector.UDP_traffic_monitor;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 import klikr.util.log.Stack_trace_getter;
@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Random;
 
 /*

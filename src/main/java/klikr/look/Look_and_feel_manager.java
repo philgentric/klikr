@@ -21,13 +21,13 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Launcher;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.browser.Drag_and_drop;
 import klikr.look.styles.Look_and_feel_materiol;
 import klikr.look.styles.Look_and_feel_light;
 import klikr.look.styles.Look_and_feel_modena;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 

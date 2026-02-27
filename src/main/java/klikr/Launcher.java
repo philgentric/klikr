@@ -24,7 +24,7 @@ import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.Look_and_feel_manager.Icon_type;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
 import klikr.util.ui.progress.Hourglass;

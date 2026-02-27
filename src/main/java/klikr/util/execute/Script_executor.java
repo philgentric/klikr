@@ -2,21 +2,15 @@ package klikr.util.execute;
 
 
 import javafx.application.Platform;
-import javafx.stage.Window;
 import klikr.Klikr_application;
-import klikr.properties.Non_booleans_properties;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Text_frame;
-import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;

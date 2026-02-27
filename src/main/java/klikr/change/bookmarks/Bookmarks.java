@@ -5,11 +5,11 @@ package klikr.change.bookmarks;
 //SOURCES ../../properties/Properties_with_base.java
 
 import javafx.stage.Window;
-import klikr.properties.File_storage;
+import klikr.settings.File_storage;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
-import klikr.properties.File_storage_using_Properties;
-import klikr.properties.Properties_with_base;
+import klikr.settings.File_storage_using_Properties;
+import klikr.settings.Properties_with_base;
 import klikr.util.log.Logger;
 
 import java.util.List;

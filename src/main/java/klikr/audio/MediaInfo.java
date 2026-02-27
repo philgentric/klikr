@@ -4,10 +4,9 @@
 package klikr.audio;
 
 import javafx.stage.Window;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.External_application;
-import klikr.properties.Non_booleans_properties;
-import klikr.properties.boolean_features.Booleans;
+import klikr.settings.boolean_features.Booleans;
 import klikr.util.execute.Execute_command;
 import klikr.util.execute.Execute_result;
 import klikr.util.log.Logger;

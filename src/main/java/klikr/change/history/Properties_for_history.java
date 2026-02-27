@@ -3,7 +3,7 @@
 
 package klikr.change.history;
 
-import klikr.properties.File_storage;
+import klikr.settings.File_storage;
 import klikr.util.log.Logger;
 
 import java.nio.file.Files;
@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static klikr.properties.File_storage_using_Properties.AGE;
+import static klikr.settings.File_storage_using_Properties.AGE;
 
 //**********************************************************
 public class Properties_for_history
@@ -70,11 +70,13 @@ public class Properties_for_history
         // maintain a short history:
         if (all_history_items.size() > max)
         {
+            // remove the last one
             History_item last = all_history_items.remove(all_history_items.size() - 1);
             for (String k : storage.get_all_keys())
             {
                 if (k.endsWith(AGE)) continue;
-                if (k.equals(last.value)) {
+                if (k.equals(last.value))
+                {
                     storage.remove(k);
                     break;
                 }

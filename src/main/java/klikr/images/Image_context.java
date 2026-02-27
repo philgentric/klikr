@@ -14,7 +14,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Klikr_application;
-import klikr.properties.String_constants;
+import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browser.items.Item_file_with_icon;

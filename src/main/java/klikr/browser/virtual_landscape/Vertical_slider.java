@@ -166,7 +166,7 @@ public class Vertical_slider implements Landscape_height_listener, Scroll_to_lis
         }
         /*else
         {
-            if ( Virtual_landscape.scroll_dbg) logger.log("scroll is not inverted="+dy);
+            if ( Scroll_position_cache.scroll_dbg) logger.log("scroll is not inverted="+dy);
         }*/
         double old_val = the_Slider.getValue();
         if ( dbg) logger.log("scroll_relative old_val="+old_val);

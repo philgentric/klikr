@@ -11,13 +11,12 @@ import klikr.util.cache.Clearable_RAM_cache;
 import klikr.path_lists.Path_list_provider;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.similarity.Similarity_cache;
-import klikr.properties.boolean_features.Feature;
-import klikr.properties.boolean_features.Feature_cache;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;

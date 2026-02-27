@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.properties;
+package klikr.settings;
 
 import java.time.LocalDateTime;
 import java.util.List;

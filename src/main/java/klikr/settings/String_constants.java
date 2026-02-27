@@ -1,4 +1,4 @@
-package klikr.properties;
+package klikr.settings;
 
 //**********************************************************
 public class String_constants
@@ -12,7 +12,7 @@ public class String_constants
     public static final String COLUMN_WIDTH = "Column_width"; //this must match the resource bundles
     public static final String STYLE_KEY = "STYLE";
     public static final String CUSTOM_COLOR = "Custom_color";
-
+    public static final String CACHE_FILE_MAX_LIFE = "CACHE_FILE_MAX_LIFE"; // in days
     public static final String USER_HOME = "user.home";
     public static final String CONF_DIR = ".klikr";
 

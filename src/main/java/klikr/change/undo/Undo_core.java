@@ -4,7 +4,7 @@
 package klikr.change.undo;
 
 import javafx.stage.Window;
-import klikr.properties.*;
+import klikr.settings.*;
 import klikr.util.Shared_services;
 import klikr.change.active_list_stage.Datetime_to_signature_source;
 import klikr.look.my_i18n.My_I18n;
@@ -17,6 +17,7 @@ import klikr.util.ui.Popups;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 
 //**********************************************************
@@ -29,13 +30,14 @@ public class Undo_core implements Datetime_to_signature_source
     private static final String key_base = "undo_item_"; // name of items about this in properties file
     public static final String HOW_MANY = "_how_many";
     private static File_storage properties;
-
+    private final Window owner;
     
     //**********************************************************
-    public Undo_core(String undo_filename, Window owner, Logger logger_)
+    public Undo_core(String undo_filename, Window owner, Logger logger)
     //**********************************************************
     {
-        logger  = logger_;
+        this.owner = owner;
+        this.logger  = logger;
         properties = new File_storage_using_Properties("Undo DB", undo_filename, true, owner, Shared_services.aborter(), logger);
         List<Undo_item> l = read_all_undo_items_from_disk();
         if (dbg) logger.log("undo store "+l.size()+" items loaded from "+undo_filename);
@@ -89,7 +91,7 @@ public class Undo_core implements Datetime_to_signature_source
     public Map<String, Undo_item> get_signature_to_undo_item_map()
     //**********************************************************
     {
-        logger.log("reading undo items from disk");
+        if ( dbg) logger.log("reading undo items from disk");
         Map<String, Undo_item> returned = new HashMap<>();
         List<Undo_item> ll = read_all_undo_items_from_disk();
         for ( Undo_item ui: ll)
@@ -158,6 +160,8 @@ public class Undo_core implements Datetime_to_signature_source
         if (!Popups.popup_ask_for_confirmation("❗"+ s1, "", owner,logger)) return;
 
         List<String> set = properties.get_all_keys();
+
+
         for ( String k : set)
         {
             if ( !k.startsWith(key_base)) continue;
@@ -209,53 +213,7 @@ public class Undo_core implements Datetime_to_signature_source
         properties.save_to_disk();
     }
 
-    /*
-    //**********************************************************
-    public static void show_all_events(Aborter aborter, Logger logger)
-    //**********************************************************
-    {
-        File_storage local = Shared_services.main_properties();
 
-        List<Line_for_info_stage> l = new ArrayList<>();
-        l.add(new Line_for_info_stage(true,"Items that can be undone:"));
-        Set<String> set = local.get_all_keys();
-        for ( String k : set)
-        {
-            if ( !k.startsWith(key_base)) continue;
-
-            if (k.endsWith(HOW_MANY))
-            {
-                StringBuilder sb = new StringBuilder();
-                UUID index = extract_index(k,logger);
-
-                int number_of_oan = Integer.parseInt(local.get(k));
-                for (int j = 0 ;j < number_of_oan; j++)
-                {
-
-                    String key = generate_key_for_old_path(index, j);
-                    String old_path_string = local.get(key);
-                    sb.append(old_path_string);
-                    sb.append(" ==> ");
-                    key = generate_key_for_new_path(index, j);
-                    String new_path_string = local.get(key);
-                    sb.append(new_path_string);
-                    sb.append(" ");
-                }
-                String key = generate_key_for_datetime(index);
-                String datetime_string = local.get(key);
-                sb.append(datetime_string);
-                sb.append(" / ");
-                key = generate_key_for_how_many_oans(index);
-                String how_many_string = local.get(key);
-                sb.append(how_many_string);
-                sb.append(" / ");
-                l.add(new Line_for_info_stage(false,sb.toString()));
-            }
-        }
-
-        Info_stage.show_info_stage("Undos", l, null);
-    }
-*/
     //**********************************************************
     public List<Undo_item> read_all_undo_items_from_disk()
     //**********************************************************
@@ -280,6 +238,7 @@ public class Undo_core implements Datetime_to_signature_source
                     logger.log("WEIRD: datetime_string=null for: "+k);
                     continue;
                 }
+
                 List<Old_and_new_Path> l = new ArrayList<>();
                 for (int j = 0 ;j < number_of_oan; j++)
                 {
@@ -304,11 +263,72 @@ public class Undo_core implements Datetime_to_signature_source
                 returned.add(undo_item);
             }
         }
+        // sort most recent first
         returned.sort(Undo_item.comparator_by_date);
+
+
+        if ( returned.size() > 1000)
+        {
+            int target_remaining = 100;
+
+            boolean erase = Popups.popup_ask_for_confirmation(
+                    "Undo list has "+returned.size()+" items!!!",
+                    "Do you want to erase all items but the most recent "+target_remaining+"?",
+                    owner,logger);
+            if ( erase)
+            {
+                List<Undo_item> to_be_removed = new  ArrayList<>();
+                int[] days_list = {365, 120, 30, 15};
+                for ( int days : days_list)
+                {
+                    if ( get_stuff_older_than(days, returned, to_be_removed, target_remaining))
+                    {
+                        break;
+                    }
+                }
+                returned.removeAll(to_be_removed);
+                for ( Undo_item undo_item : to_be_removed)
+                {
+                    remove_undo_item(undo_item,false);
+                }
+
+                int remaining = returned.size();
+                to_be_removed.clear();
+                for (int i = returned.size() - 1; i >= 0; i--)
+                {
+                    if ( remaining <= target_remaining) break;
+                    to_be_removed.add(returned.get(i));
+                    remaining--;
+                }
+                returned.removeAll(to_be_removed);
+                for ( Undo_item undo_item : to_be_removed)
+                {
+                    remove_undo_item(undo_item,false);
+                }
+
+
+                properties.save_to_disk();
+            }
+        }
         return returned;
     }
 
-
+    //**********************************************************
+    private boolean get_stuff_older_than(int days, List<Undo_item> returned, List<Undo_item> to_be_removed, int remaining)
+    //**********************************************************
+    {
+        for (int i = returned.size()-1; i > remaining; i-- )
+        {
+            Undo_item undo_item = returned.get(i);
+            if ( LocalDateTime.now().isAfter(undo_item.time_stamp.plusDays(days)))
+            {
+                to_be_removed.add(undo_item);
+                if ( dbg) logger.log("removing old UNDO item "+undo_item.to_string());
+                if( returned.size()-to_be_removed.size() == remaining) return true;
+            }
+        }
+        return false;
+    }
 
     //**********************************************************
     private void write_one_undo_item_to_disk(Undo_item undo_item)
@@ -327,7 +347,7 @@ public class Undo_core implements Datetime_to_signature_source
             if ( dbg)  logger.log("       "+k+"="+v);
         }
         int j = 0;
-        logger.log("Undo_core WRITE : "+undo_item.oans.size());
+        if ( dbg) logger.log("Undo_core WRITE "+undo_item.time_stamp.toString()+" number of oans: "+undo_item.oans.size());
         for (Old_and_new_Path oan : undo_item.oans)
         {
             {
@@ -350,29 +370,20 @@ public class Undo_core implements Datetime_to_signature_source
     }
 
     //**********************************************************
-    public void remove_undo_item(Undo_item undo_item)
+    public void remove_undo_item(Undo_item undo_item, boolean and_save)
     //**********************************************************
     {
         if ( dbg) logger.log("Undo_core REMOVE:"+undo_item.to_string());
         UUID index = undo_item.index;
-        remove_file_stored_undo_item(undo_item, index);
-    }
-
-    //**********************************************************
-    private void remove_file_stored_undo_item(Undo_item undo_item, UUID index)
-    //**********************************************************
-    {
         {
             String key = generate_key_for_how_many_oans(index);
             properties.remove(key);
-             //if ( dbg)
-                    logger.log("✅  OK UNDO removed "+key+" from properties");
+             if ( dbg) logger.log("removed "+key+" from properties");
         }
         {
             String key = generate_key_for_datetime(index);
             properties.remove(key);
-
-            if ( dbg) logger.log("✅  OK removed "+key+" from properties");
+            if ( dbg) logger.log("removed "+key+" from properties");
         }
         int j = 0;
         for (Old_and_new_Path oan : undo_item.oans)
@@ -380,16 +391,16 @@ public class Undo_core implements Datetime_to_signature_source
             {
                 String key_for_old_path = generate_key_for_old_path(index, j);
                 properties.remove(key_for_old_path);
-                if ( dbg) logger.log("✅ OK removed "+key_for_old_path+" from properties");
+                if ( dbg) logger.log("removed "+key_for_old_path+" from properties");
             }
             {
                 String key_for_new_path = generate_key_for_new_path(index, j);
                 properties.remove(key_for_new_path);
-                if ( dbg) logger.log("✅ OK removed "+key_for_new_path+" from properties");
+                if ( dbg) logger.log("removed "+key_for_new_path+" from properties");
             }
             j++;
         }
-        properties.save_to_disk();
+        if ( and_save) properties.save_to_disk();
     }
 
     //**********************************************************
@@ -407,5 +418,12 @@ public class Undo_core implements Datetime_to_signature_source
     //**********************************************************
     {
         properties.remove(k);
+    }
+
+    //**********************************************************
+    public void save_to_disk()
+    //**********************************************************
+    {
+        properties.save_to_disk();
     }
 }

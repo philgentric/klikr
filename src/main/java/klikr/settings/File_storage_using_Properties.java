@@ -1,10 +1,9 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.properties;
+package klikr.settings;
 
 import javafx.stage.Window;
-import javafx.util.Pair;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -42,7 +41,8 @@ public class File_storage_using_Properties implements File_storage
         String home = System.getProperty(String_constants.USER_HOME);
         path = Paths.get(home, String_constants.CONF_DIR, filename+".properties");
 
-        if ( dbg) logger.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
+        //if ( dbg)
+            logger.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
         reload_from_disk();
     }
     //**********************************************************
@@ -144,6 +144,10 @@ public class File_storage_using_Properties implements File_storage
     {
         if( dbg_set) logger.log("File_storage_using_Properties "+ tag +" remove() ->"+key+"<-");
         map.remove(key);
+        if ( with_age)
+        {
+            map.remove(key+AGE);
+        }
     }
 
     //**********************************************************
@@ -217,7 +221,7 @@ public class File_storage_using_Properties implements File_storage
         {
             local.put(e.getKey(), e.getValue());
         }
-        if (dbg) logger.log("save_to_disk()");
+        if (dbg) logger.log("File_storage_using_Properties: save_to_disk() "+path+ " size:"+local.size());
         try
         {
             FileOutputStream fos = new FileOutputStream(path.toFile());

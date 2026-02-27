@@ -29,8 +29,8 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.properties.boolean_features.Booleans;
-import klikr.properties.boolean_features.Feature;
+import klikr.settings.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
@@ -48,7 +48,7 @@ import klikr.look.Font_size;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
-import klikr.properties.Non_booleans_properties;
+import klikr.settings.Non_booleans_properties;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.image.Full_image_from_disk;
@@ -658,7 +658,7 @@ public abstract class Item implements Icon_destination
     protected void give_a_menu_to_the_button(Button local_button, Label local_label)
     //**********************************************************
     {
-        logger.log(Stack_trace_getter.get_stack_trace("YOP1"));
+        //logger.log(Stack_trace_getter.get_stack_trace("give_a_menu_to_the_button "));
         local_button.setOnContextMenuRequested((ContextMenuEvent event) -> {
             if ( dbg)
             {
