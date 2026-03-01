@@ -16,18 +16,14 @@ import klikr.util.Check_remaining_RAM;
 import klikr.util.Shared_services;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.Simple_json_parser;
-import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.util.mmap.Mmap;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.*;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +32,8 @@ import java.util.Map;
 public class ML_servers_monitor implements AutoCloseable
 //**********************************************************
 {
-    private static final boolean dbg = false;
-    private static final boolean ultra_dbg = false;
+    private static final boolean dbg = true;
+    private static final boolean ultra_dbg = false; // char level debug!
     private static volatile ML_servers_monitor instance;
 
     private Stage stage;
@@ -49,7 +45,7 @@ public class ML_servers_monitor implements AutoCloseable
     private static int sleep_between_network_scans_ms = DEFAULT_sleep_between_network_scans_ms;
     private static int limit;
 
-    private Map<ML_server,HBox> hboxes = new HashMap<>();
+    private Map<String,HBox> hboxes = new HashMap<>();
 
     //**********************************************************
    public static void make_faster_network_scans()
@@ -97,7 +93,7 @@ public class ML_servers_monitor implements AutoCloseable
         stage.setScene(scene);
         stage.show();
 
-        Actor_engine.execute(()-> for_ever_ask_servers_using_http_health(owner),"Pole ML servers",logger);
+        Actor_engine.execute(()-> for_ever_ask_servers_using_http_health(owner),"ML servers health check",logger);
     }
 
     //**********************************************************
@@ -113,14 +109,14 @@ public class ML_servers_monitor implements AutoCloseable
     //**********************************************************
     {
         if ( instance == null ) return;
-        Platform.runLater(()-> instance.hboxes.remove(ml_server));
+        Platform.runLater(()-> instance.hboxes.remove(ml_server.uuid()));
     }
 
     //**********************************************************
     private void make_one_line(ML_server ml_server)
     //**********************************************************
     {
-        if ( hboxes.containsKey(ml_server) ) /* ignore duplicates*/ return;
+        if ( hboxes.containsKey(ml_server.uuid()) ) /* ignore duplicates*/ return;
 
         HBox hbox = new HBox();
         hbox.setSpacing(10);
@@ -136,7 +132,7 @@ public class ML_servers_monitor implements AutoCloseable
                 ta.setEditable(false);
                 ta.setWrapText(true);
                 StringBuilder sb = new StringBuilder();
-                if (is_server_alive_2(ml_server,sb, aborter,logger))
+                if (is_server_alive(ml_server,sb, aborter,logger))
                 {
                     ta.setText(sb.toString());
                 }
@@ -182,13 +178,14 @@ public class ML_servers_monitor implements AutoCloseable
             }
         }
 
-
+/*
         {
             Label l = new Label(ml_server.uuid());
             Look_and_feel_manager.set_region_look(l, stage, logger);
             hbox.getChildren().add(l);
         }
-        hboxes.put(ml_server,hbox);
+*/
+        hboxes.put(ml_server.uuid(),hbox);
         vbox.getChildren().add(hbox);
     }
 
@@ -198,6 +195,8 @@ public class ML_servers_monitor implements AutoCloseable
     {
         while (running) {
             try {
+                if ( dbg) logger.log("for_ever_ask_servers_using_http_health .. updating");
+
                 read_registry_files_and_update_UI(owner);
                 Thread.sleep(sleep_between_network_scans_ms);
                 if ( sleep_between_network_scans_ms < DEFAULT_sleep_between_network_scans_ms)
@@ -233,20 +232,20 @@ public class ML_servers_monitor implements AutoCloseable
             for ( ML_server ml_server : list )
             {
                 if ( dbg) logger.log("query_server_health for:" + ml_server.to_string());
-                if (is_server_alive_2(ml_server,null, aborter,logger))
+                if (is_server_alive(ml_server,null, aborter,logger))
                 {
                     Platform.runLater(()->make_one_line(ml_server));
                 }
                 else
                 {
-                    Platform.runLater(()-> hboxes.remove(ml_server));
+                    Platform.runLater(()-> hboxes.remove(ml_server.uuid()));
                 }
             }
         }
     }
 
     //**********************************************************
-    public boolean is_server_alive_2(
+    public boolean is_server_alive(
             ML_server ml_server,
             StringBuilder sb_out,
             Aborter aborter, Logger logger)
@@ -257,26 +256,26 @@ public class ML_servers_monitor implements AutoCloseable
         try {
             url = new URL(url_string);
         } catch (MalformedURLException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" (Error#2) "+e));
+            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#1) "+e));
             return false;
         }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" (Error#3)"+e));
+            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#2)"+e));
             return false;
         }
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(0); // infinite
         } catch (ProtocolException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" (Error#4) "+e));
+            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#3) "+e));
             return false;
         }
         if (aborter.should_abort())
         {
-            logger.log("aborting(2) Feature_vector_source:: reason: "+aborter.reason());
+            logger.log("aborting(2) ML server alive check, reason: "+aborter.reason());
             return false;
         }
         try {
@@ -284,7 +283,7 @@ public class ML_servers_monitor implements AutoCloseable
         } catch (IOException e) {
             //logger.log(Stack_trace_getter.get_stack_trace(""+e));
             if ( sb_out != null) sb_out.append("Connection failed !");
-            logger.log((url_string+" (Error#5) "+e));
+            logger.log((url_string+" ML server alive check, (Error#4) "+e));
             return false;
         }
         try {
@@ -293,14 +292,14 @@ public class ML_servers_monitor implements AutoCloseable
             //logger.log("response code="+response_code);
         } catch (IOException e) {
             //logger.log(Stack_trace_getter.get_stack_trace(""+e));
-            logger.log((url_string+" (Error#6):"+e));
+            logger.log((url_string+" ML server alive check, (Error#5):"+e));
             return false;
         }
         try {
             String response_message = connection.getResponseMessage();
             //logger.log("response message="+response_message);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" (Error#7) "+e));
+            logger.log(Stack_trace_getter.get_stack_trace(url_string+"ML server alive check, (Error#6) "+e));
             return false;
         }
 
@@ -318,7 +317,7 @@ public class ML_servers_monitor implements AutoCloseable
             }
         } catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(" (Error#8) "+e));
+            logger.log(Stack_trace_getter.get_stack_trace("ML server alive check, (Error#7) "+e));
             return false;
         }
 

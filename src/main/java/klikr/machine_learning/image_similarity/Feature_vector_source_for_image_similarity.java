@@ -7,7 +7,6 @@ import javafx.stage.Window;
 import klikr.machine_learning.feature_vector.UDP_traffic_monitor;
 import klikr.machine_learning.ML_registry_discovery;
 import klikr.machine_learning.ML_server_type;
-import klikr.machine_learning.ML_service_type;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
@@ -46,7 +45,7 @@ public class Feature_vector_source_for_image_similarity extends Feature_vector_s
     public int get_random_port(Window owner, Logger logger)
     //**********************************************************
     {
-        return ML_registry_discovery.get_random_active_port(new ML_service_type(ML_server_type.MobileNet, null), owner,logger);
+        return ML_registry_discovery.get_random_active_port(ML_server_type.MobileNet, owner,logger);
     }
 
     //**********************************************************

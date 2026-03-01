@@ -71,6 +71,8 @@ dependencies {
     implementation 'ar.com.hjg:pngj:2.1.0'
     // for VIPS image rescaling
     implementation("app.photofox.vips-ffm:vips-ffm-core:1.9.1")
+    // for monaco web browser editor
+    implementation("io.javalin:javalin:6.4.0")
 }
 
 tasks.register('klikr', JavaExec) {
@@ -189,6 +191,15 @@ tasks.register('mmap', JavaExec) {
 tasks.register('undo', JavaExec) {
     dependsOn 'classes'
     mainClass = 'klikr.change.undo.Undo_test_app'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+    return
+}
+
+
+tasks.register('monaco', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.javalin_monaco.Javalin_monaco_app'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return

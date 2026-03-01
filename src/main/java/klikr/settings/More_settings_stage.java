@@ -55,6 +55,8 @@ public class More_settings_stage
     public static final Feature[] advanced_features ={
             Feature.Monitor_folders,
             Feature.Enable_mmap_caching,
+            Feature.Use_monaco_for_text_edition,
+            Feature.Use_web_browser_for_text_reading,
             //Feature.Enable_face_recognition,
             //Feature.Enable_image_similarity,
             Feature.Enable_bit_level_deduplication,

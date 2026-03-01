@@ -29,8 +29,10 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.javalin_monaco.Javalin_monaco;
 import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
@@ -355,11 +357,18 @@ public abstract class Item implements Icon_destination
 
 
 
-            Menu_items.add_menu_item_for_context_menu("Open_With_Klikr_Text_Frame",null,
+            Menu_items.add_menu_item_for_context_menu("Open_With_Text_Editor",null,
                     actionEvent -> {
-                    if (dbg) logger.log("button in item: Open_With_Klik_Text_Frame");
+                    if (dbg) logger.log("button in item: Open_With_Text_Editor");
 
-                    Text_frame.show(optional_of_item_path.get(),logger);
+                    if (Feature_cache.get(Feature.Use_monaco_for_text_edition))
+                    {
+                        Javalin_monaco.show(application, optional_of_item_path.get(), logger);
+                    }
+                    else
+                    {
+                        Text_frame.show(optional_of_item_path.get(),logger);
+                    }
                 }, context_menu,owner,logger);
 
             create_rename_menu_item(local_button, local_label,context_menu);

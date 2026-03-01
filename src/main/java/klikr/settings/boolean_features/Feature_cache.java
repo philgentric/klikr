@@ -22,6 +22,8 @@ public class Feature_cache
     public static final Map<Feature,Boolean> boolean_feature_cache = new HashMap<>();
 
     private static final List<Feature> default_to_true = List.of(
+            Feature.Use_monaco_for_text_edition,
+            Feature.Use_web_browser_for_text_reading,
             Feature.Show_icons_for_files,
             Feature.Show_file_names_as_tooltips,
             Feature.Reload_last_folder_on_startup,

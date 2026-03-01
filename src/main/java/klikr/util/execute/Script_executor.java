@@ -3,6 +3,8 @@ package klikr.util.execute;
 
 import javafx.application.Platform;
 import klikr.Klikr_application;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
 import klikr.util.log.Logger;
@@ -71,7 +73,14 @@ public class Script_executor
         if ( debug_mode) {
             Platform.runLater(() -> {
                 try {
-                    Text_frame.show("Script_executor", queue, 100,100, logger);
+                    /*if(Feature_cache.get(Feature.Use_web_browser_for_text_reading))
+                    {
+                        System_open_actor.open_with_web_browser(application,);
+                    }
+                    else*/
+                    {
+                        Text_frame.show("Script_executor", queue, 100, 100, logger);
+                    }
                 } finally {
                     ui_latch.countDown();
                 }

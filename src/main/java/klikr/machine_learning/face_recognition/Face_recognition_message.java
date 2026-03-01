@@ -3,6 +3,7 @@
 
 package klikr.machine_learning.face_recognition;
 
+import klikr.machine_learning.ML_server_type;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Message;
 
@@ -19,12 +20,11 @@ public class Face_recognition_message implements Message
     public final boolean do_face_detection;
     public final boolean display_face_reco_window;
     public final AtomicInteger files_in_flight;
-    public final Face_detection_type face_detection_type;
-
+    public final ML_server_type face_detection_type;
 
     //**********************************************************
     public Face_recognition_message(File file,
-                                    Face_detection_type face_detection_type,
+                                    ML_server_type face_detection_type,
                                     boolean do_face_detection,
                                     String label_for_training, // if null, this is "only" recognition, otherwise if recognition result is NOT this label, training will happen
                                     boolean display_face_reco_window,

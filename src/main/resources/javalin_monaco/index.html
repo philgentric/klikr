@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <title>Monaco Editor Bridge</title>
+        <style>
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                font-family: sans-serif;
+            }
+            #toolbar {
+                height: 48px;
+                background: #f0f0f0;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                border-bottom: 1px solid #ccc;
+                position: relative;
+            }
+            #container {
+                flex-grow: 1;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+                cursor: pointer;
+                background: #007acc;
+                color: white;
+                border: none;
+                border-radius: 4px;
+            }
+            button:hover {
+                background: #005f9e;
+            }
+            #pageTitle {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                font-weight: bold;
+                font-size: 16px;
+                color: #333;
+                white-space: nowrap;
+            }
+            #status {
+                margin-left: auto;
+                color: #666;
+                font-size: 13px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toolbar">
+            <button onclick="saveContent()">💾 Save</button>
+            <span id="pageTitle"></span>
+            <span id="status">Connecting...</span>
+        </div>
+        <div id="container"></div>
+
+        <!-- Load Monaco Editor -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+        <script>
+            require.config({
+                paths: {
+                    vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs",
+                },
+            });
+
+            let editor;
+            let ws;
+            let autoSaveTimer;
+
+            // Set title from query param
+            const urlParams = new URLSearchParams(window.location.search);
+            const titleParam = urlParams.get("title");
+            if (titleParam) {
+                document.title = titleParam;
+                document.getElementById("pageTitle").innerText = titleParam;
+            }
+
+            require(["vs/editor/editor.main"], function () {
+                editor = monaco.editor.create(
+                    document.getElementById("container"),
+                    {
+                        value: "// Wait, loading content...",
+                        //language: "java",
+                        language: "french",
+                        automaticLayout: true,
+                        theme: "vs-light",
+                    },
+                );
+
+                connectWebSocket();
+                setupAutosave();
+            });
+
+            function setupAutosave() {
+                editor.onDidChangeModelContent(() => {
+                    if (isProgrammaticUpdate) return;
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(() => {
+                        saveContent(true); // Silent save
+                    }, 1000); // 1 second delay
+                });
+            }
+
+            function connectWebSocket() {
+                const status = document.getElementById("status");
+                // Dynamic port from URL query param or assume standard logic.
+                // For simplicity, we'll try to guess port from the current location
+                // because Javalin serves this page, so window.location.host is correct.
+                const protocol =
+                    window.location.protocol === "https:" ? "wss:" : "ws:";
+                const wsUrl =
+                    protocol + "//" + window.location.host + "/monaco-ws";
+
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function () {
+                    status.innerText = "Connected";
+                    status.style.color = "green";
+
+                    // Always sync FROM server on connect/reconnect to ensure App is Source of Truth
+                    // This prevents the browser from blindly overwriting the app with empty or stale content.
+                    ws.send("REQUEST_INIT");
+                };
+
+                ws.onmessage = function (event) {
+                    // Received text from JavaFX
+                    const currentPosition = editor.getPosition();
+                    if (editor.getValue() !== event.data) {
+                        isProgrammaticUpdate = true;
+                        editor.setValue(event.data);
+                        editor.setPosition(currentPosition);
+                        isProgrammaticUpdate = false;
+                    }
+                };
+
+                ws.onclose = function () {
+                    status.innerText = "Disconnected";
+                    status.style.color = "red";
+                    setTimeout(connectWebSocket, 2000); // Auto-reconnect
+                };
+
+                ws.onerror = function (err) {
+                    console.error("WS Error", err);
+                    ws.close();
+                };
+            }
+
+            function saveContent(isSilent = false) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const content = editor.getValue();
+                    ws.send(content);
+
+                    if (!isSilent) {
+                        // Flash effect only for manual saves
+                        const btn = document.querySelector("button");
+                        const originalText = btn.innerText;
+                        btn.innerText = "Saved!";
+                        setTimeout(() => (btn.innerText = originalText), 1000);
+                    } else {
+                        // Subtle indicator for autosave
+                        const status = document.getElementById("status");
+                        status.innerText = "Autosaved";
+                        setTimeout(() => {
+                            if (status.innerText === "Autosaved")
+                                status.innerText = "Connected";
+                        }, 1000);
+                    }
+                } else {
+                    const status = document.getElementById("status");
+                    status.innerText = "Connection lost. Reconnecting...";
+                    status.style.color = "orange";
+                    // Force reconnect attempt if dead
+                    if (!ws || ws.readyState === WebSocket.CLOSED) {
+                        connectWebSocket();
+                    }
+                }
+            }
+
+            // Resize editor on window resize
+            window.addEventListener("resize", function () {
+                if (editor) editor.layout();
+            });
+        </script>
+    </body>
+</html>

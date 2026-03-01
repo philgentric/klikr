@@ -10,17 +10,15 @@ import javafx.scene.input.KeyCombination;
 import klikr.Klikr_application;
 import klikr.Window_type;
 import klikr.Window_builder;
+import klikr.machine_learning.ML_server_type;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.System_open_actor;
 import klikr.util.execute.actor.Aborter;
-import klikr.util.execute.actor.Actor_engine;
 import klikr.util.animated_gifs.Gif_repair;
 import klikr.browser.items.Item_file_with_icon;
 import klikr.change.Redo_same_move_engine;
 import klikr.change.undo.Undo_for_moves;
-import klikr.machine_learning.face_recognition.Face_detection_type;
-import klikr.machine_learning.face_recognition.Face_recognition_actor;
 import klikr.machine_learning.face_recognition.Face_recognition_message;
 import klikr.machine_learning.face_recognition.Face_recognition_service;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
@@ -327,25 +325,23 @@ public class Menus_for_image_window
         if ( Mouse_handling_for_Image_window.cropped_image_path != null) image_path = Mouse_handling_for_Image_window.cropped_image_path;
         Face_recognition_message msg = new Face_recognition_message(
                 image_path.toFile(),
-                Face_detection_type.alt_default,// ignored!
+                ML_server_type.Haars_default,// ignored!
                 do_face_detection,
                 null, // this recognition ONLY i.e. no training will happen
                 true,
                 image_window.aborter, null);
 
-        Face_recognition_actor actor = new Face_recognition_actor(recognition_services);
-        Actor_engine.run(actor,msg,null, image_window.logger);
+        Face_recognition_service.recognize(msg);
     }
 
     //**********************************************************
-    static void face_rec(Face_detection_type face_detection_type, Image_window image_window)
+    static void face_rec(ML_server_type face_detection_type, Image_window image_window)
     //**********************************************************
     {
         if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
         Face_recognition_service recognition_services = Face_recognition_service.get_instance(Klikr_application.application,image_window.stage, image_window.logger);
         if (recognition_services == null) return;
 
-        Face_recognition_actor actor = new Face_recognition_actor(recognition_services);
         boolean do_face_detection = true;
         Face_recognition_message msg = new Face_recognition_message(
                 image_window.image_display_handler.get_image_context().get().path.toFile(),
@@ -354,7 +350,7 @@ public class Menus_for_image_window
                 null,
                 true,
                 image_window.aborter, null);
-        Actor_engine.run(actor,msg,null, image_window.logger);
+        recognition_services.run_face_recognition_actor(msg);
     }
 
 
@@ -566,28 +562,28 @@ public class Menus_for_image_window
         fr_context_menu.getItems().add(Items_with_explanation.make_menu_item_with_explanation(
                 "Perform_face_recognition_service_with_high_precision_face_detector",
                 null,
-                event -> face_rec(Face_detection_type.MTCNN, image_window), image_window.stage, image_window.logger));
+                event -> face_rec(ML_server_type.MTCNN, image_window), image_window.stage, image_window.logger));
 
 
         fr_context_menu.getItems().add(Items_with_explanation.make_menu_item_with_explanation(
                 "Perform_face_recognition_service_with_optimistic_face_detector",
                 null,
-                event -> face_rec(Face_detection_type.alt_default, image_window), image_window.stage, image_window.logger));
+                event -> face_rec(ML_server_type.Haars_default, image_window), image_window.stage, image_window.logger));
 
         fr_context_menu.getItems().add(Items_with_explanation.make_menu_item_with_explanation(
                 "Perform_face_recognition_service_with_tree_face_detector",
                 null,
-                event -> face_rec(Face_detection_type.alt_tree, image_window), image_window.stage, image_window.logger));
+                event -> face_rec(ML_server_type.Haars_tree, image_window), image_window.stage, image_window.logger));
 
         fr_context_menu.getItems().add(Items_with_explanation.make_menu_item_with_explanation(
                 "Perform_face_recognition_service_with_ALT1_face_detector",
                 null,
-                event -> face_rec(Face_detection_type.alt1, image_window), image_window.stage, image_window.logger));
+                event -> face_rec(ML_server_type.Haars_alt1, image_window), image_window.stage, image_window.logger));
 
         fr_context_menu.getItems().add(Items_with_explanation.make_menu_item_with_explanation(
                 "Perform_face_recognition_service_with_ALT2_face_detector",
                 null,
-                event -> face_rec(Face_detection_type.alt2, image_window), image_window.stage, image_window.logger));
+                event -> face_rec(ML_server_type.Haars_alt2, image_window), image_window.stage, image_window.logger));
         return fr_context_menu;
     }
     //**********************************************************

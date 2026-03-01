@@ -1022,8 +1022,7 @@ public class Virtual_landscape
             // will block until icons are truly sorted
             List<Path> ll = get_iconized_sorted("process_iconified_items");
 
-            //if (dbg)
-            logger.log("✅ Virtual_landscape: all image properties acquired, saving cache ");
+            if (dbg) logger.log("✅ Virtual_landscape: all image properties acquired, saving cache ");
             Actor_engine.execute(() -> get_image_properties_cache().save_whole_cache_to_disk(),
                     "Save whole image property cache", logger);
 

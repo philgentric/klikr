@@ -6,7 +6,6 @@ package klikr.machine_learning.face_recognition;
 import javafx.stage.Window;
 import klikr.machine_learning.ML_registry_discovery;
 import klikr.machine_learning.ML_server_type;
-import klikr.machine_learning.ML_service_type;
 import klikr.util.execute.actor.Aborter;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_source_server;
@@ -31,7 +30,7 @@ public class Feature_vector_source_for_face_recognition extends Feature_vector_s
     public int get_random_port(Window owner, Logger logger)
     //**********************************************************
     {
-        return ML_registry_discovery.get_random_active_port(new ML_service_type(ML_server_type.FaceNet,null),owner,logger);
+        return ML_registry_discovery.get_random_active_port(ML_server_type.FaceNet,owner,logger);
     }
 
 

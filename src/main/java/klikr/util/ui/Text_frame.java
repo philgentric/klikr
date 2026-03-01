@@ -74,6 +74,7 @@ public class Text_frame
     }
 
     // is like a console output window
+    // read-only, take a queue as input
     //**********************************************************
     public static void show(String command, LinkedBlockingQueue<String> queue, double x, double y, Logger logger)
     //**********************************************************

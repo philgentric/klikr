@@ -7,6 +7,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.look.Look_and_feel;
+import klikr.machine_learning.ML_server_type;
 import klikr.machine_learning.ML_servers_util;
 import klikr.settings.Non_booleans_properties;
 import klikr.settings.boolean_features.Feature;
@@ -39,7 +40,9 @@ public class Installers
         String key = "Start_Image_Similarity_Servers";
         int num_servers = Non_booleans_properties.get_number_of_image_similarity_servers(owner);
 
-        EventHandler<ActionEvent> handler = e -> Actor_engine.execute(()->ML_servers_util.start_some_image_similarity_servers(num_servers,owner, logger), "Starting image similarity servers", logger);
+        EventHandler<ActionEvent> handler = e -> {
+            Actor_engine.execute(()->ML_servers_util.start_N_ML_servers(num_servers, ML_server_type.MobileNet,owner, logger), "Starting image similarity servers", logger);
+        };
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,

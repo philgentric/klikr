@@ -21,6 +21,9 @@ import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.audio.simple_player.Basic_audio_player;
+import klikr.javalin_monaco.Javalin_monaco;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Scrollable_text_field;
@@ -233,15 +236,28 @@ public class Results_frame
 					owner,
 					logger);
 			//Image_window is = Image_window.get_Image_window(the_browser, path, logger);
-		} else if (Guess_file_type.is_this_path_a_music(path, logger)) {
+		}
+		else if (Guess_file_type.is_this_path_a_music(path, logger))
+		{
 			logger.log("opening audio file: " + path.toAbsolutePath());
 			Basic_audio_player.get(null,aborter,logger);
 			Basic_audio_player.play_song(path.toAbsolutePath().toString(),true);
 			//Audio_player_gradle_start.play_song_in_separate_process(path.toFile(), logger);
-		} else if (Guess_file_type.is_this_path_a_text(path, owner, logger)) {
+		}
+		else if (Guess_file_type.is_this_path_a_text(path, owner, logger))
+		{
 			logger.log("opening text file: " + path.toAbsolutePath());
-			Text_frame.show(path, logger);
-		} else {
+			if ( Feature_cache.get(Feature.Use_web_browser_for_text_reading))
+			{
+				System_open_actor.open_with_web_browser(application,path,owner,aborter,logger);
+			}
+			else
+			{
+				Text_frame.show(path, logger);
+			}
+		}
+		else
+		{
 			System_open_actor.open_with_system(application,path, stage, aborter, logger);
 		}
 	}

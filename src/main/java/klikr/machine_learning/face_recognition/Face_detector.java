@@ -8,7 +8,6 @@ import javafx.stage.Window;
 import klikr.machine_learning.ML_registry_discovery;
 import klikr.machine_learning.ML_server_type;
 import klikr.machine_learning.ML_servers_status;
-import klikr.machine_learning.ML_service_type;
 import klikr.machine_learning.feature_vector.UDP_traffic_monitor;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
@@ -41,17 +40,10 @@ public class Face_detector
     static final int MINIMUM_ACCEPTABLE_FACE_SIZE = 200;
 
     //**********************************************************
-    public static int get_random_port(Face_detection_type face_detection_type, Window owner, Logger logger)
+    public static int get_random_port(ML_server_type face_detection_type, Window owner, Logger logger)
     //**********************************************************
     {
-        ML_server_type ml_server_type = ML_server_type.MTCNN;
-        switch (face_detection_type)
-        {
-            case alt_default, alt1, alt2, alt_tree:
-                ml_server_type = ML_server_type.Haars;
-                break;
-        }
-        ML_servers_status status = ML_registry_discovery.find_active_servers(new ML_service_type(ml_server_type, face_detection_type), owner, logger);
+        ML_servers_status status = ML_registry_discovery.find_active_servers(face_detection_type, owner, logger);
         if ( status.available_ports().isEmpty())
         {
             if (dbg) logger.log("No active face detection servers found for :"+face_detection_type);
@@ -70,7 +62,7 @@ public class Face_detector
     static long count =0;
 
     //**********************************************************
-    public static Face_detection_result detect_face(Path path, Face_detection_type face_detection_type, Window owner, Logger logger)
+    public static Face_detection_result detect_face(Path path, ML_server_type face_detection_type, Window owner, Logger logger)
     //**********************************************************
     {
 
@@ -84,13 +76,9 @@ public class Face_detector
         if ( port == -1 )
         {
             logger.log("Warning: could not find 1 active server for "+face_detection_type);
-            ML_server_type ml_server_type = ML_server_type.MTCNN;
-            if ( face_detection_type != Face_detection_type.MTCNN)
-            {
-                ml_server_type = ML_server_type.Haars;
-            }
+
             logger.log("PLEASE WAIT ! A Request has been made for "+face_detection_type+" servers to be started");
-            ML_registry_discovery.find_active_servers(new ML_service_type(ml_server_type,face_detection_type), owner,logger);
+            ML_registry_discovery.find_active_servers(face_detection_type, owner,logger);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         String url_string = null;
@@ -158,7 +146,7 @@ public class Face_detector
 
         if ( !done)
         {
-            logger.log("Face detection: failed");
+            logger.log("Face detection: connection to server failed for "+face_detection_type.name());
 
             return new Face_detection_result(null, Face_recognition_in_image_status.server_not_reacheable);
         }
@@ -188,11 +176,11 @@ public class Face_detector
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
 
-        if ( face_detection_type == Face_detection_type.MTCNN)
+        if ( face_detection_type == ML_server_type.MTCNN)
         {
             if ((face_image.getHeight() < MINIMUM_ACCEPTABLE_FACE_SIZE) || (face_image.getWidth() < MINIMUM_ACCEPTABLE_FACE_SIZE) )
             {
-                logger.log("things smaller than "+ MINIMUM_ACCEPTABLE_FACE_SIZE +" pixels are discarded i.e. we assume face detection failed");
+                logger.log("things smaller than "+ MINIMUM_ACCEPTABLE_FACE_SIZE +" pixels are discarded i.e. we assume face detection failed with "+face_detection_type.name());
                 //Image big = Utils.get_image(path);
                 //Utils.display(200,img,big,null,"face discarded as too small","",logger);
                 report_time(logger,effectively_slept);
@@ -201,9 +189,10 @@ public class Face_detector
         }
         else
         {
+            // Haars
             if (Math.abs(face_image.getHeight() - face_image.getWidth()) > 2)
             {
-                logger.log("non square face discarded i.e. we assume face detection failed");
+                logger.log("non square face discarded i.e. we assume face detection failed for "+face_detection_type.name());
                 //Image big = Utils.get_image(path);
                 //Utils.display(200,img,big,null,"non square face discarded","",logger);
                 report_time(logger,effectively_slept);
@@ -212,7 +201,7 @@ public class Face_detector
         }
 
         report_time(logger, effectively_slept);
-        logger.log("face detected");
+        logger.log("Face detector: face detected by "+face_detection_type.name());
 
         return new Face_detection_result(face_image, Face_recognition_in_image_status.face_detected);
     }

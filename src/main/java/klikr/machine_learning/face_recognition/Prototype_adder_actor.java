@@ -8,6 +8,7 @@ import javafx.scene.image.Image;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.machine_learning.feature_vector.Feature_vector;
+import klikr.util.log.Logger;
 
 import java.util.*;
 
@@ -17,12 +18,14 @@ public class Prototype_adder_actor implements Actor
 {
     public static final boolean dbg = false;
     private final Face_recognition_service service;
+    private final Logger logger;
 
     //**********************************************************
-    Prototype_adder_actor(Face_recognition_service service_)
+    Prototype_adder_actor(Face_recognition_service service, Logger logger)
     //**********************************************************
     {
-        service = service_;
+        this.service = service;
+        this.logger = logger;
     }
 
 
@@ -53,7 +56,7 @@ public class Prototype_adder_actor implements Actor
         String tag = label+ "_"+ UUID.randomUUID();
 
         Embeddings_prototype heavy_ep = new Heavy_embeddings_prototype(face, fv, label, tag);
-        heavy_ep.save(service.face_recognizer_path, service.logger);
+        heavy_ep.save(service.face_recognizer_path, logger);
 
         // what we store is the version WITHOUT the image, to save RAM
         Embeddings_prototype ep = new Light_embeddings_prototype(fv, label, tag);
@@ -64,9 +67,9 @@ public class Prototype_adder_actor implements Actor
         service.label_to_prototype_count.put(label,x);
         service.embeddings_prototypes.add(ep);
         if ( !service.labels.contains(label)) service.labels.add(label);
-        service.logger.log("added prototype image face with tag ="+tag);
+        logger.log("added prototype image face with tag ="+tag);
         // for debug
-        //Utils.display(300, face,null,null,"debug",label,service.logger);
+        Utils.display(300, face,null,null,"debug",label,logger);
         return Face_recognition_in_image_status.feature_vector_ready;
     }
 

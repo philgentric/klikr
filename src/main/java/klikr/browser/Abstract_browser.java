@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
 import klikr.look.my_i18n.My_I18n;
+import klikr.settings.boolean_features.Feature;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.virtual_landscape.*;
@@ -235,14 +236,16 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
             {
                 logger.log("SHOULD NOT HAPPEN Abstract_browser: primary_stage is null");
             }
-            CountDownLatch cdl = new CountDownLatch(1);
-            Mmap.instance.save_index(new Save_and_what(cdl));
-            try {
-                cdl.await();
-            } catch (InterruptedException e) {
-                logger.log(""+e);
+            if ( Feature_cache.get(Feature.Enable_mmap_caching))
+            {
+                CountDownLatch cdl = new CountDownLatch(1);
+                Mmap.instance.save_index(new Save_and_what(cdl));
+                try {
+                    cdl.await();
+                } catch (InterruptedException e) {
+                    logger.log("" + e);
+                }
             }
-
             if (dbg) logger.log("primary_stage closing GOING TO CALL Platform.exit()");
             Platform.exit();
             if (dbg) logger.log("primary_stage closing GOING TO CALL System.exit()");

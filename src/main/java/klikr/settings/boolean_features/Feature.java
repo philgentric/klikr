@@ -21,6 +21,8 @@ public enum Feature
     Hide_question_mark_buttons_on_mysterious_menus,
 
     Monitor_folders,
+    Use_monaco_for_text_edition,
+    Use_web_browser_for_text_reading,
     Enable_mmap_caching,
     Enable_face_recognition,
     Enable_image_similarity,

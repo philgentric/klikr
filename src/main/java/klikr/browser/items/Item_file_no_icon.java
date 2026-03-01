@@ -18,6 +18,7 @@ import klikr.Window_type;
 import klikr.audio.simple_player.Basic_audio_player;
 import klikr.audio.simple_player.Navigator_auto;
 import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.javalin_monaco.Javalin_monaco;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.settings.boolean_features.Feature_change_target;
 import klikr.util.cache.Klikr_cache;
@@ -378,7 +379,14 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             if ( Guess_file_type.is_this_path_a_text(optional_of_item_path.get(),owner,logger))
             {
                 logger.log("✅ opening text: " + optional_of_item_path.get().toAbsolutePath());
-                Text_frame.show(optional_of_item_path.get(),logger);
+                if ( Feature_cache.get(Feature.Use_monaco_for_text_edition))
+                {
+                    Javalin_monaco.show(application,optional_of_item_path.get(),logger);
+                }
+                else
+                {
+                    Text_frame.show(optional_of_item_path.get(), logger);
+                }
                 return;
             }
             if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),logger))

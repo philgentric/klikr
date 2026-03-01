@@ -14,6 +14,8 @@ package klikr.browser.icons;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 import klikr.settings.String_constants;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.External_application;
 import klikr.look.Jar_utils;
 import klikr.util.cache.Klikr_cache;
@@ -47,7 +49,7 @@ public class Icon_factory_actor implements Actor
 //**********************************************************
 {
 
-    private static final boolean cache_png_in_mmap = true;//Feature_cache.get(Feature.Enable_mmap_caching);
+    // if( Feature_cache.get(Feature.Enable_mmap_caching))
     // there are 3 possibilities for caching PNG icons (of JPGs):
     // - if cache_png_in_mmap is false,
     // for jpg, png and pdf, we store the icons in a cache folder:
@@ -314,20 +316,46 @@ TODO:
         {
             case gif:
             {
-                Optional<Image> op = Mmap.instance.read_image_as_file(icon_path);
+                Optional<Image> op;
+                if ( Feature_cache.get(Feature.Enable_mmap_caching))
+                {
+                    op = Mmap.instance.read_image_as_file(icon_path);
+                }
+                else
+                {
+                    op =  Icons_from_disk.load_icon_from_disk_cache(
+                            original_path,
+                            icon_factory_request.icon_size,
+                            String.valueOf(icon_factory_request.icon_size),
+                            Icon_caching.png_extension,
+                            false, icon_factory_request.owner, logger);
+                }
                 if( dbg) if ( op.isPresent()) logger.log("Icon caching, READ of GIF icon from mmap, as file");
                 return op;
             }
 
             case video:
             {
-                Optional<Image> op = Mmap.instance.read_image_as_file(icon_path);
+                Optional<Image> op;
+                if ( Feature_cache.get(Feature.Enable_mmap_caching))
+                {
+                    op = Mmap.instance.read_image_as_file(icon_path);
+                }
+                else
+                {
+                    op =  Icons_from_disk.load_icon_from_disk_cache(
+                            original_path,
+                            icon_factory_request.icon_size,
+                            String.valueOf(icon_factory_request.icon_size),
+                            Icon_caching.png_extension,
+                            false, icon_factory_request.owner, logger);
+                }
                 if( dbg) logger.log("Icon caching, READ of icon from mmap, as file");
                 return op;
             }
 
             default:
-            if (cache_png_in_mmap)
+            if( Feature_cache.get(Feature.Enable_mmap_caching))
             {
                 if (use_pixels_in_mmap)
                 {
@@ -637,7 +665,7 @@ TODO:
 
                 default:
                     if ( is_icon_cache_folder(original_path)) break;
-                    if ( cache_png_in_mmap)
+                    if( Feature_cache.get(Feature.Enable_mmap_caching))
                     {
                         if (use_pixels_in_mmap)
                         {

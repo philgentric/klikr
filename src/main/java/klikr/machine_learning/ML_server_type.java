@@ -7,6 +7,7 @@ import klikr.util.log.Logger;
 
 import java.nio.file.Path;
 
+
 //**********************************************************
 public enum ML_server_type
 //**********************************************************
@@ -15,7 +16,18 @@ public enum ML_server_type
     MobileNet, // feature vectors (CNN embeddings) for general purpose image similarity
     FaceNet, //  feature vectors (CNN embeddings) specialized for face similarity (=> recognition assuming faces with labels are recorded)
     MTCNN, // Convolutional Neural Network for face detection
-    Haars; // "old tech" face detector
+    // "old tech" face detector
+    Haars_tree,
+    Haars_default,
+    Haars_alt1,
+    Haars_alt2;
+
+    //**********************************************************
+    public static ML_server_type[] face_detectors()
+    //**********************************************************
+    {
+        return new ML_server_type[]{MTCNN, Haars_alt1, Haars_alt2, Haars_default, Haars_tree};
+    }
 
     //**********************************************************
     Path registry_path(Window owner, Logger logger)
@@ -23,7 +35,7 @@ public enum ML_server_type
     {
         switch(this)
         {
-            case FaceNet, Haars, MTCNN:
+            case FaceNet, MTCNN, Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
             {
                 return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("face_recognition_server_registry", false, owner, logger);
             }
@@ -45,11 +57,11 @@ public enum ML_server_type
         {
             case FaceNet, MTCNN:
             {
-                return 1;
+                return 3;
             }
-            case Haars:
+            case Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
             {
-                return 4; // one of each sub type
+                return 1;
             }
             case MobileNet:
             {
@@ -70,7 +82,7 @@ public enum ML_server_type
             {
             return "FaceNet_embeddings_server.py";
             }
-            case Haars:
+            case Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
             {
             return "haars_face_detection_server.py";
             }
@@ -82,6 +94,22 @@ public enum ML_server_type
             {
                 return "MobileNet_embeddings_server.py";
             }
+        }
+        return null;
+    }
+
+    public String get_xml_file_name()
+    {
+        switch(this)
+        {
+            case Haars_default:
+                return "haarscascade_frontalface_alt_default.xml";
+            case Haars_tree:
+                return "haarscascade_frontalface_alt_tree.xml";
+            case Haars_alt1:
+                return "haarscascade_frontalface_alt_1.xml";
+            case Haars_alt2:
+                return "haarscascade_frontalface_alt_2.xml";
         }
         return null;
     }
