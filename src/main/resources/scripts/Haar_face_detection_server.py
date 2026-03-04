@@ -14,9 +14,10 @@ import platform
 from functools import partial
 
 SERVER_UUID = str(uuid.uuid4())
+TYPE = None
 MONITOR_PORT = None
 TCP_PORT = None
-CONFIG_NAME = None
+XML_FILE_NAME = None
 
 # Global classifier
 face_cascade = None
@@ -45,12 +46,11 @@ def register_server():
         registry_dir = os.path.join(home, ".klikr", ".privacy_screen", "face_recognition_server_registry")
         os.makedirs(registry_dir, exist_ok=True)
 
-        filename = f"{CONFIG_NAME}_{SERVER_UUID}.json"
+        filename = f"{TYPE}_{SERVER_UUID}.json"
         filepath = os.path.join(registry_dir, filename)
 
         data = {
-            "name": "Haars",
-            "sub-type": CONFIG_NAME,
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID
         }
@@ -79,13 +79,13 @@ ml_loaded_successfully = False
 def attempt_load_resources():
     global face_cascade, ml_loaded_successfully
     try:
-        print(f"Loading Haar Cascade from: {CONFIG_NAME}")
-        if not os.path.exists(CONFIG_NAME):
-            raise FileNotFoundError(f"Cascade file not found: {CONFIG_NAME}")
+        print(f"Loading Haar Cascade from: {XML_FILE_NAME}")
+        if not os.path.exists(XML_FILE_NAME):
+            raise FileNotFoundError(f"Cascade file not found: {XML_FILE_NAME}")
 
-        face_cascade = cv2.CascadeClassifier(CONFIG_NAME)
+        face_cascade = cv2.CascadeClassifier(XML_FILE_NAME)
         if face_cascade.empty():
-             raise IOError(f"Failed to load cascade classifier from {CONFIG_NAME}")
+             raise IOError(f"Failed to load cascade classifier from {XML_FILE_NAME}")
 
         print("Haar Cascade loaded successfully")
         ml_loaded_successfully = True
@@ -176,7 +176,7 @@ class FaceDetectionHandler(SimpleHTTPRequestHandler):
 
             processing_time = (time.time() - start_time)*1000  # Convert to milliseconds
             # Send monitoring data
-            monitor_data = f"{SERVER_UUID},haar_face_detection,{CONFIG_NAME},{processing_time:.3f}"
+            monitor_data = f"{SERVER_UUID},haar_face_detection,{XML_FILE_NAME},{processing_time:.3f}"
             try:
                 bytes_sent = self.udp_socket.sendto(monitor_data.encode(), ('127.0.0.1', MONITOR_PORT))
                 print(f"UDP sent {bytes_sent} bytes to 127.0.0.1:{MONITOR_PORT}: {monitor_data}")
@@ -200,8 +200,7 @@ class FaceDetectionHandler(SimpleHTTPRequestHandler):
         )
 
         response = {
-            "name": "Haars",
-            "sub-type": CONFIG_NAME,
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID,
             "status": "healthy" if is_healthy else "critical_failure",
@@ -223,14 +222,14 @@ def run_server():
 
     attempt_load_resources()
 
-    print("Starting local HAARS FACE DETECTION server with config: "+CONFIG_NAME)
+    print("Starting local Haar FACE DETECTION server with config: "+XML_FILE_NAME)
 
     # Bind to ephemeral port to avoid fragile fixed port assignments
     server_address = ('127.0.0.1', 0)
     httpd = ReliableHTTPServer(server_address, FaceDetectionHandler)
     TCP_PORT = httpd.server_address[1]
 
-    print(f"Bound HAARS face detection server to TCP port: {TCP_PORT}")
+    print(f"Bound Haar face detection server to TCP port: {TCP_PORT}")
 
     # Register server using the real bound port
     REGISTRY_FILE = register_server()
@@ -251,14 +250,16 @@ def run_server():
         print("Server stopped")
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python haars_face_detection_server.py <config_name> <udp_port>")
+    if len(sys.argv) != 4:
+        print("Usage: python Haar_face_detection_server.py <TYPE> <XML_FILE_NAME> <udp_port>")
         time.sleep(1)
         sys.exit(1)
 
     try:
-        CONFIG_NAME = sys.argv[1].replace("'", "")
-        MONITOR_PORT = int(sys.argv[2])
+        TYPE = sys.argv[1]
+        #XML_FILE_NAME = sys.argv[2].replace("'", "")
+        XML_FILE_NAME = sys.argv[2]
+        MONITOR_PORT = int(sys.argv[3])
 
         run_server()
     except ValueError:

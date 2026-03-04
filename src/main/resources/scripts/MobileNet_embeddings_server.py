@@ -10,6 +10,7 @@ import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 SERVER_UUID = str(uuid.uuid4())
+TYPE = None
 MONITOR_PORT = None
 TCP_PORT = None
 
@@ -46,11 +47,11 @@ def register_server():
         registry_dir = os.path.join(home, ".klikr", ".privacy_screen", "image_similarity_server_registry")
         os.makedirs(registry_dir, exist_ok=True)
 
-        filename = f"MobileNet_{SERVER_UUID}.json"
+        filename = f"{TYPE}_{SERVER_UUID}.json"
         filepath = os.path.join(registry_dir, filename)
 
         data = {
-            "name": "MobileNet",
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID
         }
@@ -172,7 +173,7 @@ class EmbeddingGenerator(SimpleHTTPRequestHandler):
         )
 
         response = {
-            "name": "MobileNet",
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID,
             "status": "healthy" if is_healthy else "critical_failure",
@@ -293,14 +294,15 @@ def run_server():
 
 if __name__ == '__main__':
     # Parse command line arguments
-    if len(sys.argv) < 2:
-        print("Usage: python MobileNet_embeddings_server.py [udp_port]")
+    if len(sys.argv) < 3:
+        print("Usage: python MobileNet_embeddings_server.py <type> [udp_port]")
         # Keep the process alive for a moment to allow reading the error
         time.sleep(10)
         sys.exit(1)
 
     try:
-        MONITOR_PORT = int(sys.argv[1])
+        TYPE = sys.argv[1]
+        MONITOR_PORT = int(sys.argv[2])
         print("starting MobileNet_embeddings_server.py")
         run_server()
     except ValueError:

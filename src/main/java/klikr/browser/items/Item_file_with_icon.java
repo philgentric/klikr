@@ -259,7 +259,7 @@ public class Item_file_with_icon extends Item_file
     public ContextMenu make_context_menu()
     //**********************************************************
     {
-        logger.log(Stack_trace_getter.get_stack_trace("Item_file_with_icon make_context_menu"));
+        //logger.log(Stack_trace_getter.get_stack_trace("Item_file_with_icon make_context_menu"));
 
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu,owner,logger);

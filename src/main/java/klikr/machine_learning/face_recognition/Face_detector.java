@@ -5,10 +5,9 @@ package klikr.machine_learning.face_recognition;
 
 import javafx.scene.image.Image;
 import javafx.stage.Window;
-import klikr.machine_learning.ML_registry_discovery;
+import klikr.machine_learning.Load_balancer;
 import klikr.machine_learning.ML_server_type;
-import klikr.machine_learning.ML_servers_status;
-import klikr.machine_learning.feature_vector.UDP_traffic_monitor;
+import klikr.machine_learning.monitoring.UDP_traffic_monitor;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
@@ -36,26 +35,9 @@ public class Face_detector
 {
     private static final boolean dbg = false;
     private static final boolean ultra_dbg = false;
-    static Random  random = new Random();
     static final int MINIMUM_ACCEPTABLE_FACE_SIZE = 200;
 
-    //**********************************************************
-    public static int get_random_port(ML_server_type face_detection_type, Window owner, Logger logger)
-    //**********************************************************
-    {
-        ML_servers_status status = ML_registry_discovery.find_active_servers(face_detection_type, owner, logger);
-        if ( status.available_ports().isEmpty())
-        {
-            if (dbg) logger.log("No active face detection servers found for :"+face_detection_type);
-            return -1;
-        }
-
-        return status.available_ports().get(random.nextInt(status.available_ports().size()));
-    }
-
-
     record Face_detection_result(Image image, Face_recognition_in_image_status status){}
-
 
     static long start;
     static long total_server_ns = 0;
@@ -72,13 +54,11 @@ public class Face_detector
         }
 
         start = System.nanoTime();
-        int port = get_random_port(face_detection_type,owner,logger);
+        int port =  Load_balancer.get_random_active_port(face_detection_type,owner,logger);
         if ( port == -1 )
         {
             logger.log("Warning: could not find 1 active server for "+face_detection_type);
-
             logger.log("PLEASE WAIT ! A Request has been made for "+face_detection_type+" servers to be started");
-            ML_registry_discovery.find_active_servers(face_detection_type, owner,logger);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         String url_string = null;
@@ -113,34 +93,17 @@ public class Face_detector
             return new Face_detection_result(null, Face_recognition_in_image_status.server_not_reacheable);
         }
 
+
         boolean done = false;
         long effectively_slept =0;
-        long sleep_time = 100;
-        //for(;;)
-        {
-            try {
-                connection.connect();
-                done = true;
-                //break;
-            } catch (IOException e) {
-                if ( dbg) logger.log(("                         Face detector: " + e));
-            }
-            /*
-            if ( dbg) logger.log(" connection to face detection server: going to sleep: "+sleep_time);
-            try {
-                effectively_slept += sleep_time;
-                Thread.sleep(sleep_time);
-            } catch (InterruptedException e) {
-                logger.log(Stack_trace_getter.get_stack_trace("" + e));
-            }
-            sleep_time *= 5.0;
-            if ( sleep_time > 10_000) sleep_time =10_000;
-            if ( effectively_slept > 10*60*1000) // 10 minutes
-            {
-                logger.log("Face detection: giving up, server not reachable");
-                break;
-            }*/
+        try {
+            connection.connect();
+            done = true;
+            //break;
+        } catch (IOException e) {
+            if ( dbg) logger.log(("                         Face detector: " + e));
         }
+
 
 
 
@@ -171,9 +134,15 @@ public class Face_detector
         Image face_image = null;
         try (BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream())){
             face_image = new Image(bufferedInputStream);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             logger.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
+        }
+        finally
+        {
+            connection.disconnect();
         }
 
         if ( face_detection_type == ML_server_type.MTCNN)

@@ -22,21 +22,32 @@ public class Tmp_file_in_trash
     //**********************************************************
     {
         Path tmp_path = get_path_in_trash(cmd,owner, logger);
-        if ( tmp_path == null) return null;
-        if (Files.exists(tmp_path)) return tmp_path;
+        if ( tmp_path == null)
+        {
+            logger.log("❌ Fatal, cannot create path in trash: ->"+cmd+"<-");
+            return null;
+        }
+        if (Files.exists(tmp_path))
+        {
+            logger.log("NO OVERWRITE, file not copied in trash: ->"+cmd+"<-");
+            return tmp_path;
+        }
 
         String name = "/scripts/"+cmd;
         InputStream input_stream =  Application_jar.get_jar_InputStream_by_name(name);
         if ( input_stream == null)
         {
-            logger.log("❌ Fatal, can open jar stream for: ->"+name+"<-");
+            logger.log("❌ Fatal, cannot open jar stream for: ->"+name+"<-");
             return null;
         }
+        logger.log("OK jar stream opened for ->"+cmd+"<-");
+
         // create a temporary copy of this file:
 
         try
         {
             FileUtils.copyInputStreamToFile(input_stream, tmp_path.toFile());
+            logger.log("OK file copied ->"+cmd+"<-");
             return tmp_path;
         }
         catch (IOException e)

@@ -7,7 +7,7 @@ public class Simple_json_parser
 //**********************************************************
 {
     // example of json content:
-    // {"name": "MobileNet_embeddings_server",
+    // {"type": "MobileNet",
     // "port": 54225,
     // "uuid": "072ff019-5884-44f9-8b40-fe4ea967d4f8"}
 

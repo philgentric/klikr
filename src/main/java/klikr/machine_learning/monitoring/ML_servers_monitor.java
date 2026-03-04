@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.machine_learning;
+package klikr.machine_learning.monitoring;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -10,8 +10,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.machine_learning.*;
+import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Shared_services;
 import klikr.look.Look_and_feel_manager;
@@ -24,28 +30,36 @@ import klikr.util.log.Stack_trace_getter;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //**********************************************************
-public class ML_servers_monitor implements AutoCloseable
+public class ML_servers_monitor //implements AutoCloseable
 //**********************************************************
 {
-    private static final boolean dbg = true;
+    private static final boolean dbg = false;
     private static final boolean ultra_dbg = false; // char level debug!
     private static volatile ML_servers_monitor instance;
+    private static  double SMALL_WIDTH = 20;
+    private static final double SMALL_HEIGHT = 20;
+    private static final double DISPLAY_PIXEL_WIDTH = 800;
 
     private Stage stage;
-    private VBox vbox;
-    private volatile boolean running = true;
+    private VBox the_vbox;
     private Logger logger;
     private Aborter aborter;
     private static final int DEFAULT_sleep_between_network_scans_ms = 3_000;
     private static int sleep_between_network_scans_ms = DEFAULT_sleep_between_network_scans_ms;
     private static int limit;
 
-    private Map<String,HBox> hboxes = new HashMap<>();
+    // UI items
+    private final Map<String,HBox> uuid_to_big_hbox = new HashMap<>();
+    private final Map<String, HBox> uuid_to_small_hbox = new HashMap<>();
+
 
     //**********************************************************
    public static void make_faster_network_scans()
@@ -78,6 +92,7 @@ public class ML_servers_monitor implements AutoCloseable
     private void init(Window owner, Logger logger_)
     //**********************************************************
     {
+        UDP_traffic_monitor.set_monitoring_reception_frame(this);
         aborter = Shared_services.aborter();
         logger = logger_;
 
@@ -85,8 +100,8 @@ public class ML_servers_monitor implements AutoCloseable
         stage.setTitle("Live ML servers");
         stage.setMinWidth(800);
         stage.setMinHeight(800);
-        vbox = new VBox();
-        ScrollPane sp = new ScrollPane(vbox);
+        the_vbox = new VBox();
+        ScrollPane sp = new ScrollPane(the_vbox);
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         Scene scene = new Scene(sp);
@@ -96,34 +111,56 @@ public class ML_servers_monitor implements AutoCloseable
         Actor_engine.execute(()-> for_ever_ask_servers_using_http_health(owner),"ML servers health check",logger);
     }
 
-    //**********************************************************
-    public static void refresh_add(ML_server ml_server, Window owner, Logger logger)
-    //**********************************************************
-    {
-        if ( instance == null ) return;
-        Platform.runLater(()->instance. make_one_line(ml_server));
-    }
 
     //**********************************************************
     public static void refresh_remove(ML_server ml_server, Window owner, Logger logger)
     //**********************************************************
     {
         if ( instance == null ) return;
-        Platform.runLater(()-> instance.hboxes.remove(ml_server.uuid()));
+        Platform.runLater(()-> instance.remove_one_line(ml_server));
+    }
+
+
+    //**********************************************************
+    synchronized private void remove_one_line(ML_server ml_server)
+    //**********************************************************
+    {
+        HBox big_box = uuid_to_big_hbox.get(ml_server.uuid());
+        if ( big_box != null)
+        {
+            uuid_to_big_hbox.remove(ml_server.uuid());
+            the_vbox.getChildren().remove(big_box);
+        }
     }
 
     //**********************************************************
-    private void make_one_line(ML_server ml_server)
+    public static void refresh_add(ML_server ml_server, Window owner, Logger logger)
     //**********************************************************
     {
-        if ( hboxes.containsKey(ml_server.uuid()) ) /* ignore duplicates*/ return;
+        if ( instance == null ) return;
+        Platform.runLater(()->instance.make_one_line(ml_server));
+    }
 
-        HBox hbox = new HBox();
-        hbox.setSpacing(10);
+    //**********************************************************
+    synchronized private void make_one_line(ML_server ml_server)
+    //**********************************************************
+    {
+        HBox big_box = uuid_to_big_hbox.get(ml_server.uuid());
+        if ( big_box != null)
+        {
+            // ignore duplicates coming from ML_registry_discovery
+            return;
+        }
+
+        HBox big_hbox = new HBox();
+        uuid_to_big_hbox.put(ml_server.uuid(),big_hbox);
+        the_vbox.getChildren().add(big_hbox);
+
+        //big_hbox.setSpacing(10);
         {
             Button port_button = new Button(""+ml_server.port());
             Look_and_feel_manager.set_button_look(port_button, true, stage, logger);
-            hbox.getChildren().add(port_button);
+            big_hbox.getChildren().add(port_button);
             port_button.setOnAction(event -> {
                 Stage stage = new Stage();
                 TextArea ta = new TextArea();
@@ -132,7 +169,7 @@ public class ML_servers_monitor implements AutoCloseable
                 ta.setEditable(false);
                 ta.setWrapText(true);
                 StringBuilder sb = new StringBuilder();
-                if (is_server_alive(ml_server,sb, aborter,logger))
+                if (is_server_alive_heavy_version(ml_server,sb,logger))
                 {
                     ta.setText(sb.toString());
                 }
@@ -147,55 +184,41 @@ public class ML_servers_monitor implements AutoCloseable
                 stage.show();
             });
         }
+
+        {
+            Label l = new Label(ml_server.type());
+            Look_and_feel_manager.set_region_look(l, stage, logger);
+            big_hbox.getChildren().add(l);
+        }
+
+
+        {
+            HBox small_hbox = new HBox();
+            big_hbox.getChildren().add(small_hbox);
+            uuid_to_small_hbox.put(ml_server.uuid(), small_hbox);
+        }
         {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             Look_and_feel_manager.set_region_look(spacer, stage, logger);
-            hbox.getChildren().add(spacer);
+            big_hbox.getChildren().add(spacer);
         }
 
-        {
-            Label l = new Label(ml_server.name());
-            Look_and_feel_manager.set_region_look(l, stage, logger);
-            hbox.getChildren().add(l);
-        }
-        {
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-            Look_and_feel_manager.set_region_look(spacer, stage, logger);
-            hbox.getChildren().add(spacer);
-        }
-        if ( ml_server.sub_type() != null){
-            if ( dbg) logger.log("ML_server sub-type: ->" + ml_server.sub_type());
-            Label l = new Label(ml_server.sub_type());
-            Look_and_feel_manager.set_region_look(l, stage, logger);
-            hbox.getChildren().add(l);
-            {
-                Region spacer = new Region();
-                HBox.setHgrow(spacer, Priority.ALWAYS);
-                Look_and_feel_manager.set_region_look(spacer, stage, logger);
-                hbox.getChildren().add(spacer);
-            }
-        }
 
-/*
-        {
-            Label l = new Label(ml_server.uuid());
-            Look_and_feel_manager.set_region_look(l, stage, logger);
-            hbox.getChildren().add(l);
-        }
-*/
-        hboxes.put(ml_server.uuid(),hbox);
-        vbox.getChildren().add(hbox);
     }
+
+
 
     //**********************************************************
     public void for_ever_ask_servers_using_http_health(Window owner)
     //**********************************************************
     {
-        while (running) {
+        for(;;)
+        {
             try {
                 if ( dbg) logger.log("for_ever_ask_servers_using_http_health .. updating");
+
+                if( aborter.should_abort() ) return;
 
                 read_registry_files_and_update_UI(owner);
                 Thread.sleep(sleep_between_network_scans_ms);
@@ -208,7 +231,9 @@ public class ML_servers_monitor implements AutoCloseable
                         sleep_between_network_scans_ms=DEFAULT_sleep_between_network_scans_ms;
                     }
                 }
-            } catch (Exception e) {
+            }
+            catch (InterruptedException e)
+            {
                 logger.log("for_ever_ask_servers_using_http_health "+e);
             }
         }
@@ -219,9 +244,10 @@ public class ML_servers_monitor implements AutoCloseable
     private void read_registry_files_and_update_UI(Window owner)
     //**********************************************************
     {
-        Map<String, List<ML_server>> server_ports = ML_registry_discovery.scan_all_registry(owner, logger);
+        Map<String, List<ML_server>> server_ports = ML_registry.scan_all_registry(owner, logger);
         if ( server_ports == null )
         {
+            // should not happen
             logger.log("???? Server ports not found");
             return;
         }
@@ -232,23 +258,22 @@ public class ML_servers_monitor implements AutoCloseable
             for ( ML_server ml_server : list )
             {
                 if ( dbg) logger.log("query_server_health for:" + ml_server.to_string());
-                if (is_server_alive(ml_server,null, aborter,logger))
+                if (is_server_alive_heavy_version(ml_server,null,logger))
                 {
-                    Platform.runLater(()->make_one_line(ml_server));
+                    ML_servers_monitor.refresh_add(ml_server,owner,logger);
                 }
                 else
                 {
-                    Platform.runLater(()-> hboxes.remove(ml_server.uuid()));
+                    ML_servers_monitor.refresh_remove(ml_server,owner,logger);
                 }
             }
         }
     }
 
     //**********************************************************
-    public boolean is_server_alive(
+    public boolean is_server_alive_heavy_version(
             ML_server ml_server,
-            StringBuilder sb_out,
-            Aborter aborter, Logger logger)
+            StringBuilder sb_out, Logger logger)
     //**********************************************************
     {
         String url_string = "http://127.0.0.1:" + ml_server.port()+"/health";
@@ -273,11 +298,7 @@ public class ML_servers_monitor implements AutoCloseable
             logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#3) "+e));
             return false;
         }
-        if (aborter.should_abort())
-        {
-            logger.log("aborting(2) ML server alive check, reason: "+aborter.reason());
-            return false;
-        }
+
         try {
             connection.connect();
         } catch (IOException e) {
@@ -315,10 +336,14 @@ public class ML_servers_monitor implements AutoCloseable
                 if ( ultra_dbg) logger.log(""+(char)c);
                 sb.append((char)c);
             }
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             logger.log(Stack_trace_getter.get_stack_trace("ML server alive check, (Error#7) "+e));
             return false;
+        }
+        finally {
+            connection.disconnect();
         }
 
         if ( sb_out != null) sb_out.append(sb.toString());
@@ -329,13 +354,16 @@ public class ML_servers_monitor implements AutoCloseable
             String port_s = Simple_json_parser.read_key(json,"port",logger);
             if ( port_s == null)
             {
-                logger.log(" WTF ?? port == null");
+                logger.log("❌  port == null for server: "+ml_server.to_string());
+                return false;
             }
-            else {
+            else
+            {
                 try {
                     int port = Integer.parseInt(port_s);
-                    if (port != ml_server.port()) {
-                        logger.log("WTF ? ports dont match ?? from /health=" + port + " from file=" + ml_server.port());
+                    if (port != ml_server.port())
+                    {
+                        logger.log("❌  ports dont match ?? from /health=" + port + " port=" + ml_server.port());
                         return false;
                     }
                 } catch (NumberFormatException e) {
@@ -345,77 +373,78 @@ public class ML_servers_monitor implements AutoCloseable
         }
         {
             String uuid = Simple_json_parser.read_key(json,"uuid",logger);
+
+            if ( uuid == null)
+            {
+                logger.log("❌  uuid from /health == null for server: "+ml_server.to_string());
+                return false;
+            }
             if ( !uuid.equals(ml_server.uuid()))
             {
-                logger.log("WTF ? uuids dont match ?? from /health="+uuid+" from file="+ml_server.uuid());
+                logger.log("❌  uuid from /health dont match "+uuid+" for server: "+ml_server.to_string());
                 return false;
             }
         }
         {
-            String name = Simple_json_parser.read_key(json,"name",logger);
-            if ( !name.equals(ml_server.name()))
+            String type = Simple_json_parser.read_key(json,"type",logger);
+            if( type == null)
             {
-                logger.log("WTF ? names dont match ?? from /health="+name+" from file="+ml_server.name());
+                logger.log("❌  type from /health == null for server: "+ml_server.to_string());
+                return false;
+            }
+            if ( !type.equals(ml_server.type()))
+            {
+                logger.log("❌  types from /health dont match "+type+" for server: "+ml_server.to_string());
                 return false;
             }
         }
 
-        if ( dbg)
+
+
+        if ( dbg) logger.log("HTTP health scan: Found 1 live server: "+ml_server.to_string());
+        String status = Simple_json_parser.read_key(json,"status",logger);
+        boolean returned = true;
+        if ( status == null)
         {
-            String sub_type = Simple_json_parser.read_key(json,"sub-type",logger);
-            if ( sub_type != null)
+            logger.log("❌ No status found from in ML server");
+            returned = false;
+        }
+        else
+        {
+            if( dbg) logger.log("Status:"+status);
+            if ( status.equals("critical_failure"))
             {
-                if (ml_server.sub_type() != null)
-                {
-                    if ( !sub_type.equals(ml_server.sub_type()))
-                    {
-                        logger.log("WTF ? sub-types dont match ?? from /health="+sub_type+" from file="+ml_server.sub_type());
-                    }
-                }
-            }
-            else
-            {
-                if (ml_server.sub_type() != null)
-                {
-                    logger.log("WTF ? sub-types dont match ?? from /health="+sub_type+" from file="+ml_server.sub_type());
-                }
-            }
-
-            logger.log("HTTP health scan: Found 1 live server: "+ml_server.to_string());
-            String status = Simple_json_parser.read_key(json,"status",logger);
-            if ( status == null)
-            {
-                logger.log("No status found");
-            }
-            else
-            {
-                if( dbg) logger.log("Status:"+status);
-            }
-
-            String diagnostics = Simple_json_parser.read_key(json,"diagnostics",logger);
-            if ( diagnostics == null)
-            {
-                logger.log("No diagnostics found");
-            }
-            else
-            {
-                 logger.log("Diagnostics:"+diagnostics);
-            }
-
-            String runtime = Simple_json_parser.read_key(json,"runtime",logger);
-            if ( runtime == null)
-            {
-                logger.log("No runtime found");
-            }
-            else
-            {
-                logger.log("Runtime:"+runtime);
+                logger.log("❌ critical_failure in ML server");
+                returned = false;
             }
         }
-        return true;
+
+        String diagnostics = Simple_json_parser.read_key(json,"diagnostics",logger);
+        if ( diagnostics == null)
+        {
+            logger.log("No diagnostics found");
+        }
+        else
+        {
+            if ( !returned)
+            {
+                logger.log("Diagnostics:"+diagnostics);
+            }
+        }
+
+        String runtime = Simple_json_parser.read_key(json,"runtime",logger);
+        if ( runtime == null)
+        {
+            logger.log("No runtime found");
+        }
+        else
+        {
+            if ( !returned) logger.log("Runtime:"+runtime);
+        }
+        return returned;
     }
 
-
+/*
     //**********************************************************
     @Override
     public void close()
@@ -423,4 +452,107 @@ public class ML_servers_monitor implements AutoCloseable
     {
         running = false;
     }
+*/
+
+
+
+
+
+
+
+    //**********************************************************
+    public void inject(UDP_report report)
+    //**********************************************************
+    {
+        Runnable r = () -> {
+            inject_report(report);
+        };
+        Platform.runLater(r);
+
+    }
+
+    private long hit_count =0;
+    private double total_duration_ms =0;
+    private double max_hit_for_a_server = 0;
+    //**********************************************************
+    private void inject_report(UDP_report report)
+    //**********************************************************
+    {
+        hit_count++;
+        total_duration_ms += report.processing_time();
+        double average_duration_ms = total_duration_ms / hit_count;
+        //duration_label.setText("Average embeddings processing time: " + String.format("%.2f", average_duration_ms) + " ms");
+        // Update rate
+        double rate = calculate_rate();
+        //rate_label.setText(String.format("Rate: %.1f embeddings/s on last 10s", rate));
+
+
+
+        String server_uuid = report.server_uuid();
+        HBox hb = uuid_to_small_hbox.get(server_uuid);
+        if ( hb == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("Getting record for UNREGISTERED server UUID: " + server_uuid));
+            return;
+        }
+
+
+        Rectangle r = new Rectangle(SMALL_WIDTH, SMALL_HEIGHT);
+        r.setFill(get_random_color());
+        hb.getChildren().add(r);
+        if ( hb.getChildren().size() > max_hit_for_a_server )
+        {
+            max_hit_for_a_server = hb.getChildren().size();
+            if ( max_hit_for_a_server*SMALL_WIDTH > DISPLAY_PIXEL_WIDTH *0.8 )
+            {
+                // decrease the width of ALL the rectangles
+                SMALL_WIDTH = 0.7*SMALL_WIDTH;
+                for (HBox small_box : uuid_to_small_hbox.values())
+                {
+                    for (int i = 0; i < small_box.getChildren().size(); i++)
+                    {
+                        Rectangle rect = (Rectangle) small_box.getChildren().get(i);
+                        rect.setWidth(SMALL_WIDTH);
+                    }
+                }
+            }
+        }
+        stage.show();
+    }
+
+    Random r = new Random();
+    //**********************************************************
+    private Paint get_random_color()
+    //**********************************************************
+    {
+        double red = r.nextDouble();
+        double green = r.nextDouble();
+        double blue = r.nextDouble();
+        return Color.color(red, green, blue);
+    }
+
+    private final ArrayDeque<Long> time_window = new ArrayDeque<>();
+    private static final long WINDOW_SIZE_S = 10;
+    private static final long WINDOW_SIZE_MS = WINDOW_SIZE_S*1000;
+
+    //**********************************************************
+    private double calculate_rate()
+    //**********************************************************
+    {
+        long now = System.currentTimeMillis();
+
+        // Remove timestamps older than 10 seconds
+        while (!time_window.isEmpty() && now - time_window.peekFirst() > WINDOW_SIZE_MS) {
+            time_window.removeFirst();
+        }
+        time_window.addLast(now);
+        return time_window.size() / WINDOW_SIZE_S;
+    }
+
+
+    // the returned status is for the request type
+
+
+
+
 }

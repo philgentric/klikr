@@ -1,7 +1,7 @@
 package klikr.machine_learning;
 
 //**********************************************************
-public record ML_server(int port, String uuid, String name, String sub_type)
+public record ML_server(int port, String uuid, String type)
 //**********************************************************
 {
     //**********************************************************
@@ -11,8 +11,7 @@ public record ML_server(int port, String uuid, String name, String sub_type)
         StringBuilder sb = new StringBuilder();
         sb.append("port: ").append(port).append("\n");
         sb.append("uuid: ").append(uuid).append("\n");
-        sb.append("name: ").append(name).append("\n");
-        sb.append("sub-type: ").append(sub_type).append("\n");
+        sb.append("type: ").append(type).append("\n");
         return sb.toString();
     }
 }

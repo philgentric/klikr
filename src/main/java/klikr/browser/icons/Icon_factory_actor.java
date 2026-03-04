@@ -684,7 +684,6 @@ TODO:
                             if ( item_type != Iconifiable_item_type.pdf)
                             {
                                 // we need to save the icon (Image) to disk
-                                logger.log("WTF 8888 !!!!");
                                 Static_image_utilities.write_png_to_disk(icon_from_cache, icon_path, logger);
                             }
                             // then we save the file in mmap

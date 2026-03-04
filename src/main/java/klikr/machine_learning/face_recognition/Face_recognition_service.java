@@ -34,10 +34,7 @@ import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.look.Look_and_feel_manager;
-import klikr.machine_learning.ML_registry_discovery;
-import klikr.machine_learning.ML_server_launch_status;
 import klikr.machine_learning.ML_server_type;
-import klikr.machine_learning.ML_servers_status;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.cache.Cache_folder;
@@ -72,7 +69,7 @@ import java.util.concurrent.atomic.LongAdder;
 public class Face_recognition_service
 //**********************************************************
 {
-    public static final boolean dbg = true;
+    public static final boolean dbg = false;
 
     public static final int K_of_KNN = 3;
     public static final int LIMIT_PER_LABEL = 3;
@@ -248,7 +245,7 @@ public class Face_recognition_service
     //**********************************************************
     {
         //logger.log("process_file FILE before: "+file.getAbsolutePath());
-        Face_recognition_results Face_recognition_results = recognize_a_face(file.toPath(), display_face_reco_window,aborter);
+        Face_recognition_results Face_recognition_results = just_recognize_a_face(file.toPath(), display_face_reco_window,aborter);
         //logger.log("process_file FILE after : "+file.getAbsolutePath()+ " "+ Face_recognition_results.status);
         switch (Face_recognition_results.face_recognition_in_image_status())
         {
@@ -351,7 +348,7 @@ public class Face_recognition_service
         if (check_this_is_a_face)
         {
             //make a last check: but is this a face ????
-            Face_detector.Face_detection_result face_detection_result = Face_detector.detect_face(Face_recognition_results.image_path(), ML_server_type.Haars_alt1, owner, logger);
+            Face_detector.Face_detection_result face_detection_result = Face_detector.detect_face(Face_recognition_results.image_path(), ML_server_type.Haar_alt1, owner, logger);
 
             if (face_detection_result.status() != Face_recognition_in_image_status.face_detected)
             {
@@ -621,7 +618,7 @@ public class Face_recognition_service
                 label_in_flight.increment();
                 Aborter local_never_null = aborter_may_be_null;
                 if ( local_never_null == null) local_never_null = new Aborter("dummy",logger);
-                Face_recognition_message msg = new Face_recognition_message(f, ML_server_type.MTCNN, true, label, false, local_never_null, files_in_flight);
+                Face_recognition_message msg = new Face_recognition_message(f, ML_server_type.MTCNN, label, false, local_never_null, files_in_flight);
                 Actor_engine.run(face_recognition_actor, msg, tr, logger);
            }
         }
@@ -644,7 +641,7 @@ public class Face_recognition_service
 
 
     //**********************************************************
-    public void show_face_recognition_window(Image face, Eval_results eval_result)
+    public void show_face_recognition_window(Image face, Eval_results eval_result, ML_server_type ml_server_type)
     //**********************************************************
     {
         int size = 1600/K_of_KNN;
@@ -652,23 +649,29 @@ public class Face_recognition_service
         if (Platform.isFxApplicationThread())
         {
             logger.log("HAPPENS1 show_face_recognition_window");
-            show_Face_recognition_window_internal(application,size,face,eval_result,owner);
+            show_Face_recognition_window_internal(application,size,face,eval_result,ml_server_type,owner);
         }
         else {
             int size2 = size;
-            Jfx_batch_injector.inject(()->show_Face_recognition_window_internal(application,size2,face,eval_result,owner),logger);
+            Jfx_batch_injector.inject(()->show_Face_recognition_window_internal(application,size2,face,eval_result,ml_server_type,owner),logger);
         }
     }
+
+    private static double x = 10;
+    private static double y = 10;
+
     //**********************************************************
     public void show_Face_recognition_window_internal(
             Application application,
             int size,
             Image face_image,
             Eval_results eval_result,
+            ML_server_type ml_server_type,
             Window owner)
     //**********************************************************
     {
         Stage stage = new Stage();
+
         stage.initOwner(owner);
         Label status_label = new Label();
         Look_and_feel_manager.set_label_look(status_label,stage,logger);
@@ -699,7 +702,7 @@ public class Face_recognition_service
         {
             if ( face_image != null)
             {
-                Label l= new Label("Extracted face looks like this:");
+                Label l= new Label("Extracted face looks like this: (Detector: "+ml_server_type.name()+")");
                 Look_and_feel_manager.set_label_look(l,stage,logger);
                 vBox.getChildren().add(l);
                 ImageView iv = new ImageView();
@@ -712,10 +715,10 @@ public class Face_recognition_service
             }
             else
             {
-                stage.setTitle("Face Detection failed");
+                stage.setTitle("Face Detection failed for detector "+ml_server_type.name());
                 stage.setMinWidth(400);
                 stage.setMinHeight(400);
-                status_label.setText("Face Detection failed");
+                status_label.setText("Face Detection failed for detector "+ml_server_type.name());
             }
         }
         if ( face_image !=null)
@@ -905,6 +908,19 @@ public class Face_recognition_service
 
         stage.setScene(scene);
         stage.show();
+        stage.setX(x);
+        stage.setY(y);
+        stage.setAlwaysOnTop(true);
+        x += 20;
+        if ( x > 200)
+        {
+            x = 10;
+        }
+        y += 20;
+        if ( y > 200)
+        {
+            y = 10;
+        }
     }
 
 
@@ -1087,7 +1103,7 @@ public class Face_recognition_service
 
 
     //**********************************************************
-    public Face_recognition_results recognize_a_face(Path path_of_face, boolean display_face_reco_window, Aborter aborter)
+    public Face_recognition_results just_recognize_a_face(Path path_of_face, boolean display_face_reco_window, Aborter aborter)
     //**********************************************************
     {
         Eval_results eval_result = eval_a_face(path_of_face, aborter);
@@ -1102,7 +1118,7 @@ public class Face_recognition_service
 
         if (display_face_reco_window)
         {
-            show_face_recognition_window(face,eval_result);
+            show_face_recognition_window(face,eval_result,null);
         }
 
         String display_label = eval_result.label();
@@ -1334,7 +1350,7 @@ public class Face_recognition_service
         }
         if (face_detection_result.status() != Face_recognition_in_image_status.face_detected)
         {
-            if ( display_face_reco_window) show_face_recognition_window(face_detection_result.image(),null);
+            if ( display_face_reco_window) show_face_recognition_window(face_detection_result.image(),null,face_detection_type);
             return new Face_recognition_results(null,null, null,null, Face_recognition_in_image_status.no_face_detected);
         }
         Image image_face = face_detection_result.image();
@@ -1357,7 +1373,7 @@ public class Face_recognition_service
         if ( dbg) logger.log("tmp_path_to_face = "+tmp_path_to_face);
 
         Eval_results eval_result = eval_a_face(tmp_path_to_face, aborter);
-        if (display_face_reco_window) show_face_recognition_window(image_face,eval_result);
+        if (display_face_reco_window) show_face_recognition_window(image_face,eval_result,face_detection_type);
 
         String display_label = eval_result.label();
         if ( eval_result.label() == null)
@@ -1417,9 +1433,7 @@ public class Face_recognition_service
                 break;
             }
 
-            logger.log("Warning: FaceNet embeddings failed ! are the servers started ?");
-            ML_servers_status status = ML_registry_discovery.find_active_servers(ML_server_type.FaceNet, owner, logger);
-            if (status.launch_status()== ML_server_launch_status.ERROR) break;
+            logger.log("Warning: FaceNet embeddings failed ! waiting for the servers to start...");
             try
             {
                 Thread.sleep(500);

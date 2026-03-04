@@ -1,11 +1,10 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.machine_learning.feature_vector;
+package klikr.machine_learning.monitoring;
 
 import javafx.application.Platform;
 import javafx.stage.Window;
-import klikr.machine_learning.ML_servers_monitor;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
@@ -28,7 +27,7 @@ public class UDP_traffic_monitor implements AutoCloseable
     private volatile boolean running = true;
     private final Logger logger;
     public final int port = 65123;
-    private UDP_traffic_monitoring_stage monitoring_frame; // may be null
+    private static ML_servers_monitor monitoring_frame; // may be null
 
     // used when we start servers
     //**********************************************************
@@ -52,7 +51,7 @@ public class UDP_traffic_monitor implements AutoCloseable
                 {
                     instance = new UDP_traffic_monitor(owner,logger);
                     ML_servers_monitor.start_ML_servers_monitor(owner, logger);
-                    logger.log("ML servers monitoring is activated");
+                    logger.log("ML servers monitoring is running");
                 }
             }
         }
@@ -78,10 +77,16 @@ public class UDP_traffic_monitor implements AutoCloseable
             running = false;
             return;
         }
-        Platform.runLater(() -> {
-                monitoring_frame = new UDP_traffic_monitoring_stage(owner, logger);
+/*        Platform.runLater(() -> {
+                //monitoring_frame = new UDP_traffic_monitoring_stage(owner, logger);
             });
+*/
         Actor_engine.execute(this::receive_messages,"Receive embedding server UDP monitoring packets",logger);
+    }
+
+    public static void set_monitoring_reception_frame(ML_servers_monitor ml_servers_monitor)
+    {
+        monitoring_frame = ml_servers_monitor;
     }
 
     //**********************************************************
@@ -122,8 +127,8 @@ public class UDP_traffic_monitor implements AutoCloseable
 
             UDP_report report = new UDP_report(server_uuid, model_name, image_path, processing_time_ms);
 
+            if (dbg) logger.log("UDP ML servers traffic monitoring Server: "+server_uuid+" Model: "+model_name+" processed "+image_path+" in "+processing_time_ms+" milliseconds");
             if ( monitoring_frame!=null) monitoring_frame.inject(report);
-            if (dbg) logger.log("Server: "+server_uuid+" Model: "+model_name+" processed "+image_path+" in "+processing_time_ms+" milliseconds");
         }
         else
         {

@@ -67,7 +67,7 @@ public class Face_recognition_actor implements Actor
         }
 
         Path tmp_image_to_be_deleted = null;
-        if ( frm.do_face_detection)
+        if ( frm.face_detection_type != null)
         {
             tmp_image_to_be_deleted = service.detect_face_and_recognize(frm.file, frm.face_detection_type, frm.label, frm.display_face_reco_window, frm.get_aborter());
         }
@@ -75,6 +75,7 @@ public class Face_recognition_actor implements Actor
         {
             tmp_image_to_be_deleted = service.just_recognize(frm.file,frm.label, frm.display_face_reco_window, frm.get_aborter());
         }
+        /*
         if ( tmp_image_to_be_deleted != null)
         {
             try {
@@ -83,7 +84,7 @@ public class Face_recognition_actor implements Actor
             } catch (IOException e) {
                 logger.log(Stack_trace_getter.get_stack_trace(""+e));
             }
-        }
+        }*/
         return null;
     }
 

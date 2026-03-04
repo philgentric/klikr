@@ -54,41 +54,41 @@ MTCNN_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
 
 # ────────────────────── Face‑detection (haarcascade) ──────────────────────
 $FaceDetectionPorts  = @(8080, 8081)
-$FaceDetectorId      = "'haarcascade_frontalface_alt_tree.xml'"
+$FaceDetectorId      = "'tree.xml'"
 
 foreach ($port in $FaceDetectionPorts) {
     Start-Process -FilePath python3 `
-                  -ArgumentList "-c", "import haars_face_detection_server;
-haars_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
+                  -ArgumentList "-c", "import Haar_face_detection_server;
+Haar_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
                   -WindowStyle Hidden
 }
 
 $FaceDetectionPorts  = @(8090, 8091)
-$FaceDetectorId      = "'haarcascade_frontalface_alt_default.xml'"
+$FaceDetectorId      = "'default.xml'"
 
 foreach ($port in $FaceDetectionPorts) {
     Start-Process -FilePath python3 `
-                  -ArgumentList "-c", "import haars_face_detection_server;
-haars_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
+                  -ArgumentList "-c", "import Haar_face_detection_server;
+Haar_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
                   -WindowStyle Hidden
 }
 
 $FaceDetectionPorts  = @(8100, 8101)
-$FaceDetectorId      = "'haarcascade_frontalface_alt1.xml'"
+$FaceDetectorId      = "'alt1.xml'"
 
 foreach ($port in $FaceDetectionPorts) {
     Start-Process -FilePath python3 `
-                  -ArgumentList "-c", "import haars_face_detection_server;
-haars_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
+                  -ArgumentList "-c", "import Haar_face_detection_server;
+Haar_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
                   -WindowStyle Hidden
 }
 
 $FaceDetectionPorts  = @(8110, 8111)
-$FaceDetectorId      = "'haarcascade_frontalface_alt2.xml'"
+$FaceDetectorId      = "'alt2.xml'"
 
 foreach ($port in $FaceDetectionPorts) {
     Start-Process -FilePath python3 `
-                  -ArgumentList "-c", "import haars_face_detection_server;
-haars_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
+                  -ArgumentList "-c", "import Haar_face_detection_server;
+Haar_face_detection_server.run_server($port,$FaceDetectorId,$UDP_PORT)" `
                   -WindowStyle Hidden
 }

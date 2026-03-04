@@ -15,6 +15,7 @@ import platform
 SERVER_UUID = str(uuid.uuid4())  # Generate a unique ID for this server instance
 MONITOR_PORT = None
 TCP_PORT = None
+TYPE = None
 
 # Global detector
 detector = None
@@ -43,11 +44,11 @@ def register_server():
         registry_dir = os.path.join(home, ".klikr", ".privacy_screen", "face_recognition_server_registry")
         os.makedirs(registry_dir, exist_ok=True)
 
-        filename = f"MTCNN_{SERVER_UUID}.json"
+        filename = f"{TYPE}_{SERVER_UUID}.json"
         filepath = os.path.join(registry_dir, filename)
 
         data = {
-            "name": "MTCNN",
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID
         }
@@ -188,7 +189,7 @@ class MTCNN_FaceDetectionHandler(SimpleHTTPRequestHandler):
         )
 
         response = {
-            "name": "MTCNN",
+            "type": TYPE,
             "port": TCP_PORT,
             "uuid": SERVER_UUID,
             "status": "healthy" if is_healthy else "critical_failure",
@@ -238,14 +239,15 @@ def run_server():
         print("Server stopped")
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print(f"FATAL! Arguments received: {sys.argv[1:]}")  # Show only the parameters (excluding script name)
-        print("Usage: python MTCNN_face_detection_server.py <udp_port>")
+        print("Usage: python MTCNN_face_detection_server.py <type> <udp_port>")
         time.sleep(1)
         sys.exit(1)
 
     try:
-        MONITOR_PORT = int(sys.argv[1])
+        TYPE = sys.argv[1]
+        MONITOR_PORT = int(sys.argv[2])
         run_server()
     except ValueError:
         print("Error: Ports must be integers")

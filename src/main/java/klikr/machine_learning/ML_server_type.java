@@ -17,25 +17,25 @@ public enum ML_server_type
     FaceNet, //  feature vectors (CNN embeddings) specialized for face similarity (=> recognition assuming faces with labels are recorded)
     MTCNN, // Convolutional Neural Network for face detection
     // "old tech" face detector
-    Haars_tree,
-    Haars_default,
-    Haars_alt1,
-    Haars_alt2;
+    Haar_tree,
+    Haar_default,
+    Haar_alt1,
+    Haar_alt2;
 
     //**********************************************************
     public static ML_server_type[] face_detectors()
     //**********************************************************
     {
-        return new ML_server_type[]{MTCNN, Haars_alt1, Haars_alt2, Haars_default, Haars_tree};
+        return new ML_server_type[]{MTCNN, Haar_alt1, Haar_alt2, Haar_default, Haar_tree};
     }
 
     //**********************************************************
-    Path registry_path(Window owner, Logger logger)
+    public Path registry_path(Window owner, Logger logger)
     //**********************************************************
     {
         switch(this)
         {
-            case FaceNet, MTCNN, Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
+            case FaceNet, MTCNN, Haar_alt1, Haar_alt2, Haar_default, Haar_tree:
             {
                 return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("face_recognition_server_registry", false, owner, logger);
             }
@@ -49,7 +49,7 @@ public enum ML_server_type
 
     private int number_of_image_similarity_servers = -1;
     //**********************************************************
-    int quota(Window owner)
+    public int quota(Window owner)
     //**********************************************************
     {
         // for the face recog servers we count '1' for a call to start ... which may start more than one
@@ -59,7 +59,7 @@ public enum ML_server_type
             {
                 return 3;
             }
-            case Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
+            case Haar_alt1, Haar_alt2, Haar_default, Haar_tree:
             {
                 return 1;
             }
@@ -78,38 +78,42 @@ public enum ML_server_type
     {
         switch(this)
         {
+            case MobileNet:
+            {
+                return "MobileNet_embeddings_server.py";
+            }
             case FaceNet:
             {
             return "FaceNet_embeddings_server.py";
-            }
-            case Haars_alt1, Haars_alt2, Haars_default, Haars_tree:
-            {
-            return "haars_face_detection_server.py";
             }
             case MTCNN:
             {
             return "MTCNN_face_detection_server.py";
             }
-            case MobileNet:
+            case Haar_alt1, Haar_alt2, Haar_default, Haar_tree:
             {
-                return "MobileNet_embeddings_server.py";
+                return "Haar_face_detection_server.py";
             }
+
         }
         return null;
     }
 
+
+    //**********************************************************
     public String get_xml_file_name()
+    //**********************************************************
     {
         switch(this)
         {
-            case Haars_default:
-                return "haarscascade_frontalface_alt_default.xml";
-            case Haars_tree:
-                return "haarscascade_frontalface_alt_tree.xml";
-            case Haars_alt1:
-                return "haarscascade_frontalface_alt_1.xml";
-            case Haars_alt2:
-                return "haarscascade_frontalface_alt_2.xml";
+            case Haar_default:
+                return "default.xml";
+            case Haar_tree:
+                return "tree.xml";
+            case Haar_alt1:
+                return "alt1.xml";
+            case Haar_alt2:
+                return "alt2.xml";
         }
         return null;
     }

@@ -11,12 +11,12 @@ else
     kill -9 $pids
 fi
 
-# kill every “haars_face_detection_server” process
-pids=$(pgrep -f haars_face_detection_server || true)
+# kill every “Haar_face_detection_server” process
+pids=$(pgrep -f Haar_face_detection_server || true)
 if [[ -z $pids ]]; then
-    printf "No haars_face_detection_server processes found\n"
+    printf "No Haar_face_detection_server processes found\n"
 else
-    printf "Killing process(es):\n $pids \nfor haars_face_detection_server\n"
+    printf "Killing process(es):\n $pids \nfor Haar_face_detection_server\n"
     kill -9 $pids
 fi
 

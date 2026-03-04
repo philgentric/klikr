@@ -26,5 +26,5 @@ function Kill-Server {
 }
 
 Kill-Server -Pattern 'MTCNN_face_detection_server'
-Kill-Server -Pattern 'haars_face_detection_server'
+Kill-Server -Pattern 'Haars_face_detection_server'
 Kill-Server -Pattern 'FaceNet_embeddings_server'

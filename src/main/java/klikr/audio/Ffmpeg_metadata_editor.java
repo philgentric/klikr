@@ -108,7 +108,7 @@ public class Ffmpeg_metadata_editor
                 }
                 return;
             }
-            logger.log("wtf" + sb);
+            logger.log("❌ " + sb);
             logger.log("ffmpeg meta data edit:" + res.output());
         };
         Actor_engine.execute(r,"Ffmpeg meta data edit",logger);

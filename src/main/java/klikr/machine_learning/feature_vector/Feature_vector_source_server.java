@@ -349,6 +349,10 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
             logger.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (8): "+e));
             return Optional.empty();
         }
+        finally
+        {
+            connection.disconnect();
+        }
 
         if ( can_be_null != null) {
             if (can_be_null.should_abort()) {

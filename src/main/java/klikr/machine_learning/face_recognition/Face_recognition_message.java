@@ -17,15 +17,13 @@ public class Face_recognition_message implements Message
     private final Aborter aborter;
     public final File file;
     public final String label;
-    public final boolean do_face_detection;
     public final boolean display_face_reco_window;
     public final AtomicInteger files_in_flight;
-    public final ML_server_type face_detection_type;
+    public final ML_server_type face_detection_type; // none if null
 
     //**********************************************************
     public Face_recognition_message(File file,
-                                    ML_server_type face_detection_type,
-                                    boolean do_face_detection,
+                                    ML_server_type face_detection_type, // maybe null
                                     String label_for_training, // if null, this is "only" recognition, otherwise if recognition result is NOT this label, training will happen
                                     boolean display_face_reco_window,
                                     Aborter aborter,
@@ -34,7 +32,6 @@ public class Face_recognition_message implements Message
     {
         this.file = file;
         this.face_detection_type = face_detection_type;
-        this.do_face_detection = do_face_detection;
         this.label = label_for_training;
         this.display_face_reco_window = display_face_reco_window;
         this.aborter = aborter;

@@ -20,33 +20,33 @@ MTCNN_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UD
 done
 
 FACE_DETECTION_PORTS=(8080 8081)
-FACE_DETECTOR_ID="'haarcascade_frontalface_alt_tree.xml'"
+FACE_DETECTOR_ID="'tree.xml'"
 for PORT in "${FACE_DETECTION_PORTS[@]}"; do
-    LOGFILE="haars_${PORT}.txt"
-    python3 -c "import haars_face_detection_server;
-haars_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
+    LOGFILE="Haar_${PORT}.txt"
+    python3 -c "import Haar_face_detection_server;
+Haar_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
 done
 
 FACE_DETECTION_PORTS=(8090 8091)
-FACE_DETECTOR_ID="'haarcascade_frontalface_default.xml'"
+FACE_DETECTOR_ID="'default.xml'"
 for PORT in "${FACE_DETECTION_PORTS[@]}"; do
-    LOGFILE="haars_${PORT}.txt"
-    python3 -c "import haars_face_detection_server;
-haars_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
+    LOGFILE="Haar_${PORT}.txt"
+    python3 -c "import Haar_face_detection_server;
+Haar_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
 done
 
 FACE_DETECTION_PORTS=(8100 8101)
-FACE_DETECTOR_ID="'haarcascade_frontalface_alt.xml'"
+FACE_DETECTOR_ID="'alt1.xml'"
 for PORT in "${FACE_DETECTION_PORTS[@]}"; do
-    LOGFILE="haars_${PORT}.txt"
-    python3 -c "import haars_face_detection_server;
-haars_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1  &
+    LOGFILE="Haar_${PORT}.txt"
+    python3 -c "import Haar_face_detection_server;
+Haar_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1  &
 done
 
 FACE_DETECTION_PORTS=(8110 8111)
-FACE_DETECTOR_ID="'haarcascade_frontalface_alt2.xml'"
+FACE_DETECTOR_ID="'alt2.xml'"
 for PORT in "${FACE_DETECTION_PORTS[@]}"; do
-    LOGFILE="haars_${PORT}.txt"
-    python3 -c "import haars_face_detection_server;
-haars_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
+    LOGFILE="Haar_${PORT}.txt"
+    python3 -c "import Haar_face_detection_server;
+Haar_face_detection_server.run_server(${PORT},${FACE_DETECTOR_ID}, ${MONITOR_UDP_PORT})" >"$LOGFILE" 2>&1 &
 done

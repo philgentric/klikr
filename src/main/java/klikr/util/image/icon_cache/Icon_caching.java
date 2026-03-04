@@ -35,7 +35,7 @@ public class Icon_caching
     {
         if ( original_image_file == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("WTF?"));
+            logger.log(Stack_trace_getter.get_stack_trace("❌ "));
             return Optional.empty();
         }
 
