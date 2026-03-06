@@ -8,6 +8,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Booleans;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
@@ -37,7 +38,7 @@ public class Keyboard_handling_for_Image_window
             return;
         }
 
-        boolean exit_on_escape_preference = Booleans.get_boolean_defaults_to_true(Feature.Use_escape_to_close_windows.name());
+        boolean exit_on_escape_preference = Feature_cache.get(Feature.Use_escape_to_close_windows);
 
         Window owner = image_window.stage;
         if (keyboard_dbg) logger.log("Image_stage KeyEvent="+key_event);
@@ -138,27 +139,32 @@ public class Keyboard_handling_for_Image_window
 
 
             case UP:
-                if (!Check_remaining_RAM.low_memory.get())
+                if (Feature_cache.get(Feature.Enable_alternate_image_scaling))
                 {
-                    if (keyboard_dbg) logger.log("UP = previous rescaler");
-                    Path p = image_window.image_display_handler.get_image_context().get().path;
-                    if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
-                        // JAVAFX Image for GIF does not support PixelReader
-                        image_window.rescaler = image_window.rescaler.previous();
-                        image_window.redisplay(true);
+                    if (!Check_remaining_RAM.low_memory.get()) {
+                        if (keyboard_dbg) logger.log("UP = previous rescaler");
+                        Path p = image_window.image_display_handler.get_image_context().get().path;
+                        if (!Guess_file_type.is_this_path_a_gif(p, logger)) {
+                            // JAVAFX Image for GIF does not support PixelReader
+                            image_window.rescaler = image_window.rescaler.previous();
+                            image_window.redisplay(true);
+                        }
                     }
                 }
                 break;
 
             case DOWN:
-                if (!Check_remaining_RAM.low_memory.get())
+                if (Feature_cache.get(Feature.Enable_alternate_image_scaling))
                 {
-                    if (keyboard_dbg) logger.log("DOWN = next rescaler");
-                    Path p = image_window.image_display_handler.get_image_context().get().path;
-                    if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
-                        // JAVAFX Image for GIF does not support PixelReader
-                        image_window.rescaler = image_window.rescaler.next();
-                        image_window.redisplay(true);
+                    if (!Check_remaining_RAM.low_memory.get())
+                    {
+                        if (keyboard_dbg) logger.log("DOWN = next rescaler");
+                        Path p = image_window.image_display_handler.get_image_context().get().path;
+                        if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
+                            // JAVAFX Image for GIF does not support PixelReader
+                            image_window.rescaler = image_window.rescaler.next();
+                            image_window.redisplay(true);
+                        }
                     }
                 }
             break;

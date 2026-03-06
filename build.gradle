@@ -207,8 +207,9 @@ tasks.register('monaco', JavaExec) {
 
 
 
+
 application {
-    mainClass = "klikr.Launcher"
+    mainClass = "klikr.Klikr_application"
 }
 
 run{

@@ -6,6 +6,7 @@ package klikr.util;
 import javafx.stage.Stage;
 import klikr.settings.File_storage;
 import klikr.settings.File_storage_using_Properties;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature;
@@ -59,7 +60,7 @@ public class Shared_services
     //**********************************************************
     {
         Logger logger;
-        if (Booleans.get_boolean_defaults_to_false(Feature.Log_to_file.name()))
+        if (Feature_cache.get(Feature.Log_to_file))
         {
             logger = new File_logger(prefix);
         }

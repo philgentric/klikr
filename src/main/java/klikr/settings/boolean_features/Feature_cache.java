@@ -42,17 +42,19 @@ public class Feature_cache
         {
             if ( default_to_true.contains(f))
             {
-                boolean_feature_cache.put(f,Booleans.get_boolean_defaults_to_true(f.name()));
+                boolean b = Booleans.get_boolean_defaults_to_true(f.name());
+                boolean_feature_cache.put(f,b);
             }
             else
             {
-                boolean_feature_cache.put(f, Booleans.get_boolean_defaults_to_false(f.name()));
+                boolean b = Booleans.get_boolean_defaults_to_false(f.name());
+                boolean_feature_cache.put(f, b);
             }
         }
     }
 
     //**********************************************************
-    public static void register_for_all(Feature_change_target fct)
+    public static void register_for_all_booleans(Feature_change_target fct)
     //**********************************************************
     {
         registered_for_any_boolean_change.add(fct);

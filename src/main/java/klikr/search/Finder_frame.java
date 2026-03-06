@@ -21,6 +21,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
@@ -478,7 +479,7 @@ public class Finder_frame implements Search_receiver
 		{
 			long now = System.currentTimeMillis();
 			if (now - start_time > 3000) {
-				if (Booleans.get_boolean_defaults_to_false(Feature.Play_ding_after_long_processes.name())) {
+				if (Feature_cache.get(Feature.Play_ding_after_long_processes)) {
 					Ding.play("File finder took more than 3 seconds", logger);
 				}
 			}

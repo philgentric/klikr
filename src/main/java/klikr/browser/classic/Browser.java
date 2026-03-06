@@ -128,7 +128,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
 
         if (!monitor_this_folder)
         {
-            if (Booleans.get_boolean_defaults_to_true(Feature.Monitor_folders.name()))
+            if (Feature_cache.get(Feature.Monitor_folders))
             {
                 monitor_this_folder = true;
             }

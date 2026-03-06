@@ -8,6 +8,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Window;
 import klikr.Window_builder;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Shared_services;
 import klikr.Window_type;
 import klikr.look.Look_and_feel_manager;
@@ -119,7 +120,7 @@ public class Scrollable_text_field extends Region
                         Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
                     }, context_menu, owner, logger);
 
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name()))
+            if (Feature_cache.get(Feature.Enable_3D))
             {
                 Menu_items.add_menu_item_for_context_menu(
                         "Browse_in_new_3D_window", null,
@@ -139,7 +140,7 @@ public class Scrollable_text_field extends Region
                         Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
                     }, context_menu, owner, logger);
 
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name())) {
+            if (Feature_cache.get(Feature.Enable_3D)) {
                 Menu_items.add_menu_item_for_context_menu(
                         "Browse_in_new_3D_window",null,
                         event4 -> {

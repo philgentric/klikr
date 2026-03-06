@@ -175,7 +175,7 @@ public class Virtual_landscape_menus
 
             files_menu.getItems().add(search);
         }
-        if (Booleans.get_boolean_defaults_to_false(Feature.Enable_face_recognition.name()))
+        if (Feature_cache.get(Feature.Enable_face_recognition))
         {
             Menu face_recognition = new Menu("Face recognition");
             Look_and_feel_manager.set_menu_item_look(face_recognition,owner,logger);
@@ -199,26 +199,26 @@ public class Virtual_landscape_menus
             Menu_items.add_menu_item_for_menu("Remove_empty_folders",null,
                     event -> remove_empty_folders_fx(false),menu,owner,logger);
 
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_recursive_empty_folders_removal.name()))
+            if (Feature_cache.get(Feature.Enable_recursive_empty_folders_removal))
             {
                 Menu_items.add_menu_item_for_menu("Remove_empty_folders_recursively", null,event -> remove_empty_folders_fx(true),menu,owner,logger);
             }
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_name_cleaning.name()) )
+            if (Feature_cache.get(Feature.Enable_name_cleaning) )
             {
                 Menu_items.add_menu_item_for_menu("Clean_up_names", null,event -> clean_up_names_fx(),menu,owner,logger);
             }
-            if ( Booleans.get_boolean_defaults_to_false(Feature.Enable_corrupted_images_removal.name()) )
+            if ( Feature_cache.get(Feature.Enable_corrupted_images_removal) )
             {
                 Menu_items.add_menu_item_for_menu("Remove_corrupted_images", null,event -> remove_corrupted_images_fx(),menu,owner,logger);
             }
 
 
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_bit_level_deduplication.name()) )
+            if (Feature_cache.get(Feature.Enable_bit_level_deduplication) )
             {
                 create_deduplication_menu(menu);
             }
 
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_image_similarity.name()) )
+            if (Feature_cache.get(Feature.Enable_image_similarity) )
             {
                 create_image_similarity_deduplication_menu(menu);
                 create_song_similarity_deduplication_menu(menu);
@@ -228,7 +228,7 @@ public class Virtual_landscape_menus
 
         if ( virtual_landscape.context_type == Window_type.File_system_2D)
         {
-            if (Booleans.get_boolean_defaults_to_false(Feature.Enable_backup.name())) {
+            if (Feature_cache.get(Feature.Enable_backup)) {
                 files_menu.getItems().add(make_backup_menu());
             }
             if (Feature_cache.get(Feature.Enable_fusk))
@@ -1596,7 +1596,7 @@ public class Virtual_landscape_menus
             /*
             if (( sort_by == Sort_files_by.SIMILARITY_BY_PAIRS)||(sort_by == Sort_files_by.SIMILARITY_BY_PURSUIT))
             {
-                if ( !Booleans.get_boolean_defaults_to_false(Feature.Enable_image_similarity.name()))
+                if ( !Feature_cache.get(Feature.Enable_image_similarity.name()))
                 {
                     continue;
                 }

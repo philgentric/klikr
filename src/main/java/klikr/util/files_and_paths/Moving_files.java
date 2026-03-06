@@ -7,6 +7,7 @@
 package klikr.util.files_and_paths;
 
 import javafx.stage.Window;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -587,7 +588,7 @@ public class Moving_files
 
                 if ( System.currentTimeMillis()-start > 5_000)
                 {
-                    if (Booleans.get_boolean_defaults_to_false(Feature.Play_ding_after_long_processes.name()))
+                    if (Feature_cache.get(Feature.Play_ding_after_long_processes))
                     {
                         Ding.play("file moving takes more than 5s", logger);
                     }

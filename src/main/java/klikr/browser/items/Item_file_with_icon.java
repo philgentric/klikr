@@ -363,7 +363,7 @@ public class Item_file_with_icon extends Item_file
                     owner, logger);
             returned.getItems().add(mi);
         }
-        if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name()))
+        if (Feature_cache.get(Feature.Enable_3D))
         {
             MenuItem mi = Menu_items.make_menu_item(
                             "Browse_in_new_3D_window",

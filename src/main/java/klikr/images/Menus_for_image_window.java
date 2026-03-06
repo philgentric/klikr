@@ -12,6 +12,7 @@ import klikr.Window_type;
 import klikr.Window_builder;
 import klikr.machine_learning.ML_server_type;
 import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.System_open_actor;
 import klikr.util.execute.actor.Aborter;
@@ -509,7 +510,7 @@ public class Menus_for_image_window
 
 
 
-        if ( Booleans.get_boolean_defaults_to_false(Feature.Enable_image_similarity.name()))
+        if ( Feature_cache.get(Feature.Enable_image_similarity))
         {
             if (!Check_remaining_RAM.low_memory.get())
             {
@@ -524,7 +525,7 @@ public class Menus_for_image_window
             }
         }
 
-        if ( Booleans.get_boolean_defaults_to_false(Feature.Enable_face_recognition.name()))
+        if ( Feature_cache.get(Feature.Enable_face_recognition))
         {
             context_menu.getItems().add(get_face_recognition_context_menu(image_window));
         }
@@ -553,7 +554,7 @@ public class Menus_for_image_window
             }
         }
 
-        if (Booleans.get_boolean_defaults_to_false(Feature.Enable_alternate_image_scaling.name()))
+        if (Feature_cache.get(Feature.Enable_alternate_image_scaling))
         {
             Path p = image_window.image_display_handler.get_image_context().get().path;
             if(!Guess_file_type.is_this_path_a_gif(p, logger))
@@ -576,7 +577,7 @@ public class Menus_for_image_window
         returned.getItems().add(make_open_with_system_file_menu_item(image_window));
         returned.getItems().add(make_edit_menu_item(image_window));
         returned.getItems().add(make_browse_2D_menu_item(image_window));
-        if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name()))
+        if (Feature_cache.get(Feature.Enable_3D))
         {
             returned.getItems().add(make_browse_3D_menu_item(image_window));
         }

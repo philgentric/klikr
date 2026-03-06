@@ -79,7 +79,6 @@ import klikr.util.image.Full_image_from_disk;
 import klikr.util.image.decoding.Fast_image_property_from_exif_metadata_extractor;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.util.mmap.Mmap;
 import klikr.util.perf.Perf;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
@@ -212,7 +211,7 @@ public class Virtual_landscape
         this.aborter = aborter;
         this.logger = logger;
 
-        Feature_cache.register_for_all(this);
+        Feature_cache.register_for_all_booleans(this);
         Feature_cache.string_register_for(String_constants.LANGUAGE_KEY, this);
         Feature_cache.string_register_for(String_constants.STYLE_KEY, this);
 
@@ -2846,7 +2845,7 @@ public class Virtual_landscape
         scan_list();
 
         if (System.currentTimeMillis() - start > 5_000) {
-            if (Booleans.get_boolean_defaults_to_false(Feature.Play_ding_after_long_processes.name())) {
+            if (Feature_cache.get(Feature.Play_ding_after_long_processes)) {
                 Ding.play("all_image_properties_acquired: done acquiring all image properties", logger);
             }
         }

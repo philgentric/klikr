@@ -114,6 +114,7 @@ import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature;
+import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Shared_services;
 import klikr.util.execute.Guess_OS;
@@ -180,7 +181,7 @@ public class Klikr_application extends Application
         for ( StackTraceElement ste : xx) logger.log(""+ste);
 
 
-        if (Booleans.get_boolean_defaults_to_false(Feature.Log_performances.name()))
+        if (Feature_cache.get(Feature.Log_performances))
         {
             Perf.monitor(logger);
         }
@@ -207,7 +208,7 @@ public class Klikr_application extends Application
         }
         else
         {
-            if (Booleans.get_boolean_defaults_to_true(Feature.Reload_last_folder_on_startup.name()))
+            if (Feature_cache.get(Feature.Reload_last_folder_on_startup))
             {
                 List<History_item> l = History_engine.get(primary_stage).get_all_history_items();
                 if (!l.isEmpty())

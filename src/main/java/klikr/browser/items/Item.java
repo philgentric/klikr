@@ -291,7 +291,7 @@ public abstract class Item implements Icon_destination
                                 Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(finalTarget,owner,logger), owner, logger);
                             }, context_menu, owner, logger);
 
-                    if (Booleans.get_boolean_defaults_to_false(Feature.Enable_3D.name())) {
+                    if (Feature_cache.get(Feature.Enable_3D)) {
                         Menu_items.add_menu_item_for_context_menu(
                                 "Browse_in_new_3D_window",
                                 null,
