@@ -20,24 +20,6 @@ public class Treemap_layout
 {
 
     //**********************************************************
-    public static class Layout_result
-    //**********************************************************
-    {
-        public final File_node node;
-        public final Rectangle2D bounds;
-        public final List<Layout_result> children;
-
-        //**********************************************************
-        public Layout_result(File_node node, Rectangle2D bounds, List<Layout_result> children)
-        //**********************************************************
-        {
-            this.node = node;
-            this.bounds = bounds;
-            this.children = children;
-        }
-    }
-
-    //**********************************************************
     public static Layout_result calculateAt(File_node root, double x, double y, double width, double height)
     //**********************************************************
     {
@@ -46,7 +28,7 @@ public class Treemap_layout
         List<File_node> children = new ArrayList<>(root.get_children());
         children.removeIf(n -> n.get_size() <= 0);
         
-        List<Layout_result> childResults = new ArrayList<>();
+        List<Layout_result> child_results = new ArrayList<>();
         
         if (!children.isEmpty() && width > 0 && height > 0) {
             // Sort by size descending (required by squarify)
@@ -59,15 +41,15 @@ public class Treemap_layout
             }
             
             // Total size of the children we're laying out
-            double totalSize = children.stream().mapToLong(File_node::get_size).sum();
+            double total_size = children.stream().mapToLong(File_node::get_size).sum();
             
             // Total area available
-            double totalArea = width * height;
+            double total_area = width * height;
 
-            squarify(children, x, y, width, height, totalSize, totalArea, childResults);
+            squarify(children, x, y, width, height, total_size, total_area, child_results);
         }
         
-        return new Layout_result(root, bounds, childResults);
+        return new Layout_result(root, bounds, child_results);
     }
 
     /**
@@ -149,10 +131,9 @@ public class Treemap_layout
     
     /**
      * Compute the worst (maximum) aspect ratio among items [start, end) if they were
-     * laid out in a strip of dimensions shortSide × stripThickness.
-     *
-     * Items are stacked along shortSide (each gets a slice of shortSide proportional
-     * to its size), while stripThickness is fixed for all items.
+     * laid out in a strip of dimensions short_side × strip_thickness.
+     * Items are stacked along short_side (each gets a slice of short_side proportional
+     * to its size), while strip_thickness is fixed for all items.
      */
     //**********************************************************
     private static double worst_aspect_ratio(List<File_node> items, int start, int end,

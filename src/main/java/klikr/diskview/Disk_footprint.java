@@ -21,9 +21,13 @@ import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
+import klikr.util.ui.progress.Hourglass;
+import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 //*******************************************************
@@ -79,13 +83,16 @@ public class Disk_footprint implements Window_provider, Shutdown_target
             if (current_root == null) return;
 
             // Case 1: navigated into a subfolder of the scan tree → go up within the tree
-            if (scan_root != null && current_root != scan_root) {
+            if (scan_root != null && current_root != scan_root)
+            {
+                Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage.getX()+100,stage.getY()+100,stage,logger);
                 File_node parent = find_parent(scan_root, current_root);
                 if (parent != null) {
-                    navigate_to(parent);
+                    navigate_to(parent,x);
                 } else {
-                    navigate_to(scan_root);
+                    navigate_to(scan_root, x);
                 }
+                x.ifPresent(Hourglass::close);
                 return;
             }
 
@@ -129,14 +136,17 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     }
 
     //*******************************************************
-    private void navigate_to(File_node node)
+    private void navigate_to(File_node node, Optional<Hourglass> x)
     //*******************************************************
     {
-        current_root = node;
-        update_up_button();
-        status_label.setText(node.get_file().getAbsolutePath() + " — " + format_size_internal(node.get_size()));
-        refresh();
-        stage.setTitle("Disk footprint of: "+node.get_file().getAbsolutePath());
+        Platform.runLater(() -> {
+            current_root = node;
+            update_up_button();
+            status_label.setText(node.get_file().getAbsolutePath() + " — " + format_size_internal(node.get_size()));
+            refresh();
+            stage.setTitle("Disk footprint of: "+node.get_file().getAbsolutePath());
+
+        });
 
     }
 
@@ -151,11 +161,13 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     {
         if (current_root == null) return;
 
+        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage.getX()+100,stage.getY()+100,stage,logger);
         // Is clickedNode itself a direct child of currentRoot?
         File_node topChild = find_top_level_child(current_root, clickedNode);
         if (topChild != null && topChild.is_this_a_directory()) {
-            navigate_to(topChild);
+            navigate_to(topChild, x);
         }
+        x.ifPresent(Hourglass::close);
         // If topChild is a file (not a directory), or not found, do nothing
     }
 
@@ -216,79 +228,90 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
         // Thread 1: load cache, then do progressive depth reveal
         Actor_engine.execute(() -> {
-            try {
-                File_node cacheHint = current_root;
-                if (cacheHint == null || !cacheHint.get_file().equals(folder)) {
-                    cacheHint = Scan_cache.load(folder,logger);
-                }
-                final File_node cached = cacheHint;
-                final double w = drawing_pane.getWidth();
-                final double h = drawing_pane.getHeight();
-
-                // Progressive depth reveal — one frame at a time, waiting for FX to finish each
-                if (cached != null && cached.get_size() > 0 && w > 0 && h > 0) {
-                    int prevCount = 0;
-                    for (int depth = 1; depth <= 30; depth++) {
-                        List<Draw_command> cmds = build_Draw_commands2(cached, w, h, depth);
-                        if (cmds.size() == prevCount) break;
-                        prevCount = cmds.size();
-
-                        final int d = depth;
-                        final List<Draw_command> frame = cmds;
-                        CountDownLatch latch = new CountDownLatch(1);
-                        Platform.runLater(() -> {
-                            try {
-                                current_root = cached;
-                                if (scan_root == null) scan_root = cached;
-                                update_up_button();
-                                status_label.setText("Depth " + d + "… " + frame.size()
-                                        + " items — " + format_size_internal(cached.get_size()));
-                                apply_Draw_commands(frame);
-                            } finally {
-                                latch.countDown();
-                            }
-                        });
-                        latch.await();
-                        // After the latch, FX has finished but hasn't painted yet.
-                        // Yield so the FX thread can process a paint pulse.
-                        Thread.yield();
-                    }
-                    Platform.runLater(() ->
-                            status_label.setText("Cache loaded — " + format_size_internal(cached.get_size()) + " — scanning…"));
-                }
-
-                // After reveal is done, start the scan on THIS same thread
-                // (Disk_scanner internally spawns one virtual thread per folder)
-                long start_time = System.currentTimeMillis();
-                Disk_scanner scanner = new Disk_scanner(logger);
-                File_node root = scanner.scan(folder, cached);
-                long elapsed = System.currentTimeMillis() - start_time;
-                int scanned = scanner.getScanned_folders();
-                int cacheHits = scanner.getFoldersSkipped();
-
-                Scan_cache.save_in_a_thread(root,logger);
-
-                double w2 = drawing_pane.getWidth();
-                double h2 = drawing_pane.getHeight();
-                if (w2 > 0 && h2 > 0) {
-                    List<Draw_command> freshCmds = build_Draw_commands(root, w2, h2);
-                    Platform.runLater(() -> {
-                        current_root = root;
-                        scan_root = root;
-                        update_up_button();
-                        String msg = String.format("Scanned %d folders in %d ms — %s",
-                                scanned + cacheHits, elapsed, format_size_internal(root.get_size()));
-                        if (cacheHits > 0) {
-                            msg += String.format("  [%d cached, %d rescanned]", cacheHits, scanned);
-                        }
-                        status_label.setText(msg);
-                        apply_Draw_commands(freshCmds);
-                    });
-                }
-            } catch (Exception e) {
-                logger.log(""+e);
-            }
+            scan_in_thread(folder);
         },"diskview scan",logger);
+    }
+
+    private void scan_in_thread(File folder)
+    {
+        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage.getX()+100,stage.getY()+100,stage,logger);
+        try {
+            File_node cacheHint = current_root;
+            if (cacheHint == null || !cacheHint.get_file().equals(folder)) {
+                cacheHint = Scan_cache.load(folder,logger);
+            }
+            final File_node cached = cacheHint;
+            final double w = drawing_pane.getWidth();
+            final double h = drawing_pane.getHeight();
+
+            // Progressive depth reveal — one frame at a time, waiting for FX to finish each
+            if (cached != null && cached.get_size() > 0 && w > 0 && h > 0) {
+                int prevCount = 0;
+                for (int depth = 1; depth <= 30; depth++)
+                {
+                    List<Draw_command> cmds = build_Draw_commands2(cached, w, h, depth);
+                    if (cmds.size() == prevCount) break;
+                    prevCount = cmds.size();
+
+                    final int d = depth;
+                    final List<Draw_command> frame = cmds;
+                    CountDownLatch latch = new CountDownLatch(1);
+                    Platform.runLater(() -> {
+                        try {
+                            current_root = cached;
+                            if (scan_root == null) scan_root = cached;
+                            update_up_button();
+                            status_label.setText("Depth " + d + "… " + frame.size()
+                                    + " items — " + format_size_internal(cached.get_size()));
+                            apply_Draw_commands(frame);
+                        } finally {
+                            latch.countDown();
+                        }
+                    });
+                    latch.await();
+                    // After the latch, FX has finished but hasn't painted yet.
+                    // Yield so the FX thread can process a paint pulse.
+                    Thread.yield();
+                }
+                Platform.runLater(() ->
+                        status_label.setText("Cache loaded — " + format_size_internal(cached.get_size()) + " — scanning…"));
+            }
+
+            // After reveal is done, start the scan on THIS same thread
+            // (Disk_scanner internally spawns one virtual thread per folder)
+            long start_time = System.currentTimeMillis();
+            Disk_scanner scanner = new Disk_scanner(logger);
+            File_node root = scanner.scan(folder, cached);
+            long elapsed = System.currentTimeMillis() - start_time;
+            int scanned = scanner.getScanned_folders();
+            int cacheHits = scanner.getFoldersSkipped();
+
+            Scan_cache.save_in_a_thread(root,logger);
+
+            double w2 = drawing_pane.getWidth();
+            double h2 = drawing_pane.getHeight();
+            if (w2 > 0 && h2 > 0)
+            {
+                List<Draw_command> freshCmds = build_Draw_commands(root, w2, h2);
+                Platform.runLater(() -> {
+                    current_root = root;
+                    scan_root = root;
+                    update_up_button();
+                    String msg = String.format("Scanned %d folders in %d ms — %s",
+                            scanned + cacheHits, elapsed, format_size_internal(root.get_size()));
+                    if (cacheHits > 0) {
+                        msg += String.format("  [%d cached, %d rescanned]", cacheHits, scanned);
+                    }
+                    status_label.setText(msg);
+                    apply_Draw_commands(freshCmds);
+                });
+            }
+        } catch (Exception e) {
+            logger.log(""+e);
+        }
+        finally {
+            x.ifPresent(Hourglass::close);
+        }
     }
 
     /** Async version: computes layout on a virtual thread, draws via Platform.runLater. Good for resize events. */
@@ -337,26 +360,26 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     {
         drawing_pane.getChildren().clear();
 
-        double pw = drawing_pane.getWidth();
-        double ph = drawing_pane.getHeight();
+        double pane_width = drawing_pane.getWidth();
+        double pane_height = drawing_pane.getHeight();
 
         // Separate interactive vs canvas items
-        List<Draw_command> canvasItems = new java.util.ArrayList<>();
-        List<Draw_command> interactiveItems = new java.util.ArrayList<>();
+        List<Draw_command> canvas_items = new ArrayList<>();
+        List<Draw_command> interactive_items = new ArrayList<>();
         for (Draw_command cmd : commands) {
             if (cmd.is_interactive()) {
-                interactiveItems.add(cmd);
+                interactive_items.add(cmd);
             } else {
-                canvasItems.add(cmd);
+                canvas_items.add(cmd);
             }
         }
 
         // ── Layer 1: Canvas for all non-interactive (small) items ──
-        Canvas canvas = new Canvas(pw, ph);
+        Canvas canvas = new Canvas(pane_width, pane_height);
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, pw, ph);
+        gc.clearRect(0, 0, pane_width, pane_height);
 
-        for (Draw_command cmd : canvasItems) {
+        for (Draw_command cmd : canvas_items) {
             cmd.paint_on_canvas(gc);
         }
 
@@ -366,23 +389,9 @@ public class Disk_footprint implements Window_provider, Shutdown_target
             double mx = ev.getX();
             double my = ev.getY();
 
-            // Hit-test: find the smallest (deepest) canvas item containing the click point
-            Draw_command hit = null;
-            double hitArea = Double.MAX_VALUE;
-            for (Draw_command cmd : canvasItems) {
-                Rectangle2D b = cmd.bounds;
-                if (mx >= b.getMinX() && mx <= b.getMinX() + b.getWidth()
-                        && my >= b.getMinY() && my <= b.getMinY() + b.getHeight()) {
-                    double area = b.getWidth() * b.getHeight();
-                    if (area < hitArea) {
-                        hitArea = area;
-                        hit = cmd;
-                    }
-                }
-            }
-            if (hit != null && current_root != null) {
-                navigate_to_child(hit.node);
-            }
+            Actor_engine.execute(()->
+            {            explore_item(canvas_items, mx, my);
+            },"explore_item",logger);
         });
 
         drawing_pane.getChildren().add(canvas);
@@ -392,10 +401,31 @@ public class Disk_footprint implements Window_provider, Shutdown_target
             if (current_root != null) start_scan(current_root.get_file());
         };
         java.util.function.Consumer<File_node> navigate = this::navigate_to_child;
-        for (Draw_command cmd : interactiveItems) {
+        for (Draw_command cmd : interactive_items) {
             cmd.rescan_callback = rescan;
             cmd.navigate_callback = navigate;
             cmd.execute(drawing_pane, Klikr_application.application,stage);
+        }
+    }
+
+    private void explore_item(List<Draw_command> canvas_items, double mx, double my)
+    {
+        // Hit-test: find the smallest (deepest) canvas item containing the click point
+        Draw_command hit = null;
+        double hitArea = Double.MAX_VALUE;
+        for (Draw_command cmd : canvas_items) {
+            Rectangle2D b = cmd.bounds;
+            if (mx >= b.getMinX() && mx <= b.getMinX() + b.getWidth()
+                    && my >= b.getMinY() && my <= b.getMinY() + b.getHeight()) {
+                double area = b.getWidth() * b.getHeight();
+                if (area < hitArea) {
+                    hitArea = area;
+                    hit = cmd;
+                }
+            }
+        }
+        if (hit != null && current_root != null) {
+            navigate_to_child(hit.node);
         }
     }
 
@@ -412,16 +442,18 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     {
         if (w <= 0 || h <= 0) return;
 
-        Treemap_layout.Layout_result layout = Treemap_layout.calculateAt(node, x, y, w, h);
+        Layout_result layout = Treemap_layout.calculateAt(node, x, y, w, h);
 
-        if (layout.children == null || layout.children.isEmpty()) {
+        if (layout.children == null || layout.children.isEmpty())
+        {
             if (node.get_size() > 0) {
                 commands.add(new Draw_command(node, new Rectangle2D(x, y, w, h), color_family, depth, root_total_size,logger));
             }
             return;
         }
 
-        for (Treemap_layout.Layout_result child : layout.children) {
+        for (Layout_result child : layout.children)
+        {
             Rectangle2D b = child.bounds;
             if (b.getWidth() <= 0 || b.getHeight() <= 0) continue;
 

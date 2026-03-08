@@ -366,7 +366,7 @@ public class Diskview_application extends Application {
                                 List<Draw_command> commands) {
         if (w <= 0 || h <= 0) return;
 
-        Treemap_layout.Layout_result layout = Treemap_layout.calculateAt(node, x, y, w, h);
+        Layout_result layout = Treemap_layout.calculateAt(node, x, y, w, h);
 
         if (layout.children == null || layout.children.isEmpty()) {
             if (node.get_size() > 0) {
@@ -375,7 +375,7 @@ public class Diskview_application extends Application {
             return;
         }
 
-        for (Treemap_layout.Layout_result child : layout.children) {
+        for (Layout_result child : layout.children) {
             Rectangle2D b = child.bounds;
             if (b.getWidth() <= 0 || b.getHeight() <= 0) continue;
 
