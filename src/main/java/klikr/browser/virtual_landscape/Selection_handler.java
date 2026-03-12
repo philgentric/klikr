@@ -334,7 +334,7 @@ public class Selection_handler
     //**********************************************************
     {
         reset_selection();
-        add_into_selected_files(path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter));
+        add_into_selected_files(path_list_provider.only_file_paths(true,Feature_cache.get(Feature.Show_hidden_files),aborter));
         set_select_all_files(true);
     }
 }

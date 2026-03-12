@@ -109,10 +109,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
+    public int how_many_files_and_folders(boolean force_rescan, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force_rescan,aborter);
 
         int returned = 0;
         for (Path file : faf.files())
@@ -139,10 +139,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Files_and_folders files_and_folders(Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
+    public Files_and_folders files_and_folders(boolean force, Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force, aborter);
 
         // let us perform a real disk scan
         List<Path> file_paths = new ArrayList<>();
@@ -175,7 +175,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     }
 
     //**********************************************************
-    private Files_and_folders get_faf(Aborter aborter)
+    private Files_and_folders get_faf(boolean force, Aborter aborter)
     //**********************************************************
     {
         try (Perf p = new Perf("get Files_and_folders")) {
@@ -198,8 +198,20 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 return new Files_and_folders(new ArrayList<>(), new ArrayList<>());
             }
 
-
-            if (faf == null) {
+            boolean rescan = false;
+            if (force) rescan = true;
+            if (faf == null)
+            {
+                rescan = true;
+            }
+            else
+            {
+                if ( faf.folders().isEmpty() && faf.files().isEmpty() )
+                {
+                    rescan = true;
+                }
+            }
+            if (rescan) {
                 faf = scan(aborter);
             }
             cached = faf;
@@ -236,10 +248,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_folder_paths(boolean consider_also_hidden_folders, Aborter aborter)
+    public List<Path> only_folder_paths(boolean force_rescan, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force_rescan,aborter);
         List<Path> returned = new ArrayList<>();
         for (Path folder : faf.folders())
         {
@@ -254,10 +266,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_file_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_file_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force_rescan, aborter);
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
@@ -272,10 +284,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_image_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_image_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force_rescan, aborter);
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
@@ -292,10 +304,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_song_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_song_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
-        Files_and_folders faf = get_faf(aborter);
+        Files_and_folders faf = get_faf(force_rescan,aborter);
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
@@ -333,7 +345,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     {
         logger.log("Path_list_provider_for_file_system.reload(), reason ="+origin);
 
-        cached = get_faf(aborter);
+        cached = get_faf(true,aborter);
         // notify listeners
         change.call_change_listeners();
     }

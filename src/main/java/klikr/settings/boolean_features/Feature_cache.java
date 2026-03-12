@@ -5,7 +5,6 @@ package klikr.settings.boolean_features;
 //SOURCES ../../Launcher.java
 import javafx.stage.Window;
 import klikr.Launcher;
-import klikr.settings.More_settings_stage;
 import klikr.util.Shared_services;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
@@ -127,7 +126,7 @@ public class Feature_cache
     public static void update_cached_boolean(Feature feature, boolean new_val, Window owner)
     //**********************************************************
     {
-        if (Arrays.stream(More_settings_stage.non_saved_features).toList().contains(feature))
+        if (Arrays.stream(Settings_not_saved_to_disk.never_saved_to_disk_as_true).toList().contains(feature))
         {
             update_cached_boolean_internal(feature, new_val, false, owner);
         }
@@ -146,14 +145,14 @@ public class Feature_cache
         boolean_feature_cache.put(feature,new_val);
         for( Feature_change_target fct : registered_for_any_boolean_change)
         {
-            fct.update(feature,new_val);
+            fct.update_feature(feature,new_val);
         }
 
         List<Feature_change_target> l = registered_for.get(feature);
         if ( l == null) return;
         for( Feature_change_target fct : l)
         {
-            fct.update(feature,new_val);
+            fct.update_feature(feature,new_val);
         }
     }
 

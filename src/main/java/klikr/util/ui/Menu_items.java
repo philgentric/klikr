@@ -86,7 +86,7 @@ public class Menu_items
     public static void create_show_file_size_menu_item(ContextMenu context_menu, Path path, Window owner, Logger logger)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Show_file_size","",
+        Menu_items.add_menu_item_for_context_menu("Show_file_size",null,
                 event -> {
                     show_file_size(path, owner, logger);
                 }, context_menu,owner,logger);
@@ -126,7 +126,7 @@ public class Menu_items
     //**********************************************************
     public static void add_menu_item_for_context_menu(
             String key, // this is the My_I18n key
-            String addendum, // maybenull
+            String addendum, // may be null
             EventHandler<ActionEvent> action,
             ContextMenu context_menu,
             Window owner,
@@ -160,7 +160,7 @@ public class Menu_items
     //**********************************************************
     {
         String text = My_I18n.get_I18n_string(key, owner, logger);
-        if ( addendum!=null) text+=" ("+addendum+")";
+        if ( addendum!=null) if ( !addendum.isEmpty()) text+=" ("+addendum+")";
         MenuItem menu_item = new MenuItem(text);
         menu_item.setMnemonicParsing(false);
         Look_and_feel_manager.set_menu_item_look(menu_item, owner, logger);

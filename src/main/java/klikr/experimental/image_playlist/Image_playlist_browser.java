@@ -90,7 +90,7 @@ public class Image_playlist_browser extends Abstract_browser
 
     //**********************************************************
     @Override
-    public void monitor()
+    public void monitor_current_path_list_source()
     //**********************************************************
     {
         logger.log("Image_playlist_browser.monitor() ID="+ID);
@@ -150,7 +150,7 @@ public class Image_playlist_browser extends Abstract_browser
                 {
                     logger.log("Change Gang says : playlist changed !!");
                     path_list_provider.reload("image playlist changed, according to Change Gang",aborter);
-                    virtual_landscape.redraw_fx("change gang for dir: " + path_list_provider.the_playlist_file_path, true);
+                    virtual_landscape.redraw_fx(true,"change gang for dir: " + path_list_provider.the_playlist_file_path, true);
                 }
             }
         }

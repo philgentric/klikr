@@ -112,7 +112,6 @@ import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.settings.String_constants;
-import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
@@ -183,7 +182,7 @@ public class Klikr_application extends Application
 
         if (Feature_cache.get(Feature.Log_performances))
         {
-            Perf.monitor(logger);
+            Perf.start_monitoring(logger);
         }
 
         Github_stars.init(getHostServices());

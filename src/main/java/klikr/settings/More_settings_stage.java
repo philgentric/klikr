@@ -34,12 +34,7 @@ import java.util.Optional;
 public class More_settings_stage
 {
 
-    // these feature can be toggled during one usage of klikr
-    // but they are not saved i.e. reset to default when klikr (re-)starts
-    public static final Feature[] non_saved_features ={
-            Feature.Show_single_column_with_details,
-            Feature.Fusk_is_on
-    };
+
 
     public static final Feature[] basic_features ={
             Feature.Show_icons_for_files,

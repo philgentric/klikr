@@ -99,7 +99,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
+    public int how_many_files_and_folders(boolean force_rescan, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
         int returned = 0;
@@ -128,7 +128,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_file_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_file_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -146,7 +146,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_song_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_song_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -165,7 +165,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_image_paths(boolean consider_also_hidden_files, Aborter aborter)
+    public List<Path> only_image_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -186,7 +186,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public List<Path> only_folder_paths(boolean consider_also_hidden_folders, Aborter aborter)
+    public List<Path> only_folder_paths(boolean force_rescan, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
         List<Path> returned = new ArrayList<>();
@@ -345,7 +345,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Files_and_folders files_and_folders(Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
+    public Files_and_folders files_and_folders(boolean force_rescan, Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter)
     //**********************************************************
     {
 

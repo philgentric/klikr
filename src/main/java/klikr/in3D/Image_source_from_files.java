@@ -39,11 +39,11 @@ public class Image_source_from_files implements Image_source
 
         try ( Perf p = new Perf("Image_source_from_files: sorting"))
         {
-            List<Path> folders = path_list_provider.only_folder_paths(Feature_cache.get(Feature.Show_hidden_folders),aborter);
+            List<Path> folders = path_list_provider.only_folder_paths(true,Feature_cache.get(Feature.Show_hidden_folders),aborter);
             Collections.sort(folders);
             paths.addAll(folders);
 
-            List<Path> files = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+            List<Path> files = path_list_provider.only_file_paths(true,Feature_cache.get(Feature.Show_hidden_files),aborter);
             Collections.sort(files);
             paths.addAll(files);
         }

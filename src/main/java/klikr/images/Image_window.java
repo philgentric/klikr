@@ -215,7 +215,7 @@ public class Image_window
             {
                 if (fv_cache == null) {
                     Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(stage,logger);
-                    List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+                    List<Path> paths = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
                     fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, stage, x, y, aborter, logger);
                 }
                 return fv_cache;

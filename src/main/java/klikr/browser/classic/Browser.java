@@ -62,13 +62,13 @@ import klikr.browser.*;
 import klikr.path_lists.Path_list_provider;
 import klikr.change.Change_gang;
 import klikr.settings.boolean_features.Feature;
-import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.settings.boolean_features.Feature_change_target;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import klikr.util.perf.Perf;
 import klikr.util.ui.Jfx_batch_injector;
 
 import java.nio.file.Path;
@@ -103,15 +103,17 @@ public class Browser extends Abstract_browser implements Feature_change_target
 
     //**********************************************************
     @Override // Feature_change_target
-    public void update(Feature feature, boolean new_val)
+    public void update_feature(Feature feature, boolean new_val)
     //**********************************************************
     {
-        monitor();
+        logger.log("feature update received:"+feature+" new val:"+new_val);
+
+        monitor_current_path_list_source();
     }
 
     //**********************************************************
     @Override // Abstract_browser
-    public void monitor()
+    public void monitor_current_path_list_source()
     //**********************************************************
     {
         Feature_cache.register_for(Feature.Monitor_folders,this);
@@ -199,7 +201,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
         Runnable r = () -> {
             // can be super slow on network drives or slow drives
             // (e.g. USB)  ==> run in a thread
-            int how_many_files = path_list_provider.how_many_files_and_folders(Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders),aborter);
+            int how_many_files = path_list_provider.how_many_files_and_folders(false,Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders),aborter);
 
             Jfx_batch_injector.inject(() -> my_Stage.the_Stage.setTitle(name + " :     " + (long) how_many_files + " files & folders"), logger);
 
@@ -254,13 +256,13 @@ public class Browser extends Abstract_browser implements Feature_change_target
                     }
                 }
                 logger.log("redraw_fx due to change gang");
-                virtual_landscape.redraw_fx("change gang for dir: " + op.get(),true);
+                virtual_landscape.redraw_fx(true,"change gang for dir: " + op.get(),true);
             }
             break;
             case one_new_file, one_file_gone: {
                 if (dbg) logger.log("CHANGE GANG received: Browser of: " + op.get() + " RECOGNIZED change gang notification: " + l);
                 logger.log("redraw_fx due to change gang");
-                virtual_landscape.redraw_fx("change gang for dir: " + op.get(), true);
+                virtual_landscape.redraw_fx(true,"change gang for dir: " + op.get(), true);
             }
             break;
             default:

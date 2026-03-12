@@ -52,7 +52,7 @@ public class Navigator_auto implements Navigator
     public void previous(Aborter aborter)
     //**********************************************************
     {
-        List<Path> paths = path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files), aborter);
+        List<Path> paths = path_list_provider.only_song_paths(true,Feature_cache.get(Feature.Show_hidden_files), aborter);
         int index;
         if ( get_current.get() == null)
         {
@@ -87,7 +87,7 @@ public class Navigator_auto implements Navigator
     public void next(Aborter aborter)
     //**********************************************************
     {
-        List<Path> paths = path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+        List<Path> paths = path_list_provider.only_song_paths(true,Feature_cache.get(Feature.Show_hidden_files),aborter);
         //logger.log("jump_to_next "+paths.size()+" songs");
         int index;
         if ( get_current.get() == null)

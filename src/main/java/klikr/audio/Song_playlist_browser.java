@@ -68,7 +68,7 @@ public class Song_playlist_browser extends Abstract_browser
     }
 
     @Override
-    protected void monitor()
+    protected void monitor_current_path_list_source()
     {
     }
 

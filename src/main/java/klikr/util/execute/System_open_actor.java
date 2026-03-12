@@ -6,6 +6,8 @@
 package klikr.util.execute;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.util.execute.actor.Aborter;
@@ -226,6 +228,7 @@ public class System_open_actor implements Actor
         }
         StringBuilder sb = new StringBuilder();
         File wd = som.path.toFile().getParentFile();
+        //Platform.runLater(()->((Stage)som.owner).setIconified(true));
         Execute_result res = Execute_command.execute_command_list_no_wait(list, wd, som.logger);
         if ( !res.status())
         {
@@ -233,6 +236,23 @@ public class System_open_actor implements Actor
             return false;
         }
         som.logger.log("\n\n\n open with "+os.name()+" output :\n"+ sb +"\n\n\n");
+
+        /*
+        Actor_engine.execute(()->{
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                som.logger.log(""+e);
+                return;
+            }
+            Platform.runLater(()->{        ((Stage)som.owner).setWidth(500);
+            });
+
+        },"macos trick",som.logger);
+        */
         return true;
     }
 

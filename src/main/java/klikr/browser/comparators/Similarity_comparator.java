@@ -46,7 +46,7 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
         this.fv_cache_supplier = fv_cache_supplier;
         this.logger = logger;
         this.similarity_cache = similarity_cache;
-        this.images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+        this.images = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
         shuffle();
     }
 
@@ -132,7 +132,7 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
 
     protected void add_non_images(Path_list_provider path_list_provider, int i) {
         // then we add the non-images
-        for ( Path path : path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter))
+        for ( Path path : path_list_provider.only_file_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter))
         {
             if ( images.contains(path)) continue;
             dummy_names.put(path, i);

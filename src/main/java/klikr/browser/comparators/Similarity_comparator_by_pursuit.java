@@ -102,7 +102,7 @@ public class Similarity_comparator_by_pursuit extends Similarity_comparator
         }
 
         // we "extend" each pair by looking for the closest neighbors of each pair member
-        List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files), aborter);
+        List<Path> paths =  path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files), aborter);
         Similarity_engine similarity = new Similarity_engine(paths,path_list_provider,path_comparator_source, owner,aborter, logger);
 
         dummy_names.clear();

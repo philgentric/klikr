@@ -5,5 +5,5 @@ package klikr.settings.boolean_features;
 
 public interface Feature_change_target
 {
-    void update(Feature feature, boolean new_val);
+    void update_feature(Feature feature, boolean new_val);
 }

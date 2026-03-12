@@ -265,7 +265,7 @@ public class Virtual_landscape_menus
     public void dispatch_by(Virtual_landscape.Sort_by_time sort_by)
     //**********************************************************
     {
-        List<Path> files = virtual_landscape.path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
+        List<Path> files = virtual_landscape.path_list_provider.only_file_paths(true,Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
         if (files == null) {
             logger.log("❌ ERROR: cannot list files in " + virtual_landscape.path_list_provider.get_key());
         }
@@ -446,7 +446,7 @@ public class Virtual_landscape_menus
                         if ( new_dir.isPresent()) {
                             Files.createDirectory(new_dir.get());
                             Scroll_position_cache.scroll_position_cache_write(virtual_landscape.path_list_provider.get_key(), new_dir.get().toAbsolutePath().normalize().toString(),"created new folder", logger);
-                            virtual_landscape.redraw_fx("created new empty dir", true);
+                            virtual_landscape.redraw_fx(true,"created new empty dir", true);
                             break;
                         }
 
@@ -701,7 +701,7 @@ public class Virtual_landscape_menus
 
             Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner, logger);
 
-            List<Path> paths = virtual_landscape.path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
+            List<Path> paths = virtual_landscape.path_list_provider.only_image_paths(false, Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
             return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
@@ -713,7 +713,7 @@ public class Virtual_landscape_menus
         public Feature_vector_cache get()
         {
             Feature_vector_source fvs = new Feature_vector_source_for_song_similarity(virtual_landscape.aborter);
-            List<Path> paths = virtual_landscape.path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
+            List<Path> paths = virtual_landscape.path_list_provider.only_song_paths( true, Feature_cache.get(Feature.Show_hidden_files),virtual_landscape.aborter);
             return Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, virtual_landscape.path_list_provider, owner,owner.getX()+100, owner.getY()+100, virtual_landscape.aborter, logger);
         }
     };
@@ -924,7 +924,7 @@ public class Virtual_landscape_menus
     {
         remove_empty_folders(recursively);
         // can be called from a thread which is NOT the FX event thread
-        Jfx_batch_injector.inject(() -> virtual_landscape.redraw_fx("remove empty folder",false),logger);
+        Jfx_batch_injector.inject(() -> virtual_landscape.redraw_fx(true,"remove empty folder",false),logger);
     }
 
     
@@ -1459,7 +1459,7 @@ public class Virtual_landscape_menus
                     if ( cmi != local) cmi.setSelected(false);
                 }
                 Non_booleans_properties.set_column_width(length,owner);
-                local_virtual_landscape.redraw_fx("column width changed",false);
+                local_virtual_landscape.redraw_fx(false,"column width changed",false);
             }
         });
         menu.getItems().add(item);
@@ -1479,7 +1479,7 @@ public class Virtual_landscape_menus
         item.setOnAction(actionEvent -> {
             CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
             Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details, local.isSelected(), owner);
-            local_virtual_landscape.redraw_fx("Show_single_column_with_details",true);
+            local_virtual_landscape.redraw_fx(true,"Show_single_column_with_details",true);
         });
         return item;
 
@@ -1510,8 +1510,8 @@ public class Virtual_landscape_menus
                     if ( cmi != local) cmi.setSelected(false);
                 }
                 Non_booleans_properties.set_icon_size(target_size,owner);
-                logger.log("icon length changed to "+target_size);
-                virtual_landscape.redraw_fx("icon length changed",true);
+                logger.log("icon size changed to "+target_size);
+                virtual_landscape.redraw_fx(true,"icon size changed",true);
             }
         });
         menu.getItems().add(item);
@@ -1535,7 +1535,7 @@ public class Virtual_landscape_menus
                     if ( cmi != local) cmi.setSelected(false);
                 }
                 Non_booleans_properties.set_folder_icon_size(target_size,owner);
-                virtual_landscape.redraw_fx("folder icon length changed",true);
+                virtual_landscape.redraw_fx(true,"folder icon length changed",true);
             }
         });
         menu.getItems().add(item);
@@ -1559,7 +1559,7 @@ public class Virtual_landscape_menus
                     if (cmi != local) cmi.setSelected(false);
                 }
                 Non_booleans_properties.set_font_size(target_size, owner);
-                virtual_landscape.redraw_fx("font length changed",false);
+                virtual_landscape.redraw_fx(true,"font size changed",false);
             }
         });
         menu.getItems().add(item);

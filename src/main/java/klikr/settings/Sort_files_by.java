@@ -4,6 +4,7 @@
 package klikr.settings;
 
 import javafx.stage.Window;
+import klikr.settings.boolean_features.Settings_not_saved_to_disk;
 import klikr.util.Shared_services;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.browser.virtual_landscape.Path_comparator_source;
@@ -29,7 +30,7 @@ public enum Sort_files_by {
     ASPECT_RATIO,
     FILE_CREATION_DATE,
     FILE_LAST_ACCESS_DATE,
-    FILE_SIZE,
+    FILE_SIZE, // not saved to disk
     IMAGE_WIDTH,
     IMAGE_HEIGHT,
     RANDOM,
@@ -38,9 +39,9 @@ public enum Sort_files_by {
     //SIMILARITY_BY_PAIRS,
     //SIMILARITY_BY_PURSUIT,
 
-  public static final String SORT_FILES_BY = "sort_files_by";
+    public static final String SORT_FILES_BY_FOR_FOLDER_ = "sort_files_by_for_folder_";
 
-    public final static boolean dbg = false;
+    public final static boolean dbg = true;
 
 
     //**********************************************************
@@ -115,7 +116,7 @@ public enum Sort_files_by {
     private static Similarity_comparator_pairs_of_closests get_similarity_comparator_pairs_of_closests(Feature_vector_source fvs, Path_list_provider path_list_provider, Window owner, double x, double y, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+        List<Path> paths = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
         Similarity_cache similarity_cache = get_similarity_cache(fvs,path_list_provider, owner, x, y, logger);
         Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter, logger);
         return new Similarity_comparator_pairs_of_closests(
@@ -136,7 +137,7 @@ public enum Sort_files_by {
         Aborter aborter, Logger logger)
     //**********************************************************
     {
-        List<Path> paths = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+        List<Path> paths = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
         Similarity_cache similarity_cache = get_similarity_cache(fvs, path_list_provider, owner, x, y, logger);
         Feature_vector_cache fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs,paths, path_list_provider, owner, x, y, aborter, logger);
         return new Similarity_comparator_by_pursuit(
@@ -153,7 +154,6 @@ public enum Sort_files_by {
     //**********************************************************
     private static Similarity_cache get_similarity_cache(
             Feature_vector_source fvs,
-            //List<Path> paths,
             Path_list_provider path_list_provider, Window owner,double x, double y, Logger logger)
     //**********************************************************
     {
@@ -205,6 +205,9 @@ public enum Sort_files_by {
         return false;
     }
 
+    // during a session we cache 'sort_files_by' PER FOLDER
+    // and it is saved to file too
+    // EXCEPT for items in never_saved_to_disk
     private static Map<String, Sort_files_by> cached = new HashMap<>();
     //**********************************************************
     public static Sort_files_by get_sort_files_by(String key, Window owner)
@@ -213,22 +216,30 @@ public enum Sort_files_by {
         Sort_files_by from_cache = cached.get(key);
         if ( from_cache != null)
         {
-            if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (1): "+ Sort_files_by.FILE_NAME));
+            if (dbg) System.out.println(("sort files by (1): "+ from_cache.name()));
             return from_cache;
         }
 
-        String s = Shared_services.main_properties().get(SORT_FILES_BY);
+        String s = Shared_services.main_properties().get(SORT_FILES_BY_FOR_FOLDER_+key);
         if (s == null)
         {
-            Shared_services.main_properties().set_and_save(SORT_FILES_BY, Sort_files_by.FILE_NAME.name());
-            if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (2): "+ Sort_files_by.FILE_NAME));
+            Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, Sort_files_by.FILE_NAME.name());
+            if (dbg) System.out.println(("sort files by (2): "+ Sort_files_by.FILE_NAME));
             cached.put(key, Sort_files_by.FILE_NAME);
             return Sort_files_by.FILE_NAME;
         }
 
+        if ( s.length() <= SORT_FILES_BY_FOR_FOLDER_.length())
+        {
+            Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, Sort_files_by.FILE_NAME.name());
+            if (dbg) System.out.println(("sort files by (2): "+ Sort_files_by.FILE_NAME));
+            cached.put(key, Sort_files_by.FILE_NAME);
+            return Sort_files_by.FILE_NAME;
+        }
         try
         {
-            Sort_files_by returned = Sort_files_by.valueOf(s);
+            String s2 = s.substring(SORT_FILES_BY_FOR_FOLDER_.length());
+            Sort_files_by returned = Sort_files_by.valueOf(s2);
 
             if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (3): "+returned));
             cached.put(key, returned);
@@ -244,23 +255,20 @@ public enum Sort_files_by {
     }
 
     //**********************************************************
-    public static void set_sort_files_by(String key, Sort_files_by b, Window owner, Logger logger)
+    public static void set_sort_files_by(String key, Sort_files_by sort_files_by, Window owner, Logger logger)
     //**********************************************************
     {
-        cached.put(key, b);
-        /*
-        if ( b == Sort_files_by.SIMILARITY_BY_PAIRS)
+        for (int i = 0 ; i < Settings_not_saved_to_disk.never_saved_to_disk.length; i++)
         {
-            logger.log("warning: SIMILARITY_BY_PAIRS not saved to properties");
-            return;
+            if ( sort_files_by == Settings_not_saved_to_disk.never_saved_to_disk[i])
+            {
+                logger.log("warning: "+sort_files_by.name()+" not saved on disk");
+                return;
+            }
         }
 
-        if ( b == Sort_files_by.SIMILARITY_BY_PURSUIT)
-        {
-            logger.log("warning: SIMILARITY_BY_PURSUIT not saved to properties");
-            return;
-        }*/
-        Shared_services.main_properties().set_and_save(SORT_FILES_BY, b.name());
+        cached.put(key, sort_files_by);
+        Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, sort_files_by.name());
     }
 
 }

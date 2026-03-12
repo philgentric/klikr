@@ -130,11 +130,10 @@ public class Circle_3D implements Window_provider, Shutdown_target
         //image_source = new Dummy_text_image_source(icon_size,30000);
 
 
-        String s = Shared_services.main_properties().get(Sort_files_by.SORT_FILES_BY);
-        if ( !s.equals(Sort_files_by.FILE_NAME.name()))
+        Sort_files_by sort_files_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), stage);
+        if ( sort_files_by != Sort_files_by.FILE_NAME)
         {
-            Shared_services.main_properties().set(Sort_files_by.SORT_FILES_BY, Sort_files_by.FILE_NAME.name());
-            Shared_services.main_properties().save_to_disk();
+            Sort_files_by.set_sort_files_by(path_list_provider.get_key(),Sort_files_by.FILE_NAME, stage,logger);
         }
         Optional<Hourglass> hourglass = Circle_3D.get_hourglass(stage,logger);
 
@@ -537,7 +536,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
         List<Path> list = new ArrayList<>();
         // files are in alpha order
 
-        List<Path> images = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+        List<Path> images = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
         Collections.sort(images);
 
         int i = images.indexOf(path);

@@ -46,20 +46,20 @@ public interface Path_list_provider
 
     Change get_Change();
 
-    Files_and_folders files_and_folders(Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
+    Files_and_folders files_and_folders(boolean force_rescan, Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
     void reload(String origin, Aborter aborter);
 
-    List<Path> only_file_paths(boolean consider_also_hidden_files, Aborter aborter);
-    List<Path> only_image_paths(boolean consider_also_hidden_files, Aborter aborter);
-    List<Path> only_song_paths(boolean consider_also_hidden_files, Aborter aborter);
-    List<Path> only_folder_paths(boolean consider_also_hidden_folders, Aborter aborter);
+    List<Path> only_file_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter);
+    List<Path> only_image_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter);
+    List<Path> only_song_paths(boolean force_rescan, boolean consider_also_hidden_files, Aborter aborter);
+    List<Path> only_folder_paths(boolean force_rescan, boolean consider_also_hidden_folders, Aborter aborter);
 
     Move_provider get_move_provider();
 
     void delete(Path path, Window owner, double x, double y, Aborter aborter, Logger logger);
     void delete_multiple(List<Path> paths, Window owner, double x, double y, Aborter aborter, Logger logger);
 
-    int how_many_files_and_folders(boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
+    int how_many_files_and_folders(boolean force_rescan, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
 
 
     //**********************************************************

@@ -63,11 +63,11 @@ class State
             List<Path> path_list = null;
             switch (type) {
                 case images ->
-                        path_list = path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+                        path_list = path_list_provider.only_image_paths(true, Feature_cache.get(Feature.Show_hidden_files),aborter);
                 case songs ->
-                        path_list = path_list_provider.only_song_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+                        path_list = path_list_provider.only_song_paths(true, Feature_cache.get(Feature.Show_hidden_files),aborter);
                 case all_files ->
-                        path_list = path_list_provider.only_file_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+                        path_list = path_list_provider.only_file_paths(true, Feature_cache.get(Feature.Show_hidden_files),aborter);
             }
             if (path_list == null) {
                 logger.log(Stack_trace_getter.get_stack_trace("rescan failed"));

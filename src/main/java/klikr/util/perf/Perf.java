@@ -36,6 +36,7 @@ public class Perf implements AutoCloseable
         start =  System.nanoTime();
     }
 
+    // when the try of a Perf instance closes, this is executed and records the perf data
     //**********************************************************
     @Override
     public void close() //throws Exception
@@ -94,15 +95,27 @@ public class Perf implements AutoCloseable
         return String.format("%.1f",time)+"ns ";
 
     }
+
     //**********************************************************
-    public static void monitor(Logger logger)
+    public static void stop_monitoring()
+    //**********************************************************
+    {
+        enabled = false;
+    }
+    //**********************************************************
+    public static void start_monitoring(Logger logger)
     //**********************************************************
     {
         enabled = true;
         Actor_engine.execute(()->{
             for(;;)
             {
+                if (!enabled)
+                {
+                    return;
+                }
                 try {
+                    //logger.log("PERF monitoring is alive");
                     if( new_values)
                     {
                         print_all(logger);

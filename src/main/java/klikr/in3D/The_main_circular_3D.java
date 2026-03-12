@@ -35,7 +35,7 @@ public class The_main_circular_3D extends Application
         Shared_services.init("main circular 3D", primaryStage);
         Logger logger = new Simple_logger();
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
-        Perf.monitor(logger);
+        Perf.start_monitoring(logger);
 
         Path p = Path.of(System.getProperty("user.home"));
         Window_builder.additional_no_past(this,Window_type.File_system_3D,new Path_list_provider_for_file_system(p,primaryStage,logger),primaryStage,logger);

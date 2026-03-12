@@ -64,7 +64,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     protected abstract String get_name();
     protected abstract Path_list_provider get_Path_list_provider();
     protected abstract String signature();
-    protected abstract void monitor();
+    protected abstract void monitor_current_path_list_source();
 
     //**********************************************************
     public Abstract_browser(Logger logger_)
@@ -176,18 +176,18 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
         my_Stage.set_escape_event_handler(this);
 
         if ( dbg) logger.log("Browser init");
-        monitor();
+        monitor_current_path_list_source();
         virtual_landscape = new Virtual_landscape(application,context_type,get_Path_list_provider(),my_Stage.the_Stage,this,this,this,this,this,aborter, logger);
-        virtual_landscape.redraw_fx("Browser constructor", true);
+        virtual_landscape.redraw_fx(true,"Browser constructor", true);
 
         my_Stage.the_Stage.widthProperty().addListener((observable, oldValue, newValue) -> {
             if (dbg) logger.log("new browser width =" + newValue.doubleValue());
             record_stage_bounds();
-            virtual_landscape.redraw_fx("width changed by user", false);
+            virtual_landscape.redraw_fx(false,"width changed by user", false);
         });
         my_Stage.the_Stage.heightProperty().addListener((observable, oldValue, newValue) -> {
             record_stage_bounds();
-            virtual_landscape.redraw_fx("height changed by user", false);
+            virtual_landscape.redraw_fx(false,"height changed by user", false);
         });
 
 
@@ -198,7 +198,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     public void define_UI()
     //**********************************************************
     {
-        virtual_landscape.redraw_fx("UI changed TCP signal received",true);
+        virtual_landscape.redraw_fx(true,"UI changed HTTP signal received",true);
     }
 
     //**********************************************************

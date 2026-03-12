@@ -395,7 +395,7 @@ public class Item_file_with_icon extends Item_file
                 double x = owner.getX()+100;
                 double y = owner.getY()+100;
                 Path_list_provider path_list_provider = new Path_list_provider_for_file_system(image_path.getParent(),owner,logger);
-                List<Path> paths =  path_list_provider.only_image_paths(Feature_cache.get(Feature.Show_hidden_files),aborter);
+                List<Path> paths =  path_list_provider.only_image_paths(true, Feature_cache.get(Feature.Show_hidden_files),aborter);
                 Similarity_engine image_similarity = new Similarity_engine(
                         paths,
                         path_list_provider,

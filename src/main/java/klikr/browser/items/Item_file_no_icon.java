@@ -403,7 +403,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                     logger.log("✅ Item_file_no_icn, opening audio file: " + optional_of_item_path.get().toAbsolutePath());
                     logger.log("path_list_provider="+path_list_provider.to_string());
 
-                    path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update(null,true));
+                    path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update_feature(null,true));
 
                     Basic_audio_player.get(new Navigator_auto(optional_of_item_path.get(),path_list_provider,logger),aborter,logger);
                     Basic_audio_player.play_song(optional_of_item_path.get().toAbsolutePath().toString(),true);
