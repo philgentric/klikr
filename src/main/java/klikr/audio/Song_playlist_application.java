@@ -65,7 +65,7 @@
 
 //SOURCES ./System_info.java
 //SOURCES actor/Aborter.java
-//SOURCES browser/classic/Browser.java
+//SOURCES browser/classic/Browser_for_file_system_in_2D.java
 //SOURCES New_file_browser_context.java
 //SOURCES browser/My_Stage.java
 //SOURCES change/history/History_auto_clean.java
@@ -187,8 +187,8 @@ public class Song_playlist_application extends Application
 
         Path_list_provider path_list_provider = new Path_list_provider_for_playlist(path,  primary_stage, aborter, logger);
 
-        Window_builder.additional_no_past(this,Window_type.Song_playlist_browser,path_list_provider,primary_stage_,logger);
-        new Disk_usage_and_caches_monitor(()-> primary_stage, logger).start();
+        Window_provider window_provider = Window_builder.additional_no_past(this,Window_type.Song_playlist,path_list_provider,primary_stage_,logger);
+        new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
         Klikr_communicator klikr_communicator = new Klikr_communicator("Song playlist app",primary_stage,logger);
         klikr_communicator.start_as_singleton();

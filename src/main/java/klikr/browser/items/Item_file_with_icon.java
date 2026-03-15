@@ -202,13 +202,14 @@ public class Item_file_with_icon extends Item_file
 
     //**********************************************************
     @Override // Item
-    public void set_is_unselected_internal()
+    public void unset_selected_look()
+    //**********************************************************
     {
         if ( image_view != null) image_view.setViewport(null);
     }
     //**********************************************************
     @Override // Item
-    public void set_is_selected_internal()
+    public void set_selected_look()
     //**********************************************************
     {
        double DELTA = icon_size/2.0;

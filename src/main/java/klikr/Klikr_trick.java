@@ -65,7 +65,7 @@
 
 //SOURCES ./System_info.java
 //SOURCES actor/Aborter.java
-//SOURCES browser/classic/Browser.java
+//SOURCES browser/classic/Browser_for_file_system_in_2D.java
 //SOURCES New_file_browser_context.java
 //SOURCES browser/My_Stage.java
 //SOURCES change/history/History_auto_clean.java

@@ -48,6 +48,7 @@ import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 
 //**********************************************************
@@ -945,7 +946,7 @@ public class Audio_player_FX_UI implements Media_callbacks
     // **********************************************************
     {
 
-        Media_instance_statics.play_this(new_song, this, and_seek, stage, logger);
+        Media_instance_statics.play_this(Path.of(new_song), this, and_seek, stage, logger);
 
         Platform.runLater(() -> play_pause_button.setText(pause_string));
     }
@@ -1024,17 +1025,17 @@ public class Audio_player_FX_UI implements Media_callbacks
 
         // need to do it on swing event thread
         // as we use fileChooser to be able to display hidden folders
-        Runnable r = () -> playlist.choose_playlist_file_name();
+        Runnable r = () -> playlist.choose_playlist();
         Platform.runLater(r);
     }
 
     // **********************************************************
-    public void play_playlist_internal(File playlist_file_)
+    public void play_playlist_internal(Path playlist_path_)
     // **********************************************************
     {
 
         // logger.log("Going to play list: "+playlist_file.getAbsolutePath());
-        playlist.load_playlist(playlist_file_);
+        playlist.load_playlist(playlist_path_);
         if (playlist.is_empty()) {
             previous.setDisable(true);
             next.setDisable(true);

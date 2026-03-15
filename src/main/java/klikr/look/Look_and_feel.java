@@ -66,7 +66,7 @@ public abstract class Look_and_feel
     private final BackgroundFill all_files_fill;
     private final BackgroundFill drag_fill;
     private final BackgroundFill background_fill;
-    private final BackgroundFill image_playlist_fill;
+    //private final BackgroundFill image_playlist_fill;
 
     //**********************************************************
     public Look_and_feel(String name, Window owner, Logger logger)
@@ -92,7 +92,7 @@ public abstract class Look_and_feel
         all_dirs_fill = getBackgroundFill(LOOK_AND_FEEL_ALL_DIRS);
         all_files_fill = getBackgroundFill(LOOK_AND_FEEL_ALL_FILES);
         drag_fill = getBackgroundFill(LOOK_AND_FEEL_DRAG);
-        image_playlist_fill = getBackgroundFill(LOOK_AND_FEEL_IMAGE_PLAYLIST);
+        //image_playlist_fill = getBackgroundFill(LOOK_AND_FEEL_IMAGE_PLAYLIST);
 
     }
 
@@ -163,6 +163,7 @@ public abstract class Look_and_feel
         return "icons/floor.png";
     }
 
+    abstract public String get_text_color();
     abstract public String get_selected_text_color();
 
     abstract public Color get_selection_box_color();
@@ -253,6 +254,7 @@ public abstract class Look_and_feel
     {
         //logger.log("set_file_style");
         Font_size.apply_global_font_size_to_Node(node, owner, logger);
+        set_text_color(node, get_text_color());//"-fx-text-fill: #704040;");
     }
 
     //**********************************************************
@@ -280,11 +282,11 @@ public abstract class Look_and_feel
         return all_dirs_fill;
     }
 
-
+/*
     public BackgroundFill get_image_playlist_fill() {
         return image_playlist_fill;
     }
-
+*/
     //**********************************************************
     public double estimate_text_width(String s)
     //**********************************************************

@@ -37,7 +37,7 @@ public class Deduplication_console_window
     private static final boolean dbg = false;
     public static final String STATUS = "Status: ";
     Aborter private_aborter;
-    //Browser browser;
+    //Browser_for_file_system_in_2D browser;
     Window owner;
     public LongAdder count_directory_examined = new LongAdder();
     Label label_directory_examined;

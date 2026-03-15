@@ -82,7 +82,6 @@ public class Look_and_feel_dark extends Look_and_feel
         return "icons/dark/view.png";
     }
 
-
     @Override
     public String get_bookmarks_icon_path() {
         return "icons/dark/bookmarks.png";
@@ -94,13 +93,16 @@ public class Look_and_feel_dark extends Look_and_feel
     }
 
     @Override
-    public String get_selected_text_color() {return "-fx-text-fill: #FF4040;";}
+    public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
+
+    @Override
+    public String get_text_color() {return "-fx-text-fill: #FFFFFF;";}
 
     @Override
     public Color get_selection_box_color() {return Color.WHITE;}
 
     @Override
-    public Color get_background_color() {return Color.BLACK;/*valueOf("#FF4040");*/}
+    public Color get_background_color() {return Color.BLACK;}
 
     @Override
     public Color get_foreground_color() {

@@ -29,9 +29,8 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.Window;
 import klikr.Window_builder;
-import klikr.audio.simple_player.Basic_audio_player;
-import klikr.audio.simple_player.Navigator;
-import klikr.audio.simple_player.Navigator_auto;
+import klikr.audio.simple_player.The_audio_player;
+import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.External_application;
 import klikr.Klikr_application;
 import klikr.Window_type;
@@ -543,8 +542,9 @@ public class Virtual_landscape_menus
                     else
                     {
                         logger.log("starting new audio player");
-                        Navigator navigator = new Navigator_auto(null, virtual_landscape.path_list_provider, logger);
-                        Klikr_application.audio_player = Basic_audio_player.get(navigator,virtual_landscape.aborter, logger);
+                        Path playlist = String_constants.get_playlist_path(owner);
+                        Path_list_provider playlist_path_list_provider = new Path_list_provider_for_playlist(playlist,owner,virtual_landscape.aborter,logger);
+                        Klikr_application.audio_player = The_audio_player.play_playlist(virtual_landscape.application, playlist_path_list_provider, virtual_landscape.owner, virtual_landscape.aborter, logger);
                     }
                 }
                 else
@@ -1077,7 +1077,7 @@ public class Virtual_landscape_menus
                                 shutdown_target,
                                 window_type,
                                 path_list_provider,
-                                path_list_provider.get_folder_path().get(),
+                                path_list_provider.get_key(),
                                 top_left,owner,logger);
                     },history_menu,owner,logger);
 
@@ -1632,7 +1632,7 @@ public class Virtual_landscape_menus
                             virtual_landscape.shutdown_target,
                             Window_type.File_system_2D,
                             virtual_landscape.path_list_provider,
-                            virtual_landscape.path_list_provider.get_folder_path().get(),
+                            virtual_landscape.path_list_provider.get_key(),
                             virtual_landscape.get_top_left(),
                             owner, logger);
                 }

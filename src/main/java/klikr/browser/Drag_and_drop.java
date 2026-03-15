@@ -34,7 +34,7 @@ public class Drag_and_drop
     public static int accept_drag_dropped_as_a_move_in(
             Move_provider move_provider,
             DragEvent drag_event,
-            Path destination_dir,
+            Path destination, // if a dir: file system operation, if a file: playlist
             Node excluded,
             String origin, // cosmetic/debug
             boolean destination_is_trash,
@@ -128,13 +128,13 @@ public class Drag_and_drop
 
 
         //boolean destination_is_trash = Non_booleans_properties.is_this_trash(destination_dir,logger);
-        if (drag_and_drop_dbg) logger.log("\n\naccept_drag_dropped_as_a_move_in " + origin+" destination= "+destination_dir+" is_trash="+ destination_is_trash);
+        if (drag_and_drop_dbg) logger.log("\n\naccept_drag_dropped_as_a_move_in " + origin+" destination= "+destination+" is_trash="+ destination_is_trash);
 
         double x = drag_event.getX();
         double y = drag_event.getY();
 
         move_provider.move(
-                destination_dir,
+                destination,
                 destination_is_trash,
                 the_list,
                 owner,x,y,
@@ -186,7 +186,7 @@ public class Drag_and_drop
                     drag_event,
                     path,
                     node,
-                    "Browser item",
+                    "Browser_for_file_system_in_2D item",
                     is_trash,
                     owner,
                     logger);
@@ -242,7 +242,7 @@ public class Drag_and_drop
             {
                 if (drag_and_drop_dbg) logger.log("Item.init_drag_and_drop() SENDER SIDE: setOnDragDone for " + path.toAbsolutePath());
                 /*
-                DO NOT report it: it will be reported by the receiver Browser scene
+                DO NOT report it: it will be reported by the receiver Browser_for_file_system_in_2D scene
                 */
 
                 if( selection_handler!= null)

@@ -25,7 +25,9 @@ import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -116,6 +118,20 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
     @Override
     public Window get_owner() {
+        return null;
+    }
+
+    @Override
+    public void replace_current_item(Path path, Path old)
+    {
+        // not used
+    }
+
+    //*******************************************************
+    @Override
+    public Comparator<? super Path> get_file_comparator()
+    //*******************************************************
+    {
         return null;
     }
 

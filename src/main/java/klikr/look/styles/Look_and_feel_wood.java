@@ -95,7 +95,10 @@ public class Look_and_feel_wood extends Look_and_feel
     public String get_folder_icon_path() {return "icons/wood/folder.png";}
 
     @Override
-    public String get_selected_text_color() {return "-fx-text-fill: #FF4040;";}
+    public String get_text_color() {return "-fx-text-fill: #FFFFFF;";}
+
+    @Override
+    public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
 
     @Override
     public Color get_background_color() {

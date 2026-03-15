@@ -127,7 +127,7 @@ public class Javalin_monaco
                     }
                 });
                 ws.onClose(ctx -> {
-                    logger.log("Browser disconnected");
+                    logger.log("Browser_for_file_system_in_2D disconnected");
                     connected_clients.remove(ctx);
                 });
             });

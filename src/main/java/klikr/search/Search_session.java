@@ -35,7 +35,7 @@ public class Search_session implements Callback_for_file_found_publish
 	public final Search_config search_config;
 	private final Aborter local_aborter;
 	private final Search_receiver search_receiver;
-	//private final Browser browser;
+	//private final Browser_for_file_system_in_2D browser;
 	private final Window owner;
 	final Results_frame find_result_frame;
     boolean is_max_at_least_once = false;

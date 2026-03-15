@@ -8,16 +8,15 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Window;
-import klikr.audio.Song_playlist_browser;
-import klikr.browser.classic.Browser;
+import klikr.audio.Browser_for_song_playlist;
+import klikr.browser.classic.Browser_for_file_system_in_2D;
 import klikr.browser.comparators.Last_access_comparator;
 import klikr.browser.virtual_landscape.Scroll_position_cache;
 import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.diskview.Disk_footprint;
-import klikr.experimental.image_playlist.Image_playlist_browser;
-import klikr.in3D.Circle_3D;
+import klikr.images.Browser_for_image_playlist;
+import klikr.in3D.Browser_for_file_system_in_3D;
 import klikr.path_lists.Path_list_provider;
-import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;
@@ -186,14 +185,14 @@ public class Window_builder
             Shutdown_target shutdown_target,
             Window_type window_type,
             Path_list_provider what_to_browse,
-            Path key_for_scroll_position_cache,
+            String key_for_scroll_position_cache,
             Optional<Path> top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
         top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(
-                key_for_scroll_position_cache.toAbsolutePath().normalize().toString(),
+                key_for_scroll_position_cache,
                 top_left_item.toAbsolutePath().normalize().toString(),
                 "replace same folder",logger));
 
@@ -256,23 +255,23 @@ public class Window_builder
     {
         switch (window_builder.window_type)
         {
-            case Image_playlist_2D -> {
-                Path_list_provider_for_playlist pp = (Path_list_provider_for_playlist) window_builder.path_list_provider;
-                return new Image_playlist_browser(window_builder.application, pp.the_playlist_file_path,window_builder.shutdown_target,null,null,logger);
-            }
 
             case File_system_2D -> {
-                return new Browser(window_builder,logger);
+                return new Browser_for_file_system_in_2D(window_builder,logger);
             }
             case File_system_3D -> {
-                return new Circle_3D(window_builder,logger);
+                return new Browser_for_file_system_in_3D(window_builder,logger);
             }
             case File_system_diskview -> {
                 return new Disk_footprint(window_builder,logger);
             }
-            case Song_playlist_browser -> {
-                return new Song_playlist_browser(window_builder,logger);
+            case Song_playlist -> {
+                return new Browser_for_song_playlist(window_builder,logger);
             }
+            case Image_playlist_2D -> {
+                return new Browser_for_image_playlist(window_builder,logger);
+            }
+
 
         }
         return null;

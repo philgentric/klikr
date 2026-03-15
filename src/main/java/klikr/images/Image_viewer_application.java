@@ -48,7 +48,7 @@ public class Image_viewer_application extends Application
         }
 
 
-        //Browser browser = New_file_browser_context.first(path.getParent().toString(),logger);
+        //Browser_for_file_system_in_2D browser = New_file_browser_context.first(path.getParent().toString(),logger);
         //browser.my_Stage.the_Stage.hide();
         Image_window image_stage = Image_window.get_Image_window(path, new Path_list_provider_for_file_system(path.getParent(),stage,logger), null,stage,aborter,logger);
     }

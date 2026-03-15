@@ -44,40 +44,40 @@ public class UI_instance_holder
 
 
     //**********************************************************
-    public static void play_this(Application application, String file, long start, boolean first_time, Window owner, Logger logger)
+    public static void play_this(Application application, String song_full_path, long start, boolean first_time, Window owner, Logger logger)
     //**********************************************************
     {
-        if ( file == null)
+        if ( song_full_path == null)
         {
             logger.log("audio player going to guess?");
             play_this_song(null,start,first_time,logger);
             return;
         }
 
-        if (Guess_file_type.is_this_path_a_music(Path.of(file), logger))
+        if (Guess_file_type.is_this_path_a_music(Path.of(song_full_path), logger))
         {
-            logger.log("audio player going to play song:"+file);
-            play_this_song(file,start,first_time,logger);
+            logger.log("audio player going to play song:"+song_full_path);
+            play_this_song(song_full_path,start,first_time,logger);
             return;
         }
-        if (Guess_file_type.is_this_path_an_audio_playlist(Path.of(file), logger))
+        if (Guess_file_type.is_this_path_an_audio_playlist(Path.of(song_full_path), logger))
         {
-            logger.log("audio player going to play playlist:"+file);
-            play_playlist(application,new File(file),logger);
+            logger.log("audio player going to play playlist:"+song_full_path);
+            play_playlist(application,Path.of(song_full_path),logger);
             return;
         }
-        logger.log("audio player ignoring this:"+file);
+        logger.log("audio player ignoring this:"+song_full_path);
 
     }
     //**********************************************************
-    private static void play_playlist(Application application, File file, Logger logger)
+    private static void play_playlist(Application application, Path path, Logger logger)
     //**********************************************************
     {
         if ( ui == null)
         {
             init_ui(application, Shared_services.aborter(),logger);
         }
-        ui.play_playlist_internal(file);
+        ui.play_playlist_internal(path);
     }
 
     //**********************************************************

@@ -30,7 +30,6 @@ import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.javalin_monaco.Javalin_monaco;
-import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
@@ -196,9 +195,9 @@ public abstract class Item implements Icon_destination
 
     public abstract String get_string();
 
-    public abstract void set_is_selected_internal();
+    public abstract void set_selected_look();
 
-    public abstract void set_is_unselected_internal();
+    public abstract void unset_selected_look();
 
 
     //**********************************************************
@@ -644,7 +643,7 @@ public abstract class Item implements Icon_destination
     public void unset_image_is_selected()
     //**********************************************************
     {
-        set_is_unselected_internal();
+        unset_selected_look();
     }
 
     //**********************************************************
@@ -658,7 +657,7 @@ public abstract class Item implements Icon_destination
             return;
         }
         if (selection_handler.add_to_selected_files(optional_of_item_path.get())) {
-            set_is_selected_internal();
+            set_selected_look();
             logger.log("item selected:" + get_item_path());
         }
     }

@@ -9,6 +9,11 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import klikr.Start_context;
 import klikr.audio.old_player.Audio_player_with_playlist;
+import klikr.path_lists.Path_list_provider;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.path_lists.navigator.General_navigator;
+import klikr.path_lists.navigator.Navigation_type;
+import klikr.path_lists.navigator.Navigator;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.http.Klikr_communicator;
@@ -16,10 +21,7 @@ import klikr.util.log.Logger;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 //**********************************************************
 public class Simple_audio_player_application extends Application
@@ -57,11 +59,8 @@ public class Simple_audio_player_application extends Application
                     );
             File selectedFile = fileChooser.showOpenDialog(stage_);
             if (selectedFile != null) {
-                String song = selectedFile.getAbsolutePath();
-                Navigator navigator = new Folder_navigator(() -> current,this::play,logger);
-                Basic_audio_player.get(navigator,aborter,logger);
-                Basic_audio_player.play_song(song,true);
                 current = selectedFile.toPath();
+                The_audio_player.play_song_in_folder(this,current, stage_,aborter,logger);
             } else {
                 current = null;
             }
@@ -89,14 +88,6 @@ public class Simple_audio_player_application extends Application
         }
     }
 
-
-    //**********************************************************
-    private void play(Path p)
-    //**********************************************************
-    {
-        current = p;
-        Basic_audio_player.play_song(p.toAbsolutePath().toString(),false);
-    }
 
 
 }

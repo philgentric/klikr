@@ -6,6 +6,7 @@ package klikr.audio.simple_player;
 
 //SOURCES ./Song.java
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
@@ -25,24 +26,36 @@ import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import klikr.audio.old_player.UI_instance_holder;
-import klikr.change.Change_gang;
+import klikr.Klikr_application;
+import klikr.Window_builder;
+import klikr.Window_provider;
+import klikr.Window_type;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.path_lists.Path_list_provider_for_playlist;
+import klikr.path_lists.navigator.General_navigator;
+import klikr.path_lists.navigator.Navigation_type;
+import klikr.path_lists.navigator.Navigator;
+import klikr.path_lists.Path_list_provider;
 import klikr.settings.File_storage;
 import klikr.settings.Non_booleans_properties;
+import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 //**********************************************************
-public class Basic_audio_player implements Media_callbacks
-// **********************************************************
+public class The_audio_player implements Media_callbacks
+//**********************************************************
 {
-    static Basic_audio_player instance;
+    static The_audio_player instance;
 
     private static final boolean dbg = false;
     private static final boolean ultra_dbg = false;
@@ -70,9 +83,12 @@ public class Basic_audio_player implements Media_callbacks
     Label the_status_label;
     Button previous;
     Button next;
+    Button browse_source;
     CheckBox auto_next_cb;
     private volatile boolean auto_next = true;
 
+    public final Application application;
+    public final Window owner;
     Logger logger;
     Aborter aborter;
     private ObservableList<EqualizerBand> equalizer_bands;
@@ -82,31 +98,92 @@ public class Basic_audio_player implements Media_callbacks
 
     String pause_string;
     String play_string;
-    Navigator navigator; // may be null !
+    Navigator navigator;
+    Path current;
+    public static Window_provider browser;
 
-    // **********************************************************
-    public static Basic_audio_player get(Navigator navigator, Aborter aborter, Logger logger)
-    // **********************************************************
+    //**********************************************************
+    public static The_audio_player play_song_in_folder(Application application,
+                                                       Path song,
+                                                       //Window_provider browser,
+                                                       Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
     {
         if (instance == null)
         {
-            synchronized (Change_gang.class)
-            {
-                if (instance == null)
-                {
-                    instance = new Basic_audio_player(navigator, aborter, logger);
-                    instance.define_ui();
-                }
-            }
+            Path_list_provider path_list_provider = new Path_list_provider_for_file_system(song.getParent(), owner, logger);
+            make_instance(application, path_list_provider,
+                    //browser,
+                    "play_song_in_folder "+song,owner, aborter, logger);
+
         }
+        instance.play_song_internal(song, null, true);
         return instance;
     }
 
-    // **********************************************************
-    private Basic_audio_player(Navigator navigator, Aborter aborter, Logger logger)
-    // **********************************************************
+
+
+    //**********************************************************
+    public static The_audio_player play_playlist(Application application,
+                                                 //Window_provider browser,
+                                                 Path_list_provider path_list_provider, Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
     {
-        this.navigator = navigator;
+        if (instance == null)
+        {
+            make_instance(application, path_list_provider,
+                    //browser,
+                    "play_playlist",owner, aborter, logger);
+        }
+        String song_s = String_constants.get_current_song(owner);
+        Path path = null;
+        if ( song_s == null)
+        {
+            path = path_list_provider.only_song_paths(true,true,aborter).getFirst();
+        }
+        else
+        {
+            path = Path.of(song_s);
+        }
+        instance.play_song_internal(path, null,true);
+        return instance;
+    }
+
+    //**********************************************************
+    private synchronized static void make_instance(
+            Application application,
+            Path_list_provider path_list_provider,
+            //Window_provider browser,
+            String msg,
+            Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        if (instance == null)
+        {
+            logger.log("New The_audio_player "+msg+" : "+ path_list_provider.get_key());
+            instance = new The_audio_player(application,
+                    //browser,
+                    path_list_provider, owner, aborter, logger);
+            instance.define_ui();
+        }
+        else
+        {
+            logger.log("Same The_audio_player "+msg+": "+ path_list_provider.get_key());
+        }
+    }
+
+    //**********************************************************
+    private The_audio_player(Application application,
+                             //Window_provider browser,
+                             Path_list_provider path_list_provider,
+                             Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        //this.browser = browser;
+        this.application = application;
+        this.owner = owner;
+        BiConsumer<Path,Path> consumer = (path, previously) -> play_song_internal(path, previously,true);
+        this.navigator = new General_navigator(Navigation_type.songs,path_list_provider,()->current,consumer,owner,logger);
         this.aborter = aborter;
         this.logger = logger;
         stage = new Stage();
@@ -132,41 +209,50 @@ public class Basic_audio_player implements Media_callbacks
         stage.setMinWidth(WIDTH);
         stage.sizeToScene();
 
+        stage.setOnCloseRequest(event -> {
+            logger.log("Audio player NEW closing");
+            stop_current_media();
+            Klikr_application.audio_player =  null;
+            if ( browser != null)
+            {
+                ((Stage)(browser.get_owner())).close();
+                browser = null;
+            }
+            stage.close();
+        });
     }
 
-    // **********************************************************
-    public static void play_song(String new_song, boolean and_seek)
-    // **********************************************************
+
+    //**********************************************************
+    private void play_song_internal(Path song, Path previously, boolean and_seek)
+    //**********************************************************
     {
-        if (instance == null)
+        if ( song == null )
         {
-            System.out.println("Error: Basic_audio_player instance is null");
+            logger.log(Stack_trace_getter.get_stack_trace("FATAL: song == null"));
             return;
         }
-        instance.play_song_internal(new_song,and_seek);
-    }
 
-    // **********************************************************
-    private void play_song_internal(String new_song, boolean and_seek)
-    // **********************************************************
-    {
-        logger.log("Basic_audio_player ->"+new_song+"<-");
+        current = song;
+        if ( browser !=null) browser.replace_current_item(current,previously);
+        String_constants.save_current_song(current.toAbsolutePath().toString(),owner);
+
+        logger.log("The_audio_player ->"+current+"<-");
         Media_instance_statics.stop();
 
-
-        Media_instance_statics.play_this(new_song, this, and_seek, stage, logger);
+        Media_instance_statics.play_this(current, this, and_seek, stage, logger);
 
         Platform.runLater(() ->
                 {
                     play_pause_button.setText(pause_string);
-                    stage.setTitle(new_song);
+                    stage.setTitle(current.getFileName().toString());
                 });
     }
 
 
-    // **********************************************************
+    //**********************************************************
     private void define_ui()
-    // **********************************************************
+    //**********************************************************
     {
 
         the_equalizer_vbox.getChildren().clear();
@@ -180,13 +266,6 @@ public class Basic_audio_player implements Media_callbacks
         the_top_vbox.getChildren().add(duration_vbox);
         volume_and_balance(the_top_vbox);
 
-        // called only on EXTERNAL close requests i.e. hitting the cross in the title
-        stage.setOnCloseRequest(windowEvent -> {
-            logger.log("Audio player NEW closing");
-            stop_current_media();
-            stage.close();
-            UI_instance_holder.set_null();
-        });
 
         BorderPane bottom_border_pane = define_bottom_pane(the_top_vbox);//, scroll_pane);
 
@@ -198,9 +277,9 @@ public class Basic_audio_player implements Media_callbacks
 
     }
 
-    // **********************************************************
+    //**********************************************************
     private VBox define_jump_vbox()
-    // **********************************************************
+    //**********************************************************
     {
         VBox returned = new VBox();
         Look_and_feel_manager.set_region_look(returned, stage, logger);
@@ -208,14 +287,14 @@ public class Basic_audio_player implements Media_callbacks
         previous = new Button(My_I18n.get_I18n_string("Jump_To_Previous_Song", stage, logger));
         Look_and_feel_manager.set_button_look(previous, true, stage, logger);
         previous.setOnAction((ActionEvent e) ->{
-            if ( navigator!=null) navigator.previous(aborter);
+            if ( navigator!=null) navigator.previous(aborter,browser);
         } );
         returned.getChildren().add(previous);
 
         next = new Button(My_I18n.get_I18n_string("Jump_To_Next_Song", stage, logger));
         Look_and_feel_manager.set_button_look(next, true, stage, logger);
         next.setOnAction((ActionEvent e) ->{
-            if ( navigator!=null) navigator.next(aborter);
+            if ( navigator!=null) navigator.next(aborter,browser);
         } );
         returned.getChildren().add(next);
 
@@ -227,12 +306,35 @@ public class Basic_audio_player implements Media_callbacks
         });
         returned.getChildren().add(auto_next_cb);
 
+        browse_source = new Button(My_I18n.get_I18n_string("Browse_Playlist", stage, logger));
+        Look_and_feel_manager.set_button_look(browse_source, true, stage, logger);
+        browse_source.setOnAction((ActionEvent e) ->{
+            if (browser != null)
+            {
+                Stage stage = (Stage)(browser.get_owner());
+                stage.toFront();
+                return;
+            }
+            Path_list_provider path_list_provider = navigator.get_path_list_provider();
+
+            if(path_list_provider instanceof Path_list_provider_for_file_system)
+            {
+                browser = Window_builder.additional_no_past(application, Window_type.File_system_2D, path_list_provider, owner, logger);
+            }
+            else if(path_list_provider instanceof Path_list_provider_for_playlist)
+            {
+                browser = Window_builder.additional_no_past(application, Window_type.Song_playlist, path_list_provider, owner, logger);
+            }
+
+        } );
+        returned.getChildren().add(browse_source);
+
         return returned;
     }
 
-    // **********************************************************
+    //**********************************************************
     private BorderPane define_bottom_pane(Pane top_pane)
-    // **********************************************************
+    //**********************************************************
     {
         BorderPane returned = new BorderPane();
         returned.setTop(top_pane);
@@ -249,9 +351,9 @@ public class Basic_audio_player implements Media_callbacks
         return returned;
     }
 
-    // **********************************************************
+    //**********************************************************
     private VBox define_duration_vbox()
-    // **********************************************************
+    //**********************************************************
     {
         VBox returned = new VBox();
         Look_and_feel_manager.set_region_look(returned, stage, logger);
@@ -266,9 +368,9 @@ public class Basic_audio_player implements Media_callbacks
     }
 
 
-    // **********************************************************
+    //**********************************************************
     private void volume_and_balance(VBox the_big_vbox)
-    // **********************************************************
+    //**********************************************************
     {
         the_sound_control_hbox.getChildren().add(define_volume_and_balance_vbox());
         the_sound_control_hbox.getChildren().add(the_equalizer_vbox);
@@ -279,9 +381,9 @@ public class Basic_audio_player implements Media_callbacks
 
 
 
-    // **********************************************************
+    //**********************************************************
     private VBox define_volume_and_balance_vbox()
-    // **********************************************************
+    //**********************************************************
     {
         VBox returned = new VBox();
 
@@ -301,9 +403,9 @@ public class Basic_audio_player implements Media_callbacks
         return returned;
     }
 
-    // **********************************************************
+    //**********************************************************
     private VBox define_balance_vbox()
-    // **********************************************************
+    //**********************************************************
     {
         VBox balance_vbox = new VBox();
         HBox h1 = define_balance_hbox();
@@ -316,9 +418,9 @@ public class Basic_audio_player implements Media_callbacks
 
     }
 
-    // **********************************************************
+    //**********************************************************
     private HBox define_balance_hbox()
-    // **********************************************************
+    //**********************************************************
     {
         // balance hbox
         HBox balance_hbox = new HBox();
@@ -336,9 +438,9 @@ public class Basic_audio_player implements Media_callbacks
         return balance_hbox;
     }
 
-    // **********************************************************
+    //**********************************************************
     private Button define_reset_balance_button()
-    // **********************************************************
+    //**********************************************************
     {
         Button reset_balance = new Button(My_I18n.get_I18n_string("Reset_Balance", stage, logger));
         Look_and_feel_manager.set_button_look(reset_balance, true, stage, logger);
@@ -349,9 +451,9 @@ public class Basic_audio_player implements Media_callbacks
         return reset_balance;
     }
 
-    // **********************************************************
+    //**********************************************************
     private VBox define_volume_vbox()
-    // **********************************************************
+    //**********************************************************
     {
         VBox returned = new VBox();
         HBox hbox = define_volume_hbox();
@@ -375,9 +477,9 @@ public class Basic_audio_player implements Media_callbacks
         return returned;
     }
 
-    // **********************************************************
+    //**********************************************************
     private HBox define_volume_hbox()
-    // **********************************************************
+    //**********************************************************
     {
         HBox volume_hbox = new HBox();
 
@@ -404,9 +506,9 @@ public class Basic_audio_player implements Media_callbacks
     }
 
 
-    // **********************************************************
+    //**********************************************************
     private void define_timeline_slider()
-    // **********************************************************
+    //**********************************************************
     {
         the_timeline_slider = new Slider();
         // image_viewerLook_and_feel_manager.set_region_look(the_timeline_slider);
@@ -425,9 +527,9 @@ public class Basic_audio_player implements Media_callbacks
         });
     }
 
-    // **********************************************************
+    //**********************************************************
     private HBox define_duration_hbox()
-    // **********************************************************
+    //**********************************************************
     {
         HBox hbox = new HBox();
         Look_and_feel_manager.set_region_look(hbox, stage, logger);
@@ -481,19 +583,19 @@ public class Basic_audio_player implements Media_callbacks
         return hbox;
     }
 
-    // **********************************************************
+    //**********************************************************
     @Override // Media_callbacks
     public void on_end_of_media()
-    // **********************************************************
+    //**********************************************************
     {
         save_current_time_in_song(0, null);
-        navigator.next(aborter);
+        navigator.next(aborter, browser);
     }
 
-    // **********************************************************
+    //**********************************************************
     @Override // Media_callbacks
     public void on_player_ready()
-    // **********************************************************
+    //**********************************************************
     {
         //logger.log("Audio_player_FX_UI on_player_ready()");
         equalizer_bands = Media_instance_statics.get_bands();
@@ -525,9 +627,9 @@ public class Basic_audio_player implements Media_callbacks
 
     }
 
-    // **********************************************************
+    //**********************************************************
     public static String get_nice_string_for_duration(double seconds_in, Window owner, Logger logger)
-    // **********************************************************
+    //**********************************************************
     {
         int d = 0;
         int h = 0;
@@ -562,9 +664,9 @@ public class Basic_audio_player implements Media_callbacks
     List<Slider> sliders = new ArrayList<>();
     List<ChangeListener<? super Number>> listeners = new ArrayList<>();
 
-    // **********************************************************
+    //**********************************************************
     private void define_equalizer()
-    // **********************************************************
+    //**********************************************************
     {
         if (equalizer_created)
         {
@@ -625,9 +727,9 @@ public class Basic_audio_player implements Media_callbacks
         }
     }
 
-    // **********************************************************
+    //**********************************************************
     private Button make_reset_equalizer_button()
-    // **********************************************************
+    //**********************************************************
     {
         Button reset_button = new Button(My_I18n.get_I18n_string("Reset_Equalizer", stage, logger));
         Look_and_feel_manager.set_button_look(reset_button, true, stage, logger);
@@ -642,25 +744,25 @@ public class Basic_audio_player implements Media_callbacks
         return reset_button;
     }
 
-    // **********************************************************
+    //**********************************************************
     public void stop_current_media()
-    // **********************************************************
+    //**********************************************************
     {
         Media_instance_statics.stop();
         Media_instance_statics.dispose();
     }
 
-    // **********************************************************
+    //**********************************************************
     public void set_title(String s)
-    // **********************************************************
+    //**********************************************************
     {
         Runnable r = () -> stage.setTitle(s);
         Platform.runLater(r);
     }
 
-    // **********************************************************
+    //**********************************************************
     void handle_keyboard(final KeyEvent key_event, Logger logger)
-    // **********************************************************
+    //**********************************************************
     {
         if (keyword_dbg)
             logger.log("Audio_player_FX_UI KeyEvent=" + key_event);
@@ -688,7 +790,7 @@ public class Basic_audio_player implements Media_callbacks
             case RIGHT:
                 if (keyword_dbg)
                     logger.log("right");
-                navigator.next(aborter);
+                navigator.next(aborter, browser);
                 break;
 
             case UP:
@@ -697,7 +799,7 @@ public class Basic_audio_player implements Media_callbacks
             case LEFT:
                 if (keyword_dbg)
                     logger.log("left");
-                navigator.previous(aborter);
+                navigator.previous(aborter, browser);
                 break;
 
             default:
@@ -719,9 +821,9 @@ public class Basic_audio_player implements Media_callbacks
     }
 
 
-    // **********************************************************
+    //**********************************************************
     private void toggle_play_stop()
-    // **********************************************************
+    //**********************************************************
     {
         MediaPlayer.Status status = Media_instance_statics.get_status();
         if (status == MediaPlayer.Status.PLAYING)
@@ -730,27 +832,27 @@ public class Basic_audio_player implements Media_callbacks
             set_is_playing();
     }
 
-    // **********************************************************
+    //**********************************************************
     private void rewind()
-    // **********************************************************
+    //**********************************************************
     {
 
         Media_instance_statics.stop();
         set_is_playing();
     }
 
-    // **********************************************************
+    //**********************************************************
     private void set_is_playing()
-    // **********************************************************
+    //**********************************************************
     {
         Media_instance_statics.play();
         play_pause_button.setText(pause_string);
 
     }
 
-    // **********************************************************
+    //**********************************************************
     private void set_is_paused()
-    // **********************************************************
+    //**********************************************************
     {
         Media_instance_statics.pause();
         play_pause_button.setText(play_string);

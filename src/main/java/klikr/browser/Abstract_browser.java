@@ -12,6 +12,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
@@ -33,12 +34,19 @@ import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
 import klikr.util.mmap.Save_and_what;
 
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 //**********************************************************
-public abstract class Abstract_browser implements Change_receiver, Shutdown_target, Title_target, Full_screen_handler, Window_provider, UI_change_target, Background_provider
+public abstract class Abstract_browser implements
+        Change_receiver,
+        Shutdown_target,
+        Title_target,
+        Full_screen_handler,
+        Window_provider,
+        UI_change_target
 //**********************************************************
 {
     public static final boolean dbg = false;
@@ -59,17 +67,18 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     protected final Logger logger;
     protected Aborter aborter;
     protected boolean ignore_escape_as_the_stage_is_full_screen = false;
-    Window_type context_type;
+
 
     protected abstract String get_name();
     protected abstract Path_list_provider get_Path_list_provider();
     protected abstract String signature();
     protected abstract void monitor_current_path_list_source();
-
+    public final Color background_color;
     //**********************************************************
-    public Abstract_browser(Logger logger_)
+    public Abstract_browser(Color background, Logger logger_)
     //**********************************************************
     {
+        this.background_color = background;
         logger = logger_;
         abstract_browser_ID = ID_generator.getAndIncrement();
 
@@ -83,25 +92,22 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
 
     //**********************************************************
     public void init_abstract_browser(
-            Application application,
-            Window_type context_type,
-            Shutdown_target shutdown_target,
-            Rectangle2D rectangle,
+            Window_builder window_builder,
             Change_receiver change_receiver,
-            String badge)
+            String badge,
+            Aborter aborter)
     //**********************************************************
     {
-        this.context_type = context_type;
+        this.aborter = aborter;
         int count = number_of_windows.incrementAndGet();
         if ( dbg)
-            logger.log("Browser constructor browsers_created(1)=" + count);
-        if (shutdown_target != null)
+            logger.log("Browser_for_file_system_in_2D constructor browsers_created(1)=" + count);
+        if (window_builder.shutdown_target != null)
         {
             if ( dbg) logger.log("closing previous browser");
-            shutdown_target.shutdown();
+            window_builder.shutdown_target.shutdown();
         }
 
-        aborter = new Aborter("Abstract_browser for: " + get_name(), logger);
 
         my_Stage = new My_Stage(new Stage(), logger);
 
@@ -140,12 +146,12 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
         }
         else
         {
-            if (rectangle != null)
+            if (window_builder.rectangle != null)
             {
-                x = rectangle.getMinX();
-                y = rectangle.getMinY();
-                width = rectangle.getWidth();
-                height = rectangle.getHeight();
+                x = window_builder.rectangle.getMinX();
+                y = window_builder.rectangle.getMinY();
+                width = window_builder.rectangle.getWidth();
+                height = window_builder.rectangle.getHeight();
             }
         }
         if (dbg)
@@ -175,10 +181,10 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
 
         my_Stage.set_escape_event_handler(this);
 
-        if ( dbg) logger.log("Browser init");
+        if ( dbg) logger.log("Browser_for_file_system_in_2D init");
         monitor_current_path_list_source();
-        virtual_landscape = new Virtual_landscape(application,context_type,get_Path_list_provider(),my_Stage.the_Stage,this,this,this,this,this,aborter, logger);
-        virtual_landscape.redraw_fx(true,"Browser constructor", true);
+        virtual_landscape = new Virtual_landscape(window_builder.application,window_builder.window_type,get_Path_list_provider(),my_Stage.the_Stage, background_color,this,this,this,this,aborter, logger);
+        virtual_landscape.redraw_fx(true,"Browser_for_file_system_in_2D constructor", true);
 
         my_Stage.the_Stage.widthProperty().addListener((observable, oldValue, newValue) -> {
             if (dbg) logger.log("new browser width =" + newValue.doubleValue());
@@ -219,23 +225,16 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
     public void shutdown()
     //**********************************************************
     {
-        aborter.abort("Browser is closed for "+get_Path_list_provider().get_key());
-        if (dbg) logger.log("Browser shutdown " + signature());
+        aborter.abort("Browser_for_file_system_in_2D is closed for "+get_Path_list_provider().get_key());
+        if (dbg) logger.log("Browser_for_file_system_in_2D shutdown " + signature());
 
         int count = number_of_windows.decrementAndGet();
         if ( dbg) logger.log("close_window: browsers_created(2) ="+count);
-        if (count ==0)
+        if (count == 0)
         {
-            if (Klikr_application.primary_stage != null)
-            {
-                if (dbg) logger.log("primary_stage closing = primary_stage.close()");
-                Klikr_application.primary_stage.close();
-                Shared_services.aborter().abort("primary_stage closing");
-            }
-            else
-            {
-                logger.log("SHOULD NOT HAPPEN Abstract_browser: primary_stage is null");
-            }
+            //if ( dbg)
+                logger.log("number_of_windows == 0");
+            Shared_services.aborter().abort("primary_stage closing");
             if ( Feature_cache.get(Feature.Enable_mmap_caching))
             {
                 CountDownLatch cdl = new CountDownLatch(1);
@@ -253,7 +252,7 @@ public abstract class Abstract_browser implements Change_receiver, Shutdown_targ
         }
         else
         {
-            if ( dbg) logger.log("browsers_created > 0");
+            if ( dbg) logger.log("number_of_windows > 0");
         }
 
         // when we change dir, we need to de-register the old browser

@@ -164,7 +164,7 @@ tasks.register('simple_audio', JavaExec) {
 
 tasks.register('image_playlist_app', JavaExec) {
     dependsOn 'classes'
-    mainClass = 'klikr.experimental.image_playlist.Image_playlist_app'
+    mainClass = 'klikr.images.Image_playlist_app'
     classpath = sourceSets.main.runtimeClasspath
     group = 'applications'
     return

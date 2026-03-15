@@ -157,25 +157,25 @@ public class Media_instance
 
     // String song MUST be a URL
     //**********************************************************
-    Song_play_status play_this(String song, Media_callbacks media_callbacks, boolean and_seek, Window owner)
+    Song_play_status play_this(String song_URL, Media_callbacks media_callbacks, boolean and_seek, Window owner)
     //**********************************************************
     {
         //logger.log("\n\nplay_this : "+song);
         Media sound;
         try
         {
-            sound = new Media(song);
+            sound = new Media(song_URL);
         }
         catch (IllegalArgumentException e)
         {
-            logger.log("invalid media NAME or PATH: "+song);
+            logger.log("invalid media URL: "+song_URL);
             logger.log(""+e);
             //playlist.remove(new_song);
             return Song_play_status.song_should_be_removed_from_playlist_as_path_is_invalid;
         }
         catch (MediaException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("\n\nInvalid media, unlisted: "+song+"\n\n"));
+            logger.log(Stack_trace_getter.get_stack_trace("\n\nInvalid media, unlisted: "+song_URL+"\n\n"));
             //playlist.remove(new_song);
             return Song_play_status.song_should_be_removed_from_playlist_as_path_is_invalid;
         }
@@ -228,7 +228,7 @@ public class Media_instance
                 return;
             }
             if ( and_seek) {
-                Integer current_time_s = get_current_time(song, owner);
+                Integer current_time_s = get_current_time(song_URL, owner);
                 //if ( dbg)
                 logger.log("✅ seeking song to " + current_time_s + " s");
                 Duration target = Duration.seconds(current_time_s);

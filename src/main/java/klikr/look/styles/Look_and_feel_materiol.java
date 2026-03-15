@@ -104,7 +104,10 @@ public class Look_and_feel_materiol extends Look_and_feel
     public String get_back_icon_path() {return "icons/light/back.png";}
 
     @Override
-    public String get_selected_text_color() {return "-fx-text-fill: #FF4040;";}
+    public String get_text_color() {return "-fx-text-fill: #000000";}
+
+    @Override
+    public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
 
 
     @Override

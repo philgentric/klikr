@@ -27,7 +27,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.util.Shared_services;
 import klikr.Window_provider;
 import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.browser.virtual_landscape.Virtual_landscape;
@@ -53,7 +52,7 @@ import java.util.*;
 import java.util.List;
 
 //*******************************************************
-public class Circle_3D implements Window_provider, Shutdown_target
+public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_target
 //*******************************************************
 {
     public static final boolean dbg = false;
@@ -101,7 +100,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
     private final List<PhongMaterial> materials_to_apply = new ArrayList<>();
     private final Application application;
     //*******************************************************
-    public Circle_3D(Window_builder window_builder, Logger logger)
+    public Browser_for_file_system_in_3D(Window_builder window_builder, Logger logger)
     //*******************************************************
     {
         this.application = window_builder.application;
@@ -111,7 +110,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
         this.stage = (Stage)window_builder.owner;
         this.logger = logger;
 
-        aborter = new Aborter("Circle_3D", logger);
+        aborter = new Aborter("Browser_for_file_system_in_3D", logger);
 
         String title = "Circle 3D";
         if( window_builder.path_list_provider.get_folder_path().isEmpty())
@@ -135,7 +134,7 @@ public class Circle_3D implements Window_provider, Shutdown_target
         {
             Sort_files_by.set_sort_files_by(path_list_provider.get_key(),Sort_files_by.FILE_NAME, stage,logger);
         }
-        Optional<Hourglass> hourglass = Circle_3D.get_hourglass(stage,logger);
+        Optional<Hourglass> hourglass = Browser_for_file_system_in_3D.get_hourglass(stage,logger);
 
         Scene scene = get_scene();
         stage.setScene(scene);
@@ -145,7 +144,14 @@ public class Circle_3D implements Window_provider, Shutdown_target
         hourglass.ifPresent(Hourglass::close);
 
     }
-
+    //*******************************************************
+    @Override // Window_provider
+    public void replace_current_item(Path path, Path old)
+    //*******************************************************
+    {
+        // todo
+        logger.log("set_current_item not implemented for Browser_for_file_system_in_3D");
+    }
     //*******************************************************
     public Scene get_scene()
     //*******************************************************
@@ -292,7 +298,13 @@ public class Circle_3D implements Window_provider, Shutdown_target
     }
 
 
-
+    //*******************************************************
+    @Override
+    public Comparator<? super Path> get_file_comparator()
+    //*******************************************************
+    {
+        return null;
+    }
     //*******************************************************
     private void init_boxes(
             double angleStep,

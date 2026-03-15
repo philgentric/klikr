@@ -15,8 +15,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.audio.simple_player.Basic_audio_player;
-import klikr.audio.simple_player.Navigator_auto;
+import klikr.audio.simple_player.The_audio_player;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.javalin_monaco.Javalin_monaco;
 import klikr.path_lists.Path_list_provider_for_playlist;
@@ -192,10 +191,12 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         return get_item_path();
     }
 
+    //**********************************************************
     @Override // Icon_destination
     public Optional<Path> get_path_for_display_icon_destination()
+    //**********************************************************
     {
-        logger.log("Item_button get_path_for_display_icon_destination DEEP !???");
+        logger.log("Item_file_no_icon get_path_for_display_icon_destination DEEP !???");
         return get_path_for_display(true);
     }
 
@@ -309,17 +310,20 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
     //**********************************************************
     @Override // Item
-    public void set_is_unselected_internal()
+    public void unset_selected_look()
+    //**********************************************************
     {
+        logger.log("Item_file_no_icon unset_selected_look for "+path);
         Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
     }
 
 
     //**********************************************************
     @Override // Item
-    public void set_is_selected_internal()
+    public void set_selected_look()
     //**********************************************************
     {
+        logger.log("Item_file_no_icon set_selected_look for "+path);
         Look_and_feel_manager.give_button_a_selected_file_style(button,owner,logger);
     }
 
@@ -330,24 +334,27 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     private void button_for_a_non_image_file(String text, double width)
     //**********************************************************
     {
-        Optional<Path> optional_of_item_path = get_item_path();
-        if ( optional_of_item_path.isEmpty())
+        Path item_path;
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""));
-            return;
+            Optional<Path> optional_of_item_path = get_item_path();
+            if (optional_of_item_path.isEmpty()) {
+                logger.log(Stack_trace_getter.get_stack_trace(""));
+                return;
+            }
+            item_path = optional_of_item_path.get();
         }
         if ( Feature_cache.get(Feature.Show_single_column_with_details))
         {
             StringBuilder sb = new StringBuilder();
             try {
 
-                FileTime x = Files.readAttributes(optional_of_item_path.get(), BasicFileAttributes.class).creationTime();
+                FileTime x = Files.readAttributes(item_path, BasicFileAttributes.class).creationTime();
                 LocalDateTime ldt = x.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                 sb.append(ldt.format(date_time_formatter));
                 sb.append("                 ");
-                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(optional_of_item_path.get().toFile().length(),owner,logger));
+                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(item_path.toFile().length(),owner,logger));
                 sb.append("                 ");
-                if (!optional_of_item_path.get().toFile().canWrite())
+                if (!item_path.toFile().canWrite())
                 {
                     sb.append("❗ Not Writable!                 ");
                 }
@@ -374,44 +381,43 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
         button.setOnAction(event -> {
 
-            logger.log("✅ ON ACTION " + optional_of_item_path.get().toAbsolutePath());
+            logger.log("✅ ON ACTION " + item_path.toAbsolutePath());
 
-            if ( Guess_file_type.is_this_path_a_text(optional_of_item_path.get(),owner,logger))
+            if ( Guess_file_type.is_this_path_a_text(item_path,owner,logger))
             {
-                logger.log("✅ opening text: " + optional_of_item_path.get().toAbsolutePath());
+                logger.log("✅ opening text: " + item_path.toAbsolutePath());
                 if ( Feature_cache.get(Feature.Use_monaco_for_text_edition))
                 {
-                    Javalin_monaco.show(application,optional_of_item_path.get(),logger);
+                    Javalin_monaco.show(application,item_path,logger);
                 }
                 else
                 {
-                    Text_frame.show(optional_of_item_path.get(), logger);
+                    Text_frame.show(item_path, logger);
                 }
                 return;
             }
-            if ( Guess_file_type.is_this_path_an_audio_playlist(optional_of_item_path.get(),logger))
+            if ( Guess_file_type.is_this_path_an_audio_playlist(item_path,logger))
             {
-                logger.log("✅ opening audio playlist: " + optional_of_item_path.get().toAbsolutePath());
-                Window_builder.additional_no_past(application,Window_type.Song_playlist_browser,new Path_list_provider_for_playlist(path,  owner, aborter, logger),owner,logger);
+                logger.log("✅ opening audio playlist: " + item_path.toAbsolutePath());
+                Window_builder.additional_no_past(application,Window_type.Song_playlist,new Path_list_provider_for_playlist(path,  owner, aborter, logger),owner,logger);
                 return;
             }
 
-            if ( Guess_file_type.is_this_path_a_music(optional_of_item_path.get(),logger))
+            if ( Guess_file_type.is_this_path_a_music(item_path,logger))
             {
-                if ( Guess_file_type.does_this_file_contain_an_audio_track(optional_of_item_path.get(),owner,logger))
+                if ( Guess_file_type.does_this_file_contain_an_audio_track(item_path,owner,logger))
                 {
-                    logger.log("✅ Item_file_no_icn, opening audio file: " + optional_of_item_path.get().toAbsolutePath());
+                    logger.log("✅ Item_file_no_icn, opening audio file: " + item_path.toAbsolutePath());
                     logger.log("path_list_provider="+path_list_provider.to_string());
 
                     path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update_feature(null,true));
 
-                    Basic_audio_player.get(new Navigator_auto(optional_of_item_path.get(),path_list_provider,logger),aborter,logger);
-                    Basic_audio_player.play_song(optional_of_item_path.get().toAbsolutePath().toString(),true);
+                    The_audio_player.play_song_in_folder(application,item_path,owner,aborter,logger);
                     return;
                 }
             }
-            logger.log("✅ asking the system to open: " + optional_of_item_path.get().toAbsolutePath());
-            System_open_actor.open_with_system(application, optional_of_item_path.get(), owner,aborter,logger);
+            logger.log("✅ asking the system to open: " + item_path.toAbsolutePath());
+            System_open_actor.open_with_system(application, item_path, owner,aborter,logger);
         });
 
         give_a_menu_to_the_button(button,label);

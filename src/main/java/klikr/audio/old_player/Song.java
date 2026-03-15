@@ -18,6 +18,7 @@ import klikr.Window_type;
 import klikr.audio.Audio_info_frame;
 import klikr.audio.Ffmpeg_metadata_editor;
 import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browser.virtual_landscape.Path_comparator_source;
@@ -220,7 +221,7 @@ public class Song
                 };
             }
         };
-        Path_list_provider path_list_provider = new Path_list_provider_for_playlist(Playlist.get_playlist_file(owner).toPath(),owner, aborter,logger);
+        Path_list_provider path_list_provider = new Path_list_provider_for_playlist(String_constants.get_playlist_path(owner),owner, aborter,logger);
         Similarity_engine similarity_engine = new Similarity_engine(
                 path_list_provider.only_song_paths(true,false,aborter),
                 path_list_provider,

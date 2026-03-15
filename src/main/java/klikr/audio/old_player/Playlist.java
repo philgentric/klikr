@@ -57,14 +57,12 @@ public class Playlist
     private final static boolean dbg = false;
 
     private final Logger logger;
-    public static final String AUDIO_PLAYER_CURRENT_SONG = "AUDIO_PLAYER_CURRENT_SONG";
-    static final String PLAYLIST_FILE_NAME = "PLAYLIST_FILE_NAME";
 
     private List<String> the_playlist = new ArrayList<>();
     private Map<String, Song> path_to_Song = new HashMap<>();
     Song selected = null;
 
-    private static File playlist_file = null;
+    private static Path playlist_path = null;
     String the_song_path;
     private final Audio_player_FX_UI the_music_ui;
     File saving_dir = null;
@@ -320,23 +318,23 @@ public class Playlist
             logger.log("HAPPENS1 save_playlist");
             Platform.runLater(this::save_playlist);
         }
-        if (playlist_file == null)
+        if (playlist_path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
             return;
         }
-        logger.log("Saving playlist as:" + playlist_file.getAbsolutePath());
+        logger.log("Saving playlist as:" + playlist_path.toAbsolutePath().toString());
         try
         {
             int count = 0;
-            FileWriter fw = new FileWriter(playlist_file);
+            FileWriter fw = new FileWriter(playlist_path.toFile());
             for (String f : the_playlist)
             {
                 fw.write(f + "\n");
                 count++;
             }
             fw.close();
-            logger.log("Saved "+count+" songs in playlist file named:" + playlist_file.getAbsolutePath());
+            logger.log("Saved "+count+" songs in playlist file named:" + playlist_path.toAbsolutePath());
         }
         catch (IOException e)
         {
@@ -468,7 +466,7 @@ public class Playlist
         selected.set_background_to_selected();
 
         the_music_ui.scroll_to(the_song_path);
-        save_current_song(the_song_path,owner);
+        String_constants.save_current_song(the_song_path,owner);
 
         logger.log("✅ elapsed = "+(System.currentTimeMillis()-start)+" ms");
     }
@@ -518,12 +516,12 @@ public class Playlist
     //**********************************************************
     {
         long start = System.currentTimeMillis();
-        if (playlist_file == null)
+        if (playlist_path == null)
         {
-            playlist_file = get_playlist_file(owner);
+            playlist_path = String_constants.get_playlist_path(owner);
         }
-        load_playlist(playlist_file);
-        String song = get_current_song(owner);
+        load_playlist(playlist_path);
+        String song = String_constants.get_current_song(owner);
         if (song == null)
         {
             if (the_playlist.isEmpty())
@@ -537,38 +535,14 @@ public class Playlist
     }
 
 
-    //**********************************************************
-    public static File get_playlist_file(Window owner)
-    //**********************************************************
-    {
-        String playlist_file_name = Shared_services.main_properties().get(PLAYLIST_FILE_NAME);
-        if (playlist_file_name != null)
-        {
-            Path p = Path.of(playlist_file_name);
-            if (p.isAbsolute())
-            {
-                if (p.toFile().exists())
-                {
-                    return p.toFile(); // OK, loading recorded playlist after checking
-                }
-            }
-        }
-
-        // new empty playlist with default name
-        playlist_file_name = "playlist." + Guess_file_type.KLIKR_AUDIO_PLAYLIST_EXTENSION;
-        Shared_services.main_properties().set_and_save(PLAYLIST_FILE_NAME, playlist_file_name);
-        String home = System.getProperty(String_constants.USER_HOME);
-        Path p = Paths.get(home, String_constants.CONF_DIR, playlist_file_name);
-        return p.toFile();
-    }
 
 
     //**********************************************************
     public String get_playlist_name()
     //**********************************************************
     {
-        playlist_file = get_playlist_file(owner);
-        if ( dbg) logger.log("playlist_file="+playlist_file.getAbsolutePath());
+        playlist_path = String_constants.get_playlist_path(owner);
+        if ( dbg) logger.log("playlist_path="+playlist_path.toAbsolutePath());
         String playlist_name_s = extract_playlist_name();
         if ( dbg) logger.log("playlist_name=" + playlist_name_s);
         return playlist_name_s;
@@ -579,7 +553,7 @@ public class Playlist
     String extract_playlist_name()
     //**********************************************************
     {
-        return Extensions.get_base_name(playlist_file.getName());
+        return Extensions.get_base_name(playlist_path.getFileName().toString());
     }
 
 
@@ -602,7 +576,7 @@ public class Playlist
 
 
     //**********************************************************
-    void choose_playlist_file_name()
+    void choose_playlist()
     //**********************************************************
     {
          if (saving_dir == null)
@@ -657,8 +631,8 @@ public class Playlist
     public void change_play_list_name(String new_playlist_name)
     //**********************************************************
     {
-        Shared_services.main_properties().set_and_save(PLAYLIST_FILE_NAME, new_playlist_name);
-        playlist_file = new File(saving_dir, new_playlist_name);
+        Shared_services.main_properties().set_and_save(String_constants.PLAYLIST_FILE_NAME, new_playlist_name);
+        playlist_path = Path.of(saving_dir.getAbsolutePath(), new_playlist_name);
         save_playlist();
         the_music_ui.set_playlist_name_display(extract_playlist_name());
     }
@@ -683,23 +657,23 @@ public class Playlist
 
 
     //**********************************************************
-    void  load_playlist(File playlist_file_)
+    void  load_playlist(Path playlist_path_)
     //**********************************************************
     {
         if ( !Platform.isFxApplicationThread())
         {
             logger.log("HAPPENS1 load_playlist");
-            Platform.runLater(()->load_playlist(playlist_file_));
+            Platform.runLater(()->load_playlist(playlist_path_));
         }
-        logger.log("✅ Loading playlist as:" + playlist_file_.getAbsolutePath());
-        if (playlist_file_ == null)
+        logger.log("✅ Loading playlist as:" + playlist_path_.toAbsolutePath());
+        if (playlist_path_ == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ SHOULD NOT HAPPEN"));
             return;
         }
         try
         {
-            BufferedReader br = new BufferedReader(new FileReader(playlist_file_));
+            BufferedReader br = new BufferedReader(new FileReader(playlist_path_.toFile()));
             the_playlist.clear();
             the_music_ui.remove_all_songs();
             List<String> to_be_loaded = new ArrayList<>();
@@ -714,10 +688,10 @@ public class Playlist
                 }
             }
             add_all_to_playlist(to_be_loaded);
-            playlist_file = playlist_file_;
-            Shared_services.main_properties().set_and_save(PLAYLIST_FILE_NAME, playlist_file.getAbsolutePath());
+            playlist_path = playlist_path_;
+            Shared_services.main_properties().set_and_save(String_constants.PLAYLIST_FILE_NAME, playlist_path.toAbsolutePath().toString());
 
-            logger.log("\n\n✅ loaded " + the_playlist.size() + " songs from file:" + playlist_file.getAbsolutePath() + "\n\n");
+            logger.log("\n\n✅ loaded " + the_playlist.size() + " songs from file:" + playlist_path.toAbsolutePath() + "\n\n");
             update_playlist_size_info();
             the_music_ui.set_playlist_name_display(extract_playlist_name());
 
@@ -726,23 +700,23 @@ public class Playlist
         {
             try
             {
-                playlist_file.createNewFile();
+                playlist_path.toFile().createNewFile();
             }
             catch (IOException ex)
             {
                 logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
             }
-            if (playlist_file.canWrite())
+            if (playlist_path.toFile().canWrite())
             {
                 the_music_ui.set_playlist_name_display(extract_playlist_name());
                 return;
             }
-            playlist_file = null;
+            playlist_path = null;
             logger.log(Stack_trace_getter.get_stack_trace("❌ cannot write" + e.toString()));
         }
         catch (IOException e)
         {
-            playlist_file = null;
+            playlist_path = null;
             logger.log("❌ "+Stack_trace_getter.get_stack_trace(e.toString()));
         }
 
@@ -1243,21 +1217,8 @@ public class Playlist
     }
 
 
-    //**********************************************************
-    public static void save_current_song(String path, Window owner)
-    //**********************************************************
-    {
-        File_storage pm = Shared_services.main_properties();
-        pm.set_and_save(AUDIO_PLAYER_CURRENT_SONG, path);
 
-    }
 
-    //**********************************************************
-    public static String get_current_song(Window owner)
-    //**********************************************************
-    {
-        File_storage pm = Shared_services.main_properties();
-        return pm.get(AUDIO_PLAYER_CURRENT_SONG);
-    }
+
 
 }

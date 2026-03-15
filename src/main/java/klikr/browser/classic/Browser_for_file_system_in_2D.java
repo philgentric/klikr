@@ -52,11 +52,16 @@
 
 package klikr.browser.classic;
 
+import javafx.geometry.Insets;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import klikr.Window_builder;
-import klikr.Window_type;
 import klikr.browser.virtual_landscape.Scroll_position_cache;
+import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browser.*;
 import klikr.path_lists.Path_list_provider;
@@ -68,38 +73,51 @@ import klikr.util.files_and_paths.modifications.Filesystem_item_modification_wat
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.util.perf.Perf;
 import klikr.util.ui.Jfx_batch_injector;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 
 //**********************************************************
-public class Browser extends Abstract_browser implements Feature_change_target
+public class Browser_for_file_system_in_2D extends Abstract_browser implements Feature_change_target
 //**********************************************************
 {
     public final Path_list_provider path_list_provider;
     //**********************************************************
-    public Browser(Window_builder window_builder, Logger logger_)
+    public Browser_for_file_system_in_2D(Window_builder window_builder, Logger logger_)
     //**********************************************************
     {
-        super(logger_);
+        super(Color.WHITE, logger_);
         path_list_provider = window_builder.path_list_provider;
         if ( dbg) logger.log("\n\n\n\n\n\nNEW BROWSER "+path_list_provider.get_folder_path());
 
+        aborter = new Aborter("Browser_for_file_system_in_2D"+window_builder.path_list_provider.get_key(),logger_);
         init_abstract_browser(
-                window_builder.application,
-                Window_type.File_system_2D,
-                window_builder.shutdown_target,
-                window_builder.rectangle,
-                this, "klikr");
+                window_builder,
+                this, "klikr", aborter);
 
 
     }
 
+    //*******************************************************
+    @Override
+    public Comparator<? super Path> get_file_comparator()
+    //*******************************************************
+    {
+        return virtual_landscape.other_file_comparator;
+    }
 
+    //*******************************************************
+    @Override // Window_provider
+    public void replace_current_item(Path path, Path old)
+    //*******************************************************
+    {
+        // todo
+        logger.log("set_current_item not implemented for Browser_for_file_system_in_2D");
+    }
 
     //**********************************************************
     @Override // Feature_change_target
@@ -187,7 +205,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
     public String signature()
     //**********************************************************
     {
-        return "  Browser ID= " + abstract_browser_ID + " total window count: " + number_of_windows.get() + " esc=" + my_Stage.escape;
+        return "  Browser_for_file_system_in_2D ID= " + abstract_browser_ID + " total window count: " + number_of_windows.get() + " esc=" + my_Stage.escape;
     }
 
     //**********************************************************
@@ -232,13 +250,13 @@ public class Browser extends Abstract_browser implements Feature_change_target
             return;
         }
 
-        logger.log("Browser for: "+op.get()+ ", CHANGE GANG CALL received");
+        logger.log("Browser_for_file_system_in_2D for: "+op.get()+ ", CHANGE GANG CALL received");
 
         switch (Change_gang.is_my_directory_impacted(op.get(), l, logger))
         {
             case more_changes: {
                 //if (dbg)
-                    logger.log("1 Browser of: " + op.get() + " RECOGNIZED change gang notification: " + l);
+                    logger.log("1 Browser_for_file_system_in_2D of: " + op.get() + " RECOGNIZED change gang notification: " + l);
 
                 for ( Old_and_new_Path oan : l)
                 {
@@ -260,7 +278,7 @@ public class Browser extends Abstract_browser implements Feature_change_target
             }
             break;
             case one_new_file, one_file_gone: {
-                if (dbg) logger.log("CHANGE GANG received: Browser of: " + op.get() + " RECOGNIZED change gang notification: " + l);
+                if (dbg) logger.log("CHANGE GANG received: Browser_for_file_system_in_2D of: " + op.get() + " RECOGNIZED change gang notification: " + l);
                 logger.log("redraw_fx due to change gang");
                 virtual_landscape.redraw_fx(true,"change gang for dir: " + op.get(), true);
             }
@@ -277,12 +295,9 @@ public class Browser extends Abstract_browser implements Feature_change_target
     //**********************************************************
     {
         Optional<Path> op = path_list_provider.get_folder_path();
-        if ( op.isEmpty()) return "Browser NO PATH ?";
-        return "Browser:" + op.get().toAbsolutePath() + " " + abstract_browser_ID;
+        if ( op.isEmpty()) return "Browser_for_file_system_in_2D NO PATH ?";
+        return "Browser_for_file_system_in_2D:" + op.get().toAbsolutePath() + " " + abstract_browser_ID;
     }
 
-    @Override
-    public void set_background_color(Pane thePane) {
 
-    }
 }

@@ -49,9 +49,9 @@ public class About_klikr_stage
         l.add(new Line_for_info_stage(false,"    Only clearing the \"klik_trash\" folder is final, and you will be asked for confirmation"));
  //       l.add(new Line_for_info_stage(false,"    If you are really sure you want to delete something forever, fast, the short cut \"SHIFT D\" will do that."));
         l.add(new Line_for_info_stage(true,"Windows"));
-        l.add(new Line_for_info_stage(false,"     Klikr has 2 types of windows: \"Browser\" and \"Image\" "));
+        l.add(new Line_for_info_stage(false,"     Klikr has 2 types of windows: \"Browser_for_file_system_in_2D\" and \"Image\" "));
         l.add(new Line_for_info_stage(false,"     You can open has many windows as you want, the limit is your machine's RAM"));
-        l.add(new Line_for_info_stage(true,"Browser Windows"));
+        l.add(new Line_for_info_stage(true,"Browser_for_file_system_in_2D Windows"));
         l.add(new Line_for_info_stage(false,"    = displays the content of a folder"));
         l.add(new Line_for_info_stage(false,"    Uses icons for images and movies, and buttons for everything else"));
         l.add(new Line_for_info_stage(false,"    Clicking on an icon will popup a new \"Image\" window displaying that image "));
@@ -63,7 +63,7 @@ public class About_klikr_stage
         l.add(new Line_for_info_stage(false,"    Can load images one after the other very fast to explore a folder (using the space bar or the left/right arrows)"));
         l.add(new Line_for_info_stage(false,"    Has a slideshow mode (press s) with variable direction & speed (press w/x for slower/faster)"));
         l.add(new Line_for_info_stage(true,"Top Buttons"));
-        l.add(new Line_for_info_stage(false,"    Klikr \"Browser window\" has 6 top buttons"));
+        l.add(new Line_for_info_stage(false,"    Klikr \"Browser_for_file_system_in_2D window\" has 6 top buttons"));
         l.add(new Line_for_info_stage(false,"        Up (Parent Folder) button: will open the parent directory"));
         l.add(new Line_for_info_stage(false,"        Bookmark & History: for faster navigation"));
         l.add(new Line_for_info_stage(false,"        Files: everything related to files, for example: create an empty folder"));
@@ -72,13 +72,13 @@ public class About_klikr_stage
         l.add(new Line_for_info_stage(false,"        Trash button: drop trash on it, or click it and see the \"klik_trash\" folder"));
         l.add(new Line_for_info_stage(true,"Drag & drop (D&D)"));
         l.add(new Line_for_info_stage(false,"    In Klikr, you can Drag-and-Drop (almost) everything!"));
-        l.add(new Line_for_info_stage(false,"        In a Browser window: "));
+        l.add(new Line_for_info_stage(false,"        In a Browser_for_file_system_in_2D window: "));
         l.add(new Line_for_info_stage(false,"           D&D works for icons representing images in a folder ,"));
         l.add(new Line_for_info_stage(false,"           D&D works for buttons representing non-image files in a folder ,"));
         l.add(new Line_for_info_stage(false,"           D&D works for buttons representing folders"));
         l.add(new Line_for_info_stage(false,"        In an Image window:  D&D enables to move the image by dropping it in a browser window"));
         l.add(new Line_for_info_stage(false,"        D&D reception spots (where you can drop something) include:"));
-        l.add(new Line_for_info_stage(false,"          Browser window: the file will be moved into the corresponding folder"));
+        l.add(new Line_for_info_stage(false,"          Browser_for_file_system_in_2D window: the file will be moved into the corresponding folder"));
         l.add(new Line_for_info_stage(false,"          Folder buttons: the file will be moved into the corresponding folder"));
         l.add(new Line_for_info_stage(false,"          Trash button: the file will be moved into the trash folder"));
         l.add(new Line_for_info_stage(false,"          Up button: the file will be moved into the parent folder"));

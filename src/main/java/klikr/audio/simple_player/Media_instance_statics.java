@@ -13,8 +13,10 @@ import klikr.change.Change_gang;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -37,9 +39,14 @@ public class Media_instance_statics
     }
 
     //**********************************************************
-    public static void play_this(String new_song, Media_callbacks media_callbacks, boolean and_seek, Window owner, Logger logger)
+    public static void play_this(Path new_song, Media_callbacks media_callbacks, boolean and_seek, Window owner, Logger logger)
     //**********************************************************
     {
+        if ( new_song == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("FATAL: new_song == null"));
+            return;
+        }
         for(;;)
         {
             Aborter aborter = aborters.poll();
@@ -54,7 +61,7 @@ public class Media_instance_statics
 
         //logger.log("no more aborters");
         // make sure we pass a valid URI
-        String encoded = (new File(new_song)).toURI().toString();
+        String encoded = new_song.toFile().toURI().toString();
         logger.log("Media_instance_statics encoded=->"+encoded+"<-");
 
         // make a (specific-for-playing-this-song) aborter :

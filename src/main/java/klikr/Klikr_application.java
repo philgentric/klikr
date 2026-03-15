@@ -65,7 +65,7 @@
 
 //SOURCES ./System_info.java
 //SOURCES actor/Aborter.java
-//SOURCES browser/classic/Browser.java
+//SOURCES browser/classic/Browser_for_file_system_in_2D.java
 //SOURCES Window_builder.java
 //SOURCES browser/My_Stage.java
 //SOURCES look/Look_and_feel_manager.java
@@ -107,7 +107,7 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.The_audio_player;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -135,10 +135,9 @@ public class Klikr_application extends Application
 {
 
     public static Application application;
-    public static Basic_audio_player audio_player;
+    public static The_audio_player audio_player;
     public static long start_time; // used to compute the time since the application started
     private final static String name = "Klik_application";
-    public static Stage primary_stage;
 
     //**********************************************************
     public static void main(String[] args)
@@ -151,11 +150,11 @@ public class Klikr_application extends Application
 
     //**********************************************************
     @Override
-    public void start(Stage primary_stage_) throws Exception
+    public void start(Stage primary_stage) throws Exception
     //**********************************************************
     {
 
-        Shared_services.init(name,primary_stage_);
+        Shared_services.init(name,primary_stage);
         Logger logger = Shared_services.logger();
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
 
@@ -187,7 +186,7 @@ public class Klikr_application extends Application
 
         Github_stars.init(getHostServices());
 
-        primary_stage = primary_stage_;
+        //primary_stage = primary_stage_;
         Start_context context = Start_context.get_context_and_args(this);
 
         logger.log("Klik_application Start_context= " + context.args());
@@ -225,9 +224,9 @@ public class Klikr_application extends Application
         {
             path = Paths.get(System.getProperty(String_constants.USER_HOME));
         }
-        Klikr_communicator.build(context,primary_stage_,logger);
+        Klikr_communicator.build(context,primary_stage,logger);
 
-        Window_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage_,logger),primary_stage_,logger);
+        Window_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage,logger),primary_stage,logger);
 
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 

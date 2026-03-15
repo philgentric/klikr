@@ -35,10 +35,12 @@ import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.*;
-import klikr.audio.simple_player.Basic_audio_player;
-import klikr.audio.simple_player.Navigator;
-import klikr.audio.simple_player.Navigator_auto;
+
+import klikr.Klikr_application;
+import klikr.Window_builder;
+import klikr.Window_type;
+import klikr.audio.simple_player.The_audio_player;
+import klikr.browser.*;
 import klikr.browser.icons.image_properties_cache.Rotation;
 import klikr.change.bookmarks.Bookmarks;
 import klikr.change.history.History_engine;
@@ -49,8 +51,6 @@ import klikr.util.cache.*;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job_termination_reporter;
-import klikr.browser.*;
-import klikr.browser.classic.Browser;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.browser.comparators.*;
 import klikr.browser.icons.Error_type;
@@ -118,6 +118,7 @@ public class Virtual_landscape
     public static final boolean invisible_dbg = false;
     public static final boolean visible_dbg = false;
     public static final boolean scroll_dbg = false;
+    public static final boolean kbd_dbg = false;
 
     public static final int MIN_PARENT_AND_TRASH_BUTTON_WIDTH = 200;
     public static final int MIN_COLUMN_WIDTH = 300;
@@ -142,7 +143,7 @@ public class Virtual_landscape
 
     public ConcurrentLinkedQueue<List<Path>> iconized_sorted_queue = new ConcurrentLinkedQueue<>();
     public final ArrayBlockingQueue<Redraw_command> redraw_request_queue = new ArrayBlockingQueue<>(1);
-    private final ConcurrentHashMap<Path, Item> all_items_map = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Item> all_items_map = new ConcurrentHashMap<>();
     private final AtomicBoolean items_are_ready = new AtomicBoolean(false);
 
     private double virtual_landscape_height = -Double.MAX_VALUE;
@@ -180,9 +181,9 @@ public class Virtual_landscape
     public static boolean show_progress_window_on_redraw = true;
 
     private Feature_vector_cache fv_cache;
-    private final Background_provider background_provider;
 
     Klikr_cache<Path, Image_properties> image_properties_cache;
+    public final Color background_color;
 
     //**********************************************************
     public Virtual_landscape(
@@ -190,18 +191,18 @@ public class Virtual_landscape
             Window_type context_type,
             Path_list_provider path_list_provider,
             Window owner,
+            Color background_color,
             Shutdown_target shutdown_target,
             Change_receiver change_receiver,
             Title_target title_target,
             Full_screen_handler full_screen_handler,
-            Background_provider background_provider,
             Aborter aborter,
             Logger logger)
     //**********************************************************
     {
+        this.background_color = background_color;
         this.application = application;
         this.context_type = context_type;
-        this.background_provider = background_provider;
         this.full_screen_handler = full_screen_handler;
         this.title_target = title_target;
         this.shutdown_target = shutdown_target;
@@ -217,11 +218,30 @@ public class Virtual_landscape
 
         if ( Feature_cache.get(Feature.Play_music))
         {
-            Navigator navigator = new Navigator_auto(null, path_list_provider, logger);
-            Klikr_application.audio_player = Basic_audio_player.get(navigator,aborter, logger);
+            Path playlist = Path.of(System.getProperty("user.home"), String_constants.CONF_DIR, "default." + Guess_file_type.KLIKR_AUDIO_PLAYLIST_EXTENSION);
+            logger.log("trying default playlist");
+            if (!Files.exists(playlist)) {
+                try {
+                    Files.createDirectories(playlist.getParent());
+                    Files.createFile(playlist);
+                } catch (IOException e) {
+                    logger.log("" + e);
+                }
+            }
+            if (Klikr_application.audio_player != null)
+            {
+                logger.log("an audio player already exists");
+            }
+            else
+            {
+                logger.log("Starting playlist browser on path ->" + playlist + "<-");
+                Path_list_provider music_path_list_provider = new Path_list_provider_for_playlist(playlist, owner, aborter, logger);
+                Klikr_application.audio_player = The_audio_player.play_playlist(application, music_path_list_provider, owner, aborter, logger);
+            }
         }
 
         the_Pane = new Pane();
+
 
         icon_factory_actor = new Icon_factory_actor(get_image_properties_cache(), owner, logger);
         paths_holder = new Paths_holder(get_image_properties_cache(), aborter, logger);
@@ -257,6 +277,38 @@ public class Virtual_landscape
 
 
     //**********************************************************
+    public void swap_selected_look_for(Path path, Path old)
+    //**********************************************************
+    {
+        logger.log("Virtual_landscape set_selected_look_for "+old+" => "+path);
+
+        {
+            Item item = all_items_map.get(path.toAbsolutePath().toString());
+            if ( item != null)
+            {
+                item.set_selected_look();
+                scroll_to_path(path);
+            }
+            else
+            {
+                logger.log("set_selected_look failed, unknown path: "+path);
+            }
+        }
+        if ( old != null)
+        {
+            Item item = all_items_map.get(old.toAbsolutePath().toString());
+            if ( item != null)
+            {
+                item.unset_selected_look();
+            }
+            else
+            {
+                logger.log("unset_selected_look failed, unknown path: "+old);
+            }
+        }
+    }
+
+    //**********************************************************
     @Override // String_setting_change_target
     public void update_ui_config(String key, String new_value)
     //**********************************************************
@@ -271,7 +323,7 @@ public class Virtual_landscape
                     shutdown_target,
                     context_type,
                     path_list_provider,
-                    path_list_provider.get_folder_path().get(),
+                    path_list_provider.get_key(),
                     top_left,
                     owner,
                     logger);
@@ -346,7 +398,7 @@ public class Virtual_landscape
             // zoom +,  CTRL + +, meta + + (only macOS)
             KeyCombination kc = new KeyCodeCombination(KeyCode.PLUS, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is ctrl + +  = increase_icon_size");
                 increase_icon_size();
             });
@@ -356,7 +408,7 @@ public class Virtual_landscape
             // reason is for AZERTY, the '+' requires a shift on an '='
             KeyCombination kc = new KeyCodeCombination(KeyCode.EQUALS, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is ctrl + +  = increase_icon_size");
                 increase_icon_size();
             });
@@ -365,7 +417,7 @@ public class Virtual_landscape
             // zoom -,  CTRL + -, meta + - (only macOS)
             KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is ctrl + +  = increase_icon_size");
                 decrease_icon_size();
             });
@@ -378,7 +430,7 @@ public class Virtual_landscape
             // zoom -,  CTRL + -
             KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is ctrl + +  = decrease_icon_size");
                 decrease_icon_size();
             });
@@ -387,7 +439,7 @@ public class Virtual_landscape
             // zoom -,  meta + -(only macOS)
             KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.META_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is meta + +  = decrease_icon_size");
                 decrease_icon_size();
             });
@@ -399,12 +451,12 @@ public class Virtual_landscape
             select_all_files1 = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN);
             select_all_files2 = new KeyCodeCombination(KeyCode.A, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(select_all_files1, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is "+select_all_files1.getDisplayText()+"  = select all");
                 selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
             scene.getAccelerators().put(select_all_files2, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is "+select_all_files2.getDisplayText()+"  = select all");
                 selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
@@ -414,7 +466,7 @@ public class Virtual_landscape
             // select all folders,  ctrl + shift +a (only macOS)
             select_all_folders = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
             scene.getAccelerators().put(select_all_folders, () -> {
-                if (Browser.kbd_dbg)
+                if (Virtual_landscape.kbd_dbg)
                     logger.log("character is ctrl +a  = select all");
                 selection_handler.select_all_files_in_folder(path_list_provider,aborter);
             });
@@ -430,7 +482,7 @@ public class Virtual_landscape
             // FIND
             find = new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(find, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
                 virtual_landscape_menus.search_files_by_keyworks_fx();
             });
         }
@@ -439,7 +491,7 @@ public class Virtual_landscape
             // bookmark this
             bookmark_this = new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(bookmark_this, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta d = bookmark this");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta d = bookmark this");
               Bookmarks.get(owner).add(path_list_provider.get_key());
             });
         }
@@ -447,7 +499,7 @@ public class Virtual_landscape
             // refresh
             refresh = new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(refresh, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta r = refresh");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta r = refresh");
                 redraw_fx(true,"refresh", true);
             });
         }
@@ -455,7 +507,7 @@ public class Virtual_landscape
             // new window clone
             new_twin_window = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(new_twin_window, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta N = clone");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta N = clone");
                 Window_builder.additional_same_folder_twin(application,context_type, path_list_provider, get_top_left(), owner, logger);
             });
         }
@@ -464,7 +516,7 @@ public class Virtual_landscape
             // slide show start/stop
             start_stop_folder_scan_show = new KeyCodeCombination(KeyCode.S);
             scene.getAccelerators().put(start_stop_folder_scan_show, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl enter = start/stop scan");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl enter = start/stop scan");
                 handle_scan_switch();
             });
         }
@@ -472,7 +524,7 @@ public class Virtual_landscape
             // slide show slow down
             slow_down_folder_scan_show = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(slow_down_folder_scan_show, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
                 slow_down_scan();
             });
         }
@@ -480,7 +532,7 @@ public class Virtual_landscape
             // slide show slow down
             KeyCodeCombination kc = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is metq + <- = slowdown scan");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is metq + <- = slowdown scan");
                 slow_down_scan();
             });
         }
@@ -488,7 +540,7 @@ public class Virtual_landscape
             // slide show speed up
             speedup_folder_scan_show = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(speedup_folder_scan_show, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
                 speed_up_scan();
             });
         }
@@ -496,7 +548,7 @@ public class Virtual_landscape
             // slide show speed up
             KeyCombination kc = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is metq + -> = speed up scan");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is metq + -> = speed up scan");
                 speed_up_scan();
             });
         }
@@ -504,7 +556,7 @@ public class Virtual_landscape
             // FULLSCREEN
             go_full_screen = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.ALT_DOWN);
             scene.getAccelerators().put(go_full_screen, () -> {
-                if (Browser.kbd_dbg) logger.log("character is alt+enter = fullscreen");
+                if (Virtual_landscape.kbd_dbg) logger.log("character is alt+enter = fullscreen");
                 full_screen_handler.go_full_screen();
             });
         }
@@ -547,13 +599,17 @@ public class Virtual_landscape
         }
         the_Scene.setOnDragOver(drag_event -> {
             if (Drag_and_drop.drag_and_drop_ultra_dbg)
-                logger.log("Browser: OnDragOver handler called");
+                logger.log("Virtual_landscape: OnDragOver handler called");
             selection_handler.on_drag_over();
             Object source = drag_event.getGestureSource();
-            if (source == null) {
+            if (source == null) 
+            {
                 // logger.log("source class is null " + event.toString());
-            } else {
-                if (!(source instanceof Item)) {
+            } 
+            else 
+            {
+                if (!(source instanceof Item))
+                {
                     if (dbg)
                         logger.log("drag reception for scene: source is not an item but a: "
                                 + source.getClass().getName());
@@ -573,7 +629,9 @@ public class Virtual_landscape
                         drag_event.consume();
                         return;
                     }
-                } catch (ClassCastException e) {
+                } 
+                catch (ClassCastException e) 
+                {
                     logger.log(Stack_trace_getter.get_stack_trace("ERROR: " + e));
                     drag_event.consume();
                     return;
@@ -587,20 +645,22 @@ public class Virtual_landscape
 
         the_Scene.setOnDragDropped(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("Browser: OnDragDropped handler called");
+                logger.log("Virtual_landscape: OnDragDropped handler called");
             if (dbg)
-                logger.log("Something has been dropped in browser for dir :" + path_list_provider.get_key());
+                logger.log("Something has been dropped in Virtual_landscape for dir :" + path_list_provider.get_key());
             Path destination = null;
             if( path_list_provider instanceof Path_list_provider_for_file_system plpffs)
             {
                 Optional<Path> op = plpffs.get_folder_path();
                 if (op.isPresent()) destination = op.get();
-                else {
+                else
+                {
                     logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: no folder path provided"));
                 }
             }
-            if( path_list_provider instanceof Path_list_provider_for_playlist plpfpl)
+            else if( path_list_provider instanceof Path_list_provider_for_playlist plpfpl)
             {
+                logger.log("Something has been dropped in Virtual_landscape, and the destination is a PLAYLIST:" + path_list_provider.get_key());
                 destination = plpfpl.the_playlist_file_path;
             }
             int n = Drag_and_drop.accept_drag_dropped_as_a_move_in(
@@ -619,7 +679,7 @@ public class Virtual_landscape
 
         the_Scene.setOnDragExited(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("Browser: OnDragExited handler called");
+                logger.log("Virtual_landscape: OnDragExited handler called");
             if (dbg)
                 logger.log("OnDragExited in browser for dir :" + path_list_provider.get_key());
             // set_status(" drag done");
@@ -629,7 +689,7 @@ public class Virtual_landscape
         });
         the_Scene.setOnDragDone(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("Browser: setOnDragDone handler called");
+                logger.log("Virtual_landscape: setOnDragDone handler called");
             selection_handler.on_drag_done();
             drag_event.consume();
         });
@@ -664,7 +724,7 @@ public class Virtual_landscape
         int new_icon_size = (int) (Non_booleans_properties.get_icon_size(owner) * fac);
         if (new_icon_size < 20)
             new_icon_size = 20;
-        if (Browser.kbd_dbg)
+        if (Virtual_landscape.kbd_dbg)
             logger.log("new icon length = " + new_icon_size);
         Non_booleans_properties.set_icon_size(new_icon_size, owner);
         // icon_manager.modify_button_fonts(fac);
@@ -849,6 +909,7 @@ public class Virtual_landscape
         if ( scroll_to_s == null)
         {
             if ( Scroll_position_cache.scroll_cache_dbg) logger.log(("scroll_position_cache_read() returned null in scroll_to()"));
+            scroll_to_listener.perform_scroll_to(0, this);
             return;
         }
         if ( Scroll_position_cache.scroll_cache_dbg)
@@ -859,13 +920,20 @@ public class Virtual_landscape
         }
 
         Path scroll_to = Paths.get(scroll_to_s);
+        scroll_to_path(scroll_to);
+
+    }
+
+    //**********************************************************
+    private void scroll_to_path(Path scroll_to)
+    //**********************************************************
+    {
         current_vertical_offset = get_y_offset_of(scroll_to);
         if (scroll_to_listener == null) {
             logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
             return;
         }
         scroll_to_listener.perform_scroll_to(current_vertical_offset, this);
-
     }
 
     //**********************************************************
@@ -923,7 +991,7 @@ public class Virtual_landscape
             int image_properties_in_flight = 0;
             for (Path path : paths_holder.iconized_paths)
             {
-                Item item = all_items_map.get(path);
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
                 if (item == null) {
                     if (need_image_properties) {
                         image_properties_in_flight++;
@@ -946,7 +1014,7 @@ public class Virtual_landscape
             {
                 if (ultra_dbg)
                     logger.log("Virtual_landscape process_iconified_items " + path);
-                Item item = all_items_map.get(path);
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
                 if (item == null)
                 {
                     if (need_image_properties)
@@ -1002,7 +1070,7 @@ public class Virtual_landscape
                         owner,
                         aborter,
                         logger);
-                all_items_map.put(path, item);
+                all_items_map.put(path.toAbsolutePath().toString(), item);
                 // logger.log("item created: "+path);
             }
             if (dbg) {
@@ -1028,7 +1096,7 @@ public class Virtual_landscape
 
 
             for (Path path : ll) {
-                Item item = all_items_map.get(path);
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
                 if (item == null) {
                     logger.log(
                             ("❌ should not happen: no item in map for: " + path + " map length=" + all_items_map.size()));
@@ -1252,7 +1320,7 @@ public class Virtual_landscape
                 long size = path.toFile().length() / 1000_000L;
                 if (Guess_file_type.is_this_path_a_video(path, logger))
                     text = size + "MB VIDEO: " + text;
-                Item item = all_items_map.get(path);
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
                 if (item == null) {
                     // logger.log("Item_file_no_icon (3) path="+path);
 
@@ -1274,7 +1342,7 @@ public class Virtual_landscape
                             owner,
                             aborter,
                             logger);
-                    all_items_map.put(path, item);
+                    all_items_map.put(path.toAbsolutePath().toString(), item);
                 }
                 // item.get_Node().setVisible(false);
                 p = new_Point_for_files_and_dirs(p, item,
@@ -1394,7 +1462,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         try (Perf perf = new Perf("5. process_one_folder_with_picture")) {
-            Item folder_item = all_items_map.get(folder_path);
+            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
             if (folder_item == null) {
                 if (dbg)
                     logger.log("✅ WARNING:Item_folder_with_icon NO path for" + folder_path);
@@ -1416,7 +1484,7 @@ public class Virtual_landscape
                         this,
                         aborter,
                         logger);
-                all_items_map.put(folder_path, folder_item);
+                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
             }
             p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width,
                     single_column);
@@ -1435,7 +1503,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         try (Perf perf = new Perf("process_one_folder_plain")) {
-            Item folder_item = all_items_map.get(folder_path);
+            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
             if (folder_item == null) {
                 Color color = My_colors.load_color_for_path(folder_path, owner, logger);
                 // a "plain" folder is "like a file" from a layout point of view
@@ -1485,7 +1553,7 @@ public class Virtual_landscape
                         owner,
                         aborter,
                         logger);
-                all_items_map.put(folder_path, folder_item);
+                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
             }
 
             p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width, single_column);
@@ -1577,7 +1645,7 @@ public class Virtual_landscape
             }
         }
 
-        background_provider.set_background_color(the_Pane);
+        set_background_color();
 
         // logger.log(top_left + " is now top left at y=" + min_y);
 
@@ -2017,7 +2085,6 @@ public class Virtual_landscape
         Button up_button = null;
         if (context_type == Window_type.File_system_2D)
         {
-
             if( op.isPresent() )
             {
                 String go_up_text = "";
@@ -2033,22 +2100,28 @@ public class Virtual_landscape
                         false,
                         op.get(),
                         logger);
-
-                Optional<Image> icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
-                if (icon.isEmpty())
+                if ( up_button == null)
                 {
-                    logger.log("❌ BAD: could not load "
-                            + Look_and_feel_manager.get_instance(owner, logger).get_up_icon_path());
-                } else {
-                    Look_and_feel_manager.set_button_and_image_look(up_button, icon.get(), height, null, true, owner, logger);
+                    logger.log(Stack_trace_getter.get_stack_trace("up_button button is null ?"));
+                }
+                else
+                {
+                    Optional<Image> icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
+                    if (icon.isEmpty()) {
+                        logger.log("❌ BAD: could not load "
+                                + Look_and_feel_manager.get_instance(owner, logger).get_up_icon_path());
+                    } else {
+                        Look_and_feel_manager.set_button_and_image_look(up_button, icon.get(), height, null, true, owner, logger);
+                    }
+                    top_buttons.add(up_button);
                 }
             }
 
-            top_buttons.add(up_button);
         }
 
         Button trash = null;
-        if (context_type == Window_type.File_system_2D) {
+        if (context_type == Window_type.File_system_2D)
+        {
             String trash_text = My_I18n.get_I18n_string("Trash", owner, logger);// to: " +
                                                                                 // parent.toAbsolutePath().toString();
             trash = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
@@ -2059,12 +2132,19 @@ public class Virtual_landscape
                     true,
                     null,
                     logger);
+            if ( trash == null)
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("trash button is null ?"));
+            }
+            else
             {
                 Optional<Image> icon = Look_and_feel_manager.get_trash_icon(height, owner, logger);
                 if (icon.isEmpty()) {
                     logger.log("❌ BAD: could not load "
                             + Look_and_feel_manager.get_instance(owner, logger).get_bookmarks_icon_path());
-                } else {
+                }
+                else
+                {
                     Look_and_feel_manager.set_button_and_image_look(trash, icon.get(), height, null, true, owner, logger);
                 }
 
@@ -2075,7 +2155,6 @@ public class Virtual_landscape
         Pane top_pane = define_top_bar_using_buttons_deep(height, up_button, trash);
         BorderPane border_pane = define_border_pane(top_pane);
         Scene returned = new Scene(border_pane);// , W, H);
-
         // set the view order (smaller means closer to viewer = on top)
         top_pane.setViewOrder(0);
         the_Pane.setViewOrder(100);
@@ -2089,8 +2168,17 @@ public class Virtual_landscape
     {
         if (dbg)
             logger.log("✅ applying font length " + Non_booleans_properties.get_font_size(owner, logger));
-        for (Node x : top_buttons) {
-            Font_size.apply_global_font_size_to_Node(x, owner, logger);
+        for (Node x : top_buttons)
+        {
+            if ( x == null )
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("x is null ?"));
+            }
+            else
+            {
+                logger.log(("x is " + x.toString()));
+                Font_size.apply_global_font_size_to_Node(x, owner, logger);
+            }
         }
     }
 
@@ -2245,7 +2333,7 @@ public class Virtual_landscape
                 shutdown_target,
                 Window_type.File_system_2D,
                 new Path_list_provider_for_file_system(Path.of(back_string), owner, logger),
-                path_list_provider.get_folder_path().get(),
+                path_list_provider.get_key(),
                 top_left,
                 owner, logger);
     }
@@ -2368,7 +2456,11 @@ public class Virtual_landscape
         undo_bookmark_history_menu.getItems().add(
                 Virtual_landscape_menus.make_bookmarks_menu(
                 application, Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
-        undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
+
+        if(path_list_provider.get_folder_path().isPresent() )
+        {
+            Path folder_path = path_list_provider.get_folder_path().get();
+            undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
                 application,
                 the_whole_history,
                 path_list_provider,
@@ -2376,13 +2468,14 @@ public class Virtual_landscape
                 shutdown_target,
                 window_type,
                 owner, logger));
-        undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_roots_menu(
-                application,
-                path_list_provider.get_folder_path().get(),
-                top_left,
-                shutdown_target,
-                window_type,
-                owner, logger));
+            undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_roots_menu(
+                    application,
+                    folder_path,
+                    top_left,
+                    shutdown_target,
+                    window_type,
+                    owner, logger));
+        }
         return undo_bookmark_history_menu;
     }
 
@@ -2485,6 +2578,13 @@ public class Virtual_landscape
     //**********************************************************
     {
         Importer.estimate_size(owner, logger);
+    }
+
+    //**********************************************************
+    public void set_background_color()
+    //**********************************************************
+    {
+        the_Pane.setBackground(new Background(new BackgroundFill(background_color, CornerRadii.EMPTY, Insets.EMPTY)));
     }
 
     //**********************************************************

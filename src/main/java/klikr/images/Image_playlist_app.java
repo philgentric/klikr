@@ -65,7 +65,7 @@
 
 //SOURCES ./System_info.java
 //SOURCES actor/Aborter.java
-//SOURCES browser/classic/Browser.java
+//SOURCES browser/classic/Browser_for_file_system_in_2D.java
 //SOURCES New_file_browser_context.java
 //SOURCES browser/My_Stage.java
 //SOURCES change/history/History_auto_clean.java
@@ -104,7 +104,7 @@
 //SOURCES util/Sys_init.java
 //SOURCES ./Start_context.java
 
-package klikr.experimental.image_playlist;
+package klikr.images;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -195,8 +195,8 @@ public class Image_playlist_app extends Application
 
         Klikr_communicator.build(context,primary_stage_,logger);
 
-        Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
-        new Disk_usage_and_caches_monitor(()->primary_stage, logger).start();
+        Window_provider window_provider = Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
+        new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
 
     }

@@ -338,7 +338,8 @@ public class Item_folder extends Item implements Icon_destination
 
     //**********************************************************
     @Override // Item
-    public void set_is_unselected_internal()
+    public void unset_selected_look()
+    //**********************************************************
     {
         Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
     }
@@ -346,7 +347,7 @@ public class Item_folder extends Item implements Icon_destination
 
     //**********************************************************
     @Override // Item
-    public void set_is_selected_internal()
+    public void set_selected_look()
     //**********************************************************
     {
         Look_and_feel_manager.give_button_a_selected_file_style(button,owner,logger);

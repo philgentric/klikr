@@ -101,9 +101,11 @@ public class Look_and_feel_modena extends Look_and_feel
     @Override
     public String get_folder_icon_path() {return "icons/light/folder.png";}
 
+    @Override
+    public String get_text_color() {return "-fx-text-fill: #b8d4fe;";}
 
     @Override
-    public String get_selected_text_color() {return "-fx-text-fill: #FF4040;";}
+    public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
 
 
     @Override

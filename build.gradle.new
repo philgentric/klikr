@@ -1,0 +1,130 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.2'
+    id 'com.gradleup.shadow' version '9.0.1'
+}
+java {
+    sourceCompatibility = '25'
+    targetCompatibility = '25'
+}
+version = '1.0'
+group = 'klikr'
+javafx {
+    version = "25"
+    modules = "javafx.base", "javafx.graphics", "javafx.controls", "javafx.fxml", "javafx.media", "javafx.web"
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+    implementation 'org.msgpack:msgpack-core:0.9.8'
+    implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+    implementation('com.github.ben-manes.caffeine:caffeine:3.2.2')
+    implementation('commons-io:commons-io:2.19.0')
+    implementation('ar.com.hjg:pngj:2.1.0')
+    implementation("app.photofox.vips-ffm:vips-ffm-core:1.9.1")
+    implementation("io.javalin:javalin:6.4.0")
+}
+// Configurable JVM memory (can be set via -D option or default)
+def maxRamGb = Integer.parseInt(
+    (System.getProperty('klikr_max_ram_gb') ?: '2') as String
+).toInt()
+tasks.register('klikr', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.Klikr_application'
+    classpath(sourceSets.main.runtimeClasspath)
+    group = 'applications'
+    jvmArgs = "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=/usr/local/lib:/opt/homebrew/Cellar/vips/8.17.2/lib"
+
+    if (maxRamGb > 0) {
+        jvmArgs.add("-Xmx${maxRamGb}G")
+    } else {
+        println "Memory limit disabled."
+    }
+}
+tasks.register('old_audio_player', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.audio.old_player.Audio_player_application'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('song_playlist_application', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.audio.Song_playlist_application'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('simple_audio', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.audio.simple_player.Simple_audio_player_application'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('image_playlist_app', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.experimental.image_playlist.Image_playlist_app'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('in3D', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.in3D.The_main_circular_3'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('mmap', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.util.mmap.Mmap_test'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('undo', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.change.undo.Undo_test_app'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+tasks.register('monaco', JavaExec) {
+    dependsOn 'classes'
+    mainClass = 'klikr.javalin_monaco.Javalin_monaco_app'
+    classpath = sourceSets.main.runtimeClasspath
+    group = 'applications'
+}
+application {
+    mainClassName = "klikr.Klikr_application"
+}
+run {
+    standardInput = System.in
+    jvmArgs = "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=/usr/local/lib:/opt/homebrew/Cellar/vips/8.17.2/lib"
+}
+shadowJar {
+    archiveFileName.set("klikr.jar")
+    manifest {
+        attributes(
+            'Main-Class': 'klikr.Klikr_application',
+            'Implementation-Version': version
+        )
+    }
+    mergeServiceFiles()
+}
+jar {
+    enabled = false
+}
+tasks.register('runShadowJar', JavaExec) {
+    dependsOn shadowJar
+    def jarFile = file("$buildDir/libs/klikr.jar")
+    if (jarFile.exists()) {
+        classpath = files(jarFile)
+        mainClass = 'klikr.Klikr_application'
+        jvmArgs = [
+            '--enable-native-access=ALL-UNNAMED',
+            '-Djava.library.path=/usr/local/lib:/opt/homebrew/Cellar/vips/8.17.2/lib'
+        ]
+    } else {
+        throw new GradleException("Shadow JAR not found at ${jarFile.absolutePath}")
+    }
+}
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

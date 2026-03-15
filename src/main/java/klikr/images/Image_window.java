@@ -22,7 +22,7 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.browser.classic.Browser;
+import klikr.browser.classic.Browser_for_file_system_in_2D;
 import klikr.browser.comparators.Last_access_comparator;
 import klikr.browser.icons.image_properties_cache.Image_properties;
 import klikr.settings.Sort_files_by;
@@ -417,7 +417,7 @@ public class Image_window
             // slide show start/stop
             slideshow_start_stop = new KeyCodeCombination(KeyCode.S);
             scene.getAccelerators().put(slideshow_start_stop, () -> {
-                if (Browser.kbd_dbg) logger.log("character is SPACE = start/stop scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is SPACE = start/stop scan");
                 toggle_slideshow();
             });
         }
@@ -425,7 +425,7 @@ public class Image_window
             // slide show slow down
             KeyCombination kc = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -433,7 +433,7 @@ public class Image_window
             // slide show speed up
             speed_up_scan = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(speed_up_scan, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -441,7 +441,7 @@ public class Image_window
             // slide show slow down
             slow_down_scan = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(slow_down_scan, () -> {
-                if (Browser.kbd_dbg) logger.log("character is meta + <- = slowdown scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is meta + <- = slowdown scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -449,7 +449,7 @@ public class Image_window
             // slide show speed up
             KeyCombination kc = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is meta + -> = speed up scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is meta + -> = speed up scan");
                 if (is_slide_show_running()) speed_up();
             });
         }
@@ -459,7 +459,7 @@ public class Image_window
             // undo
             undo = new KeyCodeCombination(KeyCode.Z,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(undo, () -> {
-                if (Browser.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -467,7 +467,7 @@ public class Image_window
             // redo same MOVE
             KeyCombination kc = new KeyCodeCombination(KeyCode.Y);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -475,7 +475,7 @@ public class Image_window
             // redo same MOVE
             KeyCombination kc = new KeyCodeCombination(KeyCode.Y,KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -484,7 +484,7 @@ public class Image_window
             // rename
             rename = new KeyCodeCombination(KeyCode.R);
             scene.getAccelerators().put(rename, () -> {
-                if (Browser.kbd_dbg) logger.log("character is r, rename");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is r, rename");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().rename_file_for_an_image_window(this);
             });
@@ -493,7 +493,7 @@ public class Image_window
             // rename
             KeyCombination kc = new KeyCodeCombination(KeyCode.R,KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is r, rename");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is r, rename");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().rename_file_for_an_image_window(this);
             });
@@ -503,7 +503,7 @@ public class Image_window
             // OPEN
             open = new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(open, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta O = open");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl or meta O = open");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().open(stage,aborter);
             });
@@ -514,7 +514,7 @@ public class Image_window
             // FULLSCREEN
             KeyCombination kc = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.ALT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser.kbd_dbg) logger.log("character is alt+enter = fullscreen");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is alt+enter = fullscreen");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 Menus_for_image_window.toggle_fullscreen(this);
 
@@ -526,7 +526,7 @@ public class Image_window
             // FIND
             find = new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(find, () -> {
-                if (Browser.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
+                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().search_using_keywords_from_the_name(
                         path_list_provider,

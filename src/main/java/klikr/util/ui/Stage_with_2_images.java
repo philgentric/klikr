@@ -22,7 +22,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.audio.simple_player.Basic_audio_player;
+import klikr.audio.simple_player.The_audio_player;
 import klikr.experimental.deduplicate.manual.Againor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -200,8 +200,7 @@ public class Stage_with_2_images
 			{
 				if ( Guess_file_type.is_this_extension_an_audio(Extensions.get_extension(file.getName())))
 				{
-					Basic_audio_player.get(null,aborter,logger);
-					Basic_audio_player.play_song(file.getAbsolutePath(),true);
+					The_audio_player.play_song_in_folder(application,file.toPath(),owner,aborter,logger);
 				}
 				else
 				{

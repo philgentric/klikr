@@ -93,9 +93,11 @@ public class Look_and_feel_light extends Look_and_feel
         return "icons/light/folder.png";
     }
 
+    @Override
+    public String get_text_color() {return "-fx-text-fill: #000000;";}
 
     @Override
-    public String get_selected_text_color() {return "-fx-text-fill: #FF4040;";}
+    public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
 
     @Override
     public Color get_selection_box_color() {return Color.RED;}
