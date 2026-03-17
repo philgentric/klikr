@@ -314,7 +314,7 @@ public class Audio_player_FX_UI implements Media_callbacks
             }
 
             Dragboard dragboard = drag_event.getDragboard();
-            List<String> the_list = new ArrayList<>();
+            List<String> the_list_of_strings = new ArrayList<>();
             String s = dragboard.getString();
             if (s == null) {
                 logger.log("dragboard.getString()== null");
@@ -324,9 +324,9 @@ public class Audio_player_FX_UI implements Media_callbacks
                     if (ss.isBlank())
                         continue;
                     logger.log(" drag ACCEPTED for additional file: " + ss);
-                    the_list.add(ss);
+                    the_list_of_strings.add(ss);
                 }
-                if (the_list.isEmpty()) {
+                if (the_list_of_strings.isEmpty()) {
                     logger.log(" drag list is empty ? " + s);
                 }
             }
@@ -334,12 +334,12 @@ public class Audio_player_FX_UI implements Media_callbacks
                 List<File> l = dragboard.getFiles();
                 for (File fff : l) {
                     logger.log("... drag ACCEPTED for file= " + fff.getAbsolutePath());
-                    if (!the_list.contains(fff.getAbsolutePath()))
-                        the_list.add(fff.getAbsolutePath());
+                    if (!the_list_of_strings.contains(fff.getAbsolutePath()))
+                        the_list_of_strings.add(fff.getAbsolutePath());
                 }
             }
 
-            playlist.user_wants_to_add_songs(the_list, null);
+            playlist.user_wants_to_add_songs(the_list_of_strings, null);
 
             // tell the source
             drag_event.setDropCompleted(true);
@@ -800,9 +800,9 @@ public class Audio_player_FX_UI implements Media_callbacks
 
     }
 
-    // **********************************************************
+    //**********************************************************
     public static String get_nice_string_for_duration(double seconds_in, Window owner, Logger logger)
-    // **********************************************************
+    //**********************************************************
     {
         int d = 0;
         int h = 0;

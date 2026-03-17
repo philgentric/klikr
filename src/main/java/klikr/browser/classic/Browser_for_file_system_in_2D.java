@@ -94,7 +94,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
         path_list_provider = window_builder.path_list_provider;
         if ( dbg) logger.log("\n\n\n\n\n\nNEW BROWSER "+path_list_provider.get_folder_path());
 
-        aborter = new Aborter("Browser_for_file_system_in_2D"+window_builder.path_list_provider.get_key(),logger_);
+        aborter = new Aborter("Browser_for_file_system_in_2D_"+window_builder.path_list_provider.get_key(),logger_);
         init_abstract_browser(
                 window_builder,
                 this, "klikr", aborter);
@@ -205,7 +205,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     public String signature()
     //**********************************************************
     {
-        return "  Browser_for_file_system_in_2D ID= " + abstract_browser_ID + " total window count: " + number_of_windows.get() + " esc=" + my_Stage.escape;
+        return "  Browser_for_file_system_in_2D ID= " + ID + " total window count: " + Window_manager.how_many_windows() + " esc=" + my_Stage.escape;
     }
 
     //**********************************************************
@@ -296,7 +296,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     {
         Optional<Path> op = path_list_provider.get_folder_path();
         if ( op.isEmpty()) return "Browser_for_file_system_in_2D NO PATH ?";
-        return "Browser_for_file_system_in_2D:" + op.get().toAbsolutePath() + " " + abstract_browser_ID;
+        return "Browser_for_file_system_in_2D:" + op.get().toAbsolutePath() + " " + ID;
     }
 
 

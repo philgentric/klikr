@@ -33,11 +33,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public static final String KLIKR_IMAGE_PLAYLIST_EXTENSION = "klikr_image_playlist";
 
     public final Path the_playlist_file_path;
-    private final String key;
-    public final List<String> paths = new ArrayList<>();
+
     public final Logger logger;
     private final Window owner;
     private final Change change;
+
+    // cached:
+    private final String key;
+    public final List<String> paths = new ArrayList<>();
 
     //**********************************************************
     public Path_list_provider_for_playlist(
@@ -218,10 +221,12 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             Files.delete(the_playlist_file_path);
             Files.write(the_playlist_file_path,paths,java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE);
             List<String> lines = Files.readAllLines(the_playlist_file_path, StandardCharsets.UTF_8);
+            logger.log("####### Playlist AFTER SAVE:");
             for ( String s : lines)
             {
-                logger.log("AFTER SAVE FILE IS: Path_list_provider_for_playlist.save(): " +s);
+                logger.log(s);
             }
+            logger.log("##########################");
         }
         catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));

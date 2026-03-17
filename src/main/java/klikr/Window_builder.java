@@ -253,28 +253,22 @@ public class Window_builder
     private static Window_provider get_one_new(Window_builder window_builder, Logger logger)
     //**********************************************************
     {
+        Window_provider returned = null;
+
         switch (window_builder.window_type)
         {
-
-            case File_system_2D -> {
-                return new Browser_for_file_system_in_2D(window_builder,logger);
-            }
-            case File_system_3D -> {
-                return new Browser_for_file_system_in_3D(window_builder,logger);
-            }
-            case File_system_diskview -> {
-                return new Disk_footprint(window_builder,logger);
-            }
-            case Song_playlist -> {
-                return new Browser_for_song_playlist(window_builder,logger);
-            }
-            case Image_playlist_2D -> {
-                return new Browser_for_image_playlist(window_builder,logger);
-            }
-
-
+            case File_system_2D -> returned = new Browser_for_file_system_in_2D(window_builder,logger);
+            case File_system_3D -> returned = new Browser_for_file_system_in_3D(window_builder,logger);
+            case File_system_diskview -> returned = new Disk_footprint(window_builder,logger);
+            case Song_playlist -> returned = new Browser_for_song_playlist(window_builder,logger);
+            case Image_playlist_2D -> returned = new Browser_for_image_playlist(window_builder,logger);
         }
-        return null;
+        if (window_builder.shutdown_target != null)
+        {
+            if ( dbg) logger.log("closing previous window");
+            window_builder.shutdown_target.shutdown();
+        }
+        return returned;
     }
 
     //**********************************************************

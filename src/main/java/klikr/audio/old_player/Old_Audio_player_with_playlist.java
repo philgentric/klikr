@@ -16,7 +16,7 @@ import klikr.util.log.Logger;
 import java.nio.file.Path;
 
 //**********************************************************
-public class Audio_player_with_playlist
+public class Old_Audio_player_with_playlist
 //**********************************************************
 {
     private static final boolean dbg = false;
@@ -26,13 +26,13 @@ public class Audio_player_with_playlist
     Application application;
 
     //**********************************************************
-    public Audio_player_with_playlist(Application application,Path path, Logger logger)
+    public Old_Audio_player_with_playlist(Application application, Path path, Logger logger)
     //**********************************************************
     {
         this.logger = logger;
         stage = new Stage();
 
-        klikr_communicator = new Klikr_communicator("Audio_player_with_playlist",stage,logger);
+        klikr_communicator = new Klikr_communicator("Old_Audio_player_with_playlist",stage,logger);
         if (klikr_communicator.start_as_singleton())
         {
             init(application,false,path,stage,logger);
@@ -78,7 +78,7 @@ public class Audio_player_with_playlist
     public static void init(Application application,boolean as_app,Path path, Stage stage, Logger logger)
     //**********************************************************
     {
-        logger.log("Audio_player_with_playlist starts");
+        logger.log("Old_Audio_player_with_playlist starts");
         if ( as_app) {
             System_info.print(logger);
             String music = My_I18n.get_I18n_string(Look_and_feel_manager.MUSIC, stage, logger);
@@ -89,12 +89,12 @@ public class Audio_player_with_playlist
         long start = System.currentTimeMillis();
         if (path == null)
         {
-            logger.log("✅ Audio_player_with_playlist, NO audio file found in context");
+            logger.log("✅ Old_Audio_player_with_playlist, NO audio file found in context");
             UI_instance_holder.play_this(application,null, start,true,stage, logger);
         }
         else
         {
-            logger.log("✅ Audio_player_with_playlist, opening audio file = " + path.toAbsolutePath());
+            logger.log("✅ Old_Audio_player_with_playlist, opening audio file = " + path.toAbsolutePath());
             UI_instance_holder.play_this(application,path.toAbsolutePath().toString(), start,true,stage, logger);
         }
     }

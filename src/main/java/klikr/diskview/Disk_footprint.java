@@ -16,6 +16,7 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_provider;
+import klikr.browser.Window_manager;
 import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
@@ -43,6 +44,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     private Label status_label;
     private Button up_button;
     public final Logger logger;
+    public final int ID;
 
 
 
@@ -52,6 +54,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
     {
         this.logger = logger;
         stage = new Stage();
+        ID = Window_manager.register();
 
         BorderPane root = new BorderPane();
         Look_and_feel_manager.set_region_look(root,stage,logger);
@@ -113,7 +116,11 @@ public class Disk_footprint implements Window_provider, Shutdown_target
         stage.show();
         stage.setTitle("Disk footprint of: "+window_builder.path_list_provider.get_folder_path().get());
 
+        stage.setOnCloseRequest(event->{
+            shutdown();
+        });
         start_scan(window_builder.path_list_provider.get_folder_path().get().toFile());
+
     }
 
     @Override
@@ -137,7 +144,7 @@ public class Disk_footprint implements Window_provider, Shutdown_target
 
     @Override
     public void shutdown() {
-
+        Window_manager.unregister(ID,logger);
     }
 
     //*******************************************************

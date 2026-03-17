@@ -588,7 +588,11 @@ public class Virtual_landscape
 
         // EventHandler<WindowEvent> on_close_event_handler = new
         // External_close_event_handler(this);
-        owner.setOnCloseRequest(event -> shutdown_target.shutdown());
+        /*owner.setOnCloseRequest(event -> {
+            CHELOU
+            logger.log("VirtualLandscape setOnCloseRequest ");
+            shutdown_target.shutdown();
+        });*/
 
 
         {

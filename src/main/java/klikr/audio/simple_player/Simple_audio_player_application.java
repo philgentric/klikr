@@ -7,13 +7,14 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import klikr.Start_context;
-import klikr.audio.old_player.Audio_player_with_playlist;
+import klikr.Window_builder;
+import klikr.Window_provider;
+import klikr.Window_type;
+import klikr.audio.Browser_for_song_playlist;
+import klikr.audio.old_player.Old_Audio_player_with_playlist;
 import klikr.path_lists.Path_list_provider;
-import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.path_lists.navigator.General_navigator;
-import klikr.path_lists.navigator.Navigation_type;
-import klikr.path_lists.navigator.Navigator;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.http.Klikr_communicator;
@@ -65,11 +66,15 @@ public class Simple_audio_player_application extends Application
                 current = null;
             }
 
+            Application local_app = this;
             if ( reply_port != null) klikr_communicator.send_request(reply_port,"/started","POST","started");
             Consumer<String> on_appearance_changed = new Consumer<String>() {
                 @Override
                 public void accept(String s) {
-                    Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
+                    The_audio_player.play_song_in_folder(local_app,Path.of(s), stage_,aborter,logger);
+                    // path_list_provider;
+                    //Window_builder.additional_no_past(this, Window_type.Song_playlist,path_list_provider, stage_, logger);
+                    //Old_Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
                 }
             };
             klikr_communicator.set_on_appearance_changed(on_appearance_changed);

@@ -7,6 +7,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.browser.Abstract_browser;
+import klikr.browser.Window_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.execute.actor.Aborter;
@@ -120,7 +121,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     {
         logger.log("Browser_for_image_playlist.shutdown() ID="+ID);
         my_Stage.the_Stage.close();
-
+        Window_manager.unregister(ID,logger);
     }
 
     //**********************************************************

@@ -8,6 +8,7 @@ import javafx.scene.paint.Color;
 import klikr.Window_builder;
 import klikr.audio.simple_player.The_audio_player;
 import klikr.browser.Abstract_browser;
+import klikr.browser.Window_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.change.Change_receiver;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -59,7 +60,11 @@ public class Browser_for_song_playlist extends Abstract_browser
         };
         init_abstract_browser(window_builder, cr, "song_playlist",aborter);
 
-        my_Stage.the_Stage.setOnCloseRequest(event ->The_audio_player.browser = null);
+        my_Stage.the_Stage.setOnCloseRequest(event ->
+                {
+                    The_audio_player.browser = null;
+                    Window_manager.unregister(ID,logger);
+                });
     }
 
     //**********************************************************    @Override

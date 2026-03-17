@@ -28,6 +28,7 @@ import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.Window_provider;
+import klikr.browser.Window_manager;
 import klikr.browser.virtual_landscape.Shutdown_target;
 import klikr.browser.virtual_landscape.Virtual_landscape;
 import klikr.change.history.History_engine;
@@ -99,6 +100,8 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     private final List<Box_and_angle> boxes_to_update = new ArrayList<>();
     private final List<PhongMaterial> materials_to_apply = new ArrayList<>();
     private final Application application;
+    public final int ID;
+
     //*******************************************************
     public Browser_for_file_system_in_3D(Window_builder window_builder, Logger logger)
     //*******************************************************
@@ -109,6 +112,8 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
         this.small_icon_size = 64;
         this.stage = (Stage)window_builder.owner;
         this.logger = logger;
+
+        ID = Window_manager.register();
 
         aborter = new Aborter("Browser_for_file_system_in_3D", logger);
 
@@ -134,13 +139,22 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
         {
             Sort_files_by.set_sort_files_by(path_list_provider.get_key(),Sort_files_by.FILE_NAME, stage,logger);
         }
-        Optional<Hourglass> hourglass = Browser_for_file_system_in_3D.get_hourglass(stage,logger);
+        Optional<Hourglass> hourglass = Progress_window.show(
+                "Wait, loading in 3D",
+                20000,
+                100,
+                100,
+                stage,
+                logger);
 
         Scene scene = get_scene();
         stage.setScene(scene);
 
         stage.show();
         stage.setTitle(title);
+        stage.setOnCloseRequest(event->{
+            shutdown();
+        });
         hourglass.ifPresent(Hourglass::close);
 
     }
@@ -203,7 +217,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
 
         SubScene subScene = new SubScene(corridor, 800, 600, true, SceneAntialiasing.BALANCED);
         subScene.setFill(Color.DARKGRAY);
-        position_indicator_group = createCircularPositionIndicator();
+        position_indicator_group = create_circular_position_ndicator();
 
 
         StackPane stackPane = new StackPane();
@@ -245,6 +259,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
                         null,
                         Optional.empty(),
                         stage,logger);
+                Window_manager.unregister(ID,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -260,6 +275,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
                         null,
                         Optional.empty(),
                         stage,logger);
+                Window_manager.unregister(ID,logger);
             });
             buttons_box.getChildren().add(up);
         }
@@ -352,7 +368,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
                                      );
 
         if (position_indicator_group != null) {
-            updateCircularPositionIndicator(position_indicator_group);
+            update_circular_position_indicator(position_indicator_group);
         }
     }
 
@@ -624,15 +640,6 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
         });
     }
 
-    public static Optional<Hourglass> get_hourglass(Stage stage, Logger logger) {
-        return Progress_window.show(
-                "Wait, loading in 3D",
-                20000,
-                100,
-                100,
-                stage,
-                logger);
-    }
 
     //*******************************************************
     private void toggle_boxes_are_facing_camera()
@@ -650,124 +657,124 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     {
         floor_group = new Group();
         allFloorTiles.clear();
-        PhongMaterial redMaterial = new PhongMaterial(Color.RED);
+        PhongMaterial red_material = new PhongMaterial(Color.RED);
 
         Optional<Image> floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
 
-        PhongMaterial floorMaterial = null;
+        PhongMaterial floor_material = null;
         if ( floor_image.isPresent() )
         {
             Image finalFloor_image = floor_image.get();
-            floorMaterial =new PhongMaterial() {{setDiffuseMap(finalFloor_image); }};
+            floor_material =new PhongMaterial() {{setDiffuseMap(finalFloor_image); }};
         }
         else {
-            floorMaterial = new PhongMaterial(Color.LIGHTGRAY);
+            floor_material = new PhongMaterial(Color.LIGHTGRAY);
         }
 
         // Tile length - adjust based on your texture resolution
-        double tileSize = 2000;//Math.max(200, circle_radius / 50); // Square tiles
-        double tileThickness = 10;
+        double tile_size = 2000;//Math.max(200, circle_radius / 50); // Square tiles
+        double tile_thickness = 10;
 
         // Calculate grid bounds to cover the circular corridor area
         // We need to cover from -outerRadius to +outerRadius
-        double outerRadius = circle_radius + CORRIDOR_WIDTH / 2;
-        double innerRadius = circle_radius - CORRIDOR_WIDTH / 2;
+        double outer_radius = circle_radius + CORRIDOR_WIDTH / 2;
+        double inner_radius = circle_radius - CORRIDOR_WIDTH / 2;
 
-        int tilesCreated = 0;
+        int tiles_created = 0;
 
         // Camera starts at angle 0, which is position (CIRCLE_RADIUS, 0, 0)
-        double cameraStartX = circle_radius;
-        double cameraStartZ = 0;
+        double camera_start_X = circle_radius;
+        double camera_start_z = 0;
 
 // Only render floor tiles within visible corridor range
         double maxFloorDistance = CORRIDOR_WIDTH * 8; // Much less than dome radius
-        double gridStart = -(outerRadius + tileSize);
-        double gridEnd = outerRadius + tileSize;
+        double grid_start = -(outer_radius + tile_size);
+        double grid_end = outer_radius + tile_size;
 
-        for (double x = gridStart; x < gridEnd; x += tileSize) {
-            for (double z = gridStart; z < gridEnd; z += tileSize) {
+        for (double x = grid_start; x < grid_end; x += tile_size) {
+            for (double z = grid_start; z < grid_end; z += tile_size) {
                 // Check if this tile intersects with the corridor ring
-                double tileCenterX = x + tileSize / 2;
-                double tileCenterZ = z + tileSize / 2;
-                double distanceFromCenter = Math.sqrt(tileCenterX * tileCenterX + tileCenterZ * tileCenterZ);
+                double tile_center_x = x + tile_size / 2;
+                double tile_center_z = z + tile_size / 2;
+                double distance_from_center = Math.sqrt(tile_center_x * tile_center_x + tile_center_z * tile_center_z);
 
                 //double outerRadiusCheck = circle_radius + CORRIDOR_WIDTH / 2;
 
                 // Only create tiles that are within the corridor ring
-                if (distanceFromCenter >= innerRadius - tileSize &&
-                        distanceFromCenter <= outerRadius + tileSize) {
+                if (distance_from_center >= inner_radius - tile_size &&
+                        distance_from_center <= outer_radius + tile_size) {
 
-                    Box floorTile = new Box(tileSize, tileThickness, tileSize);
-                    allFloorTiles.add(floorTile);
-                    floorTile.setMaterial(floorMaterial);
-                    floorTile.setTranslateX(tileCenterX);
-                    floorTile.setTranslateY(CORRIDOR_HEIGHT / 2 - tileThickness / 2);
-                    floorTile.setTranslateZ(tileCenterZ);
+                    Box floor_tile = new Box(tile_size, tile_thickness, tile_size);
+                    allFloorTiles.add(floor_tile);
+                    floor_tile.setMaterial(floor_material);
+                    floor_tile.setTranslateX(tile_center_x);
+                    floor_tile.setTranslateY(CORRIDOR_HEIGHT / 2 - tile_thickness / 2);
+                    floor_tile.setTranslateZ(tile_center_z);
 
                     //floorGroup.getChildren().add(floorTile);
-                    tilesCreated++;
+                    tiles_created++;
                 }
             }
         }
 
 
         // Create separate red origin marker with fixed length
-        double markerSize = Math.min(tileSize * 0.3, 600);
-        Box redMarker = new Box(markerSize, tileThickness *2, markerSize);
-        redMarker.setMaterial(redMaterial);
-        redMarker.setTranslateX(cameraStartX);
-        redMarker.setTranslateY(CORRIDOR_HEIGHT / 2 - tileThickness / 2 + 1); // Slightly above floor
-        redMarker.setTranslateZ(cameraStartZ);
-        floor_group.getChildren().add(redMarker);
+        double marker_size = Math.min(tile_size * 0.3, 600);
+        Box red_marker = new Box(marker_size, tile_thickness *2, marker_size);
+        red_marker.setMaterial(red_material);
+        red_marker.setTranslateX(camera_start_X);
+        red_marker.setTranslateY(CORRIDOR_HEIGHT / 2 - tile_thickness / 2 + 1); // Slightly above floor
+        red_marker.setTranslateZ(camera_start_z);
+        floor_group.getChildren().add(red_marker);
 
 
 
-        logger.log("Created " + tilesCreated + " floor tiles");
+        logger.log("Created " + tiles_created + " floor tiles");
     }
 
     //*******************************************************
     private Group create_ceiling()
     //*******************************************************
     {
-        PhongMaterial ceilingMaterial = new PhongMaterial(Color.SKYBLUE);
+        PhongMaterial ceiling_material = new PhongMaterial(Color.SKYBLUE);
 
-        Group ceilingGroup = new Group();
+        Group ceilin_group = new Group();
 
-        double tileSize = Math.max(2000, circle_radius / 50); // Square tiles
-        double tileThickness = 10;
+        double tile_size = Math.max(2000, circle_radius / 50); // Square tiles
+        double tile_thickness = 10;
 
-        double outerRadius = circle_radius + CORRIDOR_WIDTH / 2;
-        double gridStart = -outerRadius - tileSize;
-        double gridEnd = outerRadius + tileSize;
+        double outer_radius = circle_radius + CORRIDOR_WIDTH / 2;
+        double grid_start = -outer_radius - tile_size;
+        double grid_end = outer_radius + tile_size;
 
-        int tilesCreated = 0;
+        int tiles_created = 0;
 
-        for (double x = gridStart; x < gridEnd; x += tileSize) {
-            for (double z = gridStart; z < gridEnd; z += tileSize) {
-                double tileCenterX = x + tileSize / 2;
-                double tileCenterZ = z + tileSize / 2;
-                double distanceFromCenter = Math.sqrt(tileCenterX * tileCenterX + tileCenterZ * tileCenterZ);
+        for (double x = grid_start; x < grid_end; x += tile_size) {
+            for (double z = grid_start; z < grid_end; z += tile_size) {
+                double tile_center_x = x + tile_size / 2;
+                double tile_center_z = z + tile_size / 2;
+                double distance_from_center = Math.sqrt(tile_center_x * tile_center_x + tile_center_z * tile_center_z);
 
-                double innerRadius = circle_radius - CORRIDOR_WIDTH / 2;
-                double outerRadiusCheck = circle_radius + CORRIDOR_WIDTH / 2;
+                double inner_radius = circle_radius - CORRIDOR_WIDTH / 2;
+                double outer_radius_check = circle_radius + CORRIDOR_WIDTH / 2;
 
-                if (distanceFromCenter >= innerRadius - tileSize &&
-                        distanceFromCenter <= outerRadiusCheck + tileSize) {
+                if (distance_from_center >= inner_radius - tile_size &&
+                        distance_from_center <= outer_radius_check + tile_size) {
 
-                    Box ceilingTile = new Box(tileSize, tileThickness, tileSize);
-                    ceilingTile.setMaterial(ceilingMaterial);
-                    ceilingTile.setTranslateX(tileCenterX);
-                    ceilingTile.setTranslateY(-CORRIDOR_HEIGHT / 2 + tileThickness / 2);
-                    ceilingTile.setTranslateZ(tileCenterZ);
+                    Box ceiling_tile = new Box(tile_size, tile_thickness, tile_size);
+                    ceiling_tile.setMaterial(ceiling_material);
+                    ceiling_tile.setTranslateX(tile_center_x);
+                    ceiling_tile.setTranslateY(-CORRIDOR_HEIGHT / 2 + tile_thickness / 2);
+                    ceiling_tile.setTranslateZ(tile_center_z);
 
-                    ceilingGroup.getChildren().add(ceilingTile);
-                    tilesCreated++;
+                    ceilin_group.getChildren().add(ceiling_tile);
+                    tiles_created++;
                 }
             }
         }
 
-        logger.log("Created " + tilesCreated + " ceiling tiles");
-        return ceilingGroup;
+        logger.log("Created " + tiles_created + " ceiling tiles");
+        return ceilin_group;
     }
 
 
@@ -778,7 +785,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     {
         mouse_delta_X = se.getDeltaY();
         if (mouse_delta_X == 0) return;
-        double stepAngle = 360.0 / (num_segments * 50.0);
+        double step_angle = 360.0 / (num_segments * 50.0);
         if ( se.isShiftDown())
         {
             long now  = System.currentTimeMillis();
@@ -788,36 +795,36 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
             }
             else if ( now-start_shift_down> 3000)
             {
-                stepAngle *= 40000;
-                if ( dbg) logger.log("40000 stepAngle="+stepAngle);
+                step_angle *= 40000;
+                if ( dbg) logger.log("40000 stepAngle="+step_angle);
 
             }
             else if ( now-start_shift_down> 1000)
             {
-                stepAngle *= 1000;
-                if ( dbg) logger.log("1000 stepAngle="+stepAngle);
+                step_angle *= 1000;
+                if ( dbg) logger.log("1000 stepAngle="+step_angle);
             }
             else
             {
-                stepAngle *= 100;
-                if ( dbg) logger.log("100 stepAngle="+stepAngle);
+                step_angle *= 100;
+                if ( dbg) logger.log("100 stepAngle="+step_angle);
             }
         }
         else
         {
             start_shift_down = -1;
-            if ( dbg) logger.log("zero stepAngle="+stepAngle);
+            if ( dbg) logger.log("zero stepAngle="+step_angle);
         }
-        if ( se.isControlDown()) stepAngle /= 10;
+        if ( se.isControlDown()) step_angle /= 10;
         if ( mouse_delta_X < 0)
         {
-            camera_path_angle += stepAngle;
-            camera_look_angle_Y -= stepAngle;
+            camera_path_angle += step_angle;
+            camera_look_angle_Y -= step_angle;
         }
         else
         {
-            camera_path_angle -= stepAngle;
-            camera_look_angle_Y += stepAngle;
+            camera_path_angle -= step_angle;
+            camera_look_angle_Y += step_angle;
         }
         update_camera_and_boxes();
 
@@ -858,36 +865,36 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
         }
 
         long now = System.currentTimeMillis();
-        double stepAngle =  360.0 / (num_segments * 10.0);
+        double step_angle =  360.0 / (num_segments * 10.0);
         //logger.log("stepAngle="+stepAngle);
 
         if (now - last_time[0] < 100)
         {
-            stepAngle *= 3;
+            step_angle *= 3;
             count[0]++;
             //logger.log("stepAngle, count="+count[0]);
             if (count[0] > 30) // 3 seconds
             {
-                stepAngle *= 1000;
+                step_angle *= 1000;
                 if ( dbg)
-                    logger.log("1000 stepAngle="+stepAngle);
+                    logger.log("1000 stepAngle="+step_angle);
             }
             else if (count[0] > 10) // 1 seconds
             {
-                stepAngle *= 100;
+                step_angle *= 100;
                 if ( dbg)
-                    logger.log("100 stepAngle="+stepAngle);
+                    logger.log("100 stepAngle="+step_angle);
             }
             else if (count[0] > 5)
             {
-                stepAngle *= 10;
+                step_angle *= 10;
                 if ( dbg)
-                    logger.log("10 stepAngle="+stepAngle);
+                    logger.log("10 stepAngle="+step_angle);
             }
             else
             {
                 if ( dbg)
-                    logger.log("stepAngle="+stepAngle);
+                    logger.log("stepAngle="+step_angle);
             }
 
         }
@@ -906,14 +913,14 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
         {
             case UP:
             case RIGHT:
-                delta_camera_path_angle = stepAngle;
-                delta_camera_look_angle_Y = -stepAngle;
+                delta_camera_path_angle = step_angle;
+                delta_camera_look_angle_Y = -step_angle;
                 break;
 
             case DOWN:
             case LEFT:
-                delta_camera_path_angle = -stepAngle;
-                delta_camera_look_angle_Y = stepAngle;
+                delta_camera_path_angle = -step_angle;
+                delta_camera_look_angle_Y = step_angle;
                 break;
             default:
                 return;
@@ -971,64 +978,64 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     private Group create_sky_ceiling(double dome_radius,Window owner, Logger logger)
     //*******************************************************
     {
-        Group ceilingGroup = new Group();
+        Group ceiling_group = new Group();
 
         // Create a sphere for the dome
         Sphere dome = new Sphere(dome_radius,128);
         dome.setCullFace(CullFace.FRONT); // Render inside only
 
         // Load night sky texture
-        Optional<Image> nightSkyImage = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
+        Optional<Image> sky_image = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
 
-        PhongMaterial domeMaterial;
-        if (nightSkyImage.isPresent()) {
-            Image finalNightSkyImage = nightSkyImage.get();
-            domeMaterial = new PhongMaterial() {{
-                setDiffuseMap(finalNightSkyImage);
+        PhongMaterial dome_material;
+        if (sky_image.isPresent()) {
+            Image final_sky_image = sky_image.get();
+            dome_material = new PhongMaterial() {{
+                setDiffuseMap(final_sky_image);
                 setSpecularColor(Color.BLACK); // No reflections
             }};
         } else {
             // Fallback to dark blue if no texture
             logger.log("falling back to solid color for dome");
-            domeMaterial = new PhongMaterial(Color.MIDNIGHTBLUE);
+            dome_material = new PhongMaterial(Color.MIDNIGHTBLUE);
         }
 
-        dome.setMaterial(domeMaterial);
+        dome.setMaterial(dome_material);
 
         // Position dome high above corridor
         dome.setTranslateY(-10*CORRIDOR_HEIGHT);//-domeRadius + CORRIDOR_HEIGHT); // Bottom of dome at corridor top
 
-        ceilingGroup.getChildren().add(dome);
+        ceiling_group.getChildren().add(dome);
 
         logger.log("Created dome ceiling with radius: " + dome_radius);
-        return ceilingGroup;
+        return ceiling_group;
     }
 
 
     //*******************************************************
-    private Group createCircularPositionIndicator()
+    private Group create_circular_position_ndicator()
     //*******************************************************
     {
         Group indicator = new Group();
 
         // Outer circle (track)
-        javafx.scene.shape.Circle outerCircle = new javafx.scene.shape.Circle(50);
-        outerCircle.setFill(Color.TRANSPARENT);
-        outerCircle.setStroke(Color.WHITE);
-        outerCircle.setStrokeWidth(2);
+        javafx.scene.shape.Circle outer_circle = new javafx.scene.shape.Circle(50);
+        outer_circle.setFill(Color.TRANSPARENT);
+        outer_circle.setStroke(Color.WHITE);
+        outer_circle.setStrokeWidth(2);
 
         // Inner dot (position marker)
         javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(5);
         dot.setFill(Color.RED);
 
-        indicator.getChildren().addAll(outerCircle, dot);
+        indicator.getChildren().addAll(outer_circle, dot);
         indicator.setUserData(dot); // Store dot reference for updates
 
         return indicator;
     }
 
     //*******************************************************
-    private void updateCircularPositionIndicator(Group indicator)
+    private void update_circular_position_indicator(Group indicator)
     //*******************************************************
     {
         javafx.scene.shape.Circle dot = (javafx.scene.shape.Circle) indicator.getUserData();
@@ -1046,15 +1053,19 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     }
 
     //*******************************************************
-    @Override
+    @Override // Window_provider
     public Window get_owner()
     //*******************************************************
     {
         return stage;
     }
 
-    @Override
-    public void shutdown() {
+    //*******************************************************
+    @Override // Shutdowwn_target
+    public void shutdown()
+    //*******************************************************
+    {
+        Window_manager.unregister(ID,logger);
         stage.close();
     }
 }

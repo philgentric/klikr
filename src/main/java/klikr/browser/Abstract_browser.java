@@ -8,7 +8,6 @@ package klikr.browser;
 //SOURCES ../Window_provider.java
 //SOURCES ./Title_target.java
 //SOURCES ../UI_change_target.java
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Rectangle2D;
@@ -17,8 +16,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
 import klikr.look.my_i18n.My_I18n;
-import klikr.settings.boolean_features.Feature;
-import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.virtual_landscape.*;
 import klikr.change.Change_gang;
@@ -31,12 +28,8 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
-import klikr.util.mmap.Mmap;
-import klikr.util.mmap.Save_and_what;
+import klikr.util.log.Stack_trace_getter;
 
-import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 //**********************************************************
@@ -52,11 +45,11 @@ public abstract class Abstract_browser implements
     public static final boolean dbg = false;
     public static final boolean kbd_dbg = false;
 
-    public static final AtomicInteger number_of_windows = new AtomicInteger(0);
+    //public static final AtomicInteger number_of_windows = new AtomicInteger(0);
 
     public static final String BROWSER_WINDOW = "BROWSER_WINDOW";
-    private static AtomicInteger ID_generator = new AtomicInteger(1000);
-    protected final int abstract_browser_ID;
+
+    protected final int ID;
 
     protected static final int FOLDER_MONITORING_TIMEOUT_IN_MINUTES = 600;
 
@@ -80,7 +73,9 @@ public abstract class Abstract_browser implements
     {
         this.background_color = background;
         logger = logger_;
-        abstract_browser_ID = ID_generator.getAndIncrement();
+        ID = Window_manager.register();
+        if ( dbg)
+            logger.log("AbstractBrowser constructor ID=" + ID);
 
     }
 
@@ -99,14 +94,7 @@ public abstract class Abstract_browser implements
     //**********************************************************
     {
         this.aborter = aborter;
-        int count = number_of_windows.incrementAndGet();
-        if ( dbg)
-            logger.log("Browser_for_file_system_in_2D constructor browsers_created(1)=" + count);
-        if (window_builder.shutdown_target != null)
-        {
-            if ( dbg) logger.log("closing previous browser");
-            window_builder.shutdown_target.shutdown();
-        }
+
 
 
         my_Stage = new My_Stage(new Stage(), logger);
@@ -125,8 +113,7 @@ public abstract class Abstract_browser implements
         Klikr_communicator.instance.set_on_appearance_changed(on_appearance_changed);
 
         my_Stage.the_Stage.setOnCloseRequest(event -> {
-            //System.out.println("Klik browser window exit");
-            //System.exit(0);
+            //logger.log(Stack_trace_getter.get_stack_trace("never happens? AbstractBrowser setOnCloseRequest "));
             shutdown();
         });
 
@@ -135,23 +122,22 @@ public abstract class Abstract_browser implements
         double y = 0;
         double width = 2400 / 2.0;
         double height = 1080 - y;
-
-        if (count == 1)
+        if (window_builder.rectangle != null)
         {
-            Rectangle2D r = Non_booleans_properties.get_window_bounds(BROWSER_WINDOW, my_Stage.the_Stage);
-            width = r.getWidth();
-            height = r.getHeight();
-            x = r.getMinX();
-            y = r.getMinY();
+            x = window_builder.rectangle.getMinX();
+            y = window_builder.rectangle.getMinY();
+            width = window_builder.rectangle.getWidth();
+            height = window_builder.rectangle.getHeight();
         }
         else
         {
-            if (window_builder.rectangle != null)
+            Rectangle2D r = Non_booleans_properties.get_window_bounds(BROWSER_WINDOW, my_Stage.the_Stage);
+            if (r != null)
             {
-                x = window_builder.rectangle.getMinX();
-                y = window_builder.rectangle.getMinY();
-                width = window_builder.rectangle.getWidth();
-                height = window_builder.rectangle.getHeight();
+                x = r.getMinX();
+                y = r.getMinY();
+                width = r.getWidth();
+                height = r.getHeight();
             }
         }
         if (dbg)
@@ -181,10 +167,9 @@ public abstract class Abstract_browser implements
 
         my_Stage.set_escape_event_handler(this);
 
-        if ( dbg) logger.log("Browser_for_file_system_in_2D init");
         monitor_current_path_list_source();
         virtual_landscape = new Virtual_landscape(window_builder.application,window_builder.window_type,get_Path_list_provider(),my_Stage.the_Stage, background_color,this,this,this,this,aborter, logger);
-        virtual_landscape.redraw_fx(true,"Browser_for_file_system_in_2D constructor", true);
+        virtual_landscape.redraw_fx(true,"AbstractBrowser constructor", true);
 
         my_Stage.the_Stage.widthProperty().addListener((observable, oldValue, newValue) -> {
             if (dbg) logger.log("new browser width =" + newValue.doubleValue());
@@ -211,10 +196,6 @@ public abstract class Abstract_browser implements
     private void record_stage_bounds()
     //**********************************************************
     {
-        if (number_of_windows.get() != 1) {
-            // ignore: we store the position of a "unique or last" window
-            return;
-        }
         if (dbg) logger.log("ChangeListener: image window position and/or length changed");
         Non_booleans_properties.save_window_bounds(my_Stage.the_Stage, BROWSER_WINDOW,logger);
     }
@@ -225,35 +206,10 @@ public abstract class Abstract_browser implements
     public void shutdown()
     //**********************************************************
     {
-        aborter.abort("Browser_for_file_system_in_2D is closed for "+get_Path_list_provider().get_key());
-        if (dbg) logger.log("Browser_for_file_system_in_2D shutdown " + signature());
+        aborter.abort("AbstractBrowser shutdown "+get_Path_list_provider().get_key());
+        if (dbg) logger.log("AbstractBrowser shutdown " + signature());
+        Window_manager.unregister(ID,logger);
 
-        int count = number_of_windows.decrementAndGet();
-        if ( dbg) logger.log("close_window: browsers_created(2) ="+count);
-        if (count == 0)
-        {
-            //if ( dbg)
-                logger.log("number_of_windows == 0");
-            Shared_services.aborter().abort("primary_stage closing");
-            if ( Feature_cache.get(Feature.Enable_mmap_caching))
-            {
-                CountDownLatch cdl = new CountDownLatch(1);
-                Mmap.instance.save_index(new Save_and_what(cdl));
-                try {
-                    cdl.await();
-                } catch (InterruptedException e) {
-                    logger.log("" + e);
-                }
-            }
-            if (dbg) logger.log("primary_stage closing GOING TO CALL Platform.exit()");
-            Platform.exit();
-            if (dbg) logger.log("primary_stage closing GOING TO CALL System.exit()");
-            System.exit(0);
-        }
-        else
-        {
-            if ( dbg) logger.log("number_of_windows > 0");
-        }
 
         // when we change dir, we need to de-register the old browser
         // otherwise the list in the change_gang keeps growing

@@ -37,12 +37,12 @@ public class Audio_player_application extends Application
         klikr_communicator = new Klikr_communicator("Audio_player_app",stage_,logger);
         if (klikr_communicator.start_as_singleton())
         {
-            Audio_player_with_playlist.init(this,true,context.extract_path(),stage_,logger);
+            Old_Audio_player_with_playlist.init(this,true,context.extract_path(),stage_,logger);
             if ( reply_port != null) klikr_communicator.send_request(reply_port,"/started","POST","started");
             Consumer<String> on_appearance_changed = new Consumer<String>() {
                 @Override
                 public void accept(String s) {
-                    Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
+                    Old_Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);
                 }
             };
             klikr_communicator.set_on_appearance_changed(on_appearance_changed);

@@ -18,7 +18,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.settings.File_storage;
 import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -43,7 +42,6 @@ import klikr.util.ui.Popups;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiPredicate;

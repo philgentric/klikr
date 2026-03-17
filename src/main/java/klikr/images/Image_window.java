@@ -22,6 +22,7 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.browser.Window_manager;
 import klikr.browser.classic.Browser_for_file_system_in_2D;
 import klikr.browser.comparators.Last_access_comparator;
 import klikr.browser.icons.image_properties_cache.Image_properties;
@@ -104,6 +105,7 @@ public class Image_window
 
     public Image_rescaling_filter rescaler = Image_rescaling_filter.Native;
     public Image_cache_interface image_cache;
+    public final int ID;
 
     //**********************************************************
     public static Image_window get_Image_window(Path path, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source,Window owner, Aborter aborter, Logger logger_)
@@ -152,6 +154,7 @@ public class Image_window
     {
         try (Perf p = new Perf("Image_window creation"))
         {
+            this.ID =  Window_manager.register();
             this.aborter = aborter;
             this.owner = owner;
             this.path_list_provider = path_list_provider;
@@ -896,6 +899,7 @@ public class Image_window
     //**********************************************************
     {
         //logger.log("Image_window is closing");
+        Window_manager.unregister(ID,logger);
         aborter.abort("Image_window is closing");
         Virtual_landscape.show_progress_window_on_redraw = true;
         Change_gang.deregister(image_display_handler, aborter);
