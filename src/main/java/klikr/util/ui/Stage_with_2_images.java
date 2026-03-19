@@ -200,7 +200,7 @@ public class Stage_with_2_images
 			{
 				if ( Guess_file_type.is_this_extension_an_audio(Extensions.get_extension(file.getName())))
 				{
-					The_audio_player.play_song_in_folder(application,file.toPath(),owner,aborter,logger);
+					The_audio_player.play_song_in_folder(application,file.toPath(),owner,logger);
 				}
 				else
 				{

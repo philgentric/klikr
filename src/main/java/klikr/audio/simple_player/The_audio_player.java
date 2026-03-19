@@ -34,7 +34,7 @@ import klikr.Window_provider;
 import klikr.Window_type;
 import klikr.audio.Browser_for_song_playlist;
 import klikr.browser.Drag_and_drop;
-import klikr.browser.Move_provider;
+import klikr.path_lists.Move_provider;
 import klikr.browser.Window_manager;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
@@ -49,13 +49,17 @@ import klikr.settings.Non_booleans_properties;
 import klikr.settings.String_constants;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
+import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
+import klikr.util.ui.progress.Hourglass;
+import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 //**********************************************************
@@ -113,16 +117,16 @@ public class The_audio_player implements Media_callbacks
     //**********************************************************
     public static The_audio_player play_song_in_folder(Application application,
                                                        Path song,
-                                                       //Window_provider browser,
-                                                       Window owner, Aborter aborter, Logger logger)
+                                                       Window owner,
+                                                       Logger logger)
     //**********************************************************
     {
         if (instance == null)
         {
             Path_list_provider path_list_provider = new Path_list_provider_for_file_system(song.getParent(), owner, logger);
             make_instance(application, path_list_provider,
-                    //browser,
-                    "play_song_in_folder "+song,owner, aborter, logger);
+                    "play_song_in_folder "+song,owner,
+                    logger);
 
         }
         instance.play_song_internal(song, null, true);
@@ -133,15 +137,13 @@ public class The_audio_player implements Media_callbacks
 
     //**********************************************************
     public static The_audio_player play_playlist(Application application,
-                                                 //Window_provider browser,
                                                  Path_list_provider path_list_provider, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         if (instance == null)
         {
             make_instance(application, path_list_provider,
-                    //browser,
-                    "play_playlist",owner, aborter, logger);
+                    "play_playlist",owner, logger);
         }
         String song_s = String_constants.get_current_song(owner);
         Path path = null;
@@ -161,17 +163,15 @@ public class The_audio_player implements Media_callbacks
     private synchronized static void make_instance(
             Application application,
             Path_list_provider path_list_provider,
-            //Window_provider browser,
             String msg,
-            Window owner, Aborter aborter, Logger logger)
+            Window owner,  Logger logger)
     //**********************************************************
     {
         if (instance == null)
         {
             logger.log("New The_audio_player "+msg+" : "+ path_list_provider.get_key());
             instance = new The_audio_player(application,
-                    //browser,
-                    path_list_provider, owner, aborter, logger);
+                    path_list_provider, owner, logger);
             instance.define_ui();
         }
         else
@@ -182,9 +182,8 @@ public class The_audio_player implements Media_callbacks
 
     //**********************************************************
     private The_audio_player(Application application,
-                             //Window_provider browser,
                              Path_list_provider path_list_provider,
-                             Window owner, Aborter aborter, Logger logger)
+                             Window owner, Logger logger)
     //**********************************************************
     {
         int ID = Window_manager.register();
@@ -193,7 +192,7 @@ public class The_audio_player implements Media_callbacks
         this.owner = owner;
         BiConsumer<Path,Path> consumer = (path, previously) -> play_song_internal(path, previously,true);
         this.navigator = new General_navigator(Navigation_type.songs,path_list_provider,()->current,consumer,owner,logger);
-        this.aborter = aborter;
+        this.aborter = new Aborter("audio player",logger);
         this.logger = logger;
         stage = new Stage();
 
@@ -367,35 +366,35 @@ public class The_audio_player implements Media_callbacks
 
         landing_zone.setOnDragEntered(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("OnDragEntered RECEIVER SIDE");
+                logger.log("The_audio_player OnDragEntered RECEIVER SIDE");
             Look_and_feel_manager.set_background_for_setOnDragEntered(landing_zone, stage, logger);
             drag_event.consume();
         });
         landing_zone.setOnDragExited(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("OnDragExited RECEIVER SIDE");
+                logger.log("The_audio_player OnDragExited RECEIVER SIDE");
             Look_and_feel_manager.set_background_for_setOnDragExited(landing_zone, stage, logger);
             drag_event.consume();
         });
         landing_zone.setOnDragOver(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("OnDragOver RECEIVER SIDE");
+                logger.log("The_audio_player OnDragOver RECEIVER SIDE");
             drag_event.acceptTransferModes(TransferMode.MOVE);
             Look_and_feel_manager.set_background_for_setOnDragOver(landing_zone, stage, logger);
             drag_event.consume();
         });
         landing_zone.setOnDragDropped(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg)
-                logger.log("OnDragDropped RECEIVER SIDE");
+                logger.log("The_audio_player OnDragDropped RECEIVER SIDE");
 
             Object source = drag_event.getGestureSource();
             if (source == null) {
                 logger.log(
-                        ("❗ WARNING: accept_drag_dropped_as_a_move_in, cannot check for stupid move because the event's source is null: "
-                                + drag_event.getSource()));
+                        ("❗ WARNING: The_audio_player accept_drag_dropped_as_a_move_in, cannot check for stupid move because the event's source is null: "
+                                + drag_event));
             } else {
                 if (source == landing_zone) {
-                    logger.log("❗ source is excluded: cannot drop onto itself");
+                    logger.log("❗ The_audio_player source is excluded: cannot drop onto itself");
                     drag_event.consume();
                     return;
                 }
@@ -405,37 +404,39 @@ public class The_audio_player implements Media_callbacks
             List<String> the_list = new ArrayList<>();
             String s = dragboard.getString();
             if (s == null) {
-                logger.log("dragboard.getString()== null");
+                logger.log("The_audio_player  dragboard.getString()== null");
             } else {
-                logger.log(" drag ACCEPTED for STRING:->" + s + "<-");
+                logger.log("The_audio_player drag ACCEPTED for STRING:->" + s + "<-");
                 for (String ss : s.split("\\r?\\n")) {
                     if (ss.isBlank())
                         continue;
-                    logger.log(" drag ACCEPTED for additional file: " + ss);
+                    logger.log("The_audio_player drag ACCEPTED for additional file: " + ss);
                     the_list.add(ss);
                 }
                 if (the_list.isEmpty()) {
-                    logger.log(" drag list is empty ? " + s);
+                    logger.log("The_audio_player drag list is empty ? " + s);
                 }
             }
             {
                 List<File> l = dragboard.getFiles();
                 for (File fff : l) {
-                    logger.log("... drag ACCEPTED for file= " + fff.getAbsolutePath());
+                    logger.log("The_audio_player ... drag ACCEPTED for file= " + fff.getAbsolutePath());
                     if (!the_list.contains(fff.getAbsolutePath()))
                         the_list.add(fff.getAbsolutePath());
                 }
             }
 
+
             List<File> the_list2 = new ArrayList<>();
             for ( String ss : the_list )
             {
+                logger.log("adding ->"+ss+"<-");
                 the_list2.add(new File(ss));
             }
-
             Path_list_provider path_list_provider = navigator.get_path_list_provider();
             if( path_list_provider instanceof Path_list_provider_for_playlist path_list_provider_for_playlist)
             {
+                logger.log("path_list_provider is a Path_list_provider_for_playlist");
                 Move_provider move_provider = path_list_provider_for_playlist.get_move_provider();
                 move_provider.move(null,false,the_list2,owner,100,100,aborter,logger);
             }
@@ -888,6 +889,46 @@ public class The_audio_player implements Media_callbacks
     {
         if (keyword_dbg)
             logger.log("Audio_player_FX_UI KeyEvent=" + key_event);
+
+        if (key_event.isMetaDown() && key_event.getCode() == KeyCode.V) {
+            // user is pasting some text, typically youtube URL
+            System.out.println("Meta + V pressed");
+            try {
+                // Get the system clipboard
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+
+                if (clipboard.hasContent(DataFormat.PLAIN_TEXT)) {
+                    String content = clipboard.getString();
+                    System.out.println("Clipboard Content: " + content);
+                    Runnable r = () -> {
+                        Aborter youtube_abort = new Aborter("you tube abort",logger);
+                        Optional<Hourglass> hourglass = Progress_window.show_with_abort_button(
+                                youtube_abort,
+                                "Importing audio tracks",
+                                30 * 60,
+                                stage.getX() + 100,
+                                stage.getY() + 100,
+                                stage,
+                                logger);
+
+                        Path_list_provider path_list_provider = navigator.get_path_list_provider();
+                        if( path_list_provider instanceof Path_list_provider_for_playlist path_list_provider_for_playlist)
+                        {
+                            logger.log("path_list_provider is a Path_list_provider_for_playlist");
+                            path_list_provider_for_playlist.import_from_youtube(content);
+                        }
+                        hourglass.ifPresent(Hourglass::close);
+
+                    };
+                    Actor_engine.execute(r, "Importing audio track(s)", logger);
+                } else {
+                    System.out.println("No text content in clipboard");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error accessing clipboard");
+            }
+        }
 
         switch (key_event.getCode()) {
             case F7:

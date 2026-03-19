@@ -2,22 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 package klikr.path_lists;
-//SOURCES ../Move_provider.java
+//SOURCES ../Move_provider_for_playlist.java
 import javafx.stage.Window;
 import klikr.browser.virtual_landscape.Image_found;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.Move_provider;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import org.msgpack.core.MessageBufferPacker;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +47,6 @@ public interface Path_list_provider
     List<Path> only_folder_paths(boolean force_rescan, boolean consider_also_hidden_folders, Aborter aborter);
 
     Move_provider get_move_provider();
-
     void delete(Path path, Window owner, double x, double y, Aborter aborter, Logger logger);
     void delete_multiple(List<Path> paths, Window owner, double x, double y, Aborter aborter, Logger logger);
 

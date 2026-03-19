@@ -2180,7 +2180,6 @@ public class Virtual_landscape
             }
             else
             {
-                logger.log(("x is " + x.toString()));
                 Font_size.apply_global_font_size_to_Node(x, owner, logger);
             }
         }

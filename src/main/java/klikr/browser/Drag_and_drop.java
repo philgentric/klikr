@@ -9,6 +9,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.input.*;
 import javafx.stage.Window;
+import klikr.path_lists.Move_provider;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser.items.Item;
 import klikr.browser.virtual_landscape.Selection_handler;
@@ -32,7 +33,7 @@ public class Drag_and_drop
 
     //**********************************************************
     public static int accept_drag_dropped_as_a_move_in(
-            Move_provider move_provider,
+            Move_provider move_provider_for_file_system,
             DragEvent drag_event,
             Path destination, // if a dir: file system operation, if a file: playlist
             Node excluded,
@@ -133,7 +134,7 @@ public class Drag_and_drop
         double x = drag_event.getX();
         double y = drag_event.getY();
 
-        move_provider.move(
+        move_provider_for_file_system.move(
                 destination,
                 destination_is_trash,
                 the_list,

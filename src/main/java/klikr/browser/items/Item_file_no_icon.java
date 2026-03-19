@@ -412,7 +412,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
                     path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update_feature(null,true));
 
-                    The_audio_player.play_song_in_folder(application,item_path,owner,aborter,logger);
+                    The_audio_player.play_song_in_folder(application,item_path,owner,logger);
                     return;
                 }
             }

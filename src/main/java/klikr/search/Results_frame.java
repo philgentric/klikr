@@ -239,7 +239,7 @@ public class Results_frame
 		else if (Guess_file_type.is_this_path_a_music(path, logger))
 		{
 			logger.log("opening audio file: " + path.toAbsolutePath());
-			The_audio_player.play_song_in_folder(application,path,owner, aborter,logger);
+			The_audio_player.play_song_in_folder(application,path,owner,logger);
 		}
 		else if (Guess_file_type.is_this_path_a_text(path, owner, logger))
 		{

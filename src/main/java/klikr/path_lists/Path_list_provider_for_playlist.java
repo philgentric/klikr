@@ -5,9 +5,17 @@ package klikr.path_lists;
 
 import javafx.stage.Window;
 import klikr.browser.virtual_landscape.Image_found;
+import klikr.settings.String_constants;
+import klikr.settings.boolean_features.Booleans;
+import klikr.util.External_application;
+import klikr.util.execute.Execute_command;
+import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.Move_provider;
 import klikr.change.Change_gang;
+import klikr.util.execute.actor.Actor_engine;
+import klikr.util.files_and_paths.Extensions;
+import klikr.util.files_and_paths.Filename_sanitizer;
+import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.old_and_new.Command;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
@@ -30,6 +38,7 @@ import java.util.Optional;
 public class Path_list_provider_for_playlist implements Path_list_provider
 //**********************************************************
 {
+    public static final boolean dbg = false;
     public static final String KLIKR_IMAGE_PLAYLIST_EXTENSION = "klikr_image_playlist";
 
     public final Path the_playlist_file_path;
@@ -234,27 +243,153 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     }
 
+    //**********************************************************
+    public Move_provider get_move_provider_for_file_system()
+    //**********************************************************
+    {
+        return null;
+    }
 
     //**********************************************************
-    @Override
     public Move_provider get_move_provider()
     //**********************************************************
     {
-        return (destination, destination_is_trash,
-                the_list,owner, x, y,  aborter, logger) ->
-        {
-            for ( File f : the_list)
-            {
-                String s = f.getAbsolutePath();
-                if ( paths.contains(s)) continue;
-                logger.log("Path_list_provider_for_playlist.get_move_provider(): adding "+s);
-                paths.add(s);
+        Move_provider move_provider = new Move_provider() {
+            @Override
+            public void move(Path destination, boolean destination_is_trash, List<File> the_list, Window owner, double x, double y, Aborter aborter, Logger logger) {
+
+                logger.log("Entering move() for Path_list_provider_for_playlist "+the_list.size());
+                List<String> the_list2 = new ArrayList<>();
+                for (File f : the_list) {
+                    the_list2.add(f.getAbsolutePath());
+                }
+                user_wants_to_add_songs(the_list2, aborter);
+
+                save();
+                report_change(owner);
+
             }
-            save();
-            report_change(owner);
         };
+
+        return move_provider;
     }
 
+    //**********************************************************
+    public void user_wants_to_add_songs(
+            List<String> the_list_of_new_songs,
+            Aborter aborter)
+    //**********************************************************
+    {
+        long start = System.currentTimeMillis();
+        Runnable r = () ->
+        {
+            List<Old_and_new_Path> to_be_renamed_first = new ArrayList<>();
+            List<String> oks = new ArrayList<>();
+            for (String path_s : the_list_of_new_songs)
+            {
+                logger.log(" looking at "+path_s);
+                if ( aborter.should_abort())
+                {
+                    logger.log(" ABORTING "+aborter.reason());
+                    return;
+                }
+                File f = new File(path_s);
+                if (f.isDirectory())
+                {
+                    logger.log(f+" is a directory");
+                    load_folder(f, oks,to_be_renamed_first, aborter);
+                }
+                else
+                {
+                    sanitize(path_s,  oks,to_be_renamed_first,logger);
+                }
+            }
+            Moving_files.actual_safe_moves(to_be_renamed_first, true,  owner.getX()+100, owner.getY()+ 100, owner, new Aborter("dummy",logger), logger);
+            logger.log(to_be_renamed_first.size()+ " files RENAMED to be accepted as possible songs");
+
+            String last = null;
+            List<String> final_dest = new ArrayList<>();
+            for ( Old_and_new_Path o : to_be_renamed_first)
+            {
+                if ( !paths.contains(o.new_Path.toAbsolutePath().toString()))
+                {
+                    final_dest.add(o.new_Path.toAbsolutePath().toString());
+                }
+                else
+                {
+                    logger.log(o.new_Path.toAbsolutePath().toString()+" not added = already there!");
+                }
+                last = o.new_Path.toAbsolutePath().toString();
+            }
+            for ( String f : oks)
+            {
+                if ( !paths.contains(f))
+                {
+                    final_dest.add(f);
+                    last = f;
+                }
+            }
+            logger.log(final_dest.size()+ " files accepted as possible songs");
+            paths.addAll(final_dest);
+            if ( last != null)
+            {
+                save();
+                //change_song(last, start,true);
+            }
+            //update_playlist_size_info();
+        };
+        Actor_engine.execute(r, "Adding multiple songs to playlist",logger);
+
+    }
+
+    //**********************************************************
+    private void load_folder(File folder, List<String> oks, List<Old_and_new_Path> out, Aborter aborter)
+    //**********************************************************
+    {
+        logger.log("Entering load_folder() for Path_list_provider_for_playlist");
+        File[] files = folder.listFiles();
+        if (files == null) return;
+        for (File ff : files)
+        {
+            if ( aborter.should_abort()) return;
+
+            if (ff.isDirectory())
+            {
+                load_folder(ff, oks, out, aborter);
+            }
+            else
+            {
+                sanitize(ff.getAbsolutePath(), oks, out,logger);
+            }
+        }
+    }
+
+    //**********************************************************
+    static void sanitize(String song, List<String> oks, List<Old_and_new_Path> out, Logger logger)
+    //**********************************************************
+    {
+        if (!Guess_file_type.is_this_extension_an_audio(Extensions.get_extension((new File(song)).getName())))
+        {
+            if ( dbg) logger.log("❗ Rejected as a possible song due to extension: "+(new File(song)).getName());
+            return;
+        }
+        String parent = (new File(song)).getParent();
+        String file_name = (new File(song)).getName();
+        String new_name = Extensions.get_base_name(file_name);
+
+        new_name = Filename_sanitizer.sanitize(new_name,logger);
+
+        new_name = Extensions.add(new_name,Extensions.get_extension(file_name));
+
+        if (new_name.equals(file_name))
+        {
+            oks.add(song);
+            return;
+        }
+
+        out.add(new Old_and_new_Path(Path.of(song), Path.of(parent, new_name), Command.command_rename, Status.before_command,false));
+
+    }
 
     //**********************************************************
     private void report_change(Window owner)
@@ -378,4 +513,51 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         }
         return returned;
     }
+
+    // **********************************************************
+    public void import_from_youtube(String youtube_url)
+    // **********************************************************
+    {
+        // yt-dlp -x --audio-format aac --audio-quality 0 https://youtu.be/3DB-uJ0TxKQ
+
+        logger.log("going to extract audio tracks from URl:" + youtube_url);
+
+        List<String> command_line_for_ytdlp = new ArrayList<>();
+        command_line_for_ytdlp.add(External_application.Ytdlp.get_command(owner,logger));
+        command_line_for_ytdlp.add("-4");
+        command_line_for_ytdlp.add("-x");
+        command_line_for_ytdlp.add("--audio-format");
+        command_line_for_ytdlp.add("aac");
+        command_line_for_ytdlp.add("--audio-quality");
+        command_line_for_ytdlp.add("0");
+        command_line_for_ytdlp.add(youtube_url);
+
+        StringBuilder sb = new StringBuilder();
+        String home = System.getProperty(String_constants.USER_HOME);
+        Execute_result res = Execute_command.execute_command_list(command_line_for_ytdlp, new File(home), 20 * 1000, sb,
+                logger);
+        if (!res.status()) {
+            List<String> verif = new ArrayList<>();
+            verif.add(External_application.Ytdlp.get_command(owner,logger));
+            verif.add("--version");
+            Execute_result res2 = Execute_command.execute_command_list(verif, new File(home), 20 * 1000, null, logger);
+            if (!res2.status()) {
+                Booleans.manage_show_ytdlp_install_warning(owner, logger);
+            }
+            return;
+        }
+        logger.log(sb.toString());
+
+        List<String> returned = new ArrayList<>();
+        String detector = "[ExtractAudio] Destination:";
+        for (String l : sb.toString().split("\n"))
+        {
+            if (l.startsWith(detector)) {
+                String path = (home + File.separator + l.substring(detector.length()).trim());
+                paths.add(path);
+            }
+        }
+        save();
+    }
+
 }

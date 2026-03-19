@@ -44,7 +44,11 @@ public enum External_application
         {
             boolean enable_install_debug = Feature_cache.get(Feature.Enable_install_debug);
             String line = get_command_string_to_install(owner,logger);
-            if ( line == null) return;
+            if ( line == null)
+            {
+                logger.log("FATAL get_command_string_to_install() returns null for "+name());
+                return;
+            }
             Script_executor.execute(List.of(line),Path.of("."),enable_install_debug,logger);
         };
 

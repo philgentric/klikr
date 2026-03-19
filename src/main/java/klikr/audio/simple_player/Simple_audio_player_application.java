@@ -61,7 +61,7 @@ public class Simple_audio_player_application extends Application
             File selectedFile = fileChooser.showOpenDialog(stage_);
             if (selectedFile != null) {
                 current = selectedFile.toPath();
-                The_audio_player.play_song_in_folder(this,current, stage_,aborter,logger);
+                The_audio_player.play_song_in_folder(this,current, stage_,logger);
             } else {
                 current = null;
             }
@@ -71,7 +71,7 @@ public class Simple_audio_player_application extends Application
             Consumer<String> on_appearance_changed = new Consumer<String>() {
                 @Override
                 public void accept(String s) {
-                    The_audio_player.play_song_in_folder(local_app,Path.of(s), stage_,aborter,logger);
+                    The_audio_player.play_song_in_folder(local_app,Path.of(s), stage_,logger);
                     // path_list_provider;
                     //Window_builder.additional_no_past(this, Window_type.Song_playlist,path_list_provider, stage_, logger);
                     //Old_Audio_player_with_playlist.on_ui_changed(s,Shared_services.aborter(),stage_,logger);

@@ -7,7 +7,6 @@ import javafx.stage.Window;
 import klikr.browser.virtual_landscape.Image_found;
 import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.Move_provider;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -25,7 +24,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 //**********************************************************
 public class Path_list_provider_for_file_system implements Path_list_provider
@@ -372,6 +370,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     {
         return Moving_files::safe_move_files_or_dirs;
     }
+
 
     //**********************************************************
     @Override
