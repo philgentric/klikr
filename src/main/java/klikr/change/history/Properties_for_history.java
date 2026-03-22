@@ -65,12 +65,13 @@ public class Properties_for_history
         List<History_item> all_history_items = get_all_history_items();
         all_history_items.add(new_item);
         if (dbg) logger.log("History adding: " + new_item.to_string());
+        // short youngest first
         all_history_items.sort(History_item.comparator_by_date);
 
         // maintain a short history:
         if (all_history_items.size() > max)
         {
-            // remove the last one
+            // remove the last one (oldest)
             History_item last = all_history_items.remove(all_history_items.size() - 1);
             for (String k : storage.get_all_keys())
             {
@@ -107,6 +108,7 @@ public class Properties_for_history
             hi.set_available(Files.exists(Path.of(k)));
             returned.add(hi);
         }
+        // sort most recent first
         Collections.sort(returned,History_item.comparator_by_date);
         return returned;
     }

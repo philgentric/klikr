@@ -568,25 +568,25 @@ public class Virtual_landscape_menus
         }
 
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Clear_Trash_Folder",null,
                 event -> Static_files_and_paths_utilities.clear_trash(true,owner, virtual_landscape.aborter, logger),
                 context_menu,owner,logger);
 
-        Menu_items.add_menu_item_for_context_menu("Clear_All_RAM_Caches",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Clear_All_RAM_Caches",null,
                 event -> {
                     RAM_caches.clear_all_RAM_caches(owner, logger);
                 },
                 context_menu,owner,logger);
 
-        Menu_items.add_menu_item_for_context_menu("Clear_All_Disk_Caches",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Clear_All_Disk_Caches",null,
                 event -> {
                     Cache_folder.clear_all_disk_caches(owner,virtual_landscape.aborter,logger);
                 },
                 context_menu,owner,logger);
 
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "More_Settings",null,
                 event -> new More_settings_stage("Preferences", owner,logger),
                 context_menu,owner,logger);
@@ -846,7 +846,7 @@ public class Virtual_landscape_menus
     //**********************************************************
     {
         String key = "Add_all_images_to_face_recognition_training_set";
-        MenuItem item = Menu_items.make_menu_item(key,null,
+        MenuItem item = Menu_items.make_menu_item_i18n(key,null,
         event -> {
             Face_recognition_service i = Face_recognition_service.get_instance(virtual_landscape.application, owner,logger);
             logger.log("❌ NOT IMPLEMENTED add_all_pictures_to_training_set for "+virtual_landscape.path_list_provider.get_key());
@@ -860,7 +860,7 @@ public class Virtual_landscape_menus
     public MenuItem make_save_face_recog_menu_item()
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Save_Face_Recognition",null,
                 event -> Face_recognition_service.save(),
                 owner,logger);
@@ -870,7 +870,7 @@ public class Virtual_landscape_menus
     public MenuItem make_load_face_recog_menu_item()
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Load_Face_Recognition",null,
                 event -> Face_recognition_service.load(virtual_landscape.application, owner,logger),
                 owner,logger);
@@ -882,7 +882,7 @@ public class Virtual_landscape_menus
     public MenuItem make_reset_face_recog_menu_item()
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Start_New_Face_Recognition",null,
                 event -> Face_recognition_service.start_new(virtual_landscape.application, owner,logger),
                 owner,logger);
@@ -893,7 +893,7 @@ public class Virtual_landscape_menus
     public MenuItem make_start_auto_face_recog_menu_item()
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Auto_Face_Recognition",null,
                 event -> Face_recognition_service.auto(virtual_landscape.application, Path.of(virtual_landscape.path_list_provider.get_key()),owner,logger),
                 owner,logger);
@@ -907,7 +907,7 @@ public class Virtual_landscape_menus
         Optional<Path> op = virtual_landscape.path_list_provider.get_folder_path();
         if ( op.isEmpty()) return Optional.empty();
 
-        return Optional.of(Menu_items.make_menu_item(
+        return Optional.of(Menu_items.make_menu_item_i18n(
                 "Do_Face_Recognition_On_Whole_Folder",null,
                 event -> Face_recognition_service.do_folder(virtual_landscape.application, op.get(),owner,logger),
                 owner,logger));
@@ -1245,13 +1245,13 @@ public class Virtual_landscape_menus
 
         KeyCodeCombination undo = new KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN);
 
-        undos_menu.getItems().add(Menu_items.make_menu_item(
+        undos_menu.getItems().add(Menu_items.make_menu_item_i18n(
                 "Undo_LAST_move_or_delete", undo.getDisplayText(),
                 event -> Undo_for_moves.perform_last_undo_fx(owner, x, y, logger),owner,logger));
-        undos_menu.getItems().add(Menu_items.make_menu_item(
+        undos_menu.getItems().add(Menu_items.make_menu_item_i18n(
                 "Show_Undos",null,
                 event -> pop_up_whole_undo_history(owner,logger),owner,logger));
-        undos_menu.getItems().add(Menu_items.make_menu_item(
+        undos_menu.getItems().add(Menu_items.make_menu_item_i18n(
                 "Clear_Undos",null,
                 event -> Undo_for_moves.remove_all_undo_items(owner, logger),owner,logger));
     }
@@ -1851,11 +1851,11 @@ public class Virtual_landscape_menus
         Menu menu = new Menu(text);
         Look_and_feel_manager.set_menu_item_look(menu,virtual_landscape.owner, logger);
 
-        menu.getItems().add(Menu_items.make_menu_item("Set_as_backup_source_folder",null,event -> virtual_landscape.you_are_backup_source(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Set_as_backup_destination_folder",null,event -> virtual_landscape.you_are_backup_destination(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Start_backup",null,event -> virtual_landscape.start_backup(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Abort_backup",null,event -> virtual_landscape.abort_backup(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Backup_help",null,event -> show_backup_help(logger),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Set_as_backup_source_folder",null, event -> virtual_landscape.you_are_backup_source(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Set_as_backup_destination_folder",null, event -> virtual_landscape.you_are_backup_destination(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Start_backup",null, event -> virtual_landscape.start_backup(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Abort_backup",null, event -> virtual_landscape.abort_backup(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Backup_help",null, event -> show_backup_help(logger),owner,logger));
         return menu;
     }
     //**********************************************************
@@ -1864,8 +1864,8 @@ public class Virtual_landscape_menus
     {
         String text = My_I18n.get_I18n_string("Import",virtual_landscape.owner,logger);
         Menu menu = new Menu(text);
-        menu.getItems().add(Menu_items.make_menu_item("Estimate_Size_Of_Import_Apple_Photos",null,event -> virtual_landscape.estimate_size_of_importing_apple_Photos(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Import_Apple_Photos",null,event -> virtual_landscape.import_apple_Photos(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Estimate_Size_Of_Import_Apple_Photos",null, event -> virtual_landscape.estimate_size_of_importing_apple_Photos(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Import_Apple_Photos",null, event -> virtual_landscape.import_apple_Photos(),owner,logger));
         return menu;
     }
     //**********************************************************
@@ -1874,13 +1874,13 @@ public class Virtual_landscape_menus
     {
         String text = "Fusk (experimental!)"; //My_I18n.get_I18n_string("Backup",logger);
         Menu menu = new Menu(text);
-        menu.getItems().add(Menu_items.make_menu_item("Enter fusk pin code",null,event -> virtual_landscape.enter_fusk_pin_code(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Set this folder as fusk source",null,event -> virtual_landscape.you_are_fusk_source(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Set this folder as fusk destination",null,event -> virtual_landscape.you_are_fusk_destination(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Start fusk (experimental!)",null,event -> virtual_landscape.start_fusk(),owner,logger));
-        menu.getItems().add( Menu_items.make_menu_item("Abort fusk",null,event -> virtual_landscape.abort_fusk(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Start defusk (experimental!)",null,event -> virtual_landscape.start_defusk(),owner,logger));
-        menu.getItems().add(Menu_items.make_menu_item("Fusk help",null,event -> show_fusk_help(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Enter fusk pin code",null, event -> virtual_landscape.enter_fusk_pin_code(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Set this folder as fusk source",null, event -> virtual_landscape.you_are_fusk_source(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Set this folder as fusk destination",null, event -> virtual_landscape.you_are_fusk_destination(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Start fusk (experimental!)",null, event -> virtual_landscape.start_fusk(),owner,logger));
+        menu.getItems().add( Menu_items.make_menu_item_i18n("Abort fusk",null, event -> virtual_landscape.abort_fusk(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Start defusk (experimental!)",null, event -> virtual_landscape.start_defusk(),owner,logger));
+        menu.getItems().add(Menu_items.make_menu_item_i18n("Fusk help",null, event -> show_fusk_help(),owner,logger));
         return menu;
     }
 

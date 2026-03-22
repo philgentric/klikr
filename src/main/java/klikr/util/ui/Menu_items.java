@@ -44,7 +44,7 @@ public class Menu_items
     public static void create_open_with_registered_application_menu_item(ContextMenu context_menu, Path path, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application",
+        Menu_items.add_menu_item_for_context_menu_i18n("Open_With_Registered_Application",
                 null,
                 e -> {
                     logger.log("Open_With_Registered_Application");
@@ -59,7 +59,7 @@ public class Menu_items
     {
         KeyCodeCombination kc = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
 
-        add_menu_item_for_context_menu("Browse_in_new_window",kc.getDisplayText(),
+        add_menu_item_for_context_menu_i18n("Browse_in_new_window",kc.getDisplayText(),
                 e -> {
                     //logger.log("Browse_in_new_window");
                     Path local = path;
@@ -74,7 +74,7 @@ public class Menu_items
     {
         KeyCodeCombination kc = new KeyCodeCombination(KeyCode.BACK_SPACE);
 
-        Menu_items.add_menu_item_for_context_menu("Delete",kc.getDisplayText(),
+        Menu_items.add_menu_item_for_context_menu_i18n("Delete",kc.getDisplayText(),
                 event -> {
                     if (dbg) logger.log("Deleting!");
                     double x = owner.getX()+100;
@@ -86,7 +86,7 @@ public class Menu_items
     public static void create_show_file_size_menu_item(ContextMenu context_menu, Path path, Window owner, Logger logger)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Show_file_size",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_file_size",null,
                 event -> {
                     show_file_size(path, owner, logger);
                 }, context_menu,owner,logger);
@@ -124,8 +124,8 @@ public class Menu_items
     }
 
     //**********************************************************
-    public static void add_menu_item_for_context_menu(
-            String key, // this is the My_I18n key
+    public static void add_menu_item_for_context_menu_i18n(
+            String i18n_key, // this is the My_I18n key
             String addendum, // may be null
             EventHandler<ActionEvent> action,
             ContextMenu context_menu,
@@ -133,7 +133,21 @@ public class Menu_items
             Logger logger)
     //**********************************************************
     {
-        MenuItem mi = make_menu_item(key,addendum,action,owner,logger);
+        MenuItem mi = make_menu_item_i18n(i18n_key,addendum,action,owner,logger);
+        context_menu.getItems().add(mi);
+    }
+
+    //**********************************************************
+    public static void add_menu_item_for_context_menu(
+            String menu_text,
+            String addendum, // may be null
+            EventHandler<ActionEvent> action,
+            ContextMenu context_menu,
+            Window owner,
+            Logger logger)
+    //**********************************************************
+    {
+        MenuItem mi = make_menu_item(menu_text,addendum,action,owner,logger);
         context_menu.getItems().add(mi);
     }
 
@@ -146,27 +160,46 @@ public class Menu_items
                                               Logger logger)
     //**********************************************************
     {
-        MenuItem mi = make_menu_item(key,addendum,action,owner,logger);
+        MenuItem mi = make_menu_item_i18n(key,addendum,action,owner,logger);
         menu.getItems().add(mi);
     }
 
     //**********************************************************
-    public static MenuItem make_menu_item(
-            String key,
+    public static MenuItem make_menu_item_i18n(
+            String i18n_key,
             String addendum, // maybe null
             EventHandler<ActionEvent> ev,
             Window owner,
             Logger logger)
     //**********************************************************
     {
-        String text = My_I18n.get_I18n_string(key, owner, logger);
-        if ( addendum!=null) if ( !addendum.isEmpty()) text+=" ("+addendum+")";
-        MenuItem menu_item = new MenuItem(text);
+        String menu_text = My_I18n.get_I18n_string(i18n_key, owner, logger);
+        if ( addendum!=null) if ( !addendum.isEmpty()) menu_text +=" ("+addendum+")";
+        MenuItem menu_item = new MenuItem(menu_text);
         menu_item.setMnemonicParsing(false);
         Look_and_feel_manager.set_menu_item_look(menu_item, owner, logger);
         menu_item.setOnAction(ev);
         return menu_item;
     }
+
+
+    //**********************************************************
+    public static MenuItem make_menu_item(
+            String menu_text,
+            String addendum, // maybe null
+            EventHandler<ActionEvent> ev,
+            Window owner,
+            Logger logger)
+    //**********************************************************
+    {
+        if ( addendum!=null) if ( !addendum.isEmpty()) menu_text+=" ("+addendum+")";
+        MenuItem menu_item = new MenuItem(menu_text);
+        menu_item.setMnemonicParsing(false);
+        Look_and_feel_manager.set_menu_item_look(menu_item, owner, logger);
+        menu_item.setOnAction(ev);
+        return menu_item;
+    }
+
 
 
 }

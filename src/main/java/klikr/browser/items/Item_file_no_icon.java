@@ -67,14 +67,11 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     private static final boolean make_animated_gif = true;
 
     public Button button;
-    public Label label;
+    public Label label; // may be null, as this is the text displayed when 'Show_single_column_with_details' == true
     public String text;
     private static DateTimeFormatter date_time_formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
     private final Klikr_cache<Path, Image_properties> image_properties_cache;
-
-    //private final Shutdown_target shutdown_target;
-    //private final Top_left_provider top_left_provider;
     private final Path_comparator_source path_comparator_source;
     private final Feature_change_target feature_change_target;
 
@@ -88,10 +85,8 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             Color color,
             String text_,
             Klikr_cache<Path, Image_properties> image_properties_cache,
-            Shutdown_target shutdown_target,
             Path path,
             Path_list_provider path_list_provider,
-            Top_left_provider top_left_provider,
             Path_comparator_source path_comparator_source,
             Window owner,
             Aborter aborter,
@@ -101,9 +96,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         super(application,scene,selection_handler,icon_factory_actor,color, path, path_list_provider,path_comparator_source,owner,aborter, logger);
         this.feature_change_target = feature_change_target;
         this.image_properties_cache = image_properties_cache;
-        //this.shutdown_target = shutdown_target;
-        //this.top_left_provider = top_left_provider;
-        this.path_comparator_source = path_comparator_source;
+         this.path_comparator_source = path_comparator_source;
         text = text_;
         if (path == null) {
             logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: path is null"));

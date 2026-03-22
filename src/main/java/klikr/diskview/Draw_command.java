@@ -268,7 +268,7 @@ public class Draw_command
                 Path p = node.get_file().toPath();
                 if (Guess_file_type.is_this_path_an_image(p,owner,logger))
                 {
-                    Menu_items.add_menu_item_for_context_menu(
+                    Menu_items.add_menu_item_for_context_menu_i18n(
                         "Show_Image",
                         null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                         event -> {
@@ -282,7 +282,7 @@ public class Draw_command
             }
         }
         {
-            Menu_items.add_menu_item_for_context_menu(
+            Menu_items.add_menu_item_for_context_menu_i18n(
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event -> {

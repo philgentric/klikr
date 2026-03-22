@@ -29,7 +29,9 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.browser.virtual_landscape.Scroll_position_cache;
 import klikr.javalin_monaco.Javalin_monaco;
+import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
@@ -254,14 +256,14 @@ public abstract class Item implements Icon_destination
         Path local_path = optional_of_item_path.get();
         if (Files.isDirectory(local_path))
         {
-            Menu_items.add_menu_item_for_context_menu(
+            Menu_items.add_menu_item_for_context_menu_i18n(
                     "Get_folder_size",null,
                     event -> Folder_size_stage.get_folder_size(optional_of_item_path.get(),owner, logger),
                     context_menu,owner,logger);
 
             if (is_trash())
             {
-                Menu_items.add_menu_item_for_context_menu(
+                Menu_items.add_menu_item_for_context_menu_i18n(
                     "Clear_Trash_Folder",null,
                 event -> {
                         if (dbg) logger.log("clearing trash!");
@@ -282,7 +284,7 @@ public abstract class Item implements Icon_destination
                     }
                     Path finalTarget = target;
 
-                    Menu_items.add_menu_item_for_context_menu(
+                    Menu_items.add_menu_item_for_context_menu_i18n(
                             "Browse_in_new_window",
                             null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                             event -> {
@@ -291,7 +293,7 @@ public abstract class Item implements Icon_destination
                             }, context_menu, owner, logger);
 
                     if (Feature_cache.get(Feature.Enable_3D)) {
-                        Menu_items.add_menu_item_for_context_menu(
+                        Menu_items.add_menu_item_for_context_menu_i18n(
                                 "Browse_in_new_3D_window",
                                 null,
                                 event -> {
@@ -300,7 +302,7 @@ public abstract class Item implements Icon_destination
                                 }, context_menu, owner, logger);
                     }
 
-                    Menu_items.add_menu_item_for_context_menu(
+                    Menu_items.add_menu_item_for_context_menu_i18n(
                             "Disk_View",
                             null,
                             event -> {
@@ -318,7 +320,7 @@ public abstract class Item implements Icon_destination
                 }*/
                 create_rename_menu_item(local_button, local_label,context_menu);
                 create_delete_menu_item(context_menu);
-                Menu_items.add_menu_item_for_context_menu("Copy",
+                Menu_items.add_menu_item_for_context_menu_i18n("Copy",
                         null,//(new KeyCodeCombination(KeyCode.C,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                         event -> {
                         if (dbg) logger.log("Copying the directory");
@@ -350,13 +352,22 @@ public abstract class Item implements Icon_destination
             }
 
             // is a "plain" file
+            Menu_items.add_menu_item_for_context_menu_i18n(
+                    "Browse_in_new_window",
+                    null,//(new KeyCodeCombination(KeyCode.N,KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
+                    event -> {
+                        if (dbg) logger.log("Browse in new window!");
+                        Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),optional_of_item_path.get().toAbsolutePath().toString(),"Item Browse_in_new_window",logger);
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D,path_list_provider, owner, logger);
+                    }, context_menu, owner, logger);
+
             create_open_with_system_menu_item(optional_of_item_path.get(),context_menu);
             create_open_with_web_browser_menu_item(optional_of_item_path.get(),context_menu);
             create_open_with_registered_application_menu_item(optional_of_item_path.get(),context_menu);
 
 
 
-            Menu_items.add_menu_item_for_context_menu("Open_With_Text_Editor",null,
+            Menu_items.add_menu_item_for_context_menu_i18n("Open_With_Text_Editor",null,
                     actionEvent -> {
                     if (dbg) logger.log("button in item: Open_With_Text_Editor");
 
@@ -390,7 +401,16 @@ public abstract class Item implements Icon_destination
     protected void create_delete_menu_item(ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Delete",
+        String menu_text = null;
+        if ( path_list_provider instanceof Path_list_provider_for_file_system path_list_provider_for_file_system)
+        {
+            menu_text = My_I18n.get_I18n_string("Delete",owner,logger);
+        }
+        if ( path_list_provider instanceof Path_list_provider_for_playlist path_list_provider_for_playlist)
+        {
+            menu_text = My_I18n.get_I18n_string("Remove_From_Playlist",owner,logger);
+        }
+        Menu_items.add_menu_item_for_context_menu(menu_text,
                 null,//(new KeyCodeCombination(KeyCode.BACK_SPACE)).getDisplayText(),
                 event -> {
                     if (dbg) logger.log("Deleting!");
@@ -404,7 +424,7 @@ public abstract class Item implements Icon_destination
     public void create_copy_menu_item(ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Copy",
+        Menu_items.add_menu_item_for_context_menu_i18n("Copy",
                 null,//(new KeyCodeCombination(KeyCode.C,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                 event -> {
                 if (dbg) logger.log("copying!");
@@ -431,7 +451,7 @@ public abstract class Item implements Icon_destination
     protected void create_show_file_size_menu_item(ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Show_file_size",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_file_size",null,
                 event -> {
                     Optional<Path> optional_of_item_path = get_item_path();
                     if (optional_of_item_path.isEmpty())
@@ -477,7 +497,7 @@ public abstract class Item implements Icon_destination
     public void create_open_mediainfo_frame_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Info_about",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Info_about",null,
                 actionEvent -> {
             if (dbg) logger.log("info");
             Audio_info_frame.show(path,owner,logger);
@@ -487,7 +507,7 @@ public abstract class Item implements Icon_destination
     public void create_edit_metadata_frame_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Edit_Song_Metadata",null,
                 (ActionEvent e) -> Ffmpeg_metadata_editor.edit_metadata_of_a_file_in_a_thread(path, owner, logger),
                 context_menu, owner, logger);
@@ -499,7 +519,7 @@ public abstract class Item implements Icon_destination
     public void create_open_exif_frame_menu_item(Optional<Path> path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Info_about",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Info_about",null,
                 actionEvent -> {
                     if (dbg) logger.log("info");
                     Actor_engine.execute(()-> {
@@ -522,7 +542,7 @@ public abstract class Item implements Icon_destination
     public void create_open_with_registered_application_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Open_With_Registered_Application",null,
                 actionEvent -> {
                     if (dbg) logger.log("button in item: Open_With_Registered_Application");
@@ -534,7 +554,7 @@ public abstract class Item implements Icon_destination
     public void create_open_with_web_browser_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Open_With_Web_Browser",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Open_With_Web_Browser",null,
                 actionEvent -> {
             if (dbg) logger.log("button in item: System Open");
             System_open_actor.open_with_web_browser(application,path, owner,aborter,logger);
@@ -545,7 +565,7 @@ public abstract class Item implements Icon_destination
     public void create_open_with_system_menu_item(Path path, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Open_With_System",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Open_With_System",null,
                 actionEvent -> {
                     if (dbg) logger.log("button in item: System Open");
                     System_open_actor.open_with_system(application,path, owner,aborter,logger);
@@ -750,7 +770,7 @@ public abstract class Item implements Icon_destination
     protected void create_rename_menu_item(Button local_button, Label local_label, ContextMenu context_menu)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Rename",
+        Menu_items.add_menu_item_for_context_menu_i18n("Rename",
                 null,//(new KeyCodeCombination(KeyCode.R)).getDisplayText(),
 
                 event -> {
@@ -776,7 +796,7 @@ public abstract class Item implements Icon_destination
                 Optional<Path> optional_of_item_path2 = get_item_path();
                 if (optional_of_item_path2.isEmpty())
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace(""));
+                    logger.log(Stack_trace_getter.get_stack_trace("Should not happen "));
                     return;
                 }
                 if ( optional_of_item_path2.get().toFile().isDirectory() )
@@ -808,6 +828,7 @@ public abstract class Item implements Icon_destination
                     set_new_path(new_path);
                     if ( local_label == null)
                     {
+                        // TODO: verify this
                         // the item is a Item_folder_with_icon
                         if (dbg) logger.log("rename done");
                         local_button.setText(new_dir_name);

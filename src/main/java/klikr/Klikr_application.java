@@ -211,12 +211,17 @@ public class Klikr_application extends Application
                 List<History_item> l = History_engine.get(primary_stage).get_all_history_items();
                 if (!l.isEmpty())
                 {
-                    History_item h = History_engine.get(primary_stage).get_all_history_items().get(0);
-                    if (h != null)
+                    for(History_item hi : History_engine.get(primary_stage).get_all_history_items())
                     {
-                        path = Path.of(h.value);
-                        logger.log("reloading last folder from history:" + path);
+                        if (hi != null)
+                        {
+                            path = Path.of(hi.value);
+                            if ( path.toFile().isFile()) path = path.getParent();
+                            logger.log("reloading last folder from history:" + path);
+                            break;
+                        }
                     }
+
                 }
             }
         }

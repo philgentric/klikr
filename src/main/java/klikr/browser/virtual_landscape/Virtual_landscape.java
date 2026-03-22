@@ -1337,12 +1337,9 @@ public class Virtual_landscape
                             null,
                             text,
                             get_image_properties_cache(),
-                            shutdown_target,
                             path,
                             path_list_provider,
                             this,
-                            this,
-
                             owner,
                             aborter,
                             logger);
@@ -2491,17 +2488,17 @@ public class Virtual_landscape
 
         // Rectangle2D rectangle = new
         // Rectangle2D(owner.getX(),owner.getY(),owner.getWidth(),owner.getHeight());
-        Menu_items.add_menu_item_for_context_menu("New_Window", null,
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Window", null,
                 event -> Window_builder.additional_same_folder(
                 application,
                 context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Twin_Window", new_twin_window.getDisplayText(),
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Twin_Window", new_twin_window.getDisplayText(),
                 event -> Window_builder.additional_same_folder_twin(
                 application,
                 context_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("New_Double_Window", null,event -> Window_builder
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Double_Window", null, event -> Window_builder
                 .additional_same_folder_fat_tall(
                         application,
                         context_type, path_list_provider, get_top_left(), owner, logger),
@@ -2511,14 +2508,14 @@ public class Virtual_landscape
             context_menu.getItems().add(Virtual_landscape_menus.create_menu_item_for_show_details(this,owner,logger));
         }
         {
-            start_full_screen_menu_item = Menu_items.make_menu_item("Go_full_screen",
+            start_full_screen_menu_item = Menu_items.make_menu_item_i18n("Go_full_screen",
                     go_full_screen.getDisplayText(),
                     event -> full_screen_handler.go_full_screen(), owner, logger);
             start_full_screen_menu_item.setDisable(false);
             context_menu.getItems().add(start_full_screen_menu_item);
         }
         {
-            stop_full_screen_menu_item = Menu_items.make_menu_item("Stop_full_screen","(ESC)",
+            stop_full_screen_menu_item = Menu_items.make_menu_item_i18n("Stop_full_screen","(ESC)",
                     event -> full_screen_handler.stop_full_screen(), owner, logger);
             stop_full_screen_menu_item.setDisable(true);
             context_menu.getItems().add(stop_full_screen_menu_item);
@@ -2528,26 +2525,26 @@ public class Virtual_landscape
             Menu scan = new Menu(text);
             Look_and_feel_manager.set_menu_item_look(scan, owner, logger);
 
-            scan.getItems().add(Menu_items.make_menu_item("Start_stop_folder_scan_show", start_stop_folder_scan_show.getDisplayText(), event -> handle_scan_switch(), owner, logger));
-            scan.getItems().add(Menu_items.make_menu_item("Slow_down_scan", slow_down_folder_scan_show.getDisplayText(), event -> slow_down_scan(), owner, logger));
-            scan.getItems().add(Menu_items.make_menu_item("Speed_up_scan", speedup_folder_scan_show.getDisplayText(), event -> speed_up_scan(), owner, logger));
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Start_stop_folder_scan_show", start_stop_folder_scan_show.getDisplayText(), event -> handle_scan_switch(), owner, logger));
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Slow_down_scan", slow_down_folder_scan_show.getDisplayText(), event -> slow_down_scan(), owner, logger));
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Speed_up_scan", speedup_folder_scan_show.getDisplayText(), event -> speed_up_scan(), owner, logger));
             context_menu.getItems().add(scan);
         }
-        Menu_items.add_menu_item_for_context_menu("Show_How_Many_Files_Are_In_Each_Folder",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_How_Many_Files_Are_In_Each_Folder",null,
                 event -> show_how_many_files_deep_in_each_folder(), context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("Show_Each_Folder_Total_Size", null,event -> show_total_size_deep_in_each_folder(),
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_Each_Folder_Total_Size", null, event -> show_total_size_deep_in_each_folder(),
                 context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("About_klik", null,event -> About_klikr_stage.show(owner, logger),
+        Menu_items.add_menu_item_for_context_menu_i18n("About_klik", null, event -> About_klikr_stage.show(owner, logger),
                 context_menu, owner, logger);
-        Menu_items.add_menu_item_for_context_menu("Refresh", refresh.getDisplayText(),event -> redraw_fx(true,"refresh",true), context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("Refresh", refresh.getDisplayText(), event -> redraw_fx(true,"refresh",true), context_menu, owner, logger);
         if (!change_events_off)
-            Menu_items.add_menu_item_for_context_menu("Disable_change_events", null,event -> change_events_off = true, context_menu, owner,
+            Menu_items.add_menu_item_for_context_menu_i18n("Disable_change_events", null, event -> change_events_off = true, context_menu, owner,
                     logger);
         if (change_events_off)
-            Menu_items.add_menu_item_for_context_menu("Enable_change_events", null,event -> change_events_off = false, context_menu, owner,
+            Menu_items.add_menu_item_for_context_menu_i18n("Enable_change_events", null, event -> change_events_off = false, context_menu, owner,
                     logger);
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Show_Meters",null,
                 event -> RAM_and_threads_meters_stage.show_stage(owner, logger),
                 context_menu, owner, logger);

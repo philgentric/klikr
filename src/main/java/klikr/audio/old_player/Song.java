@@ -128,7 +128,7 @@ public class Song
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu, owner, logger);
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Play_Similar_Song",null,
                 (ActionEvent e) ->
                         play_similar(Path.of(full_path), playlist, owner, logger),
@@ -136,7 +136,7 @@ public class Song
                 owner, logger);
 
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
             "Browse_in_new_window",
                 null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                 (ActionEvent e) ->
@@ -144,7 +144,7 @@ public class Song
                 context_menu,
                 owner, logger);
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Rename",
                 null,//(new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
 
@@ -166,7 +166,7 @@ public class Song
                 context_menu,
                 owner, logger);
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Remove_From_Playlist",null,
                 (ActionEvent e) ->
                         playlist.remove_from_playlist(full_path),
@@ -185,7 +185,7 @@ public class Song
             the_menu_item.setOnAction(e-> Audio_info_frame.show(Path.of(full_path),owner,logger));
         }
 
-        Menu_items.add_menu_item_for_context_menu(
+        Menu_items.add_menu_item_for_context_menu_i18n(
                 "Edit_Song_Metadata",null,
                 (ActionEvent e) -> Ffmpeg_metadata_editor.edit_metadata_of_a_file_in_a_thread(Path.of(full_path), owner, logger),
                 context_menu, owner, logger);

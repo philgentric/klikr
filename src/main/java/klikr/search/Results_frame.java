@@ -183,7 +183,7 @@ public class Results_frame
 			{
 				Menu_items.create_open_with_registered_application_menu_item(context_menu,path,owner,aborter,logger);
 
-				Menu_items.add_menu_item_for_context_menu("Delete",
+				Menu_items.add_menu_item_for_context_menu_i18n("Delete",
 						(new KeyCodeCombination(KeyCode.BACK_SPACE)).getDisplayText(),
 						e -> {
 							logger.log("Delete");

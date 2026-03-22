@@ -23,7 +23,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.settings.boolean_features.Booleans;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -320,7 +319,7 @@ public class Item_file_with_icon extends Item_file
         Menu returned = new Menu(s);
 
         {
-            MenuItem mi = Menu_items.make_menu_item(
+            MenuItem mi = Menu_items.make_menu_item_i18n(
                     "Open_With_Registered_Application",
             null,
                     event -> {
@@ -333,7 +332,7 @@ public class Item_file_with_icon extends Item_file
 
 
         {
-            MenuItem mi = Menu_items.make_menu_item(
+            MenuItem mi = Menu_items.make_menu_item_i18n(
                     "Open_With_System",
                     null,
                     event -> {
@@ -356,7 +355,7 @@ public class Item_file_with_icon extends Item_file
             returned.getItems().add(mi);
         }
  */       {
-            MenuItem mi = Menu_items.make_menu_item(
+            MenuItem mi = Menu_items.make_menu_item_i18n(
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
                     (ActionEvent e) ->
@@ -366,7 +365,7 @@ public class Item_file_with_icon extends Item_file
         }
         if (Feature_cache.get(Feature.Enable_3D))
         {
-            MenuItem mi = Menu_items.make_menu_item(
+            MenuItem mi = Menu_items.make_menu_item_i18n(
                             "Browse_in_new_3D_window",
                     null,
                             event -> {
@@ -450,19 +449,19 @@ public class Item_file_with_icon extends Item_file
             ContextMenu context_menu, boolean dbg, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        Menu_items.add_menu_item_for_context_menu("Convert_To_Mp4",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Convert_To_Mp4",null,
     event -> {
             if (dbg) logger.log("✅ convert to mp4");
             AtomicBoolean abort_reported = new AtomicBoolean(false);
             Ffmpeg_utils.video_to_mp4_in_a_thread(path,aborter, abort_reported, owner,logger);
             },
             context_menu,owner,logger);
-        Menu_items.add_menu_item_for_context_menu("Generate_many_animated_GIFs",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Generate_many_animated_GIFs",null,
                     event -> {
                 if (dbg) logger.log("✅ Generating animated gifs !");
                 Animated_gifs_from_video.generate_many_gifs(path,5,5,owner,logger);
             }, context_menu,owner,logger);
-        Menu_items.add_menu_item_for_context_menu("Generate_Animated_GIF_interactively",null,
+        Menu_items.add_menu_item_for_context_menu_i18n("Generate_Animated_GIF_interactively",null,
                 event -> {
                 if (dbg) logger.log("✅ Generating animated gifs interactively!");
                 Animated_gifs_from_video.interactive(path,logger);

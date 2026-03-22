@@ -25,7 +25,6 @@ import klikr.machine_learning.face_recognition.Face_recognition_service;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.look.my_i18n.My_I18n;
 import klikr.settings.boolean_features.Feature;
-import klikr.settings.boolean_features.Booleans;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.image.rescaling.Image_rescaling_filter;
@@ -61,7 +60,7 @@ public class Menus_for_image_window
     private static MenuItem get_undo_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Undo_LAST_move_or_delete",
+        return Menu_items.make_menu_item_i18n("Undo_LAST_move_or_delete",
                 image_window.undo.getDisplayText(),
                 e -> {
             image_window.logger.log("undoing last move");
@@ -166,7 +165,7 @@ public class Menus_for_image_window
     private static MenuItem get_search_by_autoextracted_keyword_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Search_by_keywords_from_this_ones_name",
+        return Menu_items.make_menu_item_i18n("Search_by_keywords_from_this_ones_name",
                 image_window.find.getDisplayText(),
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
@@ -182,7 +181,7 @@ public class Menus_for_image_window
     private static MenuItem get_copy_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Copy",
+        return Menu_items.make_menu_item_i18n("Copy",
                 image_window.copy.getDisplayText(),
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
@@ -194,7 +193,7 @@ public class Menus_for_image_window
     private static MenuItem get_print_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Print", null,event -> print(image_window), image_window.stage, image_window.logger);
+        return Menu_items.make_menu_item_i18n("Print", null, event -> print(image_window), image_window.stage, image_window.logger);
     }
 
     private static void print(Image_window image_window) {
@@ -225,7 +224,7 @@ public class Menus_for_image_window
     private static MenuItem get_rename_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Rename",
+        return Menu_items.make_menu_item_i18n("Rename",
                 image_window.rename.getDisplayText(),
 
                 event -> {
@@ -241,7 +240,7 @@ public class Menus_for_image_window
     private static MenuItem get_delete_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Delete",
+        return Menu_items.make_menu_item_i18n("Delete",
                 image_window.delete.getDisplayText(),
 
                 event -> {
@@ -267,7 +266,7 @@ public class Menus_for_image_window
     private static MenuItem get_browse_menu_item_effective(String button_text_key,Image_window image_window, Window_type context_type)
     //**********************************************************
     {
-        return Menu_items.make_menu_item(button_text_key,null,
+        return Menu_items.make_menu_item_i18n(button_text_key,null,
                 event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
              Window_builder.additional_no_past(
@@ -285,7 +284,7 @@ public class Menus_for_image_window
     private static MenuItem make_open_with_system_file_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Open_File",null,
+        return Menu_items.make_menu_item_i18n("Open_File",null,
                 event ->
         {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
@@ -306,7 +305,7 @@ public class Menus_for_image_window
             Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Perform_face_recognition",null,
                 event -> perform_face_reco(image_window),
                 image_window.stage, image_window.logger);
@@ -317,7 +316,7 @@ public class Menus_for_image_window
             Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item(
+        return Menu_items.make_menu_item_i18n(
                 "Perform_face_recognition_service_DIRECTLY",null,
                 event -> perform_face_reco_directly(image_window),
                 image_window.stage, image_window.logger);
@@ -398,7 +397,7 @@ public class Menus_for_image_window
     private static MenuItem make_edit_menu_item(Image_window image_window)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Edit_File",
+        return Menu_items.make_menu_item_i18n("Edit_File",
                 image_window.open.getDisplayText(),
         event -> {
             if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
@@ -410,7 +409,7 @@ public class Menus_for_image_window
     private static MenuItem make_open_with_registered_application_menu_item(Image_window image_window, Logger logger)
     //**********************************************************
     {
-        return Menu_items.make_menu_item("Open_With_Registered_Application",
+        return Menu_items.make_menu_item_i18n("Open_With_Registered_Application",
                 null,
                 event -> {
 

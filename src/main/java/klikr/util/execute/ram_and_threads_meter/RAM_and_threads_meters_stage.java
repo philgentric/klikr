@@ -12,16 +12,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
-import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.execute.Scheduled_thread_pool;
-import klikr.util.mmap.Mmap;
 import klikr.util.ui.Menu_items;
 
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 //**********************************************************
@@ -114,12 +110,12 @@ public class RAM_and_threads_meters_stage
 
         scene.setOnContextMenuRequested(event -> {
             ContextMenu context_menu = new ContextMenu();
-            Menu_items.add_menu_item_for_context_menu("Call_GC",null,
+            Menu_items.add_menu_item_for_context_menu_i18n("Call_GC",null,
                     event2 -> {
                         System.gc();
                         logger.log("Garbage collector was called");
                     },context_menu,stage,logger);
-            Menu_items.add_menu_item_for_context_menu("List_threads",null,
+            Menu_items.add_menu_item_for_context_menu_i18n("List_threads",null,
                     event3 -> {
                         Actor_engine.list_jobs(logger);
                     },context_menu,stage,logger);
