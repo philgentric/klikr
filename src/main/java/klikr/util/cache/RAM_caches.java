@@ -1,9 +1,9 @@
 package klikr.util.cache;
 
 import javafx.stage.Window;
-import klikr.browser.comparators.Similarity_comparator;
-import klikr.browser.icons.image_properties_cache.Image_properties;
-import klikr.browser.virtual_landscape.Scroll_position_cache;
+import klikr.browser_core.comparators.Similarity_comparator;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.images.caching.Image_cache_interface;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.similarity.Similarity_cache;
@@ -11,7 +11,6 @@ import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -88,7 +88,7 @@ public class Finder_actor implements Actor
     //**********************************************************
     {
         //logger.log("find_similar_files()");
-        Path dir = fm.search_config.path_list_provider().get_folder_path().get();
+        Path dir = fm.search_config.path_list_provider().get_folder_path();
         if ( !Files.isDirectory(dir))
         {
             dir = dir.getParent();

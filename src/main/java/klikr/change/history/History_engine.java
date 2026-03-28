@@ -48,10 +48,10 @@ public class History_engine
     }
 
     //**********************************************************
-    public void add(String s)
+    public void record(String s)
     //**********************************************************
     {
-        properties_for_history.add_and_prune(s);
+        properties_for_history.record_and_prune(s);
     }
 
     //**********************************************************

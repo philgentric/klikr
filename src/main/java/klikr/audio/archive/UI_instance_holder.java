@@ -1,0 +1,130 @@
+// Copyright (c) 2025 Philippe Gentric
+// SPDX-License-Identifier: MIT
+
+package klikr.audio.archive;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Window;
+import klikr.util.Shared_services;
+import klikr.util.execute.actor.Aborter;
+import klikr.util.files_and_paths.Guess_file_type;
+import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
+
+import java.nio.file.Path;
+
+//**********************************************************
+public class UI_instance_holder
+//**********************************************************
+{
+    private static Audio_player_FX_UI ui = null;
+
+
+
+
+
+    //**********************************************************
+    public static void init_ui(Application application, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        ui = new Audio_player_FX_UI(application, aborter, logger);
+        define_ui();
+    }
+
+    //**********************************************************
+    public static void define_ui()
+    //**********************************************************
+    {
+        ui.define_ui();
+        ui.playlist_init();
+        ui.set_selected();
+    }
+
+
+    //**********************************************************
+    public static void play_this(Application application, String song_full_path, long start, boolean first_time, Window owner, Logger logger)
+    //**********************************************************
+    {
+        if ( song_full_path == null)
+        {
+            logger.log("audio player going to guess?");
+            play_this_song(null,start,first_time,logger);
+            return;
+        }
+
+        if (Guess_file_type.is_this_path_a_music(Path.of(song_full_path), logger))
+        {
+            logger.log("audio player going to play song:"+song_full_path);
+            play_this_song(song_full_path,start,first_time,logger);
+            return;
+        }
+        if (Guess_file_type.is_this_path_an_audio_playlist(Path.of(song_full_path), logger))
+        {
+            logger.log("audio player going to play playlist:"+song_full_path);
+            play_playlist(application,Path.of(song_full_path),logger);
+            return;
+        }
+        logger.log("audio player ignoring this:"+song_full_path);
+
+    }
+    //**********************************************************
+    private static void play_playlist(Application application, Path path, Logger logger)
+    //**********************************************************
+    {
+        if ( ui == null)
+        {
+            init_ui(application, Shared_services.aborter(),logger);
+        }
+        ui.play_playlist_internal(path);
+    }
+
+    //**********************************************************
+    private static void play_this_song(String song, long start, boolean first_time, Logger logger)
+    //**********************************************************
+    {
+        String finalSong = song;
+        Runnable r = () ->
+        {
+            if (ui == null)
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: audio ui not initialized"));
+            }
+
+            ui.change_song(finalSong, start, first_time);
+        };
+        if (Platform.isFxApplicationThread())
+        {
+            logger.log("HAPPENS1 play_this_song");
+            r.run();
+        }
+        else Platform.runLater(r);
+    }
+
+    public static void die()
+    {
+        ui.die();
+        ui = null;
+    }
+
+    public static void set_null()
+    {
+        ui =null;
+    }
+
+    /*
+    //**********************************************************
+    @Deprecated // works only when running from source code
+    public static void start_new_process_to_browse(Path folder, Logger logger)
+    //**********************************************************
+    {
+        List<String> cmds = new ArrayList<>();
+        logger.log("start_new_process_to_browse()");
+        cmds.add("gradle");
+        cmds.add("klikr");
+        String path =  "--args=\""+folder.toAbsolutePath()+"\"";
+        cmds.add(path);
+
+        Execute_command.execute_command_list_no_wait(cmds,new File("."),logger);
+    }*/
+}

@@ -22,10 +22,10 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.browser.Window_manager;
-import klikr.browser.classic.Browser_for_file_system_in_2D;
-import klikr.browser.comparators.Last_access_comparator;
-import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.Window_manager;
+import klikr.browsers.Browser_for_file_system_in_2D;
+import klikr.browser_core.comparators.Last_access_comparator;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.settings.Sort_files_by;
 import klikr.util.cache.RAM_caches;
 import klikr.util.cache.Klikr_cache;
@@ -34,9 +34,9 @@ import klikr.images.caching.Image_cache_cafeine;
 import klikr.images.caching.Image_cache_interface;
 import klikr.images.caching.Image_cache_linkedhashmap;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser.virtual_landscape.Virtual_landscape;
+import klikr.browser_core.virtual_landscape.Virtual_landscape;
 import klikr.change.Change_gang;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.look.my_i18n.My_I18n;
@@ -178,8 +178,11 @@ public class Image_window
                 if (forward_size > 10) forward_size = 10;
                 //logger.log("cache_slots="+cache_slots);
 
-                Optional<Path> op = path_list_provider.get_folder_path();
-                op.ifPresent(folder_path -> image_cache = RAM_caches.image_caches.get(folder_path.toAbsolutePath().toString()));
+                Path folder_path = path_list_provider.get_folder_path();
+                if ( folder_path != null)
+                {
+                    image_cache = RAM_caches.image_caches.get(folder_path.toAbsolutePath().toString());
+                };
 
                 if ( image_cache == null)
                 {
@@ -189,7 +192,10 @@ public class Image_window
                     } else {
                         image_cache = new Image_cache_cafeine(forward_size, owner, aborter, logger);
                     }
-                    op.ifPresent(folder_path -> RAM_caches.image_caches.put(folder_path.toAbsolutePath().toString(), image_cache));
+                    if(folder_path != null)
+                    {
+                        RAM_caches.image_caches.put(folder_path.toAbsolutePath().toString(), image_cache);
+                    };
                 }
             }
 

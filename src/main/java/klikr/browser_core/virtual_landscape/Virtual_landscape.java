@@ -1,0 +1,3369 @@
+// Copyright (c) 2025 Philippe Gentric
+// SPDX-License-Identifier: MIT
+
+//SOURCES ./Landscape_height_listener.java
+//SOURCES ./Scroll_to_listener.java
+//SOURCES ../icons/image_properties_cache/Image_properties.java
+//SOURCES ../../look/Look_and_feel.java
+//SOURCES ../items/Item_folder_with_icon.java
+//SOURCES ../items/My_colors.java
+//SOURCES ../classic/Path_list_provider_for_file_system.java
+//SOURCES ../ram_and_threads_meter/RAM_and_threads_meters_stage.java
+//SOURCES ../../experimental/deduplicate/Deduplication_engine.java
+//SOURCES ../../image_ml/image_similarity/Deduplication_by_similarity_engine.java
+//SOURCES ../items/Top_left_provider.java
+//SOURCES ./Path_comparator_source.java
+//SOURCES ../../properties/boolean_features/String_setting_change_target.java
+
+package klikr.browser_core.virtual_landscape;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.geometry.*;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.paint.Paint;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+
+import klikr.Klikr_application;
+import klikr.Window_builder;
+import klikr.Window_type;
+import klikr.audio.player.The_audio_player;
+import klikr.browser_core.*;
+import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.change.bookmarks.Bookmarks;
+import klikr.change.history.History_engine;
+import klikr.change.undo.Undo_for_moves;
+import klikr.path_lists.Files_and_folders;
+import klikr.path_lists.Path_list_provider_for_playlist;
+import klikr.util.cache.*;
+import klikr.util.execute.actor.Aborter;
+import klikr.util.execute.actor.Actor_engine;
+import klikr.util.execute.actor.Job_termination_reporter;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.browser_core.comparators.*;
+import klikr.browser_core.icons.Error_type;
+import klikr.browser_core.icons.Icon_factory_actor;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.items.*;
+import klikr.util.execute.actor.Or_aborter;
+import klikr.util.execute.ram_and_threads_meter.RAM_and_threads_meters_stage;
+import klikr.change.Change_receiver;
+import klikr.experimental.backup.Backup_singleton;
+import klikr.experimental.fusk.Fusk_bytes;
+import klikr.experimental.fusk.Fusk_singleton;
+import klikr.experimental.fusk.Static_fusk_paths;
+import klikr.machine_learning.feature_vector.Feature_vector_cache;
+import klikr.look.Font_size;
+import klikr.look.Look_and_feel;
+import klikr.look.Look_and_feel_manager;
+import klikr.look.my_i18n.My_I18n;
+import klikr.machine_learning.feature_vector.Feature_vector_source;
+import klikr.machine_learning.image_similarity.Feature_vector_source_for_image_similarity;
+import klikr.path_lists.Path_list_provider;
+import klikr.settings.*;
+import klikr.settings.boolean_features.*;
+import klikr.util.files_and_paths.*;
+import klikr.util.image.Full_image_from_disk;
+import klikr.util.image.decoding.Fast_image_property_from_exif_metadata_extractor;
+import klikr.util.log.Logger;
+import klikr.util.log.Stack_trace_getter;
+import klikr.util.perf.Perf;
+import klikr.util.ui.*;
+import klikr.util.ui.progress.Hourglass;
+import klikr.util.ui.progress.Progress_window;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+//**********************************************************
+public class Virtual_landscape
+        implements
+        Scan_show_slave,
+        Selection_reporter,
+        Top_left_provider,
+        Path_comparator_source,
+        Feature_change_target,
+        String_setting_change_target
+//**********************************************************
+{
+    public static final boolean dbg = false;
+    public static final boolean crumbs_dbg = false;
+    public static final boolean ultra_dbg = false;
+    public static final boolean invisible_dbg = false;
+    public static final boolean visible_dbg = false;
+    public static final boolean scroll_dbg = false;
+    public static final boolean kbd_dbg = false;
+
+    public static final int MIN_PARENT_AND_TRASH_BUTTON_WIDTH = 200;
+    public static final int MIN_COLUMN_WIDTH = 300;
+    public static final double RIGHT_SIDE_SINGLE_COLUMN_MARGIN = 100;
+    private static final double MARGIN_Y = 50;
+
+    Map<LocalDateTime, String> the_whole_history = new HashMap<>();
+
+    public final Aborter aborter;
+    public final Logger logger;
+    public final Window_type context_type;
+    private Landscape_height_listener landscape_height_listener;
+    private Scroll_to_listener scroll_to_listener;
+    final Paths_holder paths_holder;
+    final Application application;
+
+    // otherwise there are 2 sorted lists
+    public Comparator<Path> image_file_comparator;
+    public Comparator<Path> other_file_comparator;
+
+    public Icon_factory_actor icon_factory_actor;
+
+    public ConcurrentLinkedQueue<List<Path>> iconized_sorted_queue = new ConcurrentLinkedQueue<>();
+    public final ArrayBlockingQueue<Redraw_command> redraw_request_queue = new ArrayBlockingQueue<>(1);
+    private final ConcurrentHashMap<String, Item> all_items_map = new ConcurrentHashMap<>();
+    private final AtomicBoolean items_are_ready = new AtomicBoolean(false);
+
+    private double virtual_landscape_height = -Double.MAX_VALUE;
+    private double current_vertical_offset = 0;
+    private int how_many_rows;
+    private Path top_left = null;
+    public final double icon_height;
+
+    boolean show_how_many_files_deep_in_each_folder_done = false;
+    boolean show_total_size_deep_in_each_folder_done = false;
+    final Window owner;
+    public Error_type error_type;
+
+    final Path_list_provider path_list_provider;
+
+    Map<Path, Long> folder_total_sizes_cache;
+    Map<Path, Long> folder_file_count_cache;
+
+    private final List<Item> future_pane_content = new ArrayList<>();
+    public Vertical_slider vertical_slider;
+    public double slider_width;
+    public final Scene the_Scene;
+    public final Pane the_Pane;
+    public final Selection_handler selection_handler;
+    public Virtual_landscape_menus virtual_landscape_menus;
+    MenuItem stop_full_screen_menu_item;
+    MenuItem start_full_screen_menu_item;
+    public List<Button> top_buttons = new ArrayList<>();
+
+    Scrollable_text_field scrollable_text_field;
+    public final Shutdown_target shutdown_target;
+    private final Title_target title_target;
+    private final Full_screen_handler full_screen_handler;
+
+    public static boolean show_progress_window_on_redraw = true;
+
+    private Feature_vector_cache fv_cache;
+
+    Klikr_cache<Path, Image_properties> image_properties_cache;
+    public final Color background_color;
+
+    //**********************************************************
+    public Virtual_landscape(
+            Application application,
+            Window_type context_type,
+            Path_list_provider path_list_provider,
+            Window owner,
+            Color background_color,
+            Shutdown_target shutdown_target,
+            Change_receiver change_receiver,
+            Title_target title_target,
+            Full_screen_handler full_screen_handler,
+            Aborter aborter,
+            Logger logger)
+    //**********************************************************
+    {
+        this.background_color = background_color;
+        this.application = application;
+        this.context_type = context_type;
+        this.full_screen_handler = full_screen_handler;
+        this.title_target = title_target;
+        this.shutdown_target = shutdown_target;
+        this.path_list_provider = path_list_provider;
+        error_type = Error_type.OK;
+        this.owner = owner;
+        this.aborter = aborter;
+        this.logger = logger;
+
+        Feature_cache.register_for_all_booleans(this);
+        Feature_cache.string_register_for(String_constants.LANGUAGE_KEY, this);
+        Feature_cache.string_register_for(String_constants.STYLE_KEY, this);
+
+        if ( Feature_cache.get(Feature.Play_music))
+        {
+            Path playlist = Path.of(System.getProperty("user.home"), String_constants.CONF_DIR, "default." + Guess_file_type.KLIKR_AUDIO_PLAYLIST_EXTENSION);
+            logger.log("trying default playlist");
+            if (!Files.exists(playlist)) {
+                try {
+                    Files.createDirectories(playlist.getParent());
+                    Files.createFile(playlist);
+                } catch (IOException e) {
+                    logger.log("" + e);
+                }
+            }
+            if (Klikr_application.audio_player != null)
+            {
+                logger.log("an audio player already exists");
+            }
+            else
+            {
+                logger.log("Starting playlist browser on path ->" + playlist + "<-");
+                Path_list_provider music_path_list_provider = new Path_list_provider_for_playlist(playlist, owner, aborter, logger);
+                Klikr_application.audio_player = The_audio_player.play_playlist(application, music_path_list_provider, owner, aborter, logger);
+            }
+        }
+
+        the_Pane = new Pane();
+
+
+        icon_factory_actor = new Icon_factory_actor(get_image_properties_cache(), owner, logger);
+        paths_holder = new Paths_holder(get_image_properties_cache(), aborter, logger);
+        selection_handler = new Selection_handler(the_Pane, this, this, logger);
+
+        virtual_landscape_menus = new Virtual_landscape_menus(this, change_receiver, owner);
+        // exit_on_escape_preference =
+        // Booleans.get_boolean(Booleans.ESCAPE_FAST_EXIT,logger);
+
+        {
+            // logger.log("creating vertical slider");
+            vertical_slider = new Vertical_slider(owner, the_Pane, this, logger);
+            // always_on_front_nodes.add(vertical_slider.the_Slider);
+            slider_width = Vertical_slider.slider_width;
+        }
+
+        set_Landscape_height_listener(vertical_slider);
+        set_scroll_to_listener(vertical_slider);
+
+        the_Scene = define_UI();
+
+        set_all_event_handlers();
+
+        ((Stage) owner).setScene(the_Scene);
+
+        if (dbg)
+            logger.log("Virtual_landscape constructor");
+
+        double font_size = Non_booleans_properties.get_font_size(owner, logger);
+        icon_height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
+        start_redraw_engine(owner, aborter, logger);
+    }
+
+
+    //**********************************************************
+    public void swap_selected_look_for(Path path, Path old)
+    //**********************************************************
+    {
+        logger.log("Virtual_landscape set_selected_look_for "+old+" => "+path);
+
+        {
+            Item item = all_items_map.get(path.toAbsolutePath().toString());
+            if ( item != null)
+            {
+                item.set_selected_look();
+                scroll_to_path(path);
+            }
+            else
+            {
+                logger.log("set_selected_look failed, unknown path: "+path);
+            }
+        }
+        if ( old != null)
+        {
+            Item item = all_items_map.get(old.toAbsolutePath().toString());
+            if ( item != null)
+            {
+                item.unset_selected_look();
+            }
+            else
+            {
+                logger.log("unset_selected_look failed, unknown path: "+old);
+            }
+        }
+    }
+
+    //**********************************************************
+    @Override // String_setting_change_target
+    public void update_ui_config(String key, String new_value)
+    //**********************************************************
+    {
+        logger.log("virtual_landscape receiving update_config_string key=" + key + " val=" + new_value);
+
+        Path top_left = get_top_left();
+        if (key.equals(String_constants.LANGUAGE_KEY) || key.equals(String_constants.STYLE_KEY))
+        {
+            Window_builder.replace_same_folder(
+                    application,
+                    shutdown_target,
+                    context_type,
+                    path_list_provider,
+                    path_list_provider.get_key(),
+                    top_left,
+                    owner,
+                    logger);
+        }
+    }
+
+    //**********************************************************
+    @Override // Selection_reporter
+    public void report(String s)
+    //**********************************************************
+    {
+        set_status(s);
+    }
+
+    //**********************************************************
+    public void set_status(String s)
+    //**********************************************************
+    {
+        if ( s == null)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("Should not happen"));
+            return;
+        }
+        scrollable_text_field.setText(s);
+        logger.log("Status = " + s);
+    }
+
+    private KeyCodeCombination go_full_screen;
+    private KeyCodeCombination start_stop_folder_scan_show;
+    private KeyCodeCombination slow_down_folder_scan_show;
+    private KeyCodeCombination speedup_folder_scan_show;
+    KeyCodeCombination find;
+    KeyCodeCombination bookmark_this;
+    KeyCodeCombination new_twin_window;
+    KeyCodeCombination refresh;
+    KeyCodeCombination undo;
+    KeyCodeCombination select_all_files1;
+    KeyCodeCombination select_all_files2;
+    KeyCodeCombination select_all_folders;
+    KeyCodeCombination show_details;
+
+
+
+    //**********************************************************
+    private void register_shortcuts(Scene scene)
+    //**********************************************************
+    {
+
+        double x = owner.getX()+100;
+        double y = owner.getY()+100;
+
+        // note that  KeyCombination.SHORTCUT_DOWN is ⌘ on macOS, Ctrl elsewhere
+        {
+            // Shortcut show details: ⌘/Ctrl + 2
+            show_details = new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(show_details, () -> {
+                Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details, !Feature_cache.get(Feature.Show_single_column_with_details), owner);
+            });
+        }
+
+        {
+            // Shortcut normal view: ⌘/Ctrl + 1
+            KeyCombination kc = new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Feature_cache.get(Feature.Show_single_column_with_details))
+                    Feature_cache.update_cached_boolean(Feature.Show_single_column_with_details,false,owner);
+            });
+        }
+
+
+        {
+            // zoom +,  CTRL + +, meta + + (only macOS)
+            KeyCombination kc = new KeyCodeCombination(KeyCode.PLUS, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is ctrl + +  = increase_icon_size");
+                increase_icon_size();
+            });
+        }
+        {
+            // zoom +,  CTRL + =, meta + = (only macOS)
+            // reason is for AZERTY, the '+' requires a shift on an '='
+            KeyCombination kc = new KeyCodeCombination(KeyCode.EQUALS, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is ctrl + +  = increase_icon_size");
+                increase_icon_size();
+            });
+        }
+        {
+            // zoom -,  CTRL + -, meta + - (only macOS)
+            KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is ctrl + +  = increase_icon_size");
+                decrease_icon_size();
+            });
+        }
+
+
+
+
+        {
+            // zoom -,  CTRL + -
+            KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.CONTROL_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is ctrl + +  = decrease_icon_size");
+                decrease_icon_size();
+            });
+        }
+        {
+            // zoom -,  meta + -(only macOS)
+            KeyCombination kc = new KeyCodeCombination(KeyCode.MINUS, KeyCombination.META_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is meta + +  = decrease_icon_size");
+                decrease_icon_size();
+            });
+        }
+
+
+        {
+            // select all files,  CTRL+a and pomme-A
+            select_all_files1 = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN);
+            select_all_files2 = new KeyCodeCombination(KeyCode.A, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(select_all_files1, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is "+select_all_files1.getDisplayText()+"  = select all");
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
+            });
+            scene.getAccelerators().put(select_all_files2, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is "+select_all_files2.getDisplayText()+"  = select all");
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
+            });
+
+        }
+        {
+            // select all folders,  ctrl + shift +a (only macOS)
+            select_all_folders = new KeyCodeCombination(KeyCode.A, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN);
+            scene.getAccelerators().put(select_all_folders, () -> {
+                if (Virtual_landscape.kbd_dbg)
+                    logger.log("character is ctrl +a  = select all");
+                selection_handler.select_all_files_in_folder(path_list_provider,aborter);
+            });
+        }
+
+        {
+            // UNDO
+            undo = new KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(undo, () -> Undo_for_moves.perform_last_undo_fx(owner, x, y, logger));
+        }
+
+        {
+            // FIND
+            find = new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(find, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
+                virtual_landscape_menus.search_files_by_keyworks_fx();
+            });
+        }
+
+        {
+            // bookmark this
+            bookmark_this = new KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(bookmark_this, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta d = bookmark this");
+              Bookmarks.get(owner).add(path_list_provider.get_key());
+            });
+        }
+        {
+            // refresh
+            refresh = new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(refresh, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta r = refresh");
+                redraw_fx(true,"refresh", true);
+            });
+        }
+        {
+            // new window clone
+            new_twin_window = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
+            scene.getAccelerators().put(new_twin_window, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta N = clone");
+                Window_builder.additional_same_folder_twin(application,context_type, path_list_provider, get_top_left(), owner, logger);
+            });
+        }
+
+        {
+            // slide show start/stop
+            start_stop_folder_scan_show = new KeyCodeCombination(KeyCode.S);
+            scene.getAccelerators().put(start_stop_folder_scan_show, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl enter = start/stop scan");
+                handle_scan_switch();
+            });
+        }
+        {
+            // slide show slow down
+            slow_down_folder_scan_show = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.CONTROL_DOWN);
+            scene.getAccelerators().put(slow_down_folder_scan_show, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
+                slow_down_scan();
+            });
+        }
+        {
+            // slide show slow down
+            KeyCodeCombination kc = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.META_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is metq + <- = slowdown scan");
+                slow_down_scan();
+            });
+        }
+        {
+            // slide show speed up
+            speedup_folder_scan_show = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.CONTROL_DOWN);
+            scene.getAccelerators().put(speedup_folder_scan_show, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
+                speed_up_scan();
+            });
+        }
+        {
+            // slide show speed up
+            KeyCombination kc = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.META_DOWN);
+            scene.getAccelerators().put(kc, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is metq + -> = speed up scan");
+                speed_up_scan();
+            });
+        }
+        {
+            // FULLSCREEN
+            go_full_screen = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.ALT_DOWN);
+            scene.getAccelerators().put(go_full_screen, () -> {
+                if (Virtual_landscape.kbd_dbg) logger.log("character is alt+enter = fullscreen");
+                full_screen_handler.go_full_screen();
+            });
+        }
+
+    }
+    //**********************************************************
+    private void set_all_event_handlers()
+    //**********************************************************
+    {
+
+        register_shortcuts(the_Scene);
+
+        ((Stage) owner).fullScreenProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    if (dbg)
+                        logger.log("fullScreenProperty changed ! new value = " + newValue.booleanValue());
+                    if (!newValue.booleanValue()) {
+                        on_fullscreen_end();
+                    } else {
+                        on_fullscreen_start();
+                    }
+                });
+
+        {
+            the_Pane.addEventHandler(MouseEvent.MOUSE_PRESSED, selection_handler::handle_mouse_pressed);
+            the_Pane.addEventHandler(MouseEvent.MOUSE_DRAGGED, selection_handler::handle_mouse_dragged);
+            the_Pane.addEventHandler(MouseEvent.MOUSE_RELEASED, selection_handler::handle_mouse_released);
+        }
+
+        // EventHandler<WindowEvent> on_close_event_handler = new
+        // External_close_event_handler(this);
+        /*owner.setOnCloseRequest(event -> {
+            CHELOU
+            logger.log("VirtualLandscape setOnCloseRequest ");
+            shutdown_target.shutdown();
+        });*/
+
+
+        {
+            // force pin classes so native image does not strip them
+            Class<?> a = javafx.scene.input.Dragboard.class;
+            Class<?> b = javafx.scene.input.ClipboardContent.class;
+            Class<?> c = javafx.scene.input.DataFormat.class;
+        }
+        the_Scene.setOnDragOver(drag_event -> {
+            if (Drag_and_drop.drag_and_drop_ultra_dbg)
+                logger.log("Virtual_landscape: OnDragOver handler called");
+            selection_handler.on_drag_over();
+            Object source = drag_event.getGestureSource();
+            if (source == null) 
+            {
+                // logger.log("source class is null " + event.toString());
+            } 
+            else 
+            {
+                if (!(source instanceof Item))
+                {
+                    if (dbg)
+                        logger.log("drag reception for scene: source is not an item but a: "
+                                + source.getClass().getName());
+                    drag_event.consume();
+                    return;
+                }
+                // logger.log("source class is:" + source.getClass().getName());
+                try {
+                    Item item = (Item) source;
+                    Scene scene_of_source = item.getScene();
+
+                    // data is dragged over the target
+                    // accept it only if it is not dragged from the same node
+                    if (scene_of_source == the_Scene) {
+                        if (dbg)
+                            logger.log("drag reception for scene: same scene, giving up<<");
+                        drag_event.consume();
+                        return;
+                    }
+                } 
+                catch (ClassCastException e) 
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("ERROR: " + e));
+                    drag_event.consume();
+                    return;
+                }
+            }
+            if (dbg)
+                logger.log("Ready to accept MOVE!");
+            drag_event.acceptTransferModes(TransferMode.MOVE);
+            drag_event.consume();
+        });
+
+        the_Scene.setOnDragDropped(drag_event -> {
+            if (Drag_and_drop.drag_and_drop_dbg)
+                logger.log("Virtual_landscape: OnDragDropped handler called");
+            if (dbg)
+                logger.log("Something has been dropped in Virtual_landscape for dir :" + path_list_provider.get_key());
+            Path destination = null;
+            if( path_list_provider instanceof Path_list_provider_for_file_system plpffs)
+            {
+                destination = plpffs.get_folder_path();
+                if (destination == null)
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: no folder path provided"));
+                }
+            }
+            else if( path_list_provider instanceof Path_list_provider_for_playlist plpfpl)
+            {
+                logger.log("Something has been dropped in Virtual_landscape, and the destination is a PLAYLIST:" + path_list_provider.get_key());
+                destination = plpfpl.the_playlist_file_path;
+            }
+            int n = Drag_and_drop.accept_drag_dropped_as_a_move_in(
+                    path_list_provider.get_move_provider(),
+                    drag_event,
+                    destination,
+                    the_Pane,
+                    "browser of dir: " + path_list_provider.get_key(),
+                    false,
+                    owner, logger);
+            set_status(n + " files have been dropped in");
+            selection_handler.on_drop();
+            drag_event.setDropCompleted(true);
+            drag_event.consume();
+        });
+
+        the_Scene.setOnDragExited(drag_event -> {
+            if (Drag_and_drop.drag_and_drop_dbg)
+                logger.log("Virtual_landscape: OnDragExited handler called");
+            if (dbg)
+                logger.log("OnDragExited in browser for dir :" + path_list_provider.get_key());
+            // set_status(" drag done");
+            virtual_landscape_menus.reset_all_files_and_folders();
+            selection_handler.on_drag_exited();
+            drag_event.consume();
+        });
+        the_Scene.setOnDragDone(drag_event -> {
+            if (Drag_and_drop.drag_and_drop_dbg)
+                logger.log("Virtual_landscape: setOnDragDone handler called");
+            selection_handler.on_drag_done();
+            drag_event.consume();
+        });
+
+        // the_stage.setMinWidth(860);
+
+        the_Scene.setOnScroll(event -> {
+            double dy = event.getDeltaY();
+            // logger.log("\n\n setOnScroll event: "+dy);
+            scroll_a_bit(dy);
+        });
+    }
+
+    //**********************************************************
+    public void increase_icon_size()
+    //**********************************************************
+    {
+        change_icon_size(1.1);
+    }
+
+    //**********************************************************
+    public void decrease_icon_size()
+    //**********************************************************
+    {
+        change_icon_size(0.9);
+    }
+
+    //**********************************************************
+    private void change_icon_size(double fac)
+    //**********************************************************
+    {
+        int new_icon_size = (int) (Non_booleans_properties.get_icon_size(owner) * fac);
+        if (new_icon_size < 20)
+            new_icon_size = 20;
+        if (Virtual_landscape.kbd_dbg)
+            logger.log("new icon length = " + new_icon_size);
+        Non_booleans_properties.set_icon_size(new_icon_size, owner);
+        // icon_manager.modify_button_fonts(fac);
+        redraw_fx(false,"new icon length " + new_icon_size, true);
+    }
+
+    //**********************************************************
+    @Override // Scan_show_slave
+    public int how_many_rows()
+    //**********************************************************
+    {
+        return how_many_rows;
+    }
+
+    //**********************************************************
+    @Override // Scan_show_slave
+    public boolean scroll_a_bit(double dy)
+    //**********************************************************
+    {
+        Path top_left = get_top_left();
+        if ( top_left != null)
+        {
+            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(), top_left.toAbsolutePath().normalize().toString(),"scroll a bit",logger);
+        };
+        return vertical_slider.request_scroll_relative(dy);
+    }
+
+    //**********************************************************
+    public void receive_error(Error_type error_type)
+    //**********************************************************
+    {
+        logger.log("receive_error");
+        Error_type finalError_type = error_type;
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                switch (finalError_type) {
+                    case OK:
+                        break;
+                    case DENIED:
+                        logger.log("\n\naccess denied\n\n");
+                        set_status("Access denied for:" + path_list_provider.get_key());
+                        on_geometry_changed(true,"access denied", null, is_redrawing);
+                        break;
+                    case NOT_FOUND:
+                    case ERROR:
+                        logger.log("\n\ndirectory gone\n\n");
+                        set_status("Gone:" + path_list_provider.get_key());
+                        on_geometry_changed(true,"gone", null, is_redrawing);
+                        break;
+                }
+            }
+        };
+        Jfx_batch_injector.inject(r, logger);
+    }
+
+
+    //**********************************************************
+    private void sort_iconized_items(String reason)
+    //**********************************************************
+    {
+        try (Perf p = new Perf("sort_iconized_items")) {
+            List<Path> local_iconized_sorted = new ArrayList<>(paths_holder.iconized_paths);
+            Comparator<Path> comparator_to_use = image_file_comparator;
+            boolean success = false;
+            for (int tentative = 0; tentative < 3; tentative++) {
+                try {
+                    local_iconized_sorted.sort(comparator_to_use);
+                    success = true;
+                    break;
+                } catch (IllegalArgumentException e) {
+                    // This catches "Comparison method violates its general contract!"
+                    if (dbg) logger.log("Sort failed (attempt " + tentative + "): unstable comparator. Shuffling and retrying.");
+
+                    // Shuffling changes the input order, which might avoid the specific
+                    // sequence that triggered the comparator bug.
+                    Collections.shuffle(local_iconized_sorted);
+                }
+            }
+
+            // Fallback: If the fancy comparator fails 3 times, use a rock-solid simple sort (e.g., File Path)
+            // This ensures we never crash or return empty/garbage result.
+            if (!success) {
+                logger.log("⚠️ Sort failed after 3 attempts. Falling back to safe Name sort.");
+                local_iconized_sorted.sort(other_file_comparator);
+            }
+
+            // 4. Publish result
+            iconized_sorted_queue.add(local_iconized_sorted);
+        }
+    }
+/*
+    //**********************************************************
+    private void sort_iconized_items(String reason)
+    //**********************************************************
+    {
+        try (Perf p = new Perf("sort_iconized_items")) {
+            List<Path> local_iconized_sorted = new ArrayList<>(paths_holder.iconized_paths);
+            for (int tentative = 0; tentative < 3; tentative++)
+            {
+                // ugly trick due to similarity pursuit
+                // it is NOT a true metric so the sort algorithm
+                // can hiccup ... when that happens we reshuffle and retry
+                try {
+                    if (dbg)
+                        logger.log("sort_iconized_items with " + image_file_comparator.getClass().getName());
+                    // this blocks until icons are sorted
+                    // unless the sort aloo fails
+                    // which happens with similarity metrics
+                    local_iconized_sorted.sort(image_file_comparator);
+                    break;
+                } catch (IllegalArgumentException e) {
+                    // let us retry after a reshuffle
+                    logger.log("image sorting failed, retrying: " + tentative);
+                    if (image_file_comparator instanceof Similarity_comparator) {
+                        Similarity_comparator sc = (Similarity_comparator) image_file_comparator;
+                        sc.shuffle();
+                    }
+                }
+            }
+            iconized_sorted_queue.add(local_iconized_sorted);
+        }
+    }
+*/
+
+
+    //**********************************************************
+    public void set_text_background(String text)
+    //**********************************************************
+    {
+
+        Text t = new Text(text);
+        t.setStyle("-fx-font-length: 70;");
+        Scene dummy_scene = new Scene(new VBox(t));
+        WritableImage wi = dummy_scene.snapshot(null);
+        Paint ppp = new ImagePattern(wi);
+        the_Pane.setBackground(new Background(new BackgroundFill(ppp, CornerRadii.EMPTY, Insets.EMPTY)));
+
+    }
+
+    //**********************************************************
+    private List<Path> get_iconized_sorted(String reason)
+    //**********************************************************
+    {
+        logger.log("get_iconized_sorted");
+
+        // non blocking
+        List<Path> returned = iconized_sorted_queue.poll();
+        if (returned != null)
+        {
+            logger.log("OK icons are sorted");
+
+            // OK, icons are sorted
+            return returned;
+        }
+
+        // icons are not yet sorted, retry
+        // if ( dbg)
+        logger.log("RESORTING iconized items");
+        sort_iconized_items(reason);
+        return iconized_sorted_queue.poll();
+    }
+
+    //**********************************************************
+    public void set_Landscape_height_listener(Landscape_height_listener landscape_height_listener_)
+    //**********************************************************
+    {
+        landscape_height_listener = landscape_height_listener_;
+    }
+
+    //**********************************************************
+    public void clear_all_selected_images()
+    //**********************************************************
+    {
+        for (Item i : all_items_map.values()) {
+            i.unset_image_is_selected();
+        }
+    }
+
+
+    //**********************************************************
+    void scroll_to()
+    //**********************************************************
+    {
+        String scroll_to_s = Scroll_position_cache.scroll_position_cache_read(path_list_provider.get_key());
+        if ( scroll_to_s == null)
+        {
+            if ( Scroll_position_cache.scroll_cache_dbg) logger.log(("scroll_position_cache_read() returned null in scroll_to()"));
+            scroll_to_listener.perform_scroll_to(0, this);
+            return;
+        }
+        if ( Scroll_position_cache.scroll_cache_dbg)
+        {
+            logger.log("Scrolling to memorized previous position in folder: "
+                    + "\n    key: "+path_list_provider.get_key()
+                    + "\n    value: "+scroll_to_s);
+        }
+
+        Path scroll_to = Paths.get(scroll_to_s);
+        scroll_to_path(scroll_to);
+
+    }
+
+    //**********************************************************
+    private void scroll_to_path(Path scroll_to)
+    //**********************************************************
+    {
+        current_vertical_offset = get_y_offset_of(scroll_to);
+        if (scroll_to_listener == null) {
+            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            return;
+        }
+        scroll_to_listener.perform_scroll_to(current_vertical_offset, this);
+    }
+
+    //**********************************************************
+    private void show_error_icon(ImageView iv_denied, double top_delta_y)
+    //**********************************************************
+    {
+        iv_denied.setPreserveRatio(true);
+        iv_denied.setSmooth(true);
+        iv_denied.setY(top_delta_y);
+        if (Platform.isFxApplicationThread()) {
+            logger.log("HAPPENS1 show_error_icon");
+            the_Pane.getChildren().add(iv_denied);
+        } else
+        {
+            logger.log("HAPPENS2 show_error_icon");
+            Jfx_batch_injector.inject(() -> the_Pane.getChildren().add(iv_denied), logger);
+        }
+        compute_bounding_rectangle(error_type.toString());
+    }
+
+    //**********************************************************
+    private void process_iconized_items(
+            boolean force_rescan,
+            boolean single_column, double icon_size,
+            double column_increment,
+            double scene_width,
+            Point2D point)
+    //**********************************************************
+    {
+        try (Perf p = new Perf("process_iconized_items")) {
+
+            Supplier<Feature_vector_cache> fv_cache_supplier = () -> {
+                if (fv_cache != null)
+                    return fv_cache;
+                double x = owner.getX() + 100;
+                double y = owner.getY() + 230;
+
+                Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(owner,logger);
+                List<Path> paths = path_list_provider.only_image_paths(force_rescan, Feature_cache.get(Feature.Show_hidden_files),aborter);
+                fv_cache = Feature_vector_cache
+                        .preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, owner, x, y, aborter,
+                                logger);
+                return fv_cache;
+            };
+
+            boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_key(), owner);
+
+            double file_button_height = 2 * Non_booleans_properties.get_font_size(owner, logger);
+
+            double max_y_in_row[] = new double[1];
+            max_y_in_row[0] = 0;
+            List<Item> current_row = new ArrayList<>();
+
+            // first compute how many images are in flight
+            int image_properties_in_flight = 0;
+            for (Path path : paths_holder.iconized_paths)
+            {
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                if (item == null) {
+                    if (need_image_properties) {
+                        image_properties_in_flight++;
+                    }
+                }
+            }
+
+            // block until:
+            // 1. all image properties REQUESTS are made
+            // the cache will use actors on threads to fetch the properties
+            // 2. the cache will call the termination reporter when each is finished
+            // so this will effectively block until all image properties are fetched
+
+            if (crumbs_dbg)
+                logger.log("process_iconized_items is on javafx thread?" + Platform.isFxApplicationThread());
+            CountDownLatch wait_for_end = new CountDownLatch(image_properties_in_flight);
+            Job_termination_reporter tr = (message, job) -> wait_for_end.countDown();
+            long start = System.currentTimeMillis();
+            for (Path path : paths_holder.iconized_paths)
+            {
+                if (ultra_dbg)
+                    logger.log("Virtual_landscape process_iconified_items " + path);
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                if (item == null)
+                {
+                    if (need_image_properties)
+                    {
+                        // ask for image properties fetch in threads
+                        get_image_properties_cache().get(path, aborter, tr, owner);
+                    }
+                }
+            }
+            if (image_properties_in_flight > 1)
+            {
+                // wait for all properties to become available
+                if (dbg) logger.log("going to wait");
+                long start2 = System.nanoTime();
+                try {
+                    wait_for_end.await();
+                } catch (InterruptedException e) {
+                    logger.log("" + e);
+                }
+                if (dbg) logger.log("wait terminated " + (System.nanoTime() - start2) + " ns");
+            }
+            if (dbg)
+                logger.log("✅ getting image properties took " + (System.currentTimeMillis() - start) + " milliseconds");
+
+            start = System.currentTimeMillis();
+            long getting_image_properties_from_cache = 0;
+            for (Path path : paths_holder.iconized_paths) {
+                long local_incr = System.currentTimeMillis();
+                Double cache_aspect_ratio = Double.valueOf(1.0);
+                if (need_image_properties) {
+                    // this is a BLOCKING call
+                    Image_properties ip = get_image_properties_cache().get(path, aborter, null, owner);
+                    if (ip == null) {
+                        if (dbg)
+                            logger.log(("✅ Warning: image property cache miss for: " + path));
+                    } else {
+                        cache_aspect_ratio = ip.get_aspect_ratio();
+                    }
+                }
+                getting_image_properties_from_cache += System.currentTimeMillis() - local_incr;
+
+                Item item = new Item_file_with_icon(
+                        application,
+                        the_Scene,
+                        selection_handler,
+                        icon_factory_actor,
+                        null,
+                        cache_aspect_ratio,
+                        fv_cache_supplier,
+                        path,
+                        path_list_provider,
+                        this,
+                        owner,
+                        aborter,
+                        logger);
+                all_items_map.put(path.toAbsolutePath().toString(), item);
+                // logger.log("item created: "+path);
+            }
+            if (dbg) {
+                logger.log("✅ making iconized items took " + (System.currentTimeMillis() - start) + " milliseconds");
+                logger.log("     ,of which getting_image_properties_from_cache= " + getting_image_properties_from_cache
+                        + " milliseconds");
+            }
+
+            boolean show_icons_for_files = Feature_cache.get(Feature.Show_icons_for_files);
+            boolean show_single_column = Feature_cache.get(Feature.Show_single_column_with_details);
+            if (show_single_column) show_icons_for_files = false;
+
+            /// at this stage we MUST have get_iconized_sorted() in the proper order
+            // that will define the x,y layout
+            start = System.currentTimeMillis();
+
+            // will block until icons are truly sorted
+            List<Path> ll = get_iconized_sorted("process_iconified_items");
+
+            if (dbg) logger.log("✅ Virtual_landscape: all image properties acquired, saving cache ");
+            Actor_engine.execute(() -> get_image_properties_cache().save_whole_cache_to_disk(),
+                    "Save whole image property cache", logger);
+
+
+            for (Path path : ll) {
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                if (item == null) {
+                    logger.log(
+                            ("❌ should not happen: no item in map for: " + path + " map length=" + all_items_map.size()));
+                    continue;
+                }
+                if (dbg)
+                    logger.log("✅  Virtual_landscape process_iconified_items " + path + " ar:"
+                            + ((Item_file_with_icon) item).aspect_ratio);
+
+                if (show_icons_for_files) {
+                    // logger.log("recomputing position for "+item.get_item_path());
+                    // logger.log(path+" point ="+point.getX()+"-"+point.getY());
+                    point = compute_next_Point2D_for_icons(point, item,
+                            icon_size, icon_size,
+                            scene_width, single_column, max_y_in_row, current_row);
+                } else {
+                    point = new_Point_for_files_and_dirs(point, item,
+                            column_increment,
+                            file_button_height, scene_width, single_column);
+                    how_many_rows++;
+                }
+            }
+            if (dbg)
+                logger.log("✅  mapping iconized items took " + (System.currentTimeMillis() - start) + " milliseconds");
+        }
+    }
+
+    //**********************************************************
+    public Klikr_cache<Path, Image_properties> get_image_properties_cache()
+    //**********************************************************
+    {
+        if ( image_properties_cache != null)
+        {
+            if ( dbg) logger.log("image_properties_cache found");
+            return image_properties_cache;
+        }
+        Klikr_cache<Path, Image_properties> tmp = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_key());
+        if (tmp != null) {
+            if (dbg) logger.log("image_properties_cache reloaded from cache of caches");
+            image_properties_cache = tmp;
+            return image_properties_cache;
+        }
+
+
+        image_properties_cache =  make_image_properties_cache(path_list_provider, aborter, owner, logger);
+        return image_properties_cache;
+    }
+
+    //**********************************************************
+    public static Klikr_cache<Path, Image_properties> make_image_properties_cache(Path_list_provider path_list_provider, Aborter aborter, Window owner, Logger logger)
+    //**********************************************************
+    {
+
+        if ( dbg) logger.log("MAKING image_properties_cache");
+        String tag;
+        Path folder_path = path_list_provider.get_folder_path();
+        if ( folder_path == null)
+        {
+            // happens for playlists
+            tag = Cache_folder.image_properties_cache.name()+path_list_provider.get_key();
+        }
+        else
+        {
+            tag = Cache_folder.image_properties_cache.name()+folder_path.getFileName();
+        }
+        String cache_file_name = UUID.nameUUIDFromBytes(tag.getBytes()) + ".properties";
+        Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.image_properties_cache.name(), false, owner, logger);
+        Path cache_path = Path.of(dir.toAbsolutePath().toString(), cache_file_name);
+
+        BiPredicate<Path, DataOutputStream> key_serializer= new BiPredicate<Path, DataOutputStream>() {
+            @Override
+            public boolean test(Path path, DataOutputStream dos)
+            {
+                String full_path = path.toAbsolutePath().normalize().toString();
+                try {
+                    dos.writeUTF(full_path);
+                    return true;
+                } catch (IOException e) {
+                    logger.log(""+e);
+                }
+                return false;
+            }
+        };
+
+        Function<DataInputStream, Path> key_deserializer = new Function<DataInputStream, Path>() {
+            @Override
+            public Path apply(DataInputStream dis)
+            {
+                try {
+                    String full_path = dis.readUTF();
+                    return Path.of(full_path);
+                } catch (IOException e) {
+                    logger.log(""+e);
+                }
+
+                return null;
+            }
+        };
+
+        BiPredicate<Image_properties, DataOutputStream> value_serializer = new BiPredicate<Image_properties, DataOutputStream>() {
+            @Override
+            public boolean test(Image_properties ip, DataOutputStream dos) {
+                try {
+                    dos.writeDouble(ip.w());
+                    dos.writeDouble(ip.h());
+                    dos.writeUTF(ip.rotation().name());
+                    return true;
+                } catch (IOException e) {
+                    logger.log(""+e);
+                }
+                return false;
+            }
+        };
+        Function<DataInputStream, Image_properties> value_deserializer = new Function<DataInputStream, Image_properties>() {
+            @Override
+            public Image_properties apply(DataInputStream dis) {
+                try {
+                    double w = dis.readDouble();
+                    double h = dis.readDouble();
+                    String r = dis.readUTF();
+                    return new Image_properties(w,h,Rotation.valueOf(r));
+                } catch (IOException e) {
+                    logger.log(""+e);
+                }
+                return null;
+            }
+        };
+
+
+
+
+        Function<Path, Image_properties> value_extractor = new Function<Path, Image_properties>() {
+            @Override
+            public Image_properties apply(Path path)
+            {
+
+                Optional<Image_properties> ip = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter, logger);
+                if (ip.isPresent()) {
+                    return ip.get();
+                }
+                if ( Guess_file_type.is_this_path_an_image(path, owner, logger))
+                {
+                    // try to load the image
+                    Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, null, aborter, logger);
+                    if (op.isPresent()) {
+                        Image image = op.get();
+                        return new Image_properties(image.getWidth(), image.getHeight(), Rotation.normal);
+                    }
+                }
+                logger.log("EXIF failed to return Image properties for"+path);
+                return new Image_properties(-1,-1, Rotation.normal);
+            }
+        };
+
+        Function<Path,String> string_key_maker = new Function<Path, String>() {
+            @Override
+            public String apply(Path path) {
+                return path.getFileName().toString();
+            }
+        };
+        Function<String,Path> K_maker = new Function<String, Path>() {
+            @Override
+            public Path apply(String s) {
+                if (folder_path == null)
+                {
+                    if ( path_list_provider instanceof Path_list_provider_for_playlist local) {
+                        return Path.of(s);
+                    }
+                    return null; // will crash
+                }
+                return folder_path.resolve(s);
+            }
+        };
+
+
+        Klikr_cache<Path, Image_properties> local_cache = new Klikr_cache<Path, Image_properties>(
+                new Path_list_provider_for_file_system(cache_path, owner, logger),
+                Cache_folder.image_properties_cache.name(),
+                key_serializer, key_deserializer,
+                value_serializer, value_deserializer,
+                value_extractor,
+                string_key_maker,
+                K_maker,
+                (d -> Image_properties.size()),
+                aborter, owner, logger);
+
+        if ( dbg) logger.log("MADE image_properties_cache");
+
+        int reloaded = local_cache.reload_cache_from_disk();
+        logger.log("✅ image_properties_cache: "+reloaded+" properties reloaded from file");
+
+
+        String cache_tag = "default_cache_tag";
+        if (folder_path != null)
+        {
+            cache_tag = folder_path.toAbsolutePath().normalize().toString();
+        }
+        else
+        {
+            if ( path_list_provider instanceof Path_list_provider_for_playlist x) {
+                cache_tag = x.the_playlist_file_path.toAbsolutePath().normalize().toString();
+            }
+        }
+        RAM_caches.image_properties_cache_of_caches.put(cache_tag,local_cache);
+        return local_cache;
+    }
+
+    //**********************************************************
+    private Point2D process_non_iconized_items(boolean single_column, double column_increment, double scene_width,
+            Point2D p)
+    //**********************************************************
+    {
+        try (Perf perf = new Perf("process_non_iconized_files")) {
+            // manage the non-iconifed-files section
+            double row_increment_for_files = 2 * Non_booleans_properties.get_font_size(owner, logger);
+
+            for (Path path : paths_holder.non_iconized) {
+                if (ultra_dbg)
+                    logger.log("✅ Virtual_landscape process_non_iconized_files " + path.toAbsolutePath());
+                String text = path.getFileName().toString();
+                long size = path.toFile().length() / 1000_000L;
+                if (Guess_file_type.is_this_path_a_video(path, logger))
+                    text = size + "MB VIDEO: " + text;
+                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                if (item == null) {
+                    // logger.log("Item_file_no_icon (3) path="+path);
+
+                    item = new Item_file_no_icon(
+                            application,
+                            the_Scene,
+                            selection_handler,
+                            this,
+                            icon_factory_actor,
+                            null,
+                            text,
+                            get_image_properties_cache(),
+                            path,
+                            path_list_provider,
+                            this,
+                            owner,
+                            aborter,
+                            logger);
+                    all_items_map.put(path.toAbsolutePath().toString(), item);
+                }
+                // item.get_Node().setVisible(false);
+                p = new_Point_for_files_and_dirs(p, item,
+                        column_increment,
+                        row_increment_for_files, scene_width, single_column);
+
+                if (item instanceof Item_file_no_icon ini) {
+                    ini.get_button().setPrefWidth(column_increment);
+                    ini.get_button().setMinWidth(column_increment);
+                }
+                if (item instanceof Item_folder ini) {
+                    ini.get_button().setPrefWidth(column_increment);
+                    ini.get_button().setMinWidth(column_increment);
+                }
+                if (item instanceof Item_folder_with_icon ini) {
+                    ini.get_button().setPrefWidth(column_increment);
+                    ini.get_button().setMinWidth(column_increment);
+                }
+            }
+            if (!paths_holder.non_iconized.isEmpty()) {
+                if (p.getX() != 0) {
+                    // logger.log("p.getX() != 0"+p.getX());
+                    p = new Point2D(0, p.getY() + row_increment_for_files);
+                    how_many_rows++;
+                }
+            }
+            return p;
+        }
+    }
+
+    //**********************************************************
+    private Point2D process_folders(boolean single_column, double row_increment_for_dirs, double column_increment,
+            double row_increment_for_dirs_with_picture, double scene_width, Point2D p)
+    //**********************************************************
+    {
+        if (dbg)
+            logger.log("✅ Virtual_landscape process_folders (0) ");
+        try (Perf perf = new Perf("process_folders")) {
+
+            double actual_row_increment;
+            if (Feature_cache.get(Feature.Show_icons_for_folders))
+            {
+                actual_row_increment = row_increment_for_dirs_with_picture;
+
+                for (Path folder_path : paths_holder.folders) {
+                    if (dbg)
+                        logger.log("✅ Virtual_landscape process_folders (1) " + folder_path);
+                    p = process_one_folder_with_picture(single_column, column_increment, actual_row_increment,
+                            scene_width, p, folder_path, Color.BEIGE);
+                }
+            }
+            else
+            {
+                actual_row_increment = row_increment_for_dirs;
+                List<Path> paths = new ArrayList<>(paths_holder.folders);
+                if (show_total_size_deep_in_each_folder_done)
+                {
+                    Comparator<Path> comp = (p1, p2) -> {
+                        Long l1 = folder_total_sizes_cache.get(p1);
+                        Long l2 = folder_total_sizes_cache.get(p2);
+                        if (l1 == null && l2 == null)
+                            return 0;
+                        if (l1 == null)
+                            return 1;
+                        if (l2 == null)
+                            return -1;
+                        return l2.compareTo(l1);
+                    };
+                    Collections.sort(paths, comp);
+                }
+                else if (show_how_many_files_deep_in_each_folder_done)
+                {
+                    Comparator<Path> comp = (p1, p2) -> {
+                        Long l1 = folder_file_count_cache.get(p1);
+                        Long l2 = folder_file_count_cache.get(p2);
+                        if (l1 == null && l2 == null)
+                            return 0;
+                        if (l1 == null)
+                            return 1;
+                        if (l2 == null)
+                            return -1;
+                        return l2.compareTo(l1);
+                    };
+                    Collections.sort(paths, comp);
+                }
+                else
+                {
+                    paths.sort(other_file_comparator);
+                }
+                if (dbg)
+                    logger.log("✅ Virtual_landscape folder_path length " + paths.size());
+                for (Path folder_path : paths) {
+                    if (dbg)
+                        logger.log("✅ Virtual_landscape process_folders (3) " + folder_path);
+                    p = process_one_folder_plain(single_column, column_increment, actual_row_increment, scene_width, p,
+                            folder_path);
+                }
+            }
+
+            if (p.getX() != 0) {
+                p = new Point2D(0, p.getY() + actual_row_increment);
+                how_many_rows++;
+            }
+            return p;
+        }
+    }
+
+    //**********************************************************
+    private Point2D process_one_folder_with_picture(
+            boolean single_column,
+            double column_increment,
+            double row_increment,
+            double scene_width,
+            Point2D p,
+            Path folder_path,
+            Color color)
+    //**********************************************************
+    {
+        try (Perf perf = new Perf("5. process_one_folder_with_picture")) {
+            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
+            if (folder_item == null) {
+                if (dbg)
+                    logger.log("✅ WARNING:Item_folder_with_icon NO path for" + folder_path);
+
+                folder_item = new Item_folder_with_icon(
+                        application,
+                        owner,
+                        the_Scene,
+                        selection_handler,
+                        icon_factory_actor,
+                        color,
+                        folder_path.getFileName().toString(),
+                        (int) column_increment,
+                        100,
+                        get_image_properties_cache(),
+                        shutdown_target,
+                        new Path_list_provider_for_file_system(folder_path, owner, logger),
+                        this,
+                        this,
+                        aborter,
+                        logger);
+                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
+            }
+            p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width,
+                    single_column);
+            return p;
+        }
+    }
+
+    //**********************************************************
+    private Point2D process_one_folder_plain(
+            boolean single_column,
+            double column_increment,
+            double row_increment,
+            double scene_width,
+            Point2D p,
+            Path folder_path)
+    //**********************************************************
+    {
+        try (Perf perf = new Perf("process_one_folder_plain")) {
+            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
+            if (folder_item == null) {
+                Color color = My_colors.load_color_for_path(folder_path, owner, logger);
+                // a "plain" folder is "like a file" from a layout point of view
+                // the difference is: it will get a border
+
+                String tmp = folder_path.getFileName().toString();
+
+                if (show_how_many_files_deep_in_each_folder_done) {
+                    Long how_many_files_deep = folder_file_count_cache.get(folder_path);
+                    if (how_many_files_deep == null) {
+                        logger.log("❌ FATAL: folder_file_count_cache not found in cache for " + folder_path);
+                    } else {
+                        logger.log("✅ OK: folder_file_count_cache found in cache for " + folder_path + " "
+                                + how_many_files_deep);
+                        tmp += " (" + how_many_files_deep + " files)";
+                    }
+                } else if (show_total_size_deep_in_each_folder_done) {
+
+                    Long bytes = folder_total_sizes_cache.get(folder_path);
+                    if (bytes == null) {
+                        logger.log("❌ FATAL: folder_total_sizes_cache not found in cache for " + folder_path);
+                    } else {
+                        logger.log("✅ OK: folder_total_sizes_cache found in cache for " + folder_path + " " + bytes);
+
+                        tmp += "       ";
+                        tmp += Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(bytes, owner,
+                                logger);
+                    }
+                }
+
+                folder_item = new Item_folder(
+                        application,
+                        the_Scene,
+                        selection_handler,
+                        icon_factory_actor,
+                        color,
+                        tmp,
+                        icon_height,
+                        false,
+                        null,
+                        get_image_properties_cache(),
+                        shutdown_target,
+                        new Path_list_provider_for_file_system(folder_path, owner, logger),
+                        this,
+                        this,
+
+                        owner,
+                        aborter,
+                        logger);
+                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
+            }
+
+            p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width, single_column);
+            if (folder_item instanceof Item_folder item_folder)
+            {
+                if (item_folder.get_button() == null)
+                {
+                    logger.log(Stack_trace_getter.get_stack_trace("PANIC item_folder.get_button() == null"));
+                }
+                else
+                {
+                    item_folder.get_button().setPrefWidth(column_increment);
+                    item_folder.get_button().setMinWidth(column_increment);
+                }
+            }
+            return p;
+        }
+    }
+
+    // this is the other entry point: SCROLLING
+    // when the slider is moved
+
+    //**********************************************************
+    public void move_absolute(
+            double new_vertical_offset,
+            String reason)
+    //**********************************************************
+    {
+        if (scroll_dbg)
+        {
+            logger.log("✅ move_absolute reason= " + reason + " new_vertical_offset=" + new_vertical_offset);
+        }
+        current_vertical_offset = new_vertical_offset;
+        on_scroll("move_absolute");
+    }
+
+    // this is on the FX thread
+    // and it is called very often = when scrolling !!
+    //**********************************************************
+    void on_scroll(String reason)
+    //**********************************************************
+    {
+        if (!items_are_ready.get()) {
+            logger.log("✅ check_visibility: items are not ready yet ! " + reason);
+            return;
+        }
+        // logger.log("check_visibility: "+ all_items_map.values().length()+" items are
+        // ready "+reason);
+        double pane_height = the_Pane.getHeight();
+        int icon_size = Non_booleans_properties.get_icon_size(owner);
+        double min_y = Double.MAX_VALUE;
+        for (Item item : all_items_map.values()) {
+            // if (item.get_y() + item.get_Height() - current_vertical_offset < 0)
+            // if (item.get_javafx_y() + item.get_Height() < current_vertical_offset
+            // -icon_size)
+            if (item.get_javafx_y() + item.get_Height() < current_vertical_offset) {
+                if (invisible_dbg)
+                    logger.log("✅ " + item.get_item_path() + " invisible (too far up) y=" + item.get_javafx_y()
+                            + " item height=" + item.get_Height());
+                item.process_is_invisible(current_vertical_offset);
+                the_Pane.getChildren().remove(item.get_Node());
+                // if ( item instanceof Item2_image ii) Item2_image.currently.remove(ii);
+                continue;
+            }
+            if (item.get_javafx_y() > pane_height + current_vertical_offset + icon_size) {
+                if (invisible_dbg)
+                    logger.log("✅ " + item.get_item_path() + " invisible (too far down)");
+                item.process_is_invisible(current_vertical_offset);
+                the_Pane.getChildren().remove(item.get_Node());
+                // if ( item instanceof Item2_image ii) Item2_image.currently.remove(ii);
+                continue;
+            }
+            if (visible_dbg)
+                logger.log("✅ " + item.get_item_path() + " Item is visible at y=" + item.get_javafx_y()
+                        + " item height=" + item.get_Height());
+            item.process_is_visible(current_vertical_offset);
+            if (!the_Pane.getChildren().contains(item.get_Node())) {
+                the_Pane.getChildren().add(item.get_Node());
+                // if ( item instanceof Item2_image ii) Item2_image.currently.add(ii);
+            }
+
+            // look for top left
+            if (item.get_javafx_x() > 0)
+                continue;
+            if (item.get_javafx_y() < min_y) {
+                min_y = item.get_javafx_y();
+                top_left = item.get_item_path();
+                // logger.log(" tmp........"+top_left + " is now top left at y=" + min_y);
+            }
+        }
+
+        set_background_color();
+
+        // logger.log(top_left + " is now top left at y=" + min_y);
+
+        // logger.log("currently Item2_image (s): "+Item2_image.currently.length());
+    }
+
+    private static final double margin = 20;
+    private static final double dmargin = 2 * margin;
+
+    //**********************************************************
+    public List<Item> get_items_in(Pane pane, double x, double y, double w, double h)
+    //**********************************************************
+    {
+        Bounds selection_bounds = new BoundingBox(x, y, w, h);
+        // logger.log("selection X= " + bounds.getMinX() + " " + bounds.getMaxX() + " Y=
+        // " + bounds.getMinY() + " " + bounds.getMaxY());
+        List<Item> returned = new ArrayList<>();
+
+        for (Item item : all_items_map.values()) {
+            Node node = item.get_Node();
+            if (!pane.getChildren().contains(node))
+                continue;
+            Bounds b = node.getBoundsInParent();
+            // if (b.intersects(bounds))
+            if (selection_bounds.contains(
+                    b.getMinX() + margin, b.getMinY() + margin, b.getMinZ(),
+                    b.getWidth() - dmargin, b.getHeight() - dmargin, b.getDepth())) {
+                returned.add(item);
+                // logger.log("2YES ! for " + item.get_icon_path() + " we have bounds X= " +
+                // b.getMinX() + " " + b.getMaxX() + " Y= " + b.getMinY() + " " + b.getMaxY());
+            } else {
+                // logger.log("2NO ? for " + item.get_icon_path() + " we have bounds X= " +
+                // b.getMinX() + " " + b.getMaxX() + " Y= " + b.getMinY() + " " + b.getMaxY());
+            }
+        }
+        return returned;
+    }
+
+    //**********************************************************
+    public double get_virtual_landscape_height()
+    //**********************************************************
+    {
+        return virtual_landscape_height;
+    }
+
+    //**********************************************************
+    public void show_how_many_files_deep_in_each_folder()
+    //**********************************************************
+    {
+        show_total_size_deep_in_each_folder_done = false;
+
+        folder_file_count_cache = new HashMap<>();
+
+        LongAdder count = new LongAdder();
+        double x = owner.getX() + 100;
+        double y = owner.getY() + 100;
+        Optional<Hourglass> progress_window = Progress_window.show_with_abort_button(
+                aborter,
+                "Computing file count",
+                20 * 60,
+                x,
+                y,
+                owner,
+                logger);
+        for (Item i : all_items_map.values()) {
+            if (i instanceof Item_folder ini)
+            {
+                Path folder_path = ini.get_true_path();
+                if ( folder_path != null )
+                {
+                    if (Files.isDirectory(folder_path)) {
+                        ini.add_how_many_files_deep_folder(
+                                count,
+                                ini.get_button(),
+                                ini.text,
+                                folder_path,
+                                folder_file_count_cache,
+                                aborter,
+                                logger);
+                    }
+                }
+            }
+
+        }
+        show_how_many_files_deep_in_each_folder_done = true;
+
+        Runnable monitor = () -> {
+            long start = System.currentTimeMillis();
+            for (;;) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    logger.log("" + e);
+                }
+                if (count.doubleValue() == 0) {
+                    Jfx_batch_injector.inject(() -> on_geometry_changed(true,"sort by number of files", progress_window, is_redrawing),
+                            logger);
+                    if (System.currentTimeMillis() - start > 3000) {
+                        Ding.play("display how many files in each folder", logger);
+                    }
+                    return;
+                }
+            }
+
+        };
+        Actor_engine.execute(monitor, "compute_geometry after computing the number of files", logger);
+    }
+
+    //**********************************************************
+    public void show_total_size_deep_in_each_folder()
+    //**********************************************************
+    {
+
+        /*
+        if ((Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
+                owner) == Sort_files_by.SIMILARITY_BY_PAIRS)
+                ||
+                (Sort_files_by.get_sort_files_by(path_list_provider.get_key(),
+                        owner) == Sort_files_by.SIMILARITY_BY_PURSUIT)) {
+            Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, owner, logger);
+        }*/
+        show_how_many_files_deep_in_each_folder_done = false;
+        folder_total_sizes_cache = new HashMap<>();
+        logger.log("✅ Virtual_landscape: show_total_size_deep_in_each_folder");
+        LongAdder count = new LongAdder();
+        double x = owner.getX() + 100;
+        double y = owner.getY() + 100;
+        Aborter local = new Aborter("show_total_size_deep_in_each_folder",logger);
+        Optional<Hourglass> hourglass = Progress_window.show_with_abort_button(
+                new Or_aborter(local, aborter,logger),
+                "Computing folder sizes",
+                20 * 60,
+                x,
+                y,
+                owner,
+                logger);
+
+        for (Item i : all_items_map.values()) {
+            if ( local.should_abort()) break;
+            if (i instanceof Item_folder item2_folder)
+            {
+                Path folder_path = item2_folder.get_true_path();
+                if ( folder_path != null ) {
+                    if (Files.isDirectory(folder_path)) {
+                        item2_folder.add_total_size_deep_folder(count, item2_folder.get_button(), item2_folder.text,
+                                folder_path,
+                                folder_total_sizes_cache, logger);
+                    }
+                }
+            }
+        }
+        show_total_size_deep_in_each_folder_done = true;
+
+        Runnable monitor = () -> {
+            long start = System.currentTimeMillis();
+            for (;;) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    logger.log("" + e);
+                }
+                if (count.doubleValue() == 0) {
+                    Jfx_batch_injector.inject(() -> on_geometry_changed(true,
+                            "sort by folder length on disk", hourglass, is_redrawing), logger);
+                    if (System.currentTimeMillis() - start > 3000) {
+                        Ding.play("display all folder sizes", logger);
+                    }
+                    return;
+                }
+            }
+
+        };
+        Actor_engine.execute(monitor, "compute_geometry after computing folder sizes", logger);
+    }
+
+    @Override // Top_left_provider
+    //**********************************************************
+    public Path get_top_left()
+    //**********************************************************
+    {
+        return top_left;
+    }
+
+    //**********************************************************
+    public double get_y_offset_of(Path target)
+    //**********************************************************
+    {
+        if (target == null)
+            return 0.0;
+
+        // logger.log("\n\nIcon_manager::get_y_offset_of "+target.toAbsolutePath()+"
+        // length="+all_items_map.values().length());
+        String t2 = target.toAbsolutePath().toString();
+        for (Item i : all_items_map.values()) {
+            // logger.log("\n\nIcon_manager::get_y_offset_of ... looking at
+            // "+i.get_item_path().toAbsolutePath());
+            Path p = i.get_item_path();
+            if (p != null)
+            {
+                if (p.toAbsolutePath().toString().equals(t2)) {
+                    // logger.log("\n\nIcon_manager::get_y_offset_of "+target+ " FOUND offset =
+                    // "+i.get_javafx_y());
+                    return i.get_javafx_y();
+                }
+            }
+        }
+        // logger.log(Stack_trace_getter.get_stack_trace("\n\nnot found:
+        // Virtual_landscape::get_y_offset_of "+target+" (was typically deleted
+        // recently)"));
+
+        return 0;
+    }
+
+    //**********************************************************
+    private Point2D compute_next_Point2D_for_icons(Point2D p,
+            Item item,
+            double column_increment,
+            double row_increment,
+            double scene_width,
+            boolean single_column,
+            double[] max_screen_y_in_row,
+            List<Item> current_row)
+    //**********************************************************
+    {
+        double width_of_this = column_increment;
+        double height_of_this = row_increment;
+
+        final double current_screen_x = p.getX();
+        final double current_screen_y = p.getY();
+        item.set_screen_x_of_image(current_screen_x);
+        item.set_screen_y_of_image(current_screen_y);
+
+        if (((Item_file_with_icon) item).aspect_ratio < 1.0) {
+            if (dbg)
+                logger.log("✅ item is portrait aspect ratio: " + item.get_item_path());
+
+            // portrait image
+            width_of_this = column_increment * ((Item_file_with_icon) item).aspect_ratio;
+            double neg_x = 0;// (width_of_this-column_increment)/2.0;
+            // shift left to compensate the portrait
+            item.set_javafx_x(current_screen_x + neg_x);
+            item.set_javafx_y(current_screen_y);
+        } else {
+            if (dbg)
+                logger.log("✅ item is landscape aspect ratio: " + item.get_item_path());
+            item.set_javafx_x(current_screen_x);
+            height_of_this = row_increment / ((Item_file_with_icon) item).aspect_ratio;
+            double neg_y = (height_of_this - row_increment) / 2.0;
+            // shift up to compensate the landscape
+            item.set_javafx_y(current_screen_y + neg_y);
+        }
+
+        current_row.add(item);
+        if (max_screen_y_in_row[0] < item.get_screen_y_of_image() + height_of_this)
+            max_screen_y_in_row[0] = item.get_screen_y_of_image() + height_of_this;
+        if (Item.layout_dbg)
+            logger.log(item.get_item_path() + "\n" +
+                    "width_of_this=" + width_of_this + " current_x=" + current_screen_x + "\n" +
+                    "height_of_this=" + height_of_this + " current_y=" + current_screen_y + " max_y = "
+                    + max_screen_y_in_row[0]);
+
+        /// then compute position of NEXT item
+        if (single_column) {
+            current_row.clear();
+            how_many_rows++;
+            double future_x = 0;
+            double future_y = current_screen_y + row_increment;
+            // logger.log("new row "+row_increment);
+            return new Point2D(future_x, future_y);
+        }
+
+        double future_x = item.get_screen_x_of_image() + width_of_this;
+        if (Item.layout_dbg)
+            logger.log("width_of_this=" + width_of_this + " => future_x: " + future_x);
+        if (future_x + column_increment > scene_width) {
+            if (Item.layout_dbg)
+                logger.log("✅ NEW ROW, max_screen_y_in_row=" + max_screen_y_in_row[0]);
+
+            // adapt the vertical shift up (neg_y)
+            // e.g. when the row also contains portraits
+            double min_y = Double.MAX_VALUE;
+            double max_y = 0;
+            for (Item i : current_row) {
+                if (i.get_screen_y_of_image() < min_y)
+                    min_y = i.get_screen_y_of_image();
+                double height = 0;
+                if (((Item_file_with_icon) i).aspect_ratio < 1.0) {
+                    // portrait image
+                    height = row_increment;
+                } else {
+                    // landscape image
+                    height = row_increment / ((Item_file_with_icon) i).aspect_ratio;
+                }
+                if (i.get_screen_y_of_image() + height > max_y)
+                    max_y = i.get_screen_y_of_image() + height;
+            }
+            double row_height = (max_y - min_y);
+            for (Item i : current_row) {
+                double height = 0;
+                if (((Item_file_with_icon) i).aspect_ratio < 1.0) {
+                    // portrait image
+                    height = row_increment;
+                } else {
+                    // landscape image
+                    height = row_increment / ((Item_file_with_icon) i).aspect_ratio;
+                }
+                double diff = (row_height - height) / 2.0;
+                i.set_javafx_y(i.get_javafx_y() + diff);
+            }
+
+            // new ROW
+            current_row.clear();
+            how_many_rows++;
+            Point2D returned = new Point2D(0, max_screen_y_in_row[0]);
+            max_screen_y_in_row[0] = 0;
+            return returned;
+        }
+
+        // continued row
+        return new Point2D(future_x, current_screen_y);
+    }
+
+    //**********************************************************
+    private Point2D new_Point_for_files_and_dirs(Point2D point,
+            Item item,
+            double column_increment,
+            double row_increment,
+            double scene_width,
+            boolean single_column)
+    //**********************************************************
+    {
+        // logger.log("column_increment: "+column_increment+", row_increment:
+        // "+row_increment);
+
+        double old_x = point.getX();
+        double old_y = point.getY();
+        item.set_javafx_x(old_x);
+        item.set_javafx_y(old_y);
+
+        double delta_h = row_increment;
+        if (single_column) {
+            how_many_rows++;
+            double new_x = 0;
+            double new_y = old_y + delta_h;
+            if (dbg)
+                logger.log("✅ single_column new row " + delta_h);
+            return new Point2D(new_x, new_y);
+        }
+        double future_x = old_x + column_increment;
+        double future_x_with_width = future_x + column_increment;
+        if (future_x_with_width > scene_width) {
+            // logger.log("old_x: "+old_x+" column_increment: "+ column_increment+"
+            // future_x_with_width: "+future_x_with_width+">"+ scene_width+" too far right,
+            // need to create a new row "+item.get_item_path());
+            how_many_rows++;
+            double new_x = 0;
+            double new_y = old_y + delta_h;
+            // logger.log("new row "+delta_h);
+            return new Point2D(new_x, new_y);
+        }
+        // future candidate point is same line, further on the right
+        return new Point2D(future_x, old_y);
+    }
+
+    //**********************************************************
+    private void compute_bounding_rectangle(String reason)
+    //**********************************************************
+    {
+        if (scroll_dbg)
+            logger.log("✅ compute_bounding_rectangle() " + reason);
+        // compute bounding rectangle
+
+        double x_min = Double.MAX_VALUE;
+        double x_max = -Double.MAX_VALUE;
+        double y_min = Double.MAX_VALUE;
+        virtual_landscape_height = -Double.MAX_VALUE;
+        for (Item item : all_items_map.values()) {
+            if (item.get_javafx_x() < x_min)
+                x_min = item.get_javafx_x();
+            if (item.get_javafx_x() + item.get_Width() > x_max) {
+                x_max = item.get_javafx_x() + item.get_Width();
+            }
+            if (item.get_javafx_y() < y_min) {
+                y_min = item.get_javafx_y();
+            }
+            double h = item.get_Height();
+            if (scroll_dbg)
+                logger.log("✅ compute_bounding_rectangle, h=" + h + " for " + item.get_string());
+
+            if (item.get_javafx_y() + h > virtual_landscape_height)
+                virtual_landscape_height = item.get_javafx_y() + h;
+        }
+
+        if (paths_holder.iconized_paths.isEmpty()) {
+            // when there is no iconized items in the folder
+            // it may happen that the height of the last row of buttons at the bottom is
+            // underestimated
+            virtual_landscape_height += 100;
+        }
+        if (scroll_dbg)
+            logger.log("✅ landscape_height=" + virtual_landscape_height);
+        if (landscape_height_listener != null) {
+            landscape_height_listener.browsed_landscape_height_has_changed(virtual_landscape_height,
+                    current_vertical_offset);
+        }
+    }
+
+    //**********************************************************
+    public void set_scroll_to_listener(Scroll_to_listener vertical_slider)
+    //**********************************************************
+    {
+        scroll_to_listener = vertical_slider;
+    }
+
+    //**********************************************************
+    public List<File> get_file_list()
+    //**********************************************************
+    {
+        return paths_holder.get_file_list();
+    }
+
+    //**********************************************************
+    public List<Path> get_folder_list()
+    //**********************************************************
+    {
+        return paths_holder.get_folder_list();
+    }
+
+    //**********************************************************
+    Scene define_UI()
+    //**********************************************************
+    {
+        Path folder_path = path_list_provider.get_folder_path();
+        double font_size = Non_booleans_properties.get_font_size(owner, logger);
+        double height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
+
+        Button up_button = null;
+        if (context_type == Window_type.File_system_2D)
+        {
+            if( folder_path != null )
+            {
+                String go_up_text = "";
+                // single exception if parh is "/" or "c:", there is no parent, no up button
+                if (path_list_provider.has_parent())
+                {
+                    go_up_text = My_I18n.get_I18n_string("Parent_Folder", owner, logger);
+                
+                    up_button = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
+                        folder_path.getParent(),
+                        go_up_text,
+                        height,
+                        MIN_PARENT_AND_TRASH_BUTTON_WIDTH,
+                        false,
+                        folder_path,
+                        logger);
+                
+                    Optional<Image> icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
+                    if (icon.isEmpty()) {
+                        logger.log("❌ BAD: could not load "
+                                + Look_and_feel_manager.get_instance(owner, logger).get_up_icon_path());
+                    } else {
+                        Look_and_feel_manager.set_button_and_image_look(up_button, icon.get(), height, null, true, owner, logger);
+                    }
+                    top_buttons.add(up_button);
+                }
+            }
+
+        }
+
+        Button trash = null;
+        if (context_type == Window_type.File_system_2D)
+        {
+            String trash_text = My_I18n.get_I18n_string("Trash", owner, logger);// to: " +
+                                                                                // parent.toAbsolutePath().toString();
+            trash = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
+                    Static_files_and_paths_utilities.get_trash_dir(Paths.get(path_list_provider.get_key()), owner, logger),
+                    trash_text,
+                    height,
+                    MIN_PARENT_AND_TRASH_BUTTON_WIDTH,
+                    true,
+                    null,
+                    logger);
+            if ( trash == null)
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("trash button is null ?"));
+            }
+            else
+            {
+                Optional<Image> icon = Look_and_feel_manager.get_trash_icon(height, owner, logger);
+                if (icon.isEmpty()) {
+                    logger.log("❌ BAD: could not load "
+                            + Look_and_feel_manager.get_instance(owner, logger).get_bookmarks_icon_path());
+                }
+                else
+                {
+                    Look_and_feel_manager.set_button_and_image_look(trash, icon.get(), height, null, true, owner, logger);
+                }
+
+            }
+            top_buttons.add(trash);
+        }
+
+        Pane top_pane = define_top_bar_using_buttons_deep(height, up_button, trash);
+        BorderPane border_pane = define_border_pane(top_pane);
+        Scene returned = new Scene(border_pane);// , W, H);
+        // set the view order (smaller means closer to viewer = on top)
+        top_pane.setViewOrder(0);
+        the_Pane.setViewOrder(100);
+        apply_font();
+        return returned;
+    }
+
+    //**********************************************************
+    public void apply_font()
+    //**********************************************************
+    {
+        if (dbg)
+            logger.log("✅ applying font length " + Non_booleans_properties.get_font_size(owner, logger));
+        for (Node x : top_buttons)
+        {
+            if ( x == null )
+            {
+                logger.log(Stack_trace_getter.get_stack_trace("x is null ?"));
+            }
+            else
+            {
+                Font_size.apply_global_font_size_to_Node(x, owner, logger);
+            }
+        }
+    }
+
+    //**********************************************************
+    String get_status()
+    //**********************************************************
+    {
+
+        Sort_files_by file_sort_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner);
+        if (file_sort_by == null)
+        {
+            return "Status: OK";
+        }
+        else
+        {
+            //return "Status: OK, files sorting order : " + file_sort_by.name() + " Folder: " + path_list_provider.get_key();
+            return "Status: OK, " + path_list_provider.get_key();
+        }
+
+    }
+
+    //**********************************************************
+    private BorderPane define_border_pane(Pane top_pane)
+    //**********************************************************
+    {
+        BorderPane returned = new BorderPane();
+        {
+            returned.setTop(top_pane);
+            Look_and_feel_manager.set_region_look(top_pane, owner, logger);
+
+        }
+        returned.setCenter(the_Pane);
+        {
+            VBox for_vertical_slider = new VBox();
+            for_vertical_slider.getChildren().add(vertical_slider.the_Slider);
+            Look_and_feel_manager.set_region_look(for_vertical_slider, owner, logger);
+
+            returned.setRight(for_vertical_slider);
+        }
+        {
+            VBox the_status_bar = new VBox();
+            /*
+             * status = new TextField(get_status());
+             * Look_and_feel_manager.set_region_look(status,owner,logger);
+             * the_status_bar.getChildren().add(status);
+             * returned.setBottom(the_status_bar);
+             */
+
+            scrollable_text_field = new Scrollable_text_field(application,get_status(), null,null,owner, aborter,logger);
+            the_status_bar.getChildren().add(scrollable_text_field);
+            returned.setBottom(the_status_bar);
+
+        }
+        Look_and_feel_manager.set_region_look(returned, owner, logger);
+        return returned;
+    }
+
+    //**********************************************************
+    private Pane define_top_bar_using_buttons_deep(double height, Button go_up, Button trash)
+    //**********************************************************
+    {
+        Pane top_pane;
+        top_pane = new VBox();
+        {
+            HBox top_pane2 = new HBox();
+            top_pane2.setAlignment(Pos.CENTER);
+            top_pane2.setSpacing(10);
+            if (go_up != null)
+                top_pane2.getChildren().add(go_up);
+            define_top_bar_using_buttons_deep2(top_pane2, height);
+            Region spacer = new Region();
+            Look_and_feel_manager.set_region_look(spacer, owner, logger);
+            top_pane2.getChildren().add(spacer);
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            if (trash != null)
+                top_pane2.getChildren().add(trash);
+            Region spacer2 = new Region();
+            Look_and_feel_manager.set_region_look(spacer2, owner, logger);
+            top_pane2.getChildren().add(spacer2);
+            HBox.setHgrow(spacer2, Priority.SOMETIMES);
+            Look_and_feel_manager.set_region_look(top_pane2, owner, logger);
+            top_pane.getChildren().add(top_pane2);
+        }
+        top_pane.getChildren().add(new Separator());
+        return top_pane;
+    }
+
+    //**********************************************************
+    private void define_top_bar_using_buttons_deep2(Pane top_pane, double height)
+    //**********************************************************
+    {
+        {
+            Button undo_bookmark_history_button = make_button_undo_and_bookmark_and_history(
+                    application,
+                    the_whole_history,
+                    path_list_provider,
+                    top_left,
+                    shutdown_target,
+                    Window_type.File_system_2D, height, owner, aborter, logger);
+
+            top_pane.getChildren().add(undo_bookmark_history_button);
+            top_buttons.add(undo_bookmark_history_button);
+        }
+        {
+            String files = My_I18n.get_I18n_string("Files", owner, logger);
+            Button files_button = new Button(files);
+            files_button.setOnAction(e -> button_files(e));
+            top_pane.getChildren().add(files_button);
+            top_buttons.add(files_button);
+            Optional<Image> icon = Look_and_feel_manager.get_folder_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(files_button, icon.orElse(null), height, null, false, owner, logger);
+        }
+        {
+            String view = My_I18n.get_I18n_string("View", owner, logger);
+            Button view_button = new Button(view);
+            view_button.setOnAction(e -> button_view(e));
+            top_pane.getChildren().add(view_button);
+            top_buttons.add(view_button);
+            Optional<Image> icon = Look_and_feel_manager.get_view_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(view_button, icon.orElse(null), height, null, false, owner, logger);
+        }
+        {
+            String preferences = My_I18n.get_I18n_string("Preferences", owner, logger);
+            Button preferences_button = new Button(preferences);
+            preferences_button.setOnAction(e -> button_preferences(e));
+            top_pane.getChildren().add(preferences_button);
+            top_buttons.add(preferences_button);
+            Optional<Image> icon = Look_and_feel_manager.get_preferences_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(preferences_button, icon.orElse(null), height, null, false, owner,
+                    logger);
+        }
+        {
+            String back_text = My_I18n.get_I18n_string("Back", owner, logger);
+            Button back_button = new Button(back_text);
+            back_button.setOnAction(e -> back());
+            top_pane.getChildren().add(back_button);
+            top_buttons.add(back_button);
+            Optional<Image> icon = Look_and_feel_manager.get_back_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(back_button, icon.orElse(null), height, null, false, owner, logger);
+        }
+    }
+
+    //**********************************************************
+    private void back()
+    //**********************************************************
+    {
+        String back_string = History_engine.get(owner).get_back();
+        if (back_string == null) return;
+        logger.log("BACK");
+        Window_builder.replace_same_folder(
+                application,
+                shutdown_target,
+                Window_type.File_system_2D,
+                new Path_list_provider_for_file_system(Path.of(back_string), owner, logger),
+                path_list_provider.get_key(),
+                top_left,
+                owner, logger);
+    }
+
+    //**********************************************************
+    public static Button make_button_undo_and_bookmark_and_history(
+            Application application,
+            Map<LocalDateTime, String> the_whole_history,
+            Path_list_provider path_list_provider,
+            Path top_left, // maybe null
+            Shutdown_target shutdown_target,
+            Window_type context_type,
+            double height,
+            Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        String undo_bookmark_history = My_I18n.get_I18n_string("Bookmarks", owner, logger);
+        undo_bookmark_history += " & " + My_I18n.get_I18n_string("History", owner, logger);
+        Button undo_bookmark_history_button = new Button(undo_bookmark_history);
+        undo_bookmark_history_button.setOnAction(e -> button_undo_and_bookmark_and_history(
+                application,
+                e,
+                the_whole_history,
+                path_list_provider,
+                top_left,
+                shutdown_target,
+                context_type, owner, aborter, logger));
+        Optional<Image> icon = Look_and_feel_manager.get_bookmarks_icon(height, owner, logger);
+        Look_and_feel_manager.set_button_and_image_look(undo_bookmark_history_button, icon.orElse(null), height, null, false, owner,
+                logger);
+        return undo_bookmark_history_button;
+    }
+
+    //**********************************************************
+    private static void button_undo_and_bookmark_and_history(
+            Application application,
+            ActionEvent e,
+            Map<LocalDateTime, String> the_whole_history,
+            Path_list_provider path_list_provider,
+            Path top_left, // maybe null
+            Shutdown_target shutdown_target, Window_type context_type, Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        ContextMenu undo_and_bookmark_and_history = define_contextmenu_undo_bookmark_history(
+                application,
+                the_whole_history,
+                path_list_provider,
+                top_left,
+                shutdown_target,
+                context_type, owner, aborter, logger);
+        Button b = (Button) e.getSource();
+        undo_and_bookmark_and_history.show(b, Side.TOP, 0, 0);
+    }
+
+    //**********************************************************
+    private void button_preferences(ActionEvent e)
+    //**********************************************************
+    {
+        ContextMenu pref = virtual_landscape_menus.define_contextmenu_preferences();
+        Button b = (Button) e.getSource();
+        pref.show(b, Side.TOP, 0, 0);
+    }
+
+    //**********************************************************
+    private void button_files(ActionEvent e)
+    //**********************************************************
+    {
+        ContextMenu files = virtual_landscape_menus.define_files_ContextMenu();
+        Button b = (Button) e.getSource();
+        files.show(b, Side.TOP, 0, 0);
+
+        /*
+         * List<MenuItem> mis = files.getItems();
+         * Visually_impaired_menus vim = new Visually_impaired_menus(mis,1400, logger);
+         * vim.show_under(b);
+         */
+    }
+
+    //**********************************************************
+    private void button_view(ActionEvent e)
+    //**********************************************************
+    {
+        ContextMenu view = define_ContextMenu_for_view_menu();
+        Button b = (Button) e.getSource();
+        view.show(b, Side.TOP, 0, 0);
+    }
+
+    //**********************************************************
+    void on_fullscreen_end()
+    //**********************************************************
+    {
+        // this is called either after the menu above OR if user pressed ESCAPE
+        start_full_screen_menu_item.setDisable(false);
+        stop_full_screen_menu_item.setDisable(true);
+    }
+
+    //**********************************************************
+    void on_fullscreen_start()
+    //**********************************************************
+    {
+        start_full_screen_menu_item.setDisable(true);
+        stop_full_screen_menu_item.setDisable(false);
+    }
+
+    //**********************************************************
+    private static ContextMenu define_contextmenu_undo_bookmark_history(
+            Application application,
+            Map<LocalDateTime, String> the_whole_history,
+            Path_list_provider path_list_provider,
+            Path top_left, // maybe null
+            Shutdown_target shutdown_target,
+            Window_type window_type,
+            Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        ContextMenu undo_bookmark_history_menu = new ContextMenu();
+        Look_and_feel_manager.set_context_menu_look(undo_bookmark_history_menu, owner, logger);
+
+        undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_undos_menu(owner, logger));
+        undo_bookmark_history_menu.getItems().add(
+                Virtual_landscape_menus.make_bookmarks_menu(
+                application, Paths.get(path_list_provider.get_key()), top_left, shutdown_target, window_type, owner, logger));
+
+        Path folder_path = path_list_provider.get_folder_path();
+        if(folder_path != null )
+        {
+            undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_history_menu(
+                application,
+                the_whole_history,
+                path_list_provider,
+                top_left,
+                shutdown_target,
+                window_type,
+                owner, aborter, logger));
+            undo_bookmark_history_menu.getItems().add(Virtual_landscape_menus.make_roots_menu(
+                    application,
+                    folder_path,
+                    top_left,
+                    shutdown_target,
+                    window_type,
+                    owner, logger));
+        }
+        return undo_bookmark_history_menu;
+    }
+
+    //**********************************************************
+    private ContextMenu define_ContextMenu_for_view_menu()
+    //**********************************************************
+    {
+        ContextMenu context_menu = new ContextMenu();
+        Look_and_feel_manager.set_context_menu_look(context_menu, owner, logger);
+
+        // Rectangle2D rectangle = new
+        // Rectangle2D(owner.getX(),owner.getY(),owner.getWidth(),owner.getHeight());
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Window", null,
+                event -> Window_builder.additional_same_folder(
+                application,
+                context_type,
+                path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Twin_Window", new_twin_window.getDisplayText(),
+                event -> Window_builder.additional_same_folder_twin(
+                application,
+                context_type,
+                path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("New_Double_Window", null, event -> Window_builder
+                .additional_same_folder_fat_tall(
+                        application,
+                        context_type, path_list_provider, get_top_left(), owner, logger),
+                context_menu, owner, logger);
+
+        {
+            context_menu.getItems().add(Virtual_landscape_menus.create_menu_item_for_show_details(this,owner,logger));
+        }
+        {
+            start_full_screen_menu_item = Menu_items.make_menu_item_i18n("Go_full_screen",
+                    go_full_screen.getDisplayText(),
+                    event -> full_screen_handler.go_full_screen(), owner, logger);
+            start_full_screen_menu_item.setDisable(false);
+            context_menu.getItems().add(start_full_screen_menu_item);
+        }
+        {
+            stop_full_screen_menu_item = Menu_items.make_menu_item_i18n("Stop_full_screen","(ESC)",
+                    event -> full_screen_handler.stop_full_screen(), owner, logger);
+            stop_full_screen_menu_item.setDisable(true);
+            context_menu.getItems().add(stop_full_screen_menu_item);
+        }
+        {
+            String text = My_I18n.get_I18n_string("Scan_show", owner, logger);
+            Menu scan = new Menu(text);
+            Look_and_feel_manager.set_menu_item_look(scan, owner, logger);
+
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Start_stop_folder_scan_show", start_stop_folder_scan_show.getDisplayText(), event -> handle_scan_switch(), owner, logger));
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Slow_down_scan", slow_down_folder_scan_show.getDisplayText(), event -> slow_down_scan(), owner, logger));
+            scan.getItems().add(Menu_items.make_menu_item_i18n("Speed_up_scan", speedup_folder_scan_show.getDisplayText(), event -> speed_up_scan(), owner, logger));
+            context_menu.getItems().add(scan);
+        }
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_How_Many_Files_Are_In_Each_Folder",null,
+                event -> show_how_many_files_deep_in_each_folder(), context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("Show_Each_Folder_Total_Size", null, event -> show_total_size_deep_in_each_folder(),
+                context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("About_klik", null, event -> About_klikr_stage.show(owner, logger),
+                context_menu, owner, logger);
+        Menu_items.add_menu_item_for_context_menu_i18n("Refresh", refresh.getDisplayText(), event -> redraw_fx(true,"refresh",true), context_menu, owner, logger);
+        if (!change_events_off)
+            Menu_items.add_menu_item_for_context_menu_i18n("Disable_change_events", null, event -> change_events_off = true, context_menu, owner,
+                    logger);
+        if (change_events_off)
+            Menu_items.add_menu_item_for_context_menu_i18n("Enable_change_events", null, event -> change_events_off = false, context_menu, owner,
+                    logger);
+
+        Menu_items.add_menu_item_for_context_menu_i18n(
+                "Show_Meters",null,
+                event -> RAM_and_threads_meters_stage.show_stage(owner, logger),
+                context_menu, owner, logger);
+
+        /*
+         * if (Feature_cache.get(Feature.Enable_tags))
+         * {
+         * Menu_items.add_menu_item("Open_tag_management",event ->
+         * Tag_items_management_stage.open_tag_management_stage(owner,aborter,logger),
+         * context_menu,owner,logger);
+         * }
+         */
+        return context_menu;
+    }
+
+    public boolean change_events_off = false;
+
+    //**********************************************************
+    public void import_apple_Photos()
+    //**********************************************************
+    {
+        if (!Popups.popup_ask_for_confirmation("❗ Importing photos will create COPIES",
+                "Please select a destination drive with enough space", owner, logger))
+            return;
+
+        Importer.perform_import(owner, aborter, logger);
+    }
+
+    //**********************************************************
+    public void estimate_size_of_importing_apple_Photos()
+    //**********************************************************
+    {
+        Importer.estimate_size(owner, logger);
+    }
+
+    //**********************************************************
+    public void set_background_color()
+    //**********************************************************
+    {
+        the_Pane.setBackground(new Background(new BackgroundFill(background_color, CornerRadii.EMPTY, Insets.EMPTY)));
+    }
+
+    //**********************************************************
+    enum Sort_by_time
+    //**********************************************************
+    {
+        year,
+        month,
+        day
+    }
+
+    /*
+     * Scan show
+     */
+
+    Scan_show the_scan_show;
+
+    private static final String msg = "(press \"s\" to start/stop/change direction, \"command + ->\"=faster, \"command + <-\"=slower) speed = ";
+
+    //**********************************************************
+    private void start_scan()
+    //**********************************************************
+    {
+        the_scan_show = new Scan_show(this, vertical_slider, aborter, logger);
+        logger.log("start_scan");
+        //set_status("Scan show starting ! " + msg + the_scan_show.get_speed());
+    }
+
+    //**********************************************************
+    public void stop_scan()
+    //**********************************************************
+    {
+        if (the_scan_show == null) return;
+        logger.log("stop_scan");
+        the_scan_show.stop_the_show();
+        the_scan_show = null;
+        //set_status("Scan show stopped " + msg);
+
+    }
+
+    //**********************************************************
+    public void invert_scan()
+    //**********************************************************
+    {
+        if (the_scan_show == null)
+            start_scan();
+        else
+            the_scan_show.invert_scan_direction();
+    }
+
+    //**********************************************************
+    public void slow_down_scan()
+    //**********************************************************
+    {
+        if (the_scan_show == null) {
+            start_scan();
+            return;
+        }
+        the_scan_show.slow_down();
+        set_status("Scan show running " + msg + the_scan_show.get_speed());
+
+    }
+
+    //**********************************************************
+    public void speed_up_scan()
+    //**********************************************************
+    {
+        if (the_scan_show == null) {
+            start_scan();
+            return;
+        }
+        the_scan_show.hurry_up();
+        set_status("Scan show running " + msg + the_scan_show.get_speed());
+
+    }
+
+    //**********************************************************
+    @Override // Feature_change_target
+    public void update_feature(Feature feature, boolean new_val)
+    //**********************************************************
+    {
+        String text = "the Feature ->" + feature + "<- has new value:" + new_val;
+        if ( feature == null) text = "refresh";
+
+        if (( feature == Feature.Show_hidden_files)||(( feature == Feature.Show_hidden_folders)))
+        {
+            Cache_folder.clear_disk_cache(Cache_folder.folder_cache,false,owner,aborter,logger);
+        }
+        if ( feature == Feature.Log_performances )
+        {
+            if ( new_val)
+            {
+                Perf.start_monitoring(logger);
+            }
+            else
+            {
+                Perf.stop_monitoring();
+            }
+        }
+
+        redraw_fx(true,text, true);
+
+    }
+
+    //**********************************************************
+    enum Scan_state
+    //**********************************************************
+    {
+        off,
+        down,
+        up
+    }
+
+    private Scan_state scan_state = Scan_state.off;
+
+    //**********************************************************
+    void handle_scan_switch()
+    //**********************************************************
+    {
+        switch (scan_state) {
+            case off -> {
+                scan_state = Scan_state.down;
+                start_scan();
+            }
+            case down -> {
+                scan_state = Scan_state.up;
+                invert_scan();
+            }
+            case up -> {
+                scan_state = Scan_state.off;
+                stop_scan();
+            }
+        }
+    }
+
+    //**********************************************************
+    public void abort_backup()
+    //**********************************************************
+    {
+        logger.log("✅ aborting backup");
+        Backup_singleton.abort();
+    }
+
+    //**********************************************************
+    public void start_backup()
+    //**********************************************************
+    {
+        logger.log("✅ starting backup");
+        Path backup_source = Static_backup_paths.get_backup_source();
+        if (backup_source == null) {
+            logger.log("❗ no backup_source");
+            Popups.popup_warning("❗ Cannot backup!", "Reason: no backup ORIGIN", false, owner, logger);
+            return;
+        }
+        Path backup_destination = Static_backup_paths.get_backup_destination();
+        if (backup_destination == null) {
+            logger.log("❗ no backup destination");
+            Popups.popup_warning("❗ Cannot backup!", "Reason: no backup DESTINATION", false, owner, logger);
+
+            return;
+        }
+        Backup_singleton.set_source(backup_source, logger);
+        Backup_singleton.set_destination(backup_destination, logger);
+        Backup_singleton.start_the_backup(owner);
+
+    }
+
+    //**********************************************************
+    public void abort_fusk()
+    //**********************************************************
+    {
+        logger.log("✅ aborting fusk");
+        Fusk_singleton.abort();
+    }
+
+    //**********************************************************
+    public void start_fusk()
+    //**********************************************************
+    {
+        logger.log("✅ starting fusk");
+        Path fusk_source = Static_fusk_paths.get_fusk_source();
+        if (fusk_source == null) {
+            logger.log("❗ no fusk_source");
+            Popups.popup_warning("❗ Cannot fusk!", "Reason: no fusk ORIGIN", false, owner, logger);
+            return;
+        }
+        Path fusk_destination = Static_fusk_paths.get_fusk_destination();
+        if (fusk_destination == null) {
+            logger.log("❗ no fusk destination");
+            Popups.popup_warning("❗ Cannot fusk!", "Reason: no fusk DESTINATION", false, owner, logger);
+
+            return;
+        }
+        Fusk_singleton.set_source(fusk_source, aborter, logger);
+        Fusk_singleton.set_destination(fusk_destination, aborter, logger);
+        Fusk_singleton.start_fusk();
+
+    }
+
+    //**********************************************************
+    public void start_defusk()
+    //**********************************************************
+    {
+        logger.log("✅ starting defusk");
+        Path defusk_source = Static_fusk_paths.get_fusk_source();
+        if (defusk_source == null) {
+            logger.log("❗ no defusk source");
+            Popups.popup_warning("❗ Cannot defusk!", "Reason: no defusk SOURCE", false, owner, logger);
+            return;
+        }
+        Path defusk_destination = Static_fusk_paths.get_fusk_destination();
+        if (defusk_destination == null) {
+            logger.log("❗ no defusk destination");
+            Popups.popup_warning("❗ Cannot defusk!", "Reason: no defusk DESTINATION", false, owner, logger);
+
+            return;
+        }
+        Fusk_singleton.set_source(defusk_source, aborter, logger);
+        Fusk_singleton.set_destination(defusk_destination, aborter, logger);
+        Fusk_singleton.start_defusk();
+
+    }
+
+    //**********************************************************
+    public void you_are_backup_destination()
+    //**********************************************************
+    {
+        Path folder_path =  path_list_provider.get_folder_path();
+        if ( folder_path == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_backup_paths.set_backup_destination(folder_path);
+        logger.log("✅ backup destination = " + path_list_provider.get_key());
+
+        set_text_background("BACKUP\nDESTINATION");
+
+    }
+
+    //**********************************************************
+    public void you_are_backup_source()
+    //**********************************************************
+    {
+        Path folder_path =  path_list_provider.get_folder_path();
+        if ( folder_path == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_backup_paths.set_backup_source(folder_path);
+        logger.log("✅ backup source = " + path_list_provider.get_key());
+
+        set_text_background("BACKUP\nSOURCE");
+
+    }
+
+    //**********************************************************
+    public void you_are_fusk_destination()
+    //**********************************************************
+    {
+        Path folder_path =  path_list_provider.get_folder_path();
+        if ( folder_path == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_fusk_paths.set_fusk_destination(folder_path);
+        logger.log("✅ fusk destination = " + path_list_provider.get_key());
+
+        set_text_background("FUSK\nDESTINATION");
+
+    }
+
+    //**********************************************************
+    public void you_are_fusk_source()
+    //**********************************************************
+    {
+        Path folder_path =  path_list_provider.get_folder_path();
+        if ( folder_path == null )
+        {
+            logger.log(Stack_trace_getter.get_stack_trace(""));
+            return;
+        }
+        Static_fusk_paths.set_fusk_source(folder_path);
+        logger.log("✅ fusk source = " + path_list_provider.get_key());
+
+        set_text_background("FUSK\nSOURCE");
+
+    }
+
+    //**********************************************************
+    public void enter_fusk_pin_code()
+    //**********************************************************
+    {
+        if (Fusk_bytes.is_initialized()) {
+            Fusk_bytes.reset(logger);
+        }
+        Fusk_bytes.initialize(logger);
+    }
+
+    // redrawing engine: in its own thread
+
+    record Redraw_command(boolean force_rescan, String reason, boolean show_hourglass){}
+
+    //**********************************************************
+    public void redraw_fx(boolean force_rescan, String reason, boolean show_hourglass)
+    //**********************************************************
+    {
+        if (dbg)
+            logger.log("✅ Virtual_landscape redraw reason:" + reason);
+        redraw_request_queue.offer(new Redraw_command(force_rescan, reason,show_hourglass));
+    }
+
+    //**********************************************************
+    private void start_redraw_engine(Window owner, Aborter aborter, Logger logger)
+    //**********************************************************
+    {
+        Runnable r = () -> {
+            for (;;) {
+                try {
+                    Redraw_command rc = redraw_request_queue.poll(3, TimeUnit.SECONDS);
+                    if (aborter.should_abort())
+                    {
+                        logger.log("redraw_engine aborted");
+                        return;
+                    }
+                    if (rc != null) redraw_all_internal(rc, owner, owner.getX() + 100, owner.getY() + 100);
+
+                } catch (InterruptedException e)
+                {
+                    logger.log("redraw_engine interrupted"+e);
+                    return;
+                }
+            }
+        };
+        Actor_engine.execute(r, "Redraw engine", logger);
+    }
+
+
+    private AtomicBoolean is_redrawing =  new AtomicBoolean(false);
+    //**********************************************************
+    private void redraw_all_internal(Redraw_command rc, Window owner, double x, double y)
+    //**********************************************************
+    {
+        if ( !is_redrawing.compareAndSet(false,true))
+        {
+            logger.log("redraw_all_internal skipped, is_redrawing");
+            return;
+        }
+        Optional<Hourglass> hourglass = Optional.empty();
+
+        long start = System.currentTimeMillis();
+
+        if (show_progress_window_on_redraw && rc.show_hourglass()) {
+            hourglass = Progress_window.show_with_aborter(
+                    aborter,
+                    "Scanning folder",
+                    20 * 60,
+                    x,
+                    y,
+                    owner,
+                    logger);
+        }
+
+        set_comparators(x + 100, y + 200);
+
+        // the_max_dir_text_length = 0;
+        all_items_map.clear();
+        paths_holder.iconized_paths.clear();
+        paths_holder.non_iconized.clear();
+        paths_holder.folders.clear();
+        iconized_sorted_queue.clear();
+
+        get_image_properties_cache();
+        scan_list();
+
+        if (System.currentTimeMillis() - start > 5_000) {
+            if (Feature_cache.get(Feature.Play_ding_after_long_processes)) {
+                Ding.play("all_image_properties_acquired: done acquiring all image properties", logger);
+            }
+        }
+        get_path_comparator();
+        // logger.log("all_image_properties_acquired, going to refresh");
+        refresh_UI(rc.force_rescan, rc.reason(), hourglass,is_redrawing);
+
+        if (dbg)
+            logger.log("✅ Virtual_landscape::refresh_UI done");
+
+    }
+
+    //**********************************************************
+    private void set_comparators(double x, double y)
+    //**********************************************************
+    {
+        // logger.log("Virtual_landscape: set_comparators");
+
+        Alphabetical_file_name_comparator alphabetical_file_name_comparator = new Alphabetical_file_name_comparator();
+
+        {
+            String cache_key = "other_"+path_list_provider.get_key();
+            other_file_comparator = RAM_caches.similarity_comparator_cache.get(cache_key);
+            if ( other_file_comparator==null)
+            {
+                other_file_comparator = Sort_files_by.get_non_image_comparator(path_list_provider, owner, aborter, logger);
+                if ( other_file_comparator instanceof Similarity_comparator local) {
+                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_key(), local);
+                }
+            }
+        }
+        {
+            String cache_key = "image_"+path_list_provider.get_key();
+            image_file_comparator = RAM_caches.similarity_comparator_cache.get(cache_key);
+            if ( image_file_comparator==null)
+            {
+                image_file_comparator = Sort_files_by.get_image_comparator(path_list_provider, this,
+                        get_image_properties_cache(),
+                        owner, x, y, aborter, logger);
+                if ( image_file_comparator instanceof Similarity_comparator local) {
+                    RAM_caches.similarity_comparator_cache.put(path_list_provider.get_key(), local);
+                }
+            }
+        }
+
+
+
+        paths_holder.folders = new ConcurrentSkipListSet<>(alphabetical_file_name_comparator);
+        paths_holder.non_iconized = new ConcurrentSkipListSet<>(other_file_comparator);
+    }
+
+    //**********************************************************
+    private void scan_list()
+    //**********************************************************
+    {
+        try (Perf p = new Perf("scan_list"))
+        {
+            boolean show_icons = Feature_cache.get(Feature.Show_icons_for_files);
+            if (Feature_cache.get(Feature.Show_single_column_with_details)) show_icons = false;
+
+            if (dbg) {
+                logger.log("✅ Virtual_landscape: scan_list");
+                if (Platform.isFxApplicationThread())
+                    logger.log(
+                            Stack_trace_getter.get_stack_trace("❌ SHOULD NOT HAPPEN: scanning disk on javafx thread"));
+            }
+
+            try {
+                Optional<Image> op = Look_and_feel_manager.get_default_icon(256, owner, logger);
+                if (op.isEmpty()) return;
+                Image default_icon = op.get();
+                final double[] local_x = { 0 };
+                final double[] local_y = { 0 };
+                final int[] count = { 0 };
+                int icon_size = Non_booleans_properties.get_icon_size(owner);
+
+                // show some empty icons, fast
+                Image_found imgfnd = new Image_found() {
+                    @Override
+                    public void image_found() {
+                        Platform.runLater(() -> {
+                            count[0] += 1;
+                            if (count[0] > 100)
+                                return;
+                            ImageView iv = new ImageView(default_icon);
+                            iv.setFitWidth(0.5 * icon_size);
+                            iv.setPreserveRatio(true);
+                            iv.setSmooth(true);
+                            iv.relocate(local_x[0], local_y[0]);
+                            local_x[0] += icon_size;
+                            if (local_x[0] > the_Pane.getWidth()) {
+                                local_x[0] = 0;
+                                local_y[0] += icon_size;
+                            }
+                            // logger.log(local_x[0]+" "+local_y[0]);
+                            the_Pane.getChildren().add(iv);
+                        });
+                    }
+                };
+                Files_and_folders faf = path_list_provider.files_and_folders(true,imgfnd,
+                        Feature_cache.get(Feature.Show_hidden_files), Feature_cache.get(Feature.Show_hidden_folders),
+                        aborter);
+
+                logger.log("✅ Virtual_landscape: faf " + faf.files().size() + " files, folders: "+faf.folders().size());
+
+                for (Path path : faf.folders())
+                {
+                    if (dbg)
+                        logger.log("✅ Virtual_landscape: looking at path " + path.toAbsolutePath());
+
+                    if (aborter.should_abort()) {
+                        logger.log("❗ path manager aborting (1) scan_list ");
+                        aborter.on_abort();
+                        return;
+                    }
+
+                    paths_holder.add_folder(path);
+                }
+                for (Path path : faf.files()) {
+                    if (dbg)
+                        logger.log("✅ Virtual_landscape: looking at path " + path.toAbsolutePath());
+
+                    if (aborter.should_abort()) {
+                        logger.log("❗ path manager aborting (2) scan_list ");
+                        aborter.on_abort();
+                        return;
+                    }
+                    paths_holder.add_file(path_list_provider,path, show_icons, owner);
+                    // this will start one virtual thread per image
+                    // to prefill the image property cache
+                }
+            } catch (InvalidPathException e) {
+                logger.log("❗ Browsing error: " + e);
+                receive_error(Error_type.NOT_FOUND);
+            } catch (SecurityException e) {
+                logger.log("❗ Browsing error: " + e);
+                receive_error(Error_type.DENIED);
+            } catch (Exception e) {
+                logger.log("❗ Browsing error: " + e);
+                receive_error(Error_type.ERROR);
+            }
+
+            if (dbg)
+                logger.log("✅ Virtual_landscape: looking at path Virtual_landscape: scan_list ends");
+        }
+    }
+
+
+    //**********************************************************
+    private void refresh_UI(boolean force_rescan, String reason, Optional<Hourglass> progress_window, AtomicBoolean is_redrawing)
+    //**********************************************************
+    {
+        sort_iconized_items(reason);
+
+        Runnable r = () -> {
+            // logger.log("refresh_UI_after_scan_dir " + reason);
+            refresh_UI_on_fx_thread(force_rescan,reason, progress_window,is_redrawing);
+        };
+        Jfx_batch_injector.inject(r, logger);
+
+    }
+
+    //**********************************************************
+    private void refresh_UI_on_fx_thread(boolean force_rescan, String reason, Optional<Hourglass> progress_window, AtomicBoolean is_redrawing)
+    //**********************************************************
+    {
+
+        try (Perf p = new Perf("refresh_UI_on_fx_thread")) {
+
+            if( aborter.should_abort())
+            {
+                progress_window.ifPresent(Hourglass::close);
+            }
+            if (dbg)
+                logger.log("✅ refresh_UI_on_fx_thread reason: " + reason);
+
+            on_geometry_changed(force_rescan,"scene_geometry_changed reason: " + reason, progress_window,is_redrawing);
+
+            if (dbg)
+                logger.log("✅ adapt_slider_to_scene");
+
+            {
+                vertical_slider.adapt_slider_to_scene(owner);
+            }
+
+            title_target.set_title();
+
+            {
+                double title_height = owner.getHeight() - the_Scene.getHeight();
+                if (title_height > 60) {
+                    logger.log("❗ WARNING: " +
+                            "title_height>60 \nowner.getHeight()=" +
+                            owner.getHeight() + "\nthe_Scene.getHeight()=" + the_Scene.getHeight());
+                } else {
+                    for (Button b : top_buttons) {
+                        b.setMinHeight(title_height);
+                    }
+                }
+            }
+        }
+        logger.log("✅ Klik start time = " + (System.currentTimeMillis() - Klikr_application.start_time) + " ms");
+    }
+
+    //**********************************************************
+    public void on_geometry_changed(boolean force_rescan, String reason, Optional<Hourglass> progress_window, AtomicBoolean is_redrawing)
+    //**********************************************************
+    {
+        try (Perf p1 = new Perf("compute_geometry")) {
+            //if (dbg)
+                logger.log("\n✅ compute_geometry reason=" + reason + " current_vertical_offset="
+                        + current_vertical_offset);
+
+            double magic = 2.0;
+            double row_increment_for_dirs = magic * Non_booleans_properties.get_font_size(owner, logger);
+            int folder_icon_size = Non_booleans_properties.get_folder_icon_size(owner);
+            int column_increment_for_folders = Non_booleans_properties.get_column_width(owner);
+            if (column_increment_for_folders < folder_icon_size)
+                column_increment_for_folders = folder_icon_size;
+
+            int icon_size = Non_booleans_properties.get_icon_size(owner);
+            int column_increment_for_icons = icon_size;
+
+            if (Feature_cache.get(Feature.Show_single_column_with_details)) {
+                // the -100 is to make the button shorter than the full width so that
+                // the mouse selection can "start" in the rightmost part of the pane
+                column_increment_for_icons = (int) (the_Scene.getWidth() - RIGHT_SIDE_SINGLE_COLUMN_MARGIN);
+                column_increment_for_folders = column_increment_for_icons;
+            }
+            double row_increment_for_dirs_with_picture = row_increment_for_dirs + folder_icon_size;
+
+            double scene_width = the_Scene.getWidth();
+
+            double top_delta_y = 2 * Non_booleans_properties.get_font_size(owner, logger);
+            if (error_type == Error_type.DENIED) {
+                Optional<Image> op = Look_and_feel_manager.get_denied_icon(icon_size, owner, logger);
+                ImageView iv_denied = new ImageView(op.orElse(null));
+                show_error_icon(iv_denied, top_delta_y);
+                progress_window.ifPresent(Hourglass::close);
+                is_redrawing.set(false);
+                return;
+            }
+            if (error_type == Error_type.NOT_FOUND) {
+                ImageView not_found = new ImageView(Look_and_feel_manager.get_not_found_icon(icon_size, owner, logger).orElse(null));
+                show_error_icon(not_found, top_delta_y);
+                progress_window.ifPresent(Hourglass::close);
+                is_redrawing.set(false);
+                return;
+            }
+            if (error_type == Error_type.ERROR) {
+                ImageView unknown_error = new ImageView(
+                        Look_and_feel_manager.get_unknown_error_icon(icon_size, owner, logger).orElse(null));
+                show_error_icon(unknown_error, top_delta_y);
+                progress_window.ifPresent(Hourglass::close);
+                is_redrawing.set(false);
+                return;
+            }
+
+            the_Pane.getChildren().clear();
+
+            // now we can be in a thread
+
+            int final_column_increment_for_folders = column_increment_for_folders;
+            int final_column_increment_for_icons = column_increment_for_icons;
+            Runnable r = () -> {
+                try (Perf p2 = new Perf("compute_geometry THREADED part")) {
+
+                    items_are_ready.set(false);
+                    future_pane_content.clear();
+                    how_many_rows = 0;
+
+                    if (dbg)
+                        logger.log("✅ on javafx thread?  " + Platform.isFxApplicationThread());
+
+                    Point2D p = new Point2D(0, 0);
+
+                    long start = System.currentTimeMillis();
+                    p = process_folders(Feature_cache.get(Feature.Show_single_column_with_details), row_increment_for_dirs,
+                            final_column_increment_for_folders, row_increment_for_dirs_with_picture, scene_width, p);
+                    if (dbg)
+                        logger.log("✅ process_folders took " + (System.currentTimeMillis() - start) + " ms");
+                    p = new Point2D(p.getX(), p.getY() + MARGIN_Y);
+                    p = process_non_iconized_items(Feature_cache.get(Feature.Show_single_column_with_details),
+                            final_column_increment_for_folders, scene_width, p);
+                    p = new Point2D(p.getX(), p.getY() + MARGIN_Y);
+                    start = System.currentTimeMillis();
+                    process_iconized_items(force_rescan, Feature_cache.get(Feature.Show_single_column_with_details), icon_size,
+                            final_column_increment_for_icons, scene_width, p);
+                    if (dbg)
+                        logger.log("✅ process_iconized_items took " + (System.currentTimeMillis() - start) + " ms");
+
+                    start = System.currentTimeMillis();
+                    compute_bounding_rectangle("map_buttons_and_icons() OK " + p.getX() + " " + p.getY());
+                    if (dbg)
+                        logger.log("✅ compute_bounding_rectangle took " + (System.currentTimeMillis() - start) + " ms");
+
+                    if (dbg)
+                        logger.log("✅ Going to remap all items");
+                    future_pane_content.addAll(all_items_map.values());
+
+                    items_are_ready.set(true);
+                    Jfx_batch_injector.inject(() -> {
+
+                        for (Item item : future_pane_content) {
+                            if (item.visible_in_scene.get()) {
+                                if (!the_Pane.getChildren().contains(item.get_Node())) {
+                                    the_Pane.getChildren().add(item.get_Node());
+                                }
+                            }
+                        }
+                        scroll_to();
+
+                        on_scroll(reason + " map_buttons_and_icons ");
+                        progress_window.ifPresent(Hourglass::close);
+                        is_redrawing.set(false);
+
+                    }, logger);
+                }
+            };
+            Actor_engine.execute(r, "compute_geometry, threaded part", logger);
+
+        }
+    }
+
+    record File_comp_cache(Sort_files_by file_sort_by, Comparator<Path> comparator) {
+    }
+
+    private File_comp_cache file_comp_cache;
+
+    //**********************************************************
+    public Comparator<Path> get_path_comparator()
+    //**********************************************************
+    {
+        Comparator<Path> local_file_comparator = image_file_comparator;
+
+        if (local_file_comparator == null) {
+            if (file_comp_cache != null) {
+                if (file_comp_cache.file_sort_by() == Sort_files_by
+                        .get_sort_files_by(path_list_provider.get_key(), owner)) {
+                    if (dbg)
+                        logger.log("✅ getting file comparator from cache=" + file_comp_cache);
+                    local_file_comparator = file_comp_cache.comparator();
+                }
+            }
+        }
+        if (local_file_comparator == null) {
+            local_file_comparator = create_fast_file_comparator();
+        }
+        if (local_file_comparator == null) {
+            logger.log("❌ FATAL: local_file_comparator is null");
+        }
+        else
+        {
+            file_comp_cache = new File_comp_cache(
+                        Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner),
+                        local_file_comparator);
+
+            image_file_comparator = local_file_comparator;
+
+        }
+
+        return local_file_comparator;
+    }
+
+    //**********************************************************
+    private Comparator<Path> create_fast_file_comparator()
+    //**********************************************************
+    {
+        Comparator<Path> local_file_comparator = null;
+        switch (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner)) {
+            case ASPECT_RATIO:
+                local_file_comparator = new Aspect_ratio_comparator(get_image_properties_cache(), aborter, owner);
+                break;
+            case RANDOM_ASPECT_RATIO:
+                local_file_comparator = new Aspect_ratio_comparator_random(get_image_properties_cache(), aborter,
+                        owner);
+                break;
+            case IMAGE_WIDTH:
+                local_file_comparator = new Image_width_comparator(get_image_properties_cache(), aborter, owner);
+                break;
+            case IMAGE_HEIGHT:
+                local_file_comparator = new Image_height_comparator(get_image_properties_cache(), aborter, owner,
+                        logger);
+                break;
+            case RANDOM:
+                local_file_comparator = new Random_comparator();
+                break;
+            case FILE_CREATION_DATE:
+                local_file_comparator = new Date_comparator(logger);
+                break;
+            case FILE_LAST_ACCESS_DATE:
+                local_file_comparator = new Last_access_comparator(logger);
+                break;
+            case FILE_SIZE:
+                local_file_comparator = new Decreasing_disk_footprint_comparator(aborter, owner);
+                break;
+
+            default:
+                local_file_comparator = new Alphabetical_file_name_comparator();
+                break;
+        }
+        return local_file_comparator;
+    }
+
+}

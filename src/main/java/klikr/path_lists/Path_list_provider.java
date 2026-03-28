@@ -4,7 +4,7 @@
 package klikr.path_lists;
 //SOURCES ../Move_provider_for_playlist.java
 import javafx.stage.Window;
-import klikr.browser.virtual_landscape.Image_found;
+import klikr.browser_core.virtual_landscape.Image_found;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -33,8 +33,8 @@ public interface Path_list_provider
 
     String get_key(); // never null (absolute path of *folder*) or (absolute path of *playlist file*)
 
-    Optional<Path> get_folder_path();
-    Optional<Path> resolve(String string);
+    Path get_folder_path();
+    Path resolve(String string);
 
     Change get_Change();
 
@@ -57,15 +57,15 @@ public interface Path_list_provider
     default boolean has_parent()
     //**********************************************************
     {
-        Optional<Path> op = get_folder_path();
-        if (op.isEmpty())
+        Path folder_path = get_folder_path();
+        if (folder_path == null)
         {
+            // calling this on a playlist?
             System.out.println(Stack_trace_getter.get_stack_trace(""));
             return false;
         }
 
-        Path parent = op.get().getParent();
-        return parent != null;
+        return folder_path.getParent()!=null;
     }
 
 }

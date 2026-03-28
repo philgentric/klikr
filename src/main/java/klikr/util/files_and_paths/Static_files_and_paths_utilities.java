@@ -14,7 +14,7 @@ import javafx.stage.Window;
 import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser.icons.Error_type;
+import klikr.browser_core.icons.Error_type;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.cache.Cache_folder;
 import klikr.settings.boolean_features.Feature;

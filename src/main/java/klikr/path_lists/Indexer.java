@@ -4,7 +4,7 @@
 //SOURCES ./State.java
 package klikr.path_lists;
 
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;

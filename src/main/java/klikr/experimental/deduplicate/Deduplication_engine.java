@@ -15,7 +15,7 @@ import javafx.stage.Window;
 import klikr.System_info;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;

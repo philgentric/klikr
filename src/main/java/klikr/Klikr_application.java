@@ -107,7 +107,7 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import klikr.audio.simple_player.The_audio_player;
+import klikr.audio.player.The_audio_player;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -217,7 +217,7 @@ public class Klikr_application extends Application
                         {
                             path = Path.of(hi.value);
                             if ( path.toFile().isFile()) path = path.getParent();
-                            logger.log("reloading last folder from history:" + path);
+                            logger.log("reloading folder from history:" + path);
                             break;
                         }
                     }

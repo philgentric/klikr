@@ -4,7 +4,7 @@
 package klikr.path_lists;
 
 import javafx.stage.Window;
-import klikr.browser.virtual_landscape.Image_found;
+import klikr.browser_core.virtual_landscape.Image_found;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Booleans;
 import klikr.util.External_application;
@@ -93,11 +93,11 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Optional<Path> get_folder_path()
+    public Path get_folder_path()
     //**********************************************************
     {
         // does not have a meaning for a playlist
-        return  Optional.empty();
+        return null;
     }
 
 
@@ -215,10 +215,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     }
     //**********************************************************
     @Override
-    public Optional<Path> resolve(String string)
+    public Path resolve(String string)
     //**********************************************************
     {
-        return Optional.empty();
+        return null;
     }
 
 

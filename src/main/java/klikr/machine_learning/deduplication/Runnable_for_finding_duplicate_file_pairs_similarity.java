@@ -4,11 +4,11 @@
 package klikr.machine_learning.deduplication;
 
 import javafx.stage.Window;
-import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.similarity.Most_similar;

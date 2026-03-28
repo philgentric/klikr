@@ -5,7 +5,7 @@ package klikr.util.files_and_paths.disk_scanner;
 
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser.icons.Error_type;
+import klikr.browser_core.icons.Error_type;
 import klikr.util.execute.actor.Executor;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;

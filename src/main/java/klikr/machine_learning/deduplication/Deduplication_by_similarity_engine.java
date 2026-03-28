@@ -11,11 +11,11 @@ package klikr.machine_learning.deduplication;
 
 import javafx.application.Application;
 import javafx.stage.Window;
-import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.experimental.deduplicate.Abortable;
 import klikr.experimental.deduplicate.console.Deduplication_console_window;

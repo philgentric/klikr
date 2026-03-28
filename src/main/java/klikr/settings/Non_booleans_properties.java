@@ -12,7 +12,7 @@ import javafx.stage.Window;
 import klikr.util.Shared_services;
 import klikr.System_info;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.virtual_landscape.Virtual_landscape;
+import klikr.browser_core.virtual_landscape.Virtual_landscape;
 import klikr.util.log.Logger;
 
 

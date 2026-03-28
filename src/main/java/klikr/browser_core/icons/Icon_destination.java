@@ -1,0 +1,29 @@
+// Copyright (c) 2025 Philippe Gentric
+// SPDX-License-Identifier: MIT
+
+package klikr.browser_core.icons;
+
+import klikr.browser_core.Image_and_properties;
+import klikr.browser_core.items.Iconifiable_item_type;
+
+import java.nio.file.Path;
+import java.util.Optional;
+
+//**********************************************************
+public interface Icon_destination
+//**********************************************************
+{
+    void receive_icon(Image_and_properties icon);
+
+    Iconifiable_item_type get_item_type();
+
+    Path get_path_for_display_icon_destination();
+
+    String get_string();
+
+    Path get_item_path();
+
+    boolean get_icon_fabrication_requested(); // this is to prevent more than 1 request per icon
+
+    void set_icon_fabrication_requested(boolean b);
+}

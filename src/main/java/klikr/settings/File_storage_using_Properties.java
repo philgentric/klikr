@@ -116,7 +116,7 @@ public class File_storage_using_Properties implements File_storage
         {
             map.put(key+AGE, LocalDateTime.now().toString());
         }
-
+        save_to_disk();
         return true;
     }
     //**********************************************************
@@ -148,6 +148,7 @@ public class File_storage_using_Properties implements File_storage
         {
             map.remove(key+AGE);
         }
+        save_to_disk();
     }
 
     //**********************************************************
@@ -157,6 +158,7 @@ public class File_storage_using_Properties implements File_storage
     {
         if( dbg_set) logger.log("File_storage_using_Properties "+ tag +" clear() ");
         map.clear();
+        save_to_disk();
     }
 
     //**********************************************************

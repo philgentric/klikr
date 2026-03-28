@@ -73,11 +73,12 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
         name = cache_name_;
         String local = name + path_list_provider.get_key();
         if ( dbg) logger.log(name +" local ="+local);
-        Optional<Path> op = path_list_provider.get_folder_path();
+        Path folder_path = path_list_provider.get_folder_path();
 
         String cache_file_name = "default_cache_file_name";
-        if ( op.isPresent() ) {
-            cache_file_name = op.get().getFileName().toString()+"_"+UUID.nameUUIDFromBytes(local.getBytes());
+        if ( folder_path != null )
+        {
+            cache_file_name = folder_path.getFileName().toString()+"_"+UUID.nameUUIDFromBytes(local.getBytes());
         }
         if ( dbg) logger.log(name +" cache_file_name ="+cache_file_name);
         Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(name, false,owner, logger);

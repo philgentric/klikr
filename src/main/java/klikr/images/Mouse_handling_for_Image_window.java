@@ -15,7 +15,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import klikr.browser.Drag_and_drop;
+import klikr.browser_core.Drag_and_drop;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.cache.Cache_folder;

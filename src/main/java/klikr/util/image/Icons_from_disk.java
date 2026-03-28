@@ -10,7 +10,7 @@ package klikr.util.image;
 import javafx.stage.Window;
 import klikr.util.External_application;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.items.Iconifiable_item_type;
+import klikr.browser_core.items.Iconifiable_item_type;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
 

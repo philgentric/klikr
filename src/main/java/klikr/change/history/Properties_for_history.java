@@ -38,7 +38,7 @@ public class Properties_for_history
 
 
     //**********************************************************
-    public void add_and_prune(String tag)
+    public void record_and_prune(String tag)
     //**********************************************************
     {
         if ( current != null)
@@ -105,7 +105,6 @@ public class Properties_for_history
                 continue;
             }
             History_item hi = new History_item(k, ts);
-            hi.set_available(Files.exists(Path.of(k)));
             returned.add(hi);
         }
         // sort most recent first
@@ -117,7 +116,7 @@ public class Properties_for_history
     public void clear()
     //**********************************************************
     {
-        System.out.println("clearing history");
+        logger.log("clearing history");
         storage.clear();
     }
 

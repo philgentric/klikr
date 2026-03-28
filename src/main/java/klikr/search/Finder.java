@@ -7,7 +7,7 @@ package klikr.search;
 import javafx.application.Application;
 import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.log.Logger;
 

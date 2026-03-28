@@ -7,14 +7,14 @@ package klikr.util.animated_gifs;
 
 import javafx.stage.Window;
 import klikr.util.External_application;
-import klikr.browser.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.util.cache.Cache_folder;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser.comparators.Aspect_ratio_comparator;
+import klikr.browser_core.comparators.Aspect_ratio_comparator;
 import klikr.settings.*;
 import klikr.settings.boolean_features.Booleans;
 import klikr.util.execute.Execute_command;
@@ -53,9 +53,9 @@ public class Animated_gif_from_folder_content
             Window owner,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
-            List<File> images_in_folder,
+            List<Path> images_in_folder,
             Klikr_cache<Path, Image_properties> image_properties_cache,
-            Aborter aborter,Logger logger)
+            Aborter aborter, Logger logger)
     //**********************************************************
     {
         //System.out.println(Stack_trace_getter.get_stack_trace("make_animated_gif_from_images_in_folder "+target_folder));
@@ -80,7 +80,7 @@ public class Animated_gif_from_folder_content
         Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,owner, logger);
         //List<Path> to_be_cleaned_up = new ArrayList<>();
         List<Path> paths = new ArrayList<>();
-        for (File f : images_in_folder) paths.add(f.toPath());
+        for (Path f : images_in_folder) paths.add(f);
         double x = owner.getX()+100;
         double y = owner.getY()+100;
         Comparator<? super Path> local_comp = Sort_files_by.get_image_comparator(path_list_provider,path_comparator_source,image_properties_cache, owner, x,y,new Aborter("dummy",logger),logger);

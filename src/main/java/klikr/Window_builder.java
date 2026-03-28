@@ -8,14 +8,14 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Window;
-import klikr.audio.Browser_for_song_playlist;
-import klikr.browser.classic.Browser_for_file_system_in_2D;
-import klikr.browser.comparators.Last_access_comparator;
-import klikr.browser.virtual_landscape.Scroll_position_cache;
-import klikr.browser.virtual_landscape.Shutdown_target;
-import klikr.diskview.Disk_footprint;
-import klikr.images.Browser_for_image_playlist;
-import klikr.in3D.Browser_for_file_system_in_3D;
+import klikr.browsers.Browser_for_song_playlist;
+import klikr.browsers.Browser_for_file_system_in_2D;
+import klikr.browser_core.comparators.Last_access_comparator;
+import klikr.browser_core.virtual_landscape.Scroll_position_cache;
+import klikr.browser_core.virtual_landscape.Shutdown_target;
+import klikr.browsers.Browser_for_disk_footprint;
+import klikr.browsers.Browser_for_image_playlist;
+import klikr.browsers.Browser_for_file_system_in_3D;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.log.Logger;
 
@@ -85,13 +85,16 @@ public class Window_builder
             Application application,
             Window_type window_type,
             Path_list_provider path_list_provider,
-            Optional<Path> top_left,
+            Path top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
         // make sure the new window is scrolled at the same position
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString(),"additional same folder",logger));
+        if ( top_left != null)
+        {
+            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left.toAbsolutePath().normalize().toString(),"additional same folder",logger);
+        };
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX()+100,originator.getY()+100,originator.getWidth()-100,originator.getHeight()-100);
 
@@ -113,7 +116,7 @@ public class Window_builder
             Application application,
             Window_type window_type,
             Path_list_provider path_list_provider,
-            Optional<Path> top_left,
+            Path top_left,
             Window originator,
             Logger logger)
     //**********************************************************
@@ -126,7 +129,7 @@ public class Window_builder
             Application application,
             Window_type window_type,
             Path_list_provider path_list_provider,
-            Optional<Path> top_left,
+            Path top_left,
             Window originator,
             Logger logger)
     //**********************************************************
@@ -139,12 +142,15 @@ public class Window_builder
             Window_type window_type,
             Path_list_provider path_list_provider,
             int ratio,
-            Optional<Path> top_left,
+            Path top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left_item.toAbsolutePath().normalize().toString(),"additional same folder ratio",logger));
+        if ( top_left != null)
+        {
+            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),top_left.toAbsolutePath().normalize().toString(),"additional same folder ratio",logger);
+        }
 
         ObservableList<Screen> intersecting_screens = Screen.getScreensForRectangle(originator.getX(), originator.getY(), originator.getWidth(), originator.getHeight());
 
@@ -186,15 +192,18 @@ public class Window_builder
             Window_type window_type,
             Path_list_provider what_to_browse,
             String key_for_scroll_position_cache,
-            Optional<Path> top_left,
+            Path top_left, // maybe null
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(
-                key_for_scroll_position_cache,
-                top_left_item.toAbsolutePath().normalize().toString(),
-                "replace same folder",logger));
+        if ( top_left != null)
+        {
+            Scroll_position_cache.scroll_position_cache_write(
+                    key_for_scroll_position_cache,
+                    top_left.toAbsolutePath().normalize().toString(),
+                    "replace same folder",logger);
+        };
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
         Window_builder window_builder =  new Window_builder(
@@ -216,23 +225,26 @@ public class Window_builder
             Window_type window_type,
             Path_list_provider path_list_provider,
             Path key_for_scroll_position_cache,
-            Optional<Path> top_left,
+            Path top_left,
             Window originator,
             Logger logger)
     //**********************************************************
     {
-        top_left.ifPresent((top_left_item)->  Scroll_position_cache.scroll_position_cache_write(
-                key_for_scroll_position_cache.toAbsolutePath().normalize().toString(),
-                top_left_item.toAbsolutePath().normalize().toString(),
-                "replace_different_folder",logger));
+        if ( top_left != null)
+        {
+            Scroll_position_cache.scroll_position_cache_write(
+                    key_for_scroll_position_cache.toAbsolutePath().normalize().toString(),
+                    top_left.toAbsolutePath().normalize().toString(),
+                    "replace_different_folder",logger);
+        };
 
-        Optional<Path> op = path_list_provider.get_folder_path();
-        op.ifPresent((Path folder_path)->
-                {
-                    if ( dbg)
-                        logger.log("replace_different_folder new path: " + folder_path.toAbsolutePath());
-                    Last_access_comparator.set_last_access(folder_path,logger);
-                });
+        Path folder_path = path_list_provider.get_folder_path();
+        if(folder_path != null)
+        {
+            // this is a file system
+            if ( dbg) logger.log("replace_different_folder new path: " + folder_path.toAbsolutePath());
+            Last_access_comparator.set_last_access(folder_path,logger);
+        }
 
         Rectangle2D rectangle = new Rectangle2D(originator.getX(),originator.getY(),originator.getWidth(),originator.getHeight());
         Window_builder window_builder =  new Window_builder(
@@ -259,7 +271,7 @@ public class Window_builder
         {
             case File_system_2D -> returned = new Browser_for_file_system_in_2D(window_builder,logger);
             case File_system_3D -> returned = new Browser_for_file_system_in_3D(window_builder,logger);
-            case File_system_diskview -> returned = new Disk_footprint(window_builder,logger);
+            case File_system_diskview -> returned = new Browser_for_disk_footprint(window_builder,logger);
             case Song_playlist -> returned = new Browser_for_song_playlist(window_builder,logger);
             case Image_playlist_2D -> returned = new Browser_for_image_playlist(window_builder,logger);
         }
@@ -275,8 +287,11 @@ public class Window_builder
     private static void record_last_access(Path_list_provider path_list_provider, Logger logger)
     //**********************************************************
     {
-        Optional<Path> op = path_list_provider.get_folder_path();
-        op.ifPresent(path -> Last_access_comparator.set_last_access(path, logger));
+        Path p = path_list_provider.get_folder_path();
+        if ( p != null)
+        {
+            Last_access_comparator.set_last_access(p, logger);
+        };
     }
 
 }

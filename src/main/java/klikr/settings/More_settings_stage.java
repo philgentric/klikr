@@ -9,7 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.browser.virtual_landscape.Scroll_position_cache;
+import klikr.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Shared_services;
 import klikr.System_info;

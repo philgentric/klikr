@@ -23,10 +23,9 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.boolean_features.Feature;
-import klikr.settings.boolean_features.Booleans;
 import klikr.util.files_and_paths.Ding;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
@@ -94,10 +93,9 @@ public class Finder_frame implements Search_receiver
 		this.path_comparator_source = path_comparator_source;
 		this.logger = logger;
 		this.look_only_for_images = look_only_for_images;
-		Optional<Path> op = path_list_provider.get_folder_path();
-		if( op.isPresent()) {
-			target_folder_path = op.get();
-			if (!op.get().toFile().isDirectory())
+		Path target_folder_path = path_list_provider.get_folder_path();
+		if( target_folder_path != null) {
+			if (!target_folder_path.toFile().isDirectory())
 			{
 				logger.log(Stack_trace_getter.get_stack_trace("Not a directory: " + path_list_provider.get_key()));
 			}
@@ -105,7 +103,6 @@ public class Finder_frame implements Search_receiver
 		else
 		{
 			// this is a playlist !
-			target_folder_path = null;
 		}
 		stage = new Stage();
         stage.initOwner(owner);

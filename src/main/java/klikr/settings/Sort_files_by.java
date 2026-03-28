@@ -6,10 +6,10 @@ package klikr.settings;
 import javafx.stage.Window;
 import klikr.settings.boolean_features.Settings_not_saved_to_disk;
 import klikr.util.Shared_services;
-import klikr.browser.icons.image_properties_cache.Image_properties;
-import klikr.browser.virtual_landscape.Path_comparator_source;
+import klikr.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser.comparators.*;
+import klikr.browser_core.comparators.*;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
 import klikr.machine_learning.similarity.Similarity_cache;
@@ -157,17 +157,17 @@ public enum Sort_files_by {
             Path_list_provider path_list_provider, Window owner,double x, double y, Logger logger)
     //**********************************************************
     {
-        Optional<Path> op = path_list_provider.get_folder_path();
-        if ( op.isEmpty())
+        Path folder_path = path_list_provider.get_folder_path();
+        if ( folder_path == null )
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""));
+            logger.log(Stack_trace_getter.get_stack_trace("folder_path == null"));
             return null;
         }
-        Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(op.get().toAbsolutePath().toString());
+        Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(folder_path.toAbsolutePath().toString());
         if (similarity_cache == null)
         {
             similarity_cache = new Similarity_cache(fvs, path_list_provider, owner, x, y, Shared_services.aborter(), logger);
-            RAM_caches.similarity_cache_of_caches.put(op.get().toAbsolutePath().toString(), similarity_cache);
+            RAM_caches.similarity_cache_of_caches.put(folder_path.toAbsolutePath().toString(), similarity_cache);
         }
         return similarity_cache;
     }

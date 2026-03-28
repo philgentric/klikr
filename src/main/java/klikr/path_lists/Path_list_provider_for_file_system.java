@@ -4,7 +4,7 @@
 package klikr.path_lists;
 
 import javafx.stage.Window;
-import klikr.browser.virtual_landscape.Image_found;
+import klikr.browser_core.virtual_landscape.Image_found;
 import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
@@ -43,14 +43,16 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public Path_list_provider_for_file_system(Path folder_path, Window owner, Logger logger)
     //**********************************************************
     {
-        this.folder_path = folder_path;
-        if( folder_path == null)
-        {
-            logger.log(Stack_trace_getter.get_stack_trace(""));
-        }
         this.logger = logger;
         change = new Change(logger);
         this.owner = owner;
+        this.folder_path = folder_path;
+        if( folder_path == null)
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("❌❌❌ Panic : null folder_path"));
+            this.key = null;
+            return;
+        }
         this.key = folder_path.toAbsolutePath().normalize().toString();
     }
 
@@ -80,11 +82,11 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public boolean is_rescan_needed()
     //**********************************************************
     {
-        Optional<Path> op = get_folder_path();
-        if ( op.isEmpty()) return  false;
+        Path path = get_folder_path();
+        if (  path == null) return  false;
         if ( timestamp < 0) return true;
         try {
-            long as_of_now = Files.getLastModifiedTime(op.get()).toMillis();
+            long as_of_now = Files.getLastModifiedTime( path).toMillis();
             boolean returned = false;
             if ( as_of_now > timestamp) returned = true;
             timestamp = as_of_now;
@@ -97,11 +99,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Optional<Path> get_folder_path()
+    public Path get_folder_path()
     //**********************************************************
     {
-        if ( folder_path == null) return Optional.empty();
-        return Optional.of(folder_path);
+        return folder_path;
     }
 
 
@@ -350,15 +351,18 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Optional<Path> resolve(String string)
+    public Path resolve(String string)
     //**********************************************************
     {
-        if (folder_path == null) return Optional.empty();
-        return Optional.of(folder_path.resolve(string));
+        if (folder_path == null) return  null;
+        return folder_path.resolve(string);
     }
 
+    //**********************************************************
     @Override
-    public Change get_Change() {
+    public Change get_Change()
+    //**********************************************************
+    {
         return change;
     }
 
@@ -394,13 +398,12 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     Files_and_folders load_cache_from_disk(Aborter aborter, Logger logger)
     //**********************************************************
     {
-        Optional<Path> op = get_folder_path();
-        if ( op.isEmpty())
+        Path path = get_folder_path();
+        if (  path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
             return null;
         }
-        Path folder_path = op.get();
         byte[] bytes = null;
         try {
             bytes = Files.readAllBytes(get_cache_save_path());
@@ -425,7 +428,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             long folder_modification_time = Files.getLastModifiedTime(folder_path).toMillis();
             if ( folder_modification_time > cache_creation_time)
             {
-                logger.log("stale folder cache for "+get_folder_path().get());
+                logger.log("stale folder cache for "+get_folder_path());
                 unpacker.close();
                 return null;
             }
@@ -441,8 +444,8 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                         unpacker.close();
                         return null;
                     }
-                    String path = unpacker.unpackString();
-                    files.add(Path.of(path));
+                    String local_path = unpacker.unpackString();
+                    files.add(Path.of(local_path));
                 }
             }
             List<Path> folders;
@@ -456,8 +459,8 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                         unpacker.close();
                         return null;
                     }
-                    String path = unpacker.unpackString();
-                    folders.add(Path.of(path));
+                    String local_path = unpacker.unpackString();
+                    folders.add(Path.of(local_path));
                 }
             }
             unpacker.close();
@@ -474,13 +477,12 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     boolean save_cache_to_disk(Files_and_folders faf, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        Optional<Path> op = get_folder_path();
-        if ( op.isEmpty())
+        Path folder_path = get_folder_path();
+        if (  folder_path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
             return false;
         }
-        Path folder_path = op.get();
         try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
             packer.packString(folder_path.toAbsolutePath().toString());
             long now = System.currentTimeMillis();

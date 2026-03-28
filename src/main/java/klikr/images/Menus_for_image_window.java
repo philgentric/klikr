@@ -17,7 +17,7 @@ import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.System_open_actor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.animated_gifs.Gif_repair;
-import klikr.browser.items.Item_file_with_icon;
+import klikr.browser_core.items.Item_file_with_icon;
 import klikr.change.Redo_same_move_engine;
 import klikr.change.undo.Undo_for_moves;
 import klikr.machine_learning.face_recognition.Face_recognition_message;
