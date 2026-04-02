@@ -76,8 +76,8 @@ public class Icon_factory_actor implements Actor
     private static final boolean cache_gifs_as_files_in_mmap = true; //Feature_cache.get(Feature.Enable_mmap_caching);
 
 
-    private static final boolean dbg = true;
-    private static final boolean verbose_dbg = true;
+    private static final boolean dbg = false;
+    private static final boolean verbose_dbg = false;
     private static final boolean pdf_dbg = false;
     private static final boolean aborting_dbg = false;
 

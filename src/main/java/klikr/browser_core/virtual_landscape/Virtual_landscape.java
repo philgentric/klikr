@@ -986,7 +986,7 @@ public class Virtual_landscape
                 return fv_cache;
             };
 
-            boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_key(), owner);
+            boolean need_image_properties = Sort_files_by.need_image_properties(path_list_provider.get_key(), owner,logger);
 
             double file_button_height = 2 * Non_booleans_properties.get_font_size(owner, logger);
 
@@ -2186,15 +2186,15 @@ public class Virtual_landscape
     //**********************************************************
     {
 
-        Sort_files_by file_sort_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner);
+        Sort_files_by file_sort_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger);
         if (file_sort_by == null)
         {
             return "Status: OK";
         }
         else
         {
-            //return "Status: OK, files sorting order : " + file_sort_by.name() + " Folder: " + path_list_provider.get_key();
-            return "Status: OK, " + path_list_provider.get_key();
+            return "Status: OK, sorting order: " + file_sort_by.name() + " for: " + path_list_provider.get_key();
+            //return "Status: OK, " + path_list_provider.get_key();
         }
 
     }
@@ -3286,8 +3286,7 @@ public class Virtual_landscape
         }
     }
 
-    record File_comp_cache(Sort_files_by file_sort_by, Comparator<Path> comparator) {
-    }
+    record File_comp_cache(Sort_files_by file_sort_by, Comparator<Path> comparator) {}
 
     private File_comp_cache file_comp_cache;
 
@@ -3296,12 +3295,15 @@ public class Virtual_landscape
     //**********************************************************
     {
         Comparator<Path> local_file_comparator = image_file_comparator;
+        //logger.log(Stack_trace_getter.get_stack_trace("get_path_comparator"));
+        Sort_files_by sort_file_by =  Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger);
 
         if (local_file_comparator == null) {
-            if (file_comp_cache != null) {
-                if (file_comp_cache.file_sort_by() == Sort_files_by
-                        .get_sort_files_by(path_list_provider.get_key(), owner)) {
-                    if (dbg)
+            if (file_comp_cache != null)
+            {
+                if (file_comp_cache.file_sort_by() == sort_file_by)
+                {
+                   if (dbg)
                         logger.log("✅ getting file comparator from cache=" + file_comp_cache);
                     local_file_comparator = file_comp_cache.comparator();
                 }
@@ -3310,19 +3312,15 @@ public class Virtual_landscape
         if (local_file_comparator == null) {
             local_file_comparator = create_fast_file_comparator();
         }
-        if (local_file_comparator == null) {
+        if (local_file_comparator == null)
+        {
             logger.log("❌ FATAL: local_file_comparator is null");
         }
         else
         {
-            file_comp_cache = new File_comp_cache(
-                        Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner),
-                        local_file_comparator);
-
+            file_comp_cache = new File_comp_cache(sort_file_by, local_file_comparator);
             image_file_comparator = local_file_comparator;
-
         }
-
         return local_file_comparator;
     }
 
@@ -3330,8 +3328,9 @@ public class Virtual_landscape
     private Comparator<Path> create_fast_file_comparator()
     //**********************************************************
     {
+        logger.log(Stack_trace_getter.get_stack_trace("create_fast_file_comparator"));
         Comparator<Path> local_file_comparator = null;
-        switch (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner)) {
+        switch (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger)) {
             case ASPECT_RATIO:
                 local_file_comparator = new Aspect_ratio_comparator(get_image_properties_cache(), aborter, owner);
                 break;

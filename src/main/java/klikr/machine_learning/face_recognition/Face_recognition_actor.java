@@ -27,7 +27,7 @@ public class Face_recognition_actor implements Actor
 //**********************************************************
 {
     private final Logger logger;
-    public static final boolean dbg = true;
+    public static final boolean dbg = false;
     private final Face_recognition_service service;
     //**********************************************************
     public Face_recognition_actor(Face_recognition_service service, Logger logger)

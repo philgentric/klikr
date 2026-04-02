@@ -113,7 +113,7 @@ public class Paths_holder
 
         if (Guess_file_type.is_this_extension_an_image(extension))
         {
-            if ( Sort_files_by.need_image_properties(path_list_provider.get_key(),owner))
+            if ( Sort_files_by.need_image_properties(path_list_provider.get_key(),owner,logger))
             {
                 if (dbg) logger.log("calling image properties cache prefill from path holder");
                 // calling this will pre-populate the property cache

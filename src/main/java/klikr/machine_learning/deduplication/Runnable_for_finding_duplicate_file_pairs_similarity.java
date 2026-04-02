@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 public class Runnable_for_finding_duplicate_file_pairs_similarity implements Runnable
 //**********************************************************
 {
-	private static final boolean dbg = true;
+	private static final boolean dbg = false;
 	Logger logger;
 	private final List<File_with_a_few_bytes> all_files;
 	BlockingQueue<Similarity_file_pair> output_queue_of_same_in_pairs;

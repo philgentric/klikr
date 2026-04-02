@@ -1650,7 +1650,7 @@ public class Virtual_landscape_menus
         String key = sort_by.name();
         CheckMenuItem item = new CheckMenuItem(My_I18n.get_I18n_string(key,virtual_landscape.owner,logger));
         Look_and_feel_manager.set_menu_item_look(item, virtual_landscape.owner, logger);
-        Sort_files_by actual = Sort_files_by.get_sort_files_by(virtual_landscape.path_list_provider.get_key(),owner);
+        Sort_files_by actual = Sort_files_by.get_sort_files_by(virtual_landscape.path_list_provider.get_key(),owner,logger);
         item.setSelected(actual == sort_by);
         item.setOnAction(actionEvent -> {
             CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
@@ -1662,7 +1662,7 @@ public class Virtual_landscape_menus
                 }
                 if ( actual != sort_by)
                 {
-                    Sort_files_by.set_sort_files_by(virtual_landscape.path_list_provider.get_key(),sort_by,owner,logger);
+                    Sort_files_by.set_sort_files_by(virtual_landscape.path_list_provider.get_key(),sort_by, true, owner,logger);
                     logger.log("new file/image sorting order= "+sort_by);
                     Window_builder.replace_same_folder(
                             virtual_landscape.application,

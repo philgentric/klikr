@@ -11,10 +11,8 @@ import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -322,9 +320,36 @@ public class Image_window
 
             });
 
+            the_Scene.setOnZoom(event -> {
+                if ( dbg) logger.log("on zoom "+event);
+                double zoom = event.getZoomFactor();
+
+                Optional<Image_context> op = image_display_handler.get_image_context();
+                if ( op.isPresent() ) {
+                    Image_context image_context = op.get();
+                    ImageView iv = image_context.the_image_view;
+                    double currentWidth = iv.getFitWidth();
+                    double currentHeight = iv.getFitHeight();
+
+                    mouse_handling_for_image_window.set_mouse_mode(this, Mouse_mode.pix_for_pix);
+
+                    iv.setFitWidth(currentWidth * zoom);
+                    iv.setFitHeight(currentHeight * zoom);
+
+                }
+                event.consume();
+
+            });
             mouse_handling_for_image_window.create_event_handlers(this, the_image_Pane);
             Virtual_landscape.show_progress_window_on_redraw = false;
         }
+    }
+
+    private static double calculate_distance(TouchPoint tp1, TouchPoint tp2)
+    {
+        double dx = tp1.getX() - tp2.getX();
+        double dy = tp1.getY() - tp2.getY();
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     KeyCombination undo;

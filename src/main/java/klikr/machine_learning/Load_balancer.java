@@ -25,7 +25,7 @@ public class Load_balancer
 //**********************************************************
 {
     private static Load_balancer instance;
-    private final static boolean dbg = true;
+    private final static boolean dbg = false;
     private final Random random = new Random();
     private Aborter pump_aborter;
     private final AtomicBoolean server_pump_started = new AtomicBoolean(false);

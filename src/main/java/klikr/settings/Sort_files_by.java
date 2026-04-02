@@ -39,9 +39,10 @@ public enum Sort_files_by {
     //SIMILARITY_BY_PAIRS,
     //SIMILARITY_BY_PURSUIT,
 
+    public final static boolean dbg = false;
+
     public static final String SORT_FILES_BY_FOR_FOLDER_ = "sort_files_by_for_folder_";
 
-    public final static boolean dbg = true;
 
 
     //**********************************************************
@@ -49,7 +50,7 @@ public enum Sort_files_by {
     //**********************************************************
     {
 
-        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
+        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger))
         {
             case //NAME_GIFS_FIRST, SIMILARITY_BY_PURSUIT, SIMILARITY_BY_PAIRS,
                  ASPECT_RATIO, RANDOM_ASPECT_RATIO, IMAGE_HEIGHT , IMAGE_WIDTH, FILE_NAME:
@@ -76,7 +77,7 @@ public enum Sort_files_by {
         double x, double y, Aborter aborter, Logger logger)
     //**********************************************************
     {
-        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner))
+        switch(Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger))
         {
             /*
             case SIMILARITY_BY_PURSUIT: {
@@ -173,10 +174,10 @@ public enum Sort_files_by {
     }
 
     //**********************************************************
-    public static boolean need_image_properties(String key, Window owner)
+    public static boolean need_image_properties(String key, Window owner, Logger logger)
     //**********************************************************
     {
-        switch(Sort_files_by.get_sort_files_by(key, owner))
+        switch(Sort_files_by.get_sort_files_by(key, owner,logger))
         {
             /*case NAME_GIFS_FIRST:
                 return false;
@@ -210,13 +211,13 @@ public enum Sort_files_by {
     // EXCEPT for items in never_saved_to_disk
     private static Map<String, Sort_files_by> cached = new HashMap<>();
     //**********************************************************
-    public static Sort_files_by get_sort_files_by(String key, Window owner)
+    public static Sort_files_by get_sort_files_by(String key, Window owner, Logger logger)
     //**********************************************************
     {
         Sort_files_by from_cache = cached.get(key);
         if ( from_cache != null)
         {
-            if (dbg) System.out.println(("sort files by (1): "+ from_cache.name()));
+            if (dbg) logger.log(Stack_trace_getter.get_stack_trace("CACHED sort files by (1): "+ from_cache.name()+" for:"+key ));
             return from_cache;
         }
 
@@ -224,38 +225,22 @@ public enum Sort_files_by {
         if (s == null)
         {
             Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, Sort_files_by.FILE_NAME.name());
-            if (dbg) System.out.println(("sort files by (2): "+ Sort_files_by.FILE_NAME));
+            if (dbg) logger.log(("sort files by (2): "+ Sort_files_by.FILE_NAME));
             cached.put(key, Sort_files_by.FILE_NAME);
             return Sort_files_by.FILE_NAME;
         }
 
-        if ( s.length() <= SORT_FILES_BY_FOR_FOLDER_.length())
-        {
-            Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, Sort_files_by.FILE_NAME.name());
-            if (dbg) System.out.println(("sort files by (2): "+ Sort_files_by.FILE_NAME));
-            cached.put(key, Sort_files_by.FILE_NAME);
-            return Sort_files_by.FILE_NAME;
-        }
-        try
-        {
-            String s2 = s.substring(SORT_FILES_BY_FOR_FOLDER_.length());
-            Sort_files_by returned = Sort_files_by.valueOf(s2);
 
-            if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (3): "+returned));
-            cached.put(key, returned);
-            return returned;
-        }
-        catch ( IllegalArgumentException e)
-        {
-            if (dbg) System.out.println(Stack_trace_getter.get_stack_trace("sort files by (4): "+ Sort_files_by.FILE_NAME));
+        Sort_files_by returned = Sort_files_by.valueOf(s);
 
-            return Sort_files_by.FILE_NAME;
-        }
+        if (dbg) logger.log(Stack_trace_getter.get_stack_trace("sort files by (4): "+returned));
+        cached.put(key, returned);
+        return returned;
 
     }
 
     //**********************************************************
-    public static void set_sort_files_by(String key, Sort_files_by sort_files_by, Window owner, Logger logger)
+    public static void set_sort_files_by(String key, Sort_files_by sort_files_by, boolean and_save, Window owner, Logger logger)
     //**********************************************************
     {
         for (int i = 0 ; i < Settings_not_saved_to_disk.never_saved_to_disk.length; i++)
@@ -267,8 +252,13 @@ public enum Sort_files_by {
             }
         }
 
+        if(dbg) logger.log("sort files by CACHE : " + sort_files_by.name() + " for folder: " + key);
         cached.put(key, sort_files_by);
-        Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_+key, sort_files_by.name());
+        if ( and_save )
+        {
+            if(dbg) logger.log("sort files by SAVING : " + sort_files_by.name() + " for folder: " + key);
+            Shared_services.main_properties().set_and_save(SORT_FILES_BY_FOR_FOLDER_ + key, sort_files_by.name());
+        }
     }
 
 }

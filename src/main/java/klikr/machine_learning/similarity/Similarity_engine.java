@@ -36,8 +36,7 @@ import java.util.function.Supplier;
 public class Similarity_engine implements Clearable_RAM_cache
 //**********************************************************
 {
-    private final static boolean dbg = true;
-
+    private final static boolean dbg = false;
 
     public static final double W = 300;
     public static final double H = 300;

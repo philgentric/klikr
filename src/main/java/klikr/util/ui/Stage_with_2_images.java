@@ -84,8 +84,8 @@ public class Stage_with_2_images
         this.aborter = private_aborter;
 
 		// there was an obscure bug with random order?
-		if (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner) == Sort_files_by.RANDOM_ASPECT_RATIO) {
-				Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, owner, logger);
+		if (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger) == Sort_files_by.RANDOM_ASPECT_RATIO) {
+				Sort_files_by.set_sort_files_by(path_list_provider.get_key(), Sort_files_by.FILE_NAME, false, owner, logger);
 		}
 		logger.log("Stage_with_2_images !");
 

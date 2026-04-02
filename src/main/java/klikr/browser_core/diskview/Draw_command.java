@@ -28,7 +28,7 @@ import java.nio.file.Path;
 public class Draw_command
 //*******************************************************
 {
-    private static final boolean dbg = true;
+    private static final boolean dbg = false;
     final Logger logger;
     public final File_node node;
     public final Rectangle2D bounds;
