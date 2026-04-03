@@ -169,9 +169,9 @@ public class Browser_for_image_playlist extends Abstract_browser
     }
     //**********************************************************
     @Override
-    public void replace_current_item(Path path, Path old)
+    public void set_unique_selected_item(Path path)
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.set_current_item() not implemented");
+        logger.log("Browser_for_image_playlist.replace_current_item() not implemented");
     }
 }

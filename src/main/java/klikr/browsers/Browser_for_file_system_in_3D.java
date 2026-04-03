@@ -25,14 +25,11 @@ import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.Window_builder;
-import klikr.Window_type;
-import klikr.Window_provider;
+import klikr.*;
 import klikr.browser_core.Window_manager;
 import klikr.browser_core.in3D.*;
 import klikr.browser_core.virtual_landscape.Shutdown_target;
 import klikr.browser_core.virtual_landscape.Virtual_landscape;
-import klikr.change.history.History_engine;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.Sort_files_by;
 import klikr.settings.boolean_features.Feature;
@@ -54,7 +51,7 @@ import java.util.*;
 import java.util.List;
 
 //*******************************************************
-public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_target
+public class Browser_for_file_system_in_3D implements Owner_provider, Selection_manager, File_comparator_provider,Shutdown_target
 //*******************************************************
 {
     public static final boolean dbg = false;
@@ -160,12 +157,12 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
 
     }
     //*******************************************************
-    @Override // Window_provider
-    public void replace_current_item(Path path, Path old)
+    @Override // Selection_manager
+    public void set_unique_selected_item(Path path)
     //*******************************************************
     {
         // todo
-        logger.log("set_current_item not implemented for Browser_for_file_system_in_3D");
+        logger.log("replace_current_item not implemented for Browser_for_file_system_in_3D");
     }
     //*******************************************************
     public Scene get_scene()
@@ -316,7 +313,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
 
 
     //*******************************************************
-    @Override
+    @Override // File_comparator_provider
     public Comparator<? super Path> get_file_comparator()
     //*******************************************************
     {
@@ -1054,7 +1051,7 @@ public class Browser_for_file_system_in_3D implements Window_provider, Shutdown_
     }
 
     //*******************************************************
-    @Override // Window_provider
+    @Override // Owner_provider
     public Window get_owner()
     //*******************************************************
     {

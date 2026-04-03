@@ -5,7 +5,7 @@ package klikr.browser_core;
 //SOURCES ./virtual_landscape/Shutdown_target.java
 //SOURCES ./virtual_landscape/Full_screen_handler.java
 //SOURCES ./virtual_landscape/Path_list_provider.java
-//SOURCES ../Window_provider.java
+//SOURCES ../Owner_provider.java
 //SOURCES ./Title_target.java
 //SOURCES ../UI_change_target.java
 import javafx.application.Platform;
@@ -25,10 +25,11 @@ import klikr.look.Look_and_feel_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.Non_booleans_properties;
 import klikr.settings.boolean_features.Feature_cache;
-import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
+import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
 
+import java.nio.file.Path;
 import java.util.function.Consumer;
 
 //**********************************************************
@@ -37,7 +38,9 @@ public abstract class Abstract_browser implements
         Shutdown_target,
         Title_target,
         Full_screen_handler,
-        Window_provider,
+        Owner_provider,
+        Selection_manager,
+        File_comparator_provider,
         UI_change_target
 //**********************************************************
 {
@@ -78,7 +81,7 @@ public abstract class Abstract_browser implements
 
     }
 
-    @Override // Window_provider
+    @Override // Owner_provider
     public Window get_owner()
     {
         return my_Stage.the_Stage;
@@ -151,7 +154,8 @@ public abstract class Abstract_browser implements
         Look_and_feel_manager.set_icon_for_main_window(my_Stage.the_Stage, badge, Look_and_feel_manager.Icon_type.KLIK, my_Stage.the_Stage, logger);
 
         //record in history
-        History_engine.get(get_owner()).record(get_path_for_history());
+        String path_for_history = get_path_for_history();
+        if ( path_for_history != null) History_engine.get(get_owner()).record(path_for_history);
 
 
         Change_gang.register(change_receiver, aborter, logger);
@@ -183,6 +187,15 @@ public abstract class Abstract_browser implements
 
     }
 
+
+    //*******************************************************
+    @Override // Selection_manager
+    public void set_unique_selected_item(Path path)
+    //*******************************************************
+    {
+        logger.log("Abstract_browser set_unique_selected_item : "+path);
+        virtual_landscape.set_selected_look_for(path);
+    }
 
     //**********************************************************
     @Override // UI_change_target signaled by launcher

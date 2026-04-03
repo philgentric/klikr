@@ -13,9 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import klikr.Klikr_application;
-import klikr.Window_builder;
-import klikr.Window_provider;
+import klikr.*;
 import klikr.browser_core.Window_manager;
 import klikr.browser_core.diskview.*;
 import klikr.browser_core.virtual_landscape.Shutdown_target;
@@ -35,7 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 //*******************************************************
-public class Browser_for_disk_footprint implements Window_provider, Shutdown_target
+public class Browser_for_disk_footprint implements Owner_provider, Selection_manager, File_comparator_provider, Shutdown_target
 //*******************************************************
 {
     private final Stage stage;
@@ -129,14 +127,14 @@ public class Browser_for_disk_footprint implements Window_provider, Shutdown_tar
         return null;
     }
 
-    @Override
-    public void replace_current_item(Path path, Path old)
+    @Override // Selection_manager
+    public void set_unique_selected_item(Path path)
     {
         // not used
     }
 
     //*******************************************************
-    @Override
+    @Override // File_comparator_provider
     public Comparator<? super Path> get_file_comparator()
     //*******************************************************
     {

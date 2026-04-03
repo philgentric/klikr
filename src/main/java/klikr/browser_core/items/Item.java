@@ -108,9 +108,12 @@ public abstract class Item implements Icon_destination
     // this is ok as long as there is no other browser open on that folder: the change_gang manages this
     protected final Path_comparator_source path_comparator_source;
     protected final Application application;
+    protected final Window_type window_type;
+
     //**********************************************************
     public Item(
             Application application,
+            Window_type window_type,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -123,6 +126,7 @@ public abstract class Item implements Icon_destination
     //**********************************************************
     {
         this.application = application;
+        this.window_type = window_type;
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
         this.aborter = aborter;
@@ -197,10 +201,16 @@ public abstract class Item implements Icon_destination
 
     public abstract String get_string();
 
-    public abstract void set_selected_look();
+    public abstract void set_selected_look_specific(boolean b);
 
-    public abstract void unset_selected_look();
-
+    private final AtomicBoolean is_selected = new AtomicBoolean(false);
+    //**********************************************************
+    public void set_selected(boolean b)
+    //**********************************************************
+    {
+        is_selected.set(b);
+        set_selected_look_specific(b);
+    }
 
     //**********************************************************
     public void request_icon_to_factory(int target_icon_size)
@@ -403,6 +413,7 @@ public abstract class Item implements Icon_destination
         String menu_text = null;
         if ( path_list_provider instanceof Path_list_provider_for_file_system path_list_provider_for_file_system)
         {
+            logger.log("pathlistprovider detected as FILE SYSTEM"+path_list_provider_for_file_system.get_key());
             menu_text = My_I18n.get_I18n_string("Delete",owner,logger);
         }
         if ( path_list_provider instanceof Path_list_provider_for_playlist path_list_provider_for_playlist)
@@ -661,26 +672,22 @@ public abstract class Item implements Icon_destination
 
     }
 
-    //**********************************************************
-    public void unset_image_is_selected()
-    //**********************************************************
-    {
-        unset_selected_look();
-    }
 
     //**********************************************************
-    public void set_is_selected()
+    public void is_in_selection_for_moving(boolean selected)
     //**********************************************************
     {
-        Path item_path = get_item_path();
-        if (item_path == null)
+        set_selected(selected);
+        if ( selected )
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""));
-            return;
-        }
-        if (selection_handler.add_to_selected_files(item_path)) {
-            set_selected_look();
-            logger.log("item selected:" + get_item_path());
+            Path item_path = get_item_path();
+            if (item_path == null) {
+                logger.log(Stack_trace_getter.get_stack_trace(""));
+                return;
+            }
+            if (selection_handler.add_to_selected_for_moving(item_path)) {
+                logger.log("item selected:" + get_item_path());
+            }
         }
     }
 
@@ -736,7 +743,7 @@ public abstract class Item implements Icon_destination
     {
         if ( !Platform.isFxApplicationThread())
         {
-            logger.log("HAPPENS1 process_is_visible");
+            logger.log(Stack_trace_getter.get_stack_trace("HAPPENS1 process_is_visible"));
             Platform.runLater(()->process_is_visible(current_vertical_offset));
         }
 
@@ -748,6 +755,7 @@ public abstract class Item implements Icon_destination
         {
             visible_in_scene.set(true);
             you_are_visible();
+            set_selected_look_specific(is_selected.get());
         }
     }
 
@@ -757,10 +765,11 @@ public abstract class Item implements Icon_destination
     {
         //if ( !Platform.isFxApplicationThread()) logger.log(Stack_trace_getter.get_stack_trace("PANIC"));
 
-        set_translate_X(get_javafx_x());
-        set_translate_Y(get_javafx_y() - current_vertical_offset);
+        //WTF set_translate_X(get_javafx_x());
+        //WTF set_translate_Y(get_javafx_y() - current_vertical_offset);
 
         //if ( !Platform.isFxApplicationThread())logger.log(Stack_trace_getter.get_stack_trace("PANIC process_is_invisible "+Platform.isFxApplicationThread()));
+        // do the shift only once as you_are_invisible is costly
         if (visible_in_scene.get())
         {
             visible_in_scene.set(false);
@@ -813,7 +822,7 @@ public abstract class Item implements Icon_destination
                     }
                     local_button.setText(new_dir_name);
                     local_button.setGraphic(restored);
-                    path_list_provider = new Path_list_provider_for_file_system(new_path,owner,logger);
+                    path_list_provider = Path_list_provider.get_approriate(window_type,new_path,owner,aborter,logger);//new Path_list_provider_for_file_system(new_path,owner,logger);
                 }
                 else
                 {

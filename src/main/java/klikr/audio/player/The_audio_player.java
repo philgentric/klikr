@@ -28,9 +28,8 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import klikr.Klikr_application;
 import klikr.Window_builder;
-import klikr.Window_provider;
+import klikr.Owner_provider;
 import klikr.Window_type;
 import klikr.browsers.Browser_for_song_playlist;
 import klikr.browser_core.Drag_and_drop;
@@ -60,13 +59,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 //**********************************************************
 public class The_audio_player implements Media_callbacks
 //**********************************************************
 {
-    static The_audio_player instance;
+    private static The_audio_player instance;
 
     private static final boolean dbg = false;
     private static final boolean ultra_dbg = false;
@@ -110,7 +109,7 @@ public class The_audio_player implements Media_callbacks
     String play_string;
     Navigator navigator;
     Path current;
-    public static Browser_for_song_playlist browser;
+    private Browser_for_song_playlist browser;
     Label total_duration;
 
     //**********************************************************
@@ -128,14 +127,14 @@ public class The_audio_player implements Media_callbacks
                     logger);
 
         }
-        instance.play_song_internal(song, null, true);
+        instance.play_song_internal(song, true);
         return instance;
     }
 
 
 
     //**********************************************************
-    public static The_audio_player play_playlist(Application application,
+    public static void play_playlist(Application application,
                                                  Path_list_provider path_list_provider, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
@@ -154,8 +153,7 @@ public class The_audio_player implements Media_callbacks
         {
             path = Path.of(song_s);
         }
-        instance.play_song_internal(path, null,true);
-        return instance;
+        instance.play_song_internal(path,true);
     }
 
     //**********************************************************
@@ -189,7 +187,7 @@ public class The_audio_player implements Media_callbacks
         //this.browser = browser;
         this.application = application;
         this.owner = owner;
-        BiConsumer<Path,Path> consumer = (path, previously) -> play_song_internal(path, previously,true);
+        Consumer<Path> consumer = (path) -> play_song_internal(path,true);
         this.navigator = new General_navigator(Navigation_type.songs,path_list_provider,()->current,consumer,owner,logger);
         this.aborter = new Aborter("audio player",logger);
         this.logger = logger;
@@ -221,7 +219,7 @@ public class The_audio_player implements Media_callbacks
         stage.setOnCloseRequest(event -> {
             logger.log("Audio player NEW closing");
             stop_current_media();
-            Klikr_application.audio_player =  null;
+            The_audio_player.kill_instance();
             if ( browser != null)
             {
                 ((Stage)(browser.get_owner())).close();
@@ -232,9 +230,33 @@ public class The_audio_player implements Media_callbacks
         });
     }
 
+    //**********************************************************
+    public static void kill_instance()
+    //**********************************************************
+    {
+        if ( instance == null) return;
+        instance.die();
+        instance = null;
+    }
 
     //**********************************************************
-    private void play_song_internal(Path song, Path previously, boolean and_seek)
+    private void die()
+    //**********************************************************
+    {
+        stage.close();
+        stop_current_media();
+    }
+
+    //**********************************************************
+    public static boolean is_running()
+    //**********************************************************
+    {
+        return instance != null;
+    }
+
+
+    //**********************************************************
+    private void play_song_internal(Path song, boolean and_seek)
     //**********************************************************
     {
         if ( song == null )
@@ -244,7 +266,7 @@ public class The_audio_player implements Media_callbacks
         }
 
         current = song;
-        if ( browser !=null) browser.replace_current_item(current,previously);
+        if ( browser !=null) browser.set_unique_selected_item(current);
         String_constants.save_current_song(current.toAbsolutePath().toString(),owner);
 
         logger.log("The_audio_player ->"+current+"<-");
@@ -329,11 +351,12 @@ public class The_audio_player implements Media_callbacks
 
             if(path_list_provider instanceof Path_list_provider_for_file_system)
             {
-                Window_provider wp = Window_builder.additional_no_past(application, Window_type.File_system_2D, path_list_provider, owner, logger);
+                Window_builder.additional_no_past(application, Window_type.File_system_2D, path_list_provider, owner, logger);
             }
             else if(path_list_provider instanceof Path_list_provider_for_playlist)
             {
                 browser = (Browser_for_song_playlist) Window_builder.additional_no_past(application, Window_type.Song_playlist, path_list_provider, owner, logger);
+                browser.set_unique_selected_item(current);
             }
 
         } );
@@ -824,7 +847,7 @@ public class The_audio_player implements Media_callbacks
             for (int i = 0; i < how_many_rectangles; i++)
             {
                 double value = get_equalizer_value_for_band(i, stage, logger);
-                logger.log(i+" value="+ value);
+                logger.log("Equalizer band#"+i+" ="+ value);
                 equalizer_bands.get(i).setGain(value);
 
                 Slider s = new Slider(MIN, MAX, value);
@@ -1024,13 +1047,6 @@ public class The_audio_player implements Media_callbacks
 
 
 
-    //**********************************************************
-    public void die()
-    //**********************************************************
-    {
-        stage.close();
-        Media_instance_statics.dispose();
-    }
 
     static int previous_current_time_in_song = -1;
 

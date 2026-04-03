@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.util.files_and_paths.modifications;
+package klikr.change.file_system_monitoring;
 
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;

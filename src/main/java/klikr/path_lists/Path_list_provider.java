@@ -4,6 +4,7 @@
 package klikr.path_lists;
 //SOURCES ../Move_provider_for_playlist.java
 import javafx.stage.Window;
+import klikr.Window_type;
 import klikr.browser_core.virtual_landscape.Image_found;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
@@ -52,6 +53,17 @@ public interface Path_list_provider
 
     int how_many_files_and_folders(boolean force_rescan, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
 
+    static Path_list_provider get_approriate(Window_type window_type, Path path, Window owner, Aborter aborter, Logger logger)
+    {
+        switch (window_type)
+        {
+            case File_system_2D, File_system_3D, File_system_diskview:
+                return new Path_list_provider_for_file_system(path, owner, logger);
+            case Image_playlist_2D, Song_playlist:
+                return new Path_list_provider_for_playlist(path, owner,aborter, logger);
+        }
+        return null;
+    }
 
     //**********************************************************
     default boolean has_parent()

@@ -1,7 +1,8 @@
 package klikr.path_lists.navigator;
 
 import javafx.stage.Window;
-import klikr.Window_provider;
+import klikr.File_comparator_provider;
+import klikr.Owner_provider;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
@@ -12,7 +13,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -26,10 +26,10 @@ public class General_navigator implements Navigator
     public final Logger logger;
     public final Window owner;
     private final Path_list_provider path_list_provider;
-    private final BiConsumer<Path,Path> path_consumer_ie_player;
+    private final Consumer<Path> path_consumer_ie_player;
     private final Supplier<Path> current_path_supplier;
     //**********************************************************
-    public General_navigator(Navigation_type navigation_type, Path_list_provider path_list_provider, Supplier<Path> current_path_supplier, BiConsumer<Path,Path> path_consumer_ie_player, Window owner, Logger logger)
+    public General_navigator(Navigation_type navigation_type, Path_list_provider path_list_provider, Supplier<Path> current_path_supplier, Consumer<Path> path_consumer_ie_player, Window owner, Logger logger)
     //**********************************************************
     {
         this.owner = owner;
@@ -46,10 +46,10 @@ public class General_navigator implements Navigator
 
     //**********************************************************
     @Override
-    public void previous(Aborter aborter, Window_provider browser)
+    public void previous(Aborter aborter, File_comparator_provider file_comparator_provider)
     //**********************************************************
     {
-        List<Path> paths = get_paths(aborter,browser);
+        List<Path> paths = get_paths(aborter,file_comparator_provider);
         if ( current_path_supplier.get() == null)
         {
             logger.log("FATAL: no current_path_supplier provider");
@@ -64,7 +64,7 @@ public class General_navigator implements Navigator
             Path path = paths.get(index);
             if ( Guess_file_type.is_this_path_a_music(path,logger))
             {
-                path_consumer_ie_player.accept(path,previously);
+                path_consumer_ie_player.accept(path);
                 return;
             }
         }
@@ -73,10 +73,10 @@ public class General_navigator implements Navigator
 
     //**********************************************************
     @Override
-    public void next(Aborter aborter, Window_provider browser)
+    public void next(Aborter aborter, File_comparator_provider file_comparator_provider)
     //**********************************************************
     {
-        List<Path> paths = get_paths(aborter, browser);
+        List<Path> paths = get_paths(aborter, file_comparator_provider);
         if ( current_path_supplier.get() == null)
         {
             logger.log("FATAL: no current_path_supplier provider");
@@ -92,7 +92,7 @@ public class General_navigator implements Navigator
             if ( Guess_file_type.is_this_path_a_music(path,logger))
             {
                 //logger.log("OK, next is a song: "+path);
-                path_consumer_ie_player.accept(path,previously);
+                path_consumer_ie_player.accept(path);
                 return;
             }
             else
@@ -122,7 +122,7 @@ public class General_navigator implements Navigator
 
 
     //**********************************************************
-    private List<Path> get_paths(Aborter aborter, Window_provider browser)
+    private List<Path> get_paths(Aborter aborter, File_comparator_provider file_comparator_provider)
     //**********************************************************
     {
         List<Path> paths = null;
@@ -139,7 +139,7 @@ public class General_navigator implements Navigator
                 break;
         }
         if (paths == null) return new ArrayList<>();
-        if ( browser != null) Collections.sort(paths,browser.get_file_comparator());
+        if ( file_comparator_provider != null) Collections.sort(paths,file_comparator_provider.get_file_comparator());
         return paths;
     }
 

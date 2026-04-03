@@ -37,7 +37,7 @@ public class Selection_handler
     private final Selection_reporter selection_reporter;
 
     // state:
-    private final List<Path> selected_files = new ArrayList<>();
+    private final List<Path> selected_files_for_moving = new ArrayList<>();
     double x0;
     double y0;
     double x1;
@@ -94,7 +94,7 @@ public class Selection_handler
 
 
     //**********************************************************
-    public boolean add_to_selected_files(Path path)
+    public boolean add_to_selected_for_moving(Path path)
     //**********************************************************
     {
         if ( Files.isDirectory(path))
@@ -111,11 +111,12 @@ public class Selection_handler
             Popups.simple_alert(s,virtual_landscape.owner,logger);
             return false;
         }
-        selected_files.add(path);
-        if (Drag_and_drop.drag_and_drop_dbg)  {
-            logger.log("✅ 1 file added to selection = " + path.getFileName());
-            logger.log("✅ all selected files =");
-            for (Path p : selected_files) {
+        selected_files_for_moving.add(path);
+        if (Drag_and_drop.drag_and_drop_dbg)
+        {
+            logger.log("✅ 1 file added to selection for moving = " + path.getFileName());
+            logger.log("✅ all selected files for moving =");
+            for (Path p : selected_files_for_moving) {
                 logger.log("        " + p.getFileName());
             }
         }
@@ -126,7 +127,7 @@ public class Selection_handler
     public List<Path> get_selected_files()
     //**********************************************************
     {
-        return selected_files;
+        return selected_files_for_moving;
     }
 
     //**********************************************************
@@ -292,7 +293,7 @@ public class Selection_handler
         if (Drag_and_drop.drag_and_drop_dbg) logger.log("=============selection=============");
         for (Item i : items)
         {
-            i.set_is_selected(); // show visible feedback to user AND add to list
+            i.is_in_selection_for_moving(true); // show visible feedback to user AND add to list
             if (Drag_and_drop.drag_and_drop_dbg) logger.log("extract_selected_files: "+i.get_string());
         }
         if (Drag_and_drop.drag_and_drop_dbg) logger.log("===================================");
@@ -303,7 +304,7 @@ public class Selection_handler
         }
         else
         {
-            selection_reporter.report(selected_files.size() + " files selected");
+            selection_reporter.report(selected_files_for_moving.size() + " files selected");
         }
     }
 
@@ -311,7 +312,7 @@ public class Selection_handler
     public void reset_selection()
     //**********************************************************
     {
-        selected_files.clear();
+        selected_files_for_moving.clear();
         virtual_landscape.clear_all_selected_images();
     }
 
@@ -319,14 +320,14 @@ public class Selection_handler
     public int get_selected_files_count()
     //**********************************************************
     {
-        return selected_files.size();
+        return selected_files_for_moving.size();
     }
 
     //**********************************************************
     public void add_into_selected_files(List<Path> ll)
     //**********************************************************
     {
-        selected_files.addAll(ll);
+        selected_files_for_moving.addAll(ll);
     }
 
     //**********************************************************

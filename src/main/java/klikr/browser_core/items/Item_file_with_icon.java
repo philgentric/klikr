@@ -77,6 +77,7 @@ public class Item_file_with_icon extends Item_file
     //**********************************************************
     public Item_file_with_icon(
             Application application,
+            Window_type window_type,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -94,6 +95,7 @@ public class Item_file_with_icon extends Item_file
     {
         super(
                 application,
+                window_type,
                 scene,
                 selection_handler,
                 icon_factory_actor,
@@ -200,19 +202,20 @@ public class Item_file_with_icon extends Item_file
 
     //**********************************************************
     @Override // Item
-    public void unset_selected_look()
+    public void set_selected_look_specific(boolean selected)
     //**********************************************************
     {
-        if ( image_view != null) image_view.setViewport(null);
-    }
-    //**********************************************************
-    @Override // Item
-    public void set_selected_look()
-    //**********************************************************
-    {
-       double DELTA = icon_size/2.0;
-       Rectangle2D r = new Rectangle2D(-DELTA, -DELTA, image_view.getFitWidth() + DELTA, image_view.getFitHeight() + DELTA);
-       image_view.setViewport(r);
+        if (selected)
+        {
+            double DELTA = icon_size / 2.0;
+            Rectangle2D r = new Rectangle2D(-DELTA, -DELTA, image_view.getFitWidth() + DELTA, image_view.getFitHeight() + DELTA);
+            image_view.setViewport(r);
+        }
+        else
+        {
+            //if ( image_view != null)
+            image_view.setViewport(null);
+        }
     }
 
     //**********************************************************

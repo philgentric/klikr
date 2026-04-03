@@ -64,6 +64,7 @@ public class Item_folder extends Item implements Icon_destination
     //**********************************************************
     public Item_folder(
             Application application,
+            Window_type window_type,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -84,6 +85,7 @@ public class Item_folder extends Item implements Icon_destination
     {
         super(
                 application,
+                window_type,
                 scene,
                 selection_handler,
                 icon_factory_actor,
@@ -341,19 +343,17 @@ public class Item_folder extends Item implements Icon_destination
 
     //**********************************************************
     @Override // Item
-    public void unset_selected_look()
+    public void set_selected_look_specific(boolean selected)
     //**********************************************************
     {
-        Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
-    }
-
-
-    //**********************************************************
-    @Override // Item
-    public void set_selected_look()
-    //**********************************************************
-    {
-        Look_and_feel_manager.give_button_a_selected_file_style(button,owner,logger);
+        if ( selected )
+        {
+            Look_and_feel_manager.give_button_a_selected_file_style(button, owner, logger);
+        }
+        else
+        {
+            Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
+        }
     }
 
 

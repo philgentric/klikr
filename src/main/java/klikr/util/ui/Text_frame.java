@@ -18,8 +18,8 @@ import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
 import klikr.settings.Non_booleans_properties;
-import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
-import klikr.util.files_and_paths.modifications.Filesystem_modification_reporter;
+import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
+import klikr.change.file_system_monitoring.Filesystem_modification_reporter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 

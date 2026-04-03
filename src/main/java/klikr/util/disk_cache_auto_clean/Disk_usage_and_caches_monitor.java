@@ -5,7 +5,7 @@
 //SOURCES ./Disk_cache_auto_clean.java
 package klikr.util.disk_cache_auto_clean;
 
-import klikr.Window_provider;
+import klikr.Owner_provider;
 import klikr.settings.Non_booleans_properties;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.Shared_services;
@@ -20,7 +20,7 @@ public class Disk_usage_and_caches_monitor
     private final Disk_cache_auto_clean cache_auto_clean;
 
     //**********************************************************
-    public Disk_usage_and_caches_monitor(Window_provider window_provider, Logger logger)
+    public Disk_usage_and_caches_monitor(Owner_provider window_provider, Logger logger)
     //**********************************************************
     {
         this.logger = logger;

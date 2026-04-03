@@ -20,7 +20,6 @@ import klikr.path_lists.Path_list_provider;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 //**********************************************************
 public class Window_builder
@@ -62,7 +61,7 @@ public class Window_builder
 
 
     //**********************************************************
-    public static Window_provider additional_no_past(Application application,Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
+    public static Owner_provider additional_no_past(Application application, Window_type window_type, Path_list_provider path_list_provider, Window owner, Logger logger)
     //**********************************************************
     {
         record_last_access(path_list_provider, logger);
@@ -262,10 +261,10 @@ public class Window_builder
     }
 
     //**********************************************************
-    private static Window_provider get_one_new(Window_builder window_builder, Logger logger)
+    private static Owner_provider get_one_new(Window_builder window_builder, Logger logger)
     //**********************************************************
     {
-        Window_provider returned = null;
+        Owner_provider returned = null;
 
         switch (window_builder.window_type)
         {

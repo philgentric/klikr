@@ -12,6 +12,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
+import klikr.Window_type;
 import klikr.path_lists.Files_and_folders;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
@@ -65,6 +66,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     //**********************************************************
     public Item_folder_with_icon(
             Application application,
+            Window_type window_type,
             Window owner,
             Scene scene,
             Selection_handler selection_handler,
@@ -84,6 +86,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     {
         super(
                 application,
+                window_type,
                 scene,
                 selection_handler,
                 icon_factory_actor,

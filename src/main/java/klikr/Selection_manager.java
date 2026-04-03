@@ -3,16 +3,11 @@
 
 package klikr;
 
-import javafx.stage.Window;
-
 import java.nio.file.Path;
-import java.util.Comparator;
 
 //**********************************************************
-public interface Window_provider
+public interface Selection_manager
 //**********************************************************
 {
-    Window get_owner();
-    void replace_current_item(Path path, Path old);
-    Comparator<? super Path> get_file_comparator();
+    void set_unique_selected_item(Path path);
 }

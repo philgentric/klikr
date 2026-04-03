@@ -187,7 +187,7 @@ public class Song_playlist_application extends Application
 
         Path_list_provider path_list_provider = new Path_list_provider_for_playlist(path,  primary_stage, aborter, logger);
 
-        Window_provider window_provider = Window_builder.additional_no_past(this,Window_type.Song_playlist,path_list_provider,primary_stage_,logger);
+        Owner_provider window_provider = Window_builder.additional_no_past(this,Window_type.Song_playlist,path_list_provider,primary_stage_,logger);
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
         Klikr_communicator klikr_communicator = new Klikr_communicator("Song playlist app",primary_stage,logger);

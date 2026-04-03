@@ -1,6 +1,7 @@
 package klikr.path_lists.navigator;
 
-import klikr.Window_provider;
+import klikr.File_comparator_provider;
+import klikr.Owner_provider;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.execute.actor.Aborter;
 
@@ -10,7 +11,7 @@ import klikr.util.execute.actor.Aborter;
 public interface Navigator
 //**********************************************************
 {
-    void previous(Aborter aborter, Window_provider browser);
-    void next(Aborter aborter, Window_provider browser);
+    void previous(Aborter aborter, File_comparator_provider browser);
+    void next(Aborter aborter, File_comparator_provider browser);
     Path_list_provider get_path_list_provider();
 }

@@ -134,14 +134,14 @@ public class Virtual_landscape_menus
         Look_and_feel_manager.set_context_menu_look(files_menu,owner,logger);
 
         files_menu.getItems().add(make_select_all_files_menu_item(logger));
-        if ( virtual_landscape.context_type == Window_type.File_system_2D) files_menu.getItems().add(make_select_all_folders_menu_item(logger));
+        if ( virtual_landscape.window_type == Window_type.File_system_2D) files_menu.getItems().add(make_select_all_folders_menu_item(logger));
 
         {
             String create_string = My_I18n.get_I18n_string("Create",owner,logger);
             Menu create = new Menu(create_string);
             Look_and_feel_manager.set_menu_item_look(create,owner,logger);
 
-            if ( virtual_landscape.context_type == Window_type.File_system_2D)
+            if ( virtual_landscape.window_type == Window_type.File_system_2D)
             {
                 Menu_items.add_menu_item_for_menu("Create_new_empty_directory", null,
                         event -> create_new_directory(),create,owner,logger);
@@ -152,7 +152,7 @@ public class Virtual_landscape_menus
                 //Menu_items.add_menu_item2("Create_new_empty_image_playlist",event -> Window_builder.create_new_image_playlist(owner, logger)));
             }*/
             Menu_items.add_menu_item_for_menu("Create_PDF_contact_sheet", null,event -> create_PDF_contact_sheet(),create,owner,logger);
-            if ( virtual_landscape.context_type == Window_type.File_system_2D)
+            if ( virtual_landscape.window_type == Window_type.File_system_2D)
             {
                 Menu_items.add_menu_item_for_menu("Stash_Files_In_Folders_By_Year", null, event -> sort_by_time(Virtual_landscape.Sort_by_time.year),create,owner,logger);
                 Menu_items.add_menu_item_for_menu("Stash_Files_In_Folders_By_Month", null,event -> sort_by_time(Virtual_landscape.Sort_by_time.month),create,owner,logger);
@@ -167,7 +167,7 @@ public class Virtual_landscape_menus
             Look_and_feel_manager.set_menu_item_look(search,owner,logger);
 
             Menu_items.add_menu_item_for_menu("Search_by_keywords", virtual_landscape.find.getDisplayText(), event -> search_files_by_keyworks_fx(),search,owner,logger);
-            if ( virtual_landscape.context_type == Window_type.File_system_2D)
+            if ( virtual_landscape.window_type == Window_type.File_system_2D)
             {
                 Menu_items.add_menu_item_for_menu("Show_Where_Are_Images", null,event -> show_where_are_images(),search,owner,logger);
             }
@@ -190,7 +190,7 @@ public class Virtual_landscape_menus
 
             files_menu.getItems().add(face_recognition);
         }
-        if ( virtual_landscape.context_type == Window_type.File_system_2D)
+        if ( virtual_landscape.window_type == Window_type.File_system_2D)
         {
             String cleanup = My_I18n.get_I18n_string("Clean_Up",owner,logger);
             Menu menu = new Menu(cleanup);
@@ -227,7 +227,7 @@ public class Virtual_landscape_menus
             files_menu.getItems().add(menu);
         }
 
-        if ( virtual_landscape.context_type == Window_type.File_system_2D)
+        if ( virtual_landscape.window_type == Window_type.File_system_2D)
         {
             if (Feature_cache.get(Feature.Enable_backup)) {
                 files_menu.getItems().add(make_backup_menu());
@@ -540,7 +540,7 @@ public class Virtual_landscape_menus
                 if ( menu_item.isSelected())
                 {
                     Feature_cache.update_cached_boolean(Feature.Play_music, true, owner);
-                    if ( Klikr_application.audio_player != null)
+                    if (The_audio_player.is_running())
                     {
                         logger.log("an audio player already exists");
                     }
@@ -549,17 +549,16 @@ public class Virtual_landscape_menus
                         logger.log("starting new audio player");
                         Path playlist = String_constants.get_playlist_path(owner);
                         Path_list_provider playlist_path_list_provider = new Path_list_provider_for_playlist(playlist,owner,virtual_landscape.aborter,logger);
-                        Klikr_application.audio_player = The_audio_player.play_playlist(virtual_landscape.application, playlist_path_list_provider, virtual_landscape.owner, virtual_landscape.aborter, logger);
+                        The_audio_player.play_playlist(virtual_landscape.application, playlist_path_list_provider, virtual_landscape.owner, virtual_landscape.aborter, logger);
                     }
                 }
                 else
                 {
                     Feature_cache.update_cached_boolean(Feature.Play_music, false, owner);
-                    if ( Klikr_application.audio_player != null)
+                    if ( The_audio_player.is_running())
                     {
                         logger.log("killing audio player");
-                        Klikr_application.audio_player.die();
-                        Klikr_application.audio_player = null;
+                        The_audio_player.kill_instance();
                     }
                     else
                     {
@@ -818,6 +817,7 @@ public class Virtual_landscape_menus
         // we make a Item_button but are only interested in the button...
         Item_folder dummy = new Item_folder(
                 virtual_landscape.application,
+                virtual_landscape.window_type,
                 virtual_landscape.the_Scene,
                 virtual_landscape.selection_handler,
                 virtual_landscape.icon_factory_actor,
@@ -1022,7 +1022,7 @@ public class Virtual_landscape_menus
             Path_list_provider path_list_provider,
             Path top_left,
             Shutdown_target shutdown_target,
-            Window_type context_type, Window owner, Aborter aborter, Logger logger)
+            Window_type window_type, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         String text = My_I18n.get_I18n_string("History",owner,logger);
@@ -1030,19 +1030,19 @@ public class Virtual_landscape_menus
         Menu history_menu = new Menu(text);
         Look_and_feel_manager.set_menu_item_look(history_menu,owner, logger);
 
-        create_history_menu(application,the_whole_history,path_list_provider, top_left, shutdown_target, history_menu, context_type, owner,aborter, logger);
+        create_history_menu(application,the_whole_history,path_list_provider, top_left, shutdown_target, history_menu, window_type, owner,aborter, logger);
         return history_menu;
     }
 
     //**********************************************************
-    public static Menu make_bookmarks_menu(Application application,Path path, Path top_left, Shutdown_target shutdown_target, Window_type context_type, Window owner, Logger logger)
+    public static Menu make_bookmarks_menu(Application application,Path path, Path top_left, Shutdown_target shutdown_target, Window_type window_type, Window owner, Logger logger)
     //**********************************************************
     {
         String text = My_I18n.get_I18n_string("Bookmarks",owner,logger);
         Menu bookmarks_menu = new Menu(text);
         Look_and_feel_manager.set_menu_item_look(bookmarks_menu,owner, logger);
 
-        create_bookmarks_menu(application,bookmarks_menu, path, top_left, shutdown_target, context_type,owner,logger);
+        create_bookmarks_menu(application,bookmarks_menu, path, top_left, shutdown_target, window_type,owner,logger);
         return bookmarks_menu;
     }
     //**********************************************************
@@ -1239,7 +1239,7 @@ public class Virtual_landscape_menus
             Path path,
             Path top_left,
             Shutdown_target shutdown_target,
-            Window_type context_type,
+            Window_type window_type,
             Window owner, Logger logger)
     //**********************************************************
     {
@@ -1261,7 +1261,7 @@ public class Virtual_landscape_menus
                 Window_builder.replace_different_folder(
                         application,
                         shutdown_target,
-                        context_type,
+                        window_type,
                         new Path_list_provider_for_file_system(Path.of(hi),owner,logger),
                         path,
                         top_left,
@@ -1667,7 +1667,7 @@ public class Virtual_landscape_menus
                     Window_builder.replace_same_folder(
                             virtual_landscape.application,
                             virtual_landscape.shutdown_target,
-                            Window_type.File_system_2D,
+                            virtual_landscape.window_type,
                             virtual_landscape.path_list_provider,
                             virtual_landscape.path_list_provider.get_key(),
                             virtual_landscape.get_top_left(),

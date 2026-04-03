@@ -50,6 +50,7 @@ public class Browser_for_song_playlist extends Abstract_browser
             public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
             {
                 logger.log("Browser_for_song_playlist CHANGE RECEIVED");
+                upon_change();
             }
 
             @Override
@@ -62,9 +63,17 @@ public class Browser_for_song_playlist extends Abstract_browser
 
         my_Stage.the_Stage.setOnCloseRequest(event ->
                 {
-                    The_audio_player.browser = null;
+                    The_audio_player.kill_instance();
                     Window_manager.unregister(ID,logger);
                 });
+    }
+
+    //**********************************************************    @Override
+    private void upon_change()
+    //**********************************************************    @Override
+    {
+        //path_list_provider.reload("upon_change",aborter);
+        virtual_landscape.redraw_fx(true,"upon_change",false);
     }
 
     //**********************************************************    @Override
@@ -81,17 +90,9 @@ public class Browser_for_song_playlist extends Abstract_browser
         return get_Path_list_provider().get_key();
     }
 
-    //*******************************************************
-    @Override // Window_provider
-    public void replace_current_item(Path path, Path previously)
-    //*******************************************************
-    {
-        logger.log("Browser_for_song_playlist set_current_item "+previously+" => "+path);
-        virtual_landscape.swap_selected_look_for(path,previously);
-    }
 
     //*******************************************************
-    @Override
+    @Override // File_comparator_provider
     public Comparator<? super Path> get_file_comparator()
     //*******************************************************
     {
@@ -119,6 +120,7 @@ public class Browser_for_song_playlist extends Abstract_browser
     protected void monitor_current_path_list_source()
     //**********************************************************
     {
+        logger.log("Browser_for_song_playlist monitor_current_path_list_source NOT IMPLEMENTED");
     }
 
     //**********************************************************
@@ -135,7 +137,8 @@ public class Browser_for_song_playlist extends Abstract_browser
     public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
     //**********************************************************
     {
-
+        logger.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere NOT IMPLEMENTED");
+        upon_change();
     }
 
     //**********************************************************

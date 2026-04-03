@@ -7,6 +7,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
+import klikr.Window_type;
 import klikr.util.execute.actor.Aborter;
 import klikr.browser_core.icons.Icon_factory_actor;
 import klikr.browser_core.virtual_landscape.Path_comparator_source;
@@ -31,6 +32,7 @@ public abstract class Item_file extends Item
     //**********************************************************
     public Item_file(
             Application application,
+            Window_type window_type,
             Scene scene,
             Selection_handler selection_handler,
             Icon_factory_actor icon_factory_actor,
@@ -43,7 +45,7 @@ public abstract class Item_file extends Item
             Logger logger)
     //**********************************************************
     {
-        super(application,scene, selection_handler, icon_factory_actor, color, path_list_provider, path_comparator_source, owner, aborter, logger);
+        super(application,window_type, scene, selection_handler, icon_factory_actor, color, path_list_provider, path_comparator_source, owner, aborter, logger);
         if ( path_ == null )
         {
             logger.log(Stack_trace_getter.get_stack_trace("path_ == null ???"));

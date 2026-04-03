@@ -64,7 +64,7 @@ import klikr.change.Change_gang;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.settings.boolean_features.Feature_change_target;
-import klikr.util.files_and_paths.modifications.Filesystem_item_modification_watcher;
+import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.util.files_and_paths.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -73,7 +73,6 @@ import klikr.util.ui.Jfx_batch_injector;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 
 //**********************************************************
@@ -106,12 +105,12 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     }
 
     //*******************************************************
-    @Override // Window_provider
-    public void replace_current_item(Path path, Path old)
+    @Override // Owner_provider
+    public void set_unique_selected_item(Path path)
     //*******************************************************
     {
         // todo
-        logger.log("set_current_item not implemented for Browser_for_file_system_in_2D");
+        logger.log("replace_current_item not implemented for Browser_for_file_system_in_2D");
     }
 
     //**********************************************************
@@ -189,7 +188,8 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     public String get_path_for_history()
     //**********************************************************
     {
-        if ( path_list_provider == null) return "should not happen";
+        if ( path_list_provider == null) return null;
+        if ( path_list_provider.get_folder_path() == null) return null;
         return path_list_provider.get_folder_path().toString();
     }
 

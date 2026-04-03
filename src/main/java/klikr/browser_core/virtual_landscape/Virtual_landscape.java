@@ -83,6 +83,7 @@ import klikr.util.perf.Perf;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
+import org.jspecify.annotations.NonNull;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -129,7 +130,7 @@ public class Virtual_landscape
 
     public final Aborter aborter;
     public final Logger logger;
-    public final Window_type context_type;
+    public final Window_type window_type;
     private Landscape_height_listener landscape_height_listener;
     private Scroll_to_listener scroll_to_listener;
     final Paths_holder paths_holder;
@@ -185,10 +186,12 @@ public class Virtual_landscape
     Klikr_cache<Path, Image_properties> image_properties_cache;
     public final Color background_color;
 
+    private Item selected_item;
+
     //**********************************************************
     public Virtual_landscape(
             Application application,
-            Window_type context_type,
+            Window_type window_type,
             Path_list_provider path_list_provider,
             Window owner,
             Color background_color,
@@ -202,7 +205,7 @@ public class Virtual_landscape
     {
         this.background_color = background_color;
         this.application = application;
-        this.context_type = context_type;
+        this.window_type = window_type;
         this.full_screen_handler = full_screen_handler;
         this.title_target = title_target;
         this.shutdown_target = shutdown_target;
@@ -228,7 +231,7 @@ public class Virtual_landscape
                     logger.log("" + e);
                 }
             }
-            if (Klikr_application.audio_player != null)
+            if (The_audio_player.is_running())
             {
                 logger.log("an audio player already exists");
             }
@@ -236,7 +239,7 @@ public class Virtual_landscape
             {
                 logger.log("Starting playlist browser on path ->" + playlist + "<-");
                 Path_list_provider music_path_list_provider = new Path_list_provider_for_playlist(playlist, owner, aborter, logger);
-                Klikr_application.audio_player = The_audio_player.play_playlist(application, music_path_list_provider, owner, aborter, logger);
+                The_audio_player.play_playlist(application, music_path_list_provider, owner, aborter, logger);
             }
         }
 
@@ -277,35 +280,43 @@ public class Virtual_landscape
 
 
     //**********************************************************
-    public void swap_selected_look_for(Path path, Path old)
+    public void set_selected_look_for(Path new_selected_path)
     //**********************************************************
     {
-        logger.log("Virtual_landscape set_selected_look_for "+old+" => "+path);
+        logger.log("Virtual_landscape set_selected_look_for:  "+new_selected_path);
 
+        if ( selected_item != null) selected_item.set_selected(false);
+
+        // need to WAIT for the all_items_map to be finished
+        Actor_engine.execute(()->
         {
-            Item item = all_items_map.get(path.toAbsolutePath().toString());
+            for(;;)
+            {
+                Thread.onSpinWait();
+                if ( items_are_ready.get()) break;
+            }
+            Item item = all_items_map.get(path_to_string(new_selected_path));
             if ( item != null)
             {
-                item.set_selected_look();
-                scroll_to_path(path);
+                selected_item = item;
+                Platform.runLater(() ->
+                {
+                    selected_item.set_selected(true);
+                    if (!selected_item.visible_in_scene.get()) {
+                        logger.log("Virtual_landscape  scrolling to new selection as it is INvisible:  " + new_selected_path);
+                        scroll_to_path(new_selected_path);
+                    } else {
+                        logger.log("Virtual_landscape NOT scrolling to new selection as it is visible:  " + new_selected_path);
+                    }
+                });
             }
             else
             {
-                logger.log("set_selected_look failed, unknown path: "+path);
+                selected_item = null;
+                logger.log(Stack_trace_getter.get_stack_trace("set_selected_look failed, path not found: "+new_selected_path));
             }
-        }
-        if ( old != null)
-        {
-            Item item = all_items_map.get(old.toAbsolutePath().toString());
-            if ( item != null)
-            {
-                item.unset_selected_look();
-            }
-            else
-            {
-                logger.log("unset_selected_look failed, unknown path: "+old);
-            }
-        }
+        },"waiting for items to be ready",logger);
+
     }
 
     //**********************************************************
@@ -321,7 +332,7 @@ public class Virtual_landscape
             Window_builder.replace_same_folder(
                     application,
                     shutdown_target,
-                    context_type,
+                    window_type,
                     path_list_provider,
                     path_list_provider.get_key(),
                     top_left,
@@ -508,7 +519,7 @@ public class Virtual_landscape
             new_twin_window = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(new_twin_window, () -> {
                 if (Virtual_landscape.kbd_dbg) logger.log("character is ctrl or meta N = clone");
-                Window_builder.additional_same_folder_twin(application,context_type, path_list_provider, get_top_left(), owner, logger);
+                Window_builder.additional_same_folder_twin(application,window_type, path_list_provider, get_top_left(), owner, logger);
             });
         }
 
@@ -903,7 +914,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         for (Item i : all_items_map.values()) {
-            i.unset_image_is_selected();
+            i.is_in_selection_for_moving(false);
         }
     }
 
@@ -998,7 +1009,7 @@ public class Virtual_landscape
             int image_properties_in_flight = 0;
             for (Path path : paths_holder.iconized_paths)
             {
-                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                Item item = all_items_map.get(path_to_string(path));
                 if (item == null) {
                     if (need_image_properties) {
                         image_properties_in_flight++;
@@ -1021,7 +1032,7 @@ public class Virtual_landscape
             {
                 if (ultra_dbg)
                     logger.log("Virtual_landscape process_iconified_items " + path);
-                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                Item item = all_items_map.get(path_to_string(path));
                 if (item == null)
                 {
                     if (need_image_properties)
@@ -1065,6 +1076,7 @@ public class Virtual_landscape
 
                 Item item = new Item_file_with_icon(
                         application,
+                        window_type,
                         the_Scene,
                         selection_handler,
                         icon_factory_actor,
@@ -1077,7 +1089,7 @@ public class Virtual_landscape
                         owner,
                         aborter,
                         logger);
-                all_items_map.put(path.toAbsolutePath().toString(), item);
+                all_items_map.put(path_to_string(path), item);
                 // logger.log("item created: "+path);
             }
             if (dbg) {
@@ -1103,7 +1115,7 @@ public class Virtual_landscape
 
 
             for (Path path : ll) {
-                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                Item item = all_items_map.get(path_to_string(path));
                 if (item == null) {
                     logger.log(
                             ("❌ should not happen: no item in map for: " + path + " map length=" + all_items_map.size()));
@@ -1129,6 +1141,10 @@ public class Virtual_landscape
             if (dbg)
                 logger.log("✅  mapping iconized items took " + (System.currentTimeMillis() - start) + " milliseconds");
         }
+    }
+
+    private static @NonNull String path_to_string(Path path) {
+        return path.toAbsolutePath().toString();
     }
 
     //**********************************************************
@@ -1171,7 +1187,7 @@ public class Virtual_landscape
         }
         String cache_file_name = UUID.nameUUIDFromBytes(tag.getBytes()) + ".properties";
         Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.image_properties_cache.name(), false, owner, logger);
-        Path cache_path = Path.of(dir.toAbsolutePath().toString(), cache_file_name);
+        Path cache_path = Path.of(path_to_string(dir), cache_file_name);
 
         BiPredicate<Path, DataOutputStream> key_serializer= new BiPredicate<Path, DataOutputStream>() {
             @Override
@@ -1327,12 +1343,13 @@ public class Virtual_landscape
                 long size = path.toFile().length() / 1000_000L;
                 if (Guess_file_type.is_this_path_a_video(path, logger))
                     text = size + "MB VIDEO: " + text;
-                Item item = all_items_map.get(path.toAbsolutePath().toString());
+                Item item = all_items_map.get(path_to_string(path));
                 if (item == null) {
                     // logger.log("Item_file_no_icon (3) path="+path);
 
                     item = new Item_file_no_icon(
                             application,
+                            window_type,
                             the_Scene,
                             selection_handler,
                             this,
@@ -1346,7 +1363,7 @@ public class Virtual_landscape
                             owner,
                             aborter,
                             logger);
-                    all_items_map.put(path.toAbsolutePath().toString(), item);
+                    all_items_map.put(path_to_string(path), item);
                 }
                 // item.get_Node().setVisible(false);
                 p = new_Point_for_files_and_dirs(p, item,
@@ -1466,13 +1483,14 @@ public class Virtual_landscape
     //**********************************************************
     {
         try (Perf perf = new Perf("5. process_one_folder_with_picture")) {
-            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
+            Item folder_item = all_items_map.get(path_to_string(folder_path));
             if (folder_item == null) {
                 if (dbg)
                     logger.log("✅ WARNING:Item_folder_with_icon NO path for" + folder_path);
 
                 folder_item = new Item_folder_with_icon(
                         application,
+                        window_type,
                         owner,
                         the_Scene,
                         selection_handler,
@@ -1488,7 +1506,7 @@ public class Virtual_landscape
                         this,
                         aborter,
                         logger);
-                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
+                all_items_map.put(path_to_string(folder_path), folder_item);
             }
             p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width,
                     single_column);
@@ -1507,7 +1525,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         try (Perf perf = new Perf("process_one_folder_plain")) {
-            Item folder_item = all_items_map.get(folder_path.toAbsolutePath().toString());
+            Item folder_item = all_items_map.get(path_to_string(folder_path));
             if (folder_item == null) {
                 Color color = My_colors.load_color_for_path(folder_path, owner, logger);
                 // a "plain" folder is "like a file" from a layout point of view
@@ -1540,6 +1558,7 @@ public class Virtual_landscape
 
                 folder_item = new Item_folder(
                         application,
+                        window_type,
                         the_Scene,
                         selection_handler,
                         icon_factory_actor,
@@ -1557,7 +1576,7 @@ public class Virtual_landscape
                         owner,
                         aborter,
                         logger);
-                all_items_map.put(folder_path.toAbsolutePath().toString(), folder_item);
+                all_items_map.put(path_to_string(folder_path), folder_item);
             }
 
             p = new_Point_for_files_and_dirs(p, folder_item, column_increment, row_increment, scene_width, single_column);
@@ -1842,14 +1861,14 @@ public class Virtual_landscape
 
         // logger.log("\n\nIcon_manager::get_y_offset_of "+target.toAbsolutePath()+"
         // length="+all_items_map.values().length());
-        String t2 = target.toAbsolutePath().toString();
+        String t2 = path_to_string(target);
         for (Item i : all_items_map.values()) {
             // logger.log("\n\nIcon_manager::get_y_offset_of ... looking at
             // "+i.get_item_path().toAbsolutePath());
             Path p = i.get_item_path();
             if (p != null)
             {
-                if (p.toAbsolutePath().toString().equals(t2)) {
+                if (path_to_string(p).equals(t2)) {
                     // logger.log("\n\nIcon_manager::get_y_offset_of "+target+ " FOUND offset =
                     // "+i.get_javafx_y());
                     return i.get_javafx_y();
@@ -2087,8 +2106,9 @@ public class Virtual_landscape
         double height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
 
         Button up_button = null;
-        if (context_type == Window_type.File_system_2D)
+        if (window_type == Window_type.File_system_2D)
         {
+            // need a UP button
             if( folder_path != null )
             {
                 String go_up_text = "";
@@ -2120,8 +2140,9 @@ public class Virtual_landscape
         }
 
         Button trash = null;
-        if (context_type == Window_type.File_system_2D)
+        if (window_type == Window_type.File_system_2D)
         {
+            // need a TRASH button
             String trash_text = My_I18n.get_I18n_string("Trash", owner, logger);// to: " +
                                                                                 // parent.toAbsolutePath().toString();
             trash = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
@@ -2276,7 +2297,7 @@ public class Virtual_landscape
                     path_list_provider,
                     top_left,
                     shutdown_target,
-                    Window_type.File_system_2D, height, owner, aborter, logger);
+                    window_type, height, owner, aborter, logger);
 
             top_pane.getChildren().add(undo_bookmark_history_button);
             top_buttons.add(undo_bookmark_history_button);
@@ -2330,7 +2351,7 @@ public class Virtual_landscape
         Window_builder.replace_same_folder(
                 application,
                 shutdown_target,
-                Window_type.File_system_2D,
+                window_type,
                 new Path_list_provider_for_file_system(Path.of(back_string), owner, logger),
                 path_list_provider.get_key(),
                 top_left,
@@ -2344,7 +2365,7 @@ public class Virtual_landscape
             Path_list_provider path_list_provider,
             Path top_left, // maybe null
             Shutdown_target shutdown_target,
-            Window_type context_type,
+            Window_type window_type,
             double height,
             Window owner, Aborter aborter, Logger logger)
     //**********************************************************
@@ -2359,7 +2380,7 @@ public class Virtual_landscape
                 path_list_provider,
                 top_left,
                 shutdown_target,
-                context_type, owner, aborter, logger));
+                window_type, owner, aborter, logger));
         Optional<Image> icon = Look_and_feel_manager.get_bookmarks_icon(height, owner, logger);
         Look_and_feel_manager.set_button_and_image_look(undo_bookmark_history_button, icon.orElse(null), height, null, false, owner,
                 logger);
@@ -2373,7 +2394,7 @@ public class Virtual_landscape
             Map<LocalDateTime, String> the_whole_history,
             Path_list_provider path_list_provider,
             Path top_left, // maybe null
-            Shutdown_target shutdown_target, Window_type context_type, Window owner, Aborter aborter, Logger logger)
+            Shutdown_target shutdown_target, Window_type window_type, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         ContextMenu undo_and_bookmark_and_history = define_contextmenu_undo_bookmark_history(
@@ -2382,7 +2403,7 @@ public class Virtual_landscape
                 path_list_provider,
                 top_left,
                 shutdown_target,
-                context_type, owner, aborter, logger);
+                window_type, owner, aborter, logger);
         Button b = (Button) e.getSource();
         undo_and_bookmark_and_history.show(b, Side.TOP, 0, 0);
     }
@@ -2490,17 +2511,17 @@ public class Virtual_landscape
         Menu_items.add_menu_item_for_context_menu_i18n("New_Window", null,
                 event -> Window_builder.additional_same_folder(
                 application,
-                context_type,
+                window_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
         Menu_items.add_menu_item_for_context_menu_i18n("New_Twin_Window", new_twin_window.getDisplayText(),
                 event -> Window_builder.additional_same_folder_twin(
                 application,
-                context_type,
+                window_type,
                 path_list_provider, get_top_left(), owner, logger), context_menu, owner, logger);
         Menu_items.add_menu_item_for_context_menu_i18n("New_Double_Window", null, event -> Window_builder
                 .additional_same_folder_fat_tall(
                         application,
-                        context_type, path_list_provider, get_top_left(), owner, logger),
+                        window_type, path_list_provider, get_top_left(), owner, logger),
                 context_menu, owner, logger);
 
         {
@@ -3135,7 +3156,9 @@ public class Virtual_landscape
             if( aborter.should_abort())
             {
                 progress_window.ifPresent(Hourglass::close);
+                return;
             }
+            if (selected_item != null) selected_item.set_selected(true);
             if (dbg)
                 logger.log("✅ refresh_UI_on_fx_thread reason: " + reason);
 
@@ -3263,11 +3286,15 @@ public class Virtual_landscape
                     future_pane_content.addAll(all_items_map.values());
 
                     items_are_ready.set(true);
-                    Jfx_batch_injector.inject(() -> {
+                    Jfx_batch_injector.inject(() ->
+                    {
 
-                        for (Item item : future_pane_content) {
-                            if (item.visible_in_scene.get()) {
-                                if (!the_Pane.getChildren().contains(item.get_Node())) {
+                        for (Item item : future_pane_content)
+                        {
+                            if (item.visible_in_scene.get())
+                            {
+                                if (!the_Pane.getChildren().contains(item.get_Node()))
+                                {
                                     the_Pane.getChildren().add(item.get_Node());
                                 }
                             }

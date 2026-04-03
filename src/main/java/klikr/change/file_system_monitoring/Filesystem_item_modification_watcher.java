@@ -4,7 +4,7 @@
 //SOURCES ./Filesystem_modification_reporter.java
 //SOURCES ./Filesystem_item_signature.java
 
-package klikr.util.files_and_paths.modifications;
+package klikr.change.file_system_monitoring;
 
 import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;

@@ -107,7 +107,6 @@ package klikr;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import klikr.audio.player.The_audio_player;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -135,7 +134,6 @@ public class Klikr_application extends Application
 {
 
     public static Application application;
-    public static The_audio_player audio_player;
     public static long start_time; // used to compute the time since the application started
     private final static String name = "Klik_application";
 
@@ -231,7 +229,7 @@ public class Klikr_application extends Application
         }
         Klikr_communicator.build(context,primary_stage,logger);
 
-        Window_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage,logger),primary_stage,logger);
+        Owner_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage,logger),primary_stage,logger);
 
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 

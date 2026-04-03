@@ -78,6 +78,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     //**********************************************************
     public Item_file_no_icon(
             Application application,
+            Window_type window_type,
             Scene scene,
             Selection_handler selection_handler,
             Feature_change_target feature_change_target,
@@ -93,7 +94,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             Logger logger)
     //**********************************************************
     {
-        super(application,scene,selection_handler,icon_factory_actor,color, path, path_list_provider,path_comparator_source,owner,aborter, logger);
+        super(application,window_type,scene,selection_handler,icon_factory_actor,color, path, path_list_provider,path_comparator_source,owner,aborter, logger);
         this.feature_change_target = feature_change_target;
         this.image_properties_cache = image_properties_cache;
          this.path_comparator_source = path_comparator_source;
@@ -305,21 +306,19 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
     //**********************************************************
     @Override // Item
-    public void unset_selected_look()
+    public void set_selected_look_specific(boolean selected)
     //**********************************************************
     {
-        logger.log("Item_file_no_icon unset_selected_look for "+path);
-        Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
-    }
-
-
-    //**********************************************************
-    @Override // Item
-    public void set_selected_look()
-    //**********************************************************
-    {
-        logger.log("Item_file_no_icon set_selected_look for "+path);
-        Look_and_feel_manager.give_button_a_selected_file_style(button,owner,logger);
+        if (selected)
+        {
+            logger.log("Item_file_no_icon set_selected_look for " + path);
+            Look_and_feel_manager.give_button_a_selected_file_style(button, owner, logger);
+        }
+        else
+        {
+            logger.log("Item_file_no_icon unset_selected_look for "+path);
+            Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
+        }
     }
 
 

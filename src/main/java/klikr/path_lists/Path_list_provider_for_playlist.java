@@ -412,11 +412,11 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     //**********************************************************
     {
         logger.log("Path_list_provider_for_playlist.delete(): "+path.toAbsolutePath().toString());
-        dump("paths before delete");
+        //dump("paths before delete");
         paths.remove(path.toAbsolutePath().toString());
-        dump("paths after delete");
+        //dump("paths after delete");
         save();
-        dump("paths after save");
+        //dump("paths after save");
         report_change(owner);
     }
 
