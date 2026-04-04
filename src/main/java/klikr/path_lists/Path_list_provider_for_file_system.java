@@ -73,6 +73,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         //if ( cache_dbg)
             logger.log("folder_cache_dir="+folder_cache_dir);
         String local = folder_path.toAbsolutePath().toString();
+        local = local.replace(":","_");
         local = local.replace(File.separator,"_");
         logger.log("local="+local);
         return Path.of(folder_cache_dir.toAbsolutePath().toString(),local+".cache");
