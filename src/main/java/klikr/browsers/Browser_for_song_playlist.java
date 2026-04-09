@@ -44,37 +44,15 @@ public class Browser_for_song_playlist extends Abstract_browser
 
         logger.log("Browser_for_song_playlist created with path_list_provider: " + path_list_provider.get_key());
 
-        Change_receiver cr = new Change_receiver()
-        {
-            @Override
-            public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
-            {
-                logger.log("Browser_for_song_playlist CHANGE RECEIVED");
-                upon_change();
-            }
 
-            @Override
-            public String get_Change_receiver_string()
-            {
-                return "";
-            }
-        };
-        init_abstract_browser(window_builder, cr, "song_playlist",aborter);
+        init_abstract_browser(window_builder, this, "song_playlist",aborter);
 
         my_Stage.the_Stage.setOnCloseRequest(event ->
-                {
-                    The_audio_player.kill_instance();
-                    Window_manager.unregister(ID,logger);
-                });
+            {
+                Window_manager.unregister(ID,logger);
+            });
     }
 
-    //**********************************************************    @Override
-    private void upon_change()
-    //**********************************************************    @Override
-    {
-        //path_list_provider.reload("upon_change",aborter);
-        virtual_landscape.redraw_fx(true,"upon_change",false);
-    }
 
     //**********************************************************    @Override
     protected String get_name()
@@ -128,17 +106,17 @@ public class Browser_for_song_playlist extends Abstract_browser
     public void set_title()
     //**********************************************************
     {
-        my_Stage.the_Stage.setTitle("Song PLAY LIST (this is NOT a folder): "+ path_list_provider.the_playlist_file_path.toAbsolutePath().toString());
+        my_Stage.the_Stage.setTitle("SONG PLAYLIST:" + path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
 
     }
 
     //**********************************************************
-    @Override
+    @Override // Change_receiver
     public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
     //**********************************************************
     {
         logger.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere NOT IMPLEMENTED");
-        upon_change();
+        virtual_landscape.redraw_fx(true,"change received",false);
     }
 
     //**********************************************************

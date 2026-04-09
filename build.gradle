@@ -39,8 +39,8 @@ plugins {
 }
 
 java {
-    sourceCompatibility = '25'
-    targetCompatibility = '25'
+    sourceCompatibility = '26'
+    targetCompatibility = '26'
 }
 
 
@@ -50,7 +50,7 @@ group = 'klikr'
 
 
 javafx {
-    version = "25"
+    version = "26"
     modules = [ 'javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.fxml','javafx.media','javafx.web' ]
 }
 

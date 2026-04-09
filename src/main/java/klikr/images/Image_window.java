@@ -166,7 +166,7 @@ public class Image_window
             the_image_Pane = new StackPane();
             Look_and_feel_manager.set_region_look(the_image_Pane, owner, logger);
 
-            path_list_provider.get_Change().add_change_listener(() -> rescan("Image_window constructor"));
+            path_list_provider.get_change_broadcaster().add_change_listener(() -> rescan_folder_indexes("Image_window constructor"));
 
             {
                 long remaining_RAM = Check_remaining_RAM.get_remaining_memory(logger);
@@ -637,10 +637,10 @@ public class Image_window
     }
 
     //**********************************************************
-    private void rescan(String reason)
+    private void rescan_folder_indexes(String reason)
     //**********************************************************
     {
-        image_display_handler.rescan(reason);
+        image_display_handler.rescan_folder_indexes(reason);
     }
 
 

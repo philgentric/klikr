@@ -274,7 +274,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
                         if (oan.new_Path.startsWith(folder_path))
                         {
                             // make sure the window will scroll to the landing point of the displaced file
-                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),oan.new_Path.toAbsolutePath().normalize().toString(),"Change Gang event received = new item in folder",logger);
+                            Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),oan.new_Path.toAbsolutePath().normalize().toString(),"Change_broadcaster Gang event received = new item in folder",logger);
                         }
                     }
                 }

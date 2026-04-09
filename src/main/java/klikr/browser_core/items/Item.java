@@ -30,7 +30,7 @@ import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.browser_core.virtual_landscape.Scroll_position_cache;
-import klikr.javalin_monaco.Javalin_monaco;
+import klikr.javalin.monaco.Javalin_monaco;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
@@ -367,7 +367,7 @@ public abstract class Item implements Icon_destination
                     event -> {
                         if (dbg) logger.log("Browse in new window!");
                         Scroll_position_cache.scroll_position_cache_write(path_list_provider.get_key(),item_path.toAbsolutePath().toString(),"Item Browse_in_new_window",logger);
-                        Window_builder.additional_no_past(application,Window_type.File_system_2D,path_list_provider, owner, logger);
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(item_path.getParent(),owner,logger), owner, logger);
                     }, context_menu, owner, logger);
 
             create_open_with_system_menu_item(item_path,context_menu);
@@ -376,19 +376,33 @@ public abstract class Item implements Icon_destination
 
 
 
-            Menu_items.add_menu_item_for_context_menu_i18n("Open_With_Text_Editor",null,
+            Menu_items.add_menu_item_for_context_menu_i18n("View_Text_Read_Only",null,
                     actionEvent -> {
-                    if (dbg) logger.log("button in item: Open_With_Text_Editor");
+                    if (dbg) logger.log("button in item: View_Text_Read_Only");
 
                     if (Feature_cache.get(Feature.Use_monaco_for_text_edition))
                     {
-                        Javalin_monaco.show(application, item_path, logger);
+                        Javalin_monaco.read_only(application, item_path, logger);
                     }
                     else
                     {
                         Text_frame.show(item_path,logger);
                     }
                 }, context_menu,owner,logger);
+
+            Menu_items.add_menu_item_for_context_menu_i18n("Edit_Text",null,
+                    actionEvent -> {
+                        if (dbg) logger.log("button in item: Edit_Text");
+
+                        if (Feature_cache.get(Feature.Use_monaco_for_text_edition))
+                        {
+                            Javalin_monaco.edit(application, item_path, logger);
+                        }
+                        else
+                        {
+                            Text_frame.show(item_path,logger);
+                        }
+                    }, context_menu,owner,logger);
 
             create_rename_menu_item(local_button, local_label,context_menu);
 

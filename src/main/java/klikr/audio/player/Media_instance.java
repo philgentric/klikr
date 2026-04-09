@@ -156,7 +156,7 @@ public class Media_instance
 
     // String song MUST be a URL
     //**********************************************************
-    Song_play_status play_this(String song_URL, Media_callbacks media_callbacks, boolean and_seek, Window owner)
+    Song_play_status play_this(String song_URL, Media_callbacks media_callbacks, Window owner)
     //**********************************************************
     {
         //logger.log("\n\nplay_this : "+song);
@@ -226,8 +226,9 @@ public class Media_instance
                 logger.log("❗ player aborted in setOnPlaying "+ aborter.reason());
                 return;
             }
-            if ( and_seek) {
-                Integer current_time_s = get_current_time(song_URL, owner);
+
+            {
+                Integer current_time_s = get_current_time(owner);
                 //if ( dbg)
                 logger.log("✅ seeking song to " + current_time_s + " s");
                 Duration target = Duration.seconds(current_time_s);
@@ -238,15 +239,12 @@ public class Media_instance
     }
 
     //**********************************************************
-    Integer get_current_time(String song, Window owner)
+    Integer get_current_time(Window owner)
     //**********************************************************
     {
-        if ( song != null)
-        {
-            Integer current_time_s = get_current_time_in_song(owner,logger);
-            if ( current_time_s != null) return current_time_s;
-        }
-        return Integer.valueOf(0);
+        Integer current_time_s = get_current_time_in_song(owner,logger);
+        if ( current_time_s != null) return current_time_s;
+        return 0;
     }
 
 

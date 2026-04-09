@@ -195,7 +195,7 @@ public class Image_playlist_app extends Application
 
         Klikr_communicator.build(context,primary_stage_,logger);
 
-        Owner_provider window_provider = Window_builder.additional_no_past(application,Window_type.Image_playlist_2D,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
+        Owner_provider window_provider = Window_builder.additional_no_past(application,Window_type.Image_playlist,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
         new Disk_usage_and_caches_monitor(window_provider, logger).start();
 
 

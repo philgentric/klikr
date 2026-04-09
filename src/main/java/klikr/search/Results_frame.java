@@ -48,7 +48,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 //**********************************************************
-public class Results_frame
+public class Results_frame implements Results
 //**********************************************************
 {
 	final Logger logger;
@@ -265,6 +265,7 @@ public class Results_frame
 
 
 	//**********************************************************
+	@Override // Results
 	public void inject_search_results(Search_result sr, String keys, boolean is_max, Window window)
 	//**********************************************************
 	{

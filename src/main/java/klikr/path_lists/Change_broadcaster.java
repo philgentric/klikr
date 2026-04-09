@@ -9,14 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 //**********************************************************
-public class Change
+public class Change_broadcaster
 //**********************************************************
 {
     public final Logger logger;
     List<Runnable> change_listeners = new ArrayList<>();
 
     //**********************************************************
-    public Change(Logger logger)
+    public Change_broadcaster(Logger logger)
     //**********************************************************
     {
         this.logger = logger;
@@ -29,10 +29,10 @@ public class Change
         change_listeners.add(listener);
     }
     //**********************************************************
-    public  void call_change_listeners()
+    public void call_all_change_listeners()
     //**********************************************************
     {
-        logger.log("Change: call_change_listeners() ");
+        logger.log("Change_broadcaster: call_change_listeners() ");
         for (Runnable r : change_listeners)
         {
             r.run();

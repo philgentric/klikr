@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 //**********************************************************
 public class Path_list_provider_for_file_system implements Path_list_provider
@@ -34,7 +33,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     private final String key;
     private final Logger logger;
     private final Window owner;
-    private final Change change;
+    private final Change_broadcaster change_broadcaster;
     long timestamp = -1;
     private Files_and_folders cached;
     private volatile long cache_creation_time;
@@ -44,7 +43,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     //**********************************************************
     {
         this.logger = logger;
-        change = new Change(logger);
+        change_broadcaster = new Change_broadcaster(logger);
         this.owner = owner;
         this.folder_path = folder_path;
         if( folder_path == null)
@@ -349,7 +348,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
         cached = get_faf(true,aborter);
         // notify listeners
-        change.call_change_listeners();
+        change_broadcaster.call_all_change_listeners();
     }
 
     //**********************************************************
@@ -363,10 +362,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Change get_Change()
+    public Change_broadcaster get_change_broadcaster()
     //**********************************************************
     {
-        return change;
+        return change_broadcaster;
     }
 
 

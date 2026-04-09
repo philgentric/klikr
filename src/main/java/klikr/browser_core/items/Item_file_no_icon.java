@@ -17,7 +17,7 @@ import klikr.Window_builder;
 import klikr.Window_type;
 import klikr.audio.player.The_audio_player;
 import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.javalin_monaco.Javalin_monaco;
+import klikr.javalin.monaco.Javalin_monaco;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.settings.boolean_features.Feature_change_target;
 import klikr.util.cache.Klikr_cache;
@@ -311,12 +311,12 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     {
         if (selected)
         {
-            logger.log("Item_file_no_icon set_selected_look for " + path);
+            if( dbg) logger.log("Item_file_no_icon set_selected_look for " + path);
             Look_and_feel_manager.give_button_a_selected_file_style(button, owner, logger);
         }
         else
         {
-            logger.log("Item_file_no_icon unset_selected_look for "+path);
+            if( dbg) logger.log("Item_file_no_icon unset_selected_look for "+path);
             Look_and_feel_manager.give_button_a_file_style(button,owner,logger);
         }
     }
@@ -380,7 +380,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                 logger.log("✅ opening text: " + item_path.toAbsolutePath());
                 if ( Feature_cache.get(Feature.Use_monaco_for_text_edition))
                 {
-                    Javalin_monaco.show(application,item_path,logger);
+                    Javalin_monaco.read_only(application,item_path,logger);
                 }
                 else
                 {
@@ -401,8 +401,6 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                 {
                     logger.log("✅ Item_file_no_icn, opening audio file: " + item_path.toAbsolutePath());
                     logger.log("path_list_provider="+path_list_provider.to_string());
-
-                    path_list_provider.get_Change().add_change_listener(() -> feature_change_target.update_feature(null,true));
 
                     The_audio_player.play_song_in_folder(application,item_path,owner,logger);
                     return;

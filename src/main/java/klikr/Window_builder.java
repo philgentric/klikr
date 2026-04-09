@@ -272,7 +272,7 @@ public class Window_builder
             case File_system_3D -> returned = new Browser_for_file_system_in_3D(window_builder,logger);
             case File_system_diskview -> returned = new Browser_for_disk_footprint(window_builder,logger);
             case Song_playlist -> returned = new Browser_for_song_playlist(window_builder,logger);
-            case Image_playlist_2D -> returned = new Browser_for_image_playlist(window_builder,logger);
+            case Image_playlist -> returned = new Browser_for_image_playlist(window_builder,logger);
         }
         if (window_builder.shutdown_target != null)
         {

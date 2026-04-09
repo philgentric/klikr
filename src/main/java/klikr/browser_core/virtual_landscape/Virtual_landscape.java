@@ -17,6 +17,7 @@
 
 package klikr.browser_core.virtual_landscape;
 
+import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -32,10 +33,12 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
+import javafx.util.Duration;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
@@ -151,7 +154,7 @@ public class Virtual_landscape
     private double current_vertical_offset = 0;
     private int how_many_rows;
     private Path top_left = null;
-    public final double icon_height;
+    public final double icon_height_for_folders;
 
     boolean show_how_many_files_deep_in_each_folder_done = false;
     boolean show_total_size_deep_in_each_folder_done = false;
@@ -172,7 +175,7 @@ public class Virtual_landscape
     public Virtual_landscape_menus virtual_landscape_menus;
     MenuItem stop_full_screen_menu_item;
     MenuItem start_full_screen_menu_item;
-    public List<Button> top_buttons = new ArrayList<>();
+    public List<Region> top_buttons = new ArrayList<>();
 
     Scrollable_text_field scrollable_text_field;
     public final Shutdown_target shutdown_target;
@@ -274,7 +277,7 @@ public class Virtual_landscape
             logger.log("Virtual_landscape constructor");
 
         double font_size = Non_booleans_properties.get_font_size(owner, logger);
-        icon_height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
+        icon_height_for_folders = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
         start_redraw_engine(owner, aborter, logger);
     }
 
@@ -1564,7 +1567,7 @@ public class Virtual_landscape
                         icon_factory_actor,
                         color,
                         tmp,
-                        icon_height,
+                        icon_height_for_folders,
                         false,
                         null,
                         get_image_properties_cache(),
@@ -1668,7 +1671,6 @@ public class Virtual_landscape
             }
         }
 
-        set_background_color();
 
         // logger.log(top_left + " is now top left at y=" + min_y);
 
@@ -2140,11 +2142,17 @@ public class Virtual_landscape
         }
 
         Button trash = null;
-        if (window_type == Window_type.File_system_2D)
+        Region the_label_fpr_a_playlist = null;
+        if (window_type == Window_type.Song_playlist)
         {
-            // need a TRASH button
+            the_label_fpr_a_playlist = new Label("♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪  SONG PLAYLIST ♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪♪  ");
+            top_buttons.add(the_label_fpr_a_playlist);
+        }
+        else if (window_type == Window_type.File_system_2D)
+        {
+            // TRASH button
             String trash_text = My_I18n.get_I18n_string("Trash", owner, logger);// to: " +
-                                                                                // parent.toAbsolutePath().toString();
+            // parent.toAbsolutePath().toString();
             trash = virtual_landscape_menus.make_button_that_behaves_like_a_folder(
                     Static_files_and_paths_utilities.get_trash_dir(Paths.get(path_list_provider.get_key()), owner, logger),
                     trash_text,
@@ -2173,8 +2181,9 @@ public class Virtual_landscape
             top_buttons.add(trash);
         }
 
-        Pane top_pane = define_top_bar_using_buttons_deep(height, up_button, trash);
-        BorderPane border_pane = define_border_pane(top_pane);
+
+        Pane top_pane = define_top_bar_using_buttons_deep(height, up_button, trash, the_label_fpr_a_playlist);
+        BorderPane border_pane = define_border_pane(top_pane, the_label_fpr_a_playlist);
         Scene returned = new Scene(border_pane);// , W, H);
         // set the view order (smaller means closer to viewer = on top)
         top_pane.setViewOrder(0);
@@ -2189,7 +2198,7 @@ public class Virtual_landscape
     {
         if (dbg)
             logger.log("✅ applying font length " + Non_booleans_properties.get_font_size(owner, logger));
-        for (Node x : top_buttons)
+        for (Region x : top_buttons)
         {
             if ( x == null )
             {
@@ -2221,14 +2230,18 @@ public class Virtual_landscape
     }
 
     //**********************************************************
-    private BorderPane define_border_pane(Pane top_pane)
+    private BorderPane define_border_pane(Pane top_pane, Region the_label_replacing_trash)
     //**********************************************************
     {
         BorderPane returned = new BorderPane();
         {
             returned.setTop(top_pane);
             Look_and_feel_manager.set_region_look(top_pane, owner, logger);
-
+            if (the_label_replacing_trash != null)
+            {
+                Font f = ((Label)the_label_replacing_trash).getFont();
+                ((Label)the_label_replacing_trash).setFont(Font.font(f.getFamily(),f.getSize()*3));
+            }
         }
         returned.setCenter(the_Pane);
         {
@@ -2257,11 +2270,13 @@ public class Virtual_landscape
     }
 
     //**********************************************************
-    private Pane define_top_bar_using_buttons_deep(double height, Button go_up, Button trash)
+    private Pane define_top_bar_using_buttons_deep(double height, Button go_up, Region trash, Region the_label_replacing_trash)
     //**********************************************************
     {
         Pane top_pane;
         top_pane = new VBox();
+
+        if ( the_label_replacing_trash !=null) add_strip(top_pane);
         {
             HBox top_pane2 = new HBox();
             top_pane2.setAlignment(Pos.CENTER);
@@ -2275,21 +2290,44 @@ public class Virtual_landscape
             HBox.setHgrow(spacer, Priority.ALWAYS);
             if (trash != null)
                 top_pane2.getChildren().add(trash);
+            if (the_label_replacing_trash != null) {
+                FadeTransition fade_transition = new FadeTransition(Duration.seconds(1), the_label_replacing_trash);
+                fade_transition.setFromValue(1.0);
+                fade_transition.setToValue(0.2);
+                fade_transition.setCycleCount(FadeTransition.INDEFINITE);
+                fade_transition.setAutoReverse(true);
+                fade_transition.play();
+                top_pane2.getChildren().add(the_label_replacing_trash);
+            }
             Region spacer2 = new Region();
             Look_and_feel_manager.set_region_look(spacer2, owner, logger);
             top_pane2.getChildren().add(spacer2);
             HBox.setHgrow(spacer2, Priority.SOMETIMES);
             Look_and_feel_manager.set_region_look(top_pane2, owner, logger);
+
             top_pane.getChildren().add(top_pane2);
         }
+        if ( the_label_replacing_trash !=null) add_strip(top_pane);
         top_pane.getChildren().add(new Separator());
         return top_pane;
+    }
+
+    //**********************************************************
+    private void add_strip(Pane top_pane)
+    //**********************************************************
+    {
+        Region color_strip = new Region();
+        color_strip.setMinHeight(8);
+        color_strip.setStyle("-fx-background-color: #"+background_color.toString().substring(2,8)+";");
+        top_pane.getChildren().add(color_strip);
+        //the_Pane.setBackground(new Background(new BackgroundFill(background_color, CornerRadii.EMPTY, Insets.EMPTY)));
     }
 
     //**********************************************************
     private void define_top_bar_using_buttons_deep2(Pane top_pane, double height)
     //**********************************************************
     {
+        if ( window_type == Window_type.File_system_2D)
         {
             Button undo_bookmark_history_button = make_button_undo_and_bookmark_and_history(
                     application,
@@ -2302,6 +2340,7 @@ public class Virtual_landscape
             top_pane.getChildren().add(undo_bookmark_history_button);
             top_buttons.add(undo_bookmark_history_button);
         }
+        if ( window_type == Window_type.File_system_2D)
         {
             String files = My_I18n.get_I18n_string("Files", owner, logger);
             Button files_button = new Button(files);
@@ -2311,6 +2350,7 @@ public class Virtual_landscape
             Optional<Image> icon = Look_and_feel_manager.get_folder_icon(height, owner, logger);
             Look_and_feel_manager.set_button_and_image_look(files_button, icon.orElse(null), height, null, false, owner, logger);
         }
+        if ( window_type == Window_type.File_system_2D)
         {
             String view = My_I18n.get_I18n_string("View", owner, logger);
             Button view_button = new Button(view);
@@ -2320,6 +2360,7 @@ public class Virtual_landscape
             Optional<Image> icon = Look_and_feel_manager.get_view_icon(height, owner, logger);
             Look_and_feel_manager.set_button_and_image_look(view_button, icon.orElse(null), height, null, false, owner, logger);
         }
+        if ( window_type == Window_type.File_system_2D)
         {
             String preferences = My_I18n.get_I18n_string("Preferences", owner, logger);
             Button preferences_button = new Button(preferences);
@@ -2330,6 +2371,7 @@ public class Virtual_landscape
             Look_and_feel_manager.set_button_and_image_look(preferences_button, icon.orElse(null), height, null, false, owner,
                     logger);
         }
+        if ( window_type == Window_type.File_system_2D)
         {
             String back_text = My_I18n.get_I18n_string("Back", owner, logger);
             Button back_button = new Button(back_text);
@@ -2600,12 +2642,6 @@ public class Virtual_landscape
         Importer.estimate_size(owner, logger);
     }
 
-    //**********************************************************
-    public void set_background_color()
-    //**********************************************************
-    {
-        the_Pane.setBackground(new Background(new BackgroundFill(background_color, CornerRadii.EMPTY, Insets.EMPTY)));
-    }
 
     //**********************************************************
     enum Sort_by_time
@@ -3180,8 +3216,9 @@ public class Virtual_landscape
                             "title_height>60 \nowner.getHeight()=" +
                             owner.getHeight() + "\nthe_Scene.getHeight()=" + the_Scene.getHeight());
                 } else {
-                    for (Button b : top_buttons) {
+                    for (Region b : top_buttons) {
                         b.setMinHeight(title_height);
+
                     }
                 }
             }

@@ -96,9 +96,6 @@ public abstract class Abstract_browser implements
     //**********************************************************
     {
         this.aborter = aborter;
-
-
-
         my_Stage = new My_Stage(new Stage(), logger);
 
         Consumer<String> on_appearance_changed = new Consumer<String>() {
@@ -222,7 +219,6 @@ public abstract class Abstract_browser implements
         aborter.abort("AbstractBrowser shutdown "+get_Path_list_provider().get_key());
         if (dbg) logger.log("AbstractBrowser shutdown " + signature());
         Window_manager.unregister(ID,logger);
-
 
         // when we change dir, we need to de-register the old browser
         // otherwise the list in the change_gang keeps growing

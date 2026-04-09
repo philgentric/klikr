@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 //**********************************************************
 public class Path_list_provider_for_playlist implements Path_list_provider
@@ -45,7 +44,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     public final Logger logger;
     private final Window owner;
-    private final Change change;
+    private final Change_broadcaster change_broadcaster;
 
     // cached:
     private final String key;
@@ -60,7 +59,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     //**********************************************************
     {
         this.logger = logger;
-        change = new Change(logger);
+        change_broadcaster = new Change_broadcaster(logger);
         this.owner = owner;
         this.the_playlist_file_path = the_playlist_file_path;
         this.key = the_playlist_file_path.toAbsolutePath().normalize().toString();
@@ -263,7 +262,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
                 for (File f : the_list) {
                     the_list2.add(f.getAbsolutePath());
                 }
-                user_wants_to_add_songs(the_list2, aborter);
+                user_wants_to_add_items(the_list2, aborter);
 
                 save();
                 report_change(owner);
@@ -275,7 +274,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     }
 
     //**********************************************************
-    public void user_wants_to_add_songs(
+    public void user_wants_to_add_items(
             List<String> the_list_of_new_songs,
             Aborter aborter)
     //**********************************************************
@@ -463,7 +462,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
                 if ( aborter.should_abort()) return;
                 if ( !paths.contains(s))
                 {
-                    logger.log("Path_list_provider_for_playlist.reload(): adding "+s);
+                    //logger.log("Path_list_provider_for_playlist.reload(): adding "+s);
                     paths.add(s);
                 }
             }
@@ -475,12 +474,12 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        change.call_change_listeners();
+        change_broadcaster.call_all_change_listeners();
     }
 
     @Override
-    public Change get_Change() {
-        return change;
+    public Change_broadcaster get_change_broadcaster() {
+        return change_broadcaster;
     }
 
     //**********************************************************

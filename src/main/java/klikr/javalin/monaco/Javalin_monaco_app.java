@@ -1,4 +1,4 @@
-package klikr.javalin_monaco;
+package klikr.javalin.monaco;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -9,6 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import klikr.javalin.Javalin_common;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;
 
@@ -17,24 +18,32 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A JavaFX application that integrates with Monaco Editor running in a local browser.
+ * A (test) JavaFX application that integrates with Monaco Editor
+ * running in a local browser.
  */
+
+//**********************************************************
 public class Javalin_monaco_app extends Application
+//**********************************************************
 {
 
     private TextArea the_TextArea;
 
 
+    //**********************************************************
     public static void main(String[] args)
     {
         launch(args);
     }
 
+    //**********************************************************
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage)
+    //**********************************************************
+    {
 
         Logger logger = new Simple_logger();
-        Javalin_monaco javalin_monaco = new Javalin_monaco("Editor",this, logger);
+
 
         // 1. Setup JavaFX UI
         VBox root = new VBox(10);
@@ -49,14 +58,14 @@ public class Javalin_monaco_app extends Application
 
 
         Button open_button = new Button("Open Monaco Editor in Browser_for_file_system_in_2D");
-        open_button.setOnAction(e -> javalin_monaco.open_browser());
+        open_button.setOnAction(e -> Javalin_common.open_browser(this,false,"title",8080,logger));
 
         root.getChildren().addAll(infoLabel, open_button, the_TextArea);
 
         Scene scene = new Scene(root, 600, 400);
         primaryStage.setTitle("JavaFX <-> Monaco Bridge");
         primaryStage.setScene(scene);
-        primaryStage.setOnCloseRequest(e -> javalin_monaco.stop_javalin_server());
+        primaryStage.setOnCloseRequest(e -> Javalin_monaco.stop_server());
         primaryStage.show();
 
         Supplier<String> text_source = ()->
@@ -84,11 +93,6 @@ public class Javalin_monaco_app extends Application
             Platform.runLater(()->the_TextArea.setText(s));
         };
 
-        javalin_monaco.start_javalin_server(text_source, text_sink);
+        Javalin_monaco.show2(this,text_source, text_sink,logger);
     }
-
-
-
-
-
 }

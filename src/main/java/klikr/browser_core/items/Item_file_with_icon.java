@@ -344,19 +344,7 @@ public class Item_file_with_icon extends Item_file
                     owner, logger);
             returned.getItems().add(mi);
         }
-/*
-        {
-            MenuItem mi = Menu_items.make_menu_item(
-                    "Edit_File",
-                    null,//(new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),
-                    event -> {
-                        if (dbg) logger.log("Editing " + path);
-                        System_open_actor.open_with_system(application,path, owner, aborter, logger);
-                    },
-                    owner, logger);
-            returned.getItems().add(mi);
-        }
- */       {
+       {
             MenuItem mi = Menu_items.make_menu_item_i18n(
                     "Browse_in_new_window",
                     null,//(new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)).getDisplayText(),

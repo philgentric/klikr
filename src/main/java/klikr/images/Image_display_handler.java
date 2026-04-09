@@ -368,7 +368,10 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         image_properties_cache = imagePropertiesCache;
     }
 
-    public void rescan(String reason) {
+    //**********************************************************
+    public void rescan_folder_indexes(String reason)
+    //**********************************************************
+    {
         if ( image_indexer != null)
         {
             image_indexer.rescan(reason,aborter);

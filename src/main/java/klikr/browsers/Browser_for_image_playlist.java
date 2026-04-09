@@ -40,7 +40,7 @@ public class Browser_for_image_playlist extends Abstract_browser
         init_abstract_browser(window_builder,this,"playlist",aborter);
 
 
-        logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAY LIST "+path_list_provider.get_key());
+        logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAYLIST "+path_list_provider.get_key());
 
     }
 
@@ -100,7 +100,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     {
         logger.log("Browser_for_image_playlist.set_title() ID="+ID);
 
-        my_Stage.the_Stage.setTitle("Image PLAY LIST (this is NOT a folder): "+ path_list_provider.the_playlist_file_path.toAbsolutePath().toString());
+        my_Stage.the_Stage.setTitle("Image PLAYLIST "+ path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
     }
 
     //**********************************************************
@@ -144,8 +144,8 @@ public class Browser_for_image_playlist extends Abstract_browser
                 String s = path_list_provider.the_playlist_file_path.toAbsolutePath().toString();
                 if( oanp.new_Path.toAbsolutePath().toString().equals(s))
                 {
-                    logger.log("Change Gang says : playlist changed !!");
-                    path_list_provider.reload("image playlist changed, according to Change Gang",aborter);
+                    logger.log("Change_broadcaster Gang says : playlist changed !!");
+                    path_list_provider.reload("image playlist changed, according to Change_broadcaster Gang",aborter);
                     virtual_landscape.redraw_fx(true,"change gang for dir: " + path_list_provider.the_playlist_file_path, true);
                 }
             }

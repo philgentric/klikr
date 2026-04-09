@@ -37,7 +37,7 @@ public class Search_session implements Callback_for_file_found_publish
 	private final Search_receiver search_receiver;
 	//private final Browser_for_file_system_in_2D browser;
 	private final Window owner;
-	final Results_frame find_result_frame;
+	final Results find_result_frame;
     boolean is_max_at_least_once = false;
 
 
@@ -62,6 +62,11 @@ public class Search_session implements Callback_for_file_found_publish
 				path_list_provider,
 				path_comparator_source,
 				local_aborter, owner, logger);
+		/*this.find_result_frame = new Web_results(
+				application,
+				path_list_provider,
+				path_comparator_source,
+				local_aborter, owner, logger);*/
 	}
 
 	//**********************************************************

@@ -30,7 +30,7 @@ public class Media_instance_statics
     public static Media_instance get(Aborter aborter, Logger logger)
     // **********************************************************
     {
-        synchronized (Change_gang.class)
+        synchronized (Media_instance.class)
         {
             instance = new Media_instance(aborter,logger);
             return instance;
@@ -38,7 +38,7 @@ public class Media_instance_statics
     }
 
     //**********************************************************
-    public static void play_this(Path new_song, Media_callbacks media_callbacks, boolean and_seek, Window owner, Logger logger)
+    public static void play_this(Path new_song, Media_callbacks media_callbacks, Window owner, Logger logger)
     //**********************************************************
     {
         if ( new_song == null )
@@ -68,7 +68,7 @@ public class Media_instance_statics
         aborters.add(aborter);
 
         instance = get(aborter,logger);
-        Actor_engine.execute(() -> instance.play_this(encoded, media_callbacks,and_seek,owner),"play song "+encoded,logger);
+        Actor_engine.execute(() -> instance.play_this(encoded, media_callbacks,owner),"play song "+encoded,logger);
     }
 
     //**********************************************************
@@ -105,42 +105,59 @@ public class Media_instance_statics
 
 
 
+    //**********************************************************
     public static void set_balance(double balance)
+    //**********************************************************
     {
         if ( instance == null) return;
         instance.set_balance_internal(balance);
 
     }
 
-    public static boolean toggle_mute() {
+    //**********************************************************
+    public static boolean toggle_mute()
+    //**********************************************************
+    {
         if ( instance == null) return true;
         return instance.toggle_mute_internal();
     }
 
+    //**********************************************************
     public static void set_volume(double volume)
+    //**********************************************************
     {
         if ( instance == null) return;
         instance.set_volume_internal(volume);
     }
 
-    public static void seek(Duration target) {
+    //**********************************************************
+    public static void seek(Duration target)
+    //**********************************************************
+    {
         if ( instance == null) return;
         instance.seek_internal(target);
     }
 
+    //**********************************************************
     public static void stop()
+    //**********************************************************
     {
         if ( instance == null) return;
         instance.stop_internal();
     }
 
-    public static ObservableList<EqualizerBand> get_bands() {
+    //**********************************************************
+    public static ObservableList<EqualizerBand> get_bands()
+    //**********************************************************
+    {
         if ( instance == null) return null;
         return instance.get_bands_internal();
 
     }
 
+    //**********************************************************
     public static void dispose()
+    //**********************************************************
     {
         if ( instance == null) return;
         instance.dispose_internal();
@@ -149,9 +166,12 @@ public class Media_instance_statics
     }
 
 
-    public static MediaPlayer.Status get_status() {
+    //**********************************************************
+    public static MediaPlayer.Status get_status()
+    //**********************************************************
+    {
         if ( instance == null) return MediaPlayer.Status.DISPOSED;
         return instance.get_status_internal();
-
     }
+
 }

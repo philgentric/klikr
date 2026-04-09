@@ -12,7 +12,6 @@ import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 //**********************************************************
 public interface Path_list_provider
@@ -37,7 +36,7 @@ public interface Path_list_provider
     Path get_folder_path();
     Path resolve(String string);
 
-    Change get_Change();
+    Change_broadcaster get_change_broadcaster();
 
     Files_and_folders files_and_folders(boolean force_rescan, Image_found imgfnd, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
     void reload(String origin, Aborter aborter);
@@ -59,7 +58,7 @@ public interface Path_list_provider
         {
             case File_system_2D, File_system_3D, File_system_diskview:
                 return new Path_list_provider_for_file_system(path, owner, logger);
-            case Image_playlist_2D, Song_playlist:
+            case Image_playlist, Song_playlist:
                 return new Path_list_provider_for_playlist(path, owner,aborter, logger);
         }
         return null;

@@ -10,6 +10,6 @@ public enum Window_type
     File_system_2D,
     File_system_3D,
     File_system_diskview,
-    Image_playlist_2D,
+    Image_playlist,
     Song_playlist,
 }

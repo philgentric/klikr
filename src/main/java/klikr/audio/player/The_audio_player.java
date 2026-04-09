@@ -29,7 +29,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import klikr.Window_builder;
-import klikr.Owner_provider;
 import klikr.Window_type;
 import klikr.browsers.Browser_for_song_playlist;
 import klikr.browser_core.Drag_and_drop;
@@ -127,7 +126,7 @@ public class The_audio_player implements Media_callbacks
                     logger);
 
         }
-        instance.play_song_internal(song, true);
+        instance.play_song_internal(song);
         return instance;
     }
 
@@ -153,7 +152,7 @@ public class The_audio_player implements Media_callbacks
         {
             path = Path.of(song_s);
         }
-        instance.play_song_internal(path,true);
+        instance.play_song_internal(path);
     }
 
     //**********************************************************
@@ -187,7 +186,7 @@ public class The_audio_player implements Media_callbacks
         //this.browser = browser;
         this.application = application;
         this.owner = owner;
-        Consumer<Path> consumer = (path) -> play_song_internal(path,true);
+        Consumer<Path> consumer = this::play_song_internal;
         this.navigator = new General_navigator(Navigation_type.songs,path_list_provider,()->current,consumer,owner,logger);
         this.aborter = new Aborter("audio player",logger);
         this.logger = logger;
@@ -202,19 +201,18 @@ public class The_audio_player implements Media_callbacks
         {
             stage.setX(r.getMinX());
             stage.setY(r.getMinY());
-            stage.setMinWidth(r.getWidth());
-            stage.setMinHeight(r.getHeight());
+            stage.setWidth(r.getWidth());
+            stage.setHeight(r.getHeight());
         }
         ChangeListener<Number> change_listener = (observableValue, number, t1) -> {
-            logger.log("ChangeListener: image window position and/or lengthchanged");
+            //logger.log("ChangeListener: image window position and/or lengthchanged");
             Non_booleans_properties.save_window_bounds(stage, AUDIO_PLAYER, logger);
         };
         stage.xProperty().addListener(change_listener);
         stage.yProperty().addListener(change_listener);
         stage.widthProperty().addListener(change_listener);
         stage.heightProperty().addListener(change_listener);
-        //stage.setMinWidth(WIDTH);
-        stage.sizeToScene();
+        //stage.sizeToScene();
 
         stage.setOnCloseRequest(event -> {
             logger.log("Audio player NEW closing");
@@ -256,7 +254,7 @@ public class The_audio_player implements Media_callbacks
 
 
     //**********************************************************
-    private void play_song_internal(Path song, boolean and_seek)
+    private void play_song_internal(Path song)
     //**********************************************************
     {
         if ( song == null )
@@ -266,13 +264,14 @@ public class The_audio_player implements Media_callbacks
         }
 
         current = song;
+        save(0);
         if ( browser !=null) browser.set_unique_selected_item(current);
         String_constants.save_current_song(current.toAbsolutePath().toString(),owner);
 
         logger.log("The_audio_player ->"+current+"<-");
         Media_instance_statics.stop();
 
-        Media_instance_statics.play_this(current, this, and_seek, stage, logger);
+        Media_instance_statics.play_this(current, this, stage, logger);
 
         Platform.runLater(() ->
                 {
@@ -1023,8 +1022,7 @@ public class The_audio_player implements Media_callbacks
     private void rewind()
     //**********************************************************
     {
-
-        Media_instance_statics.stop();
+        Media_instance_statics.seek(Duration.ZERO);
         set_is_playing();
     }
 
@@ -1054,16 +1052,28 @@ public class The_audio_player implements Media_callbacks
     public static void save_current_time_in_song(int time, Window owner)
     //**********************************************************
     {
-        if (previous_current_time_in_song > 0) {
-            if (previous_current_time_in_song / 10 == time / 10) return;
-        }
-        previous_current_time_in_song = time;
-        //logger.log("save_current_time_in_song "+time);
-        File_storage pm = Shared_services.main_properties();
-        pm.set_and_save(Media_instance.AUDIO_PLAYER_CURRENT_TIME, "" + time);
 
+        if (previous_current_time_in_song > 0)
+        {
+            if (previous_current_time_in_song / 10 == time / 10)
+            {
+                // do not save more often than each 0.1s
+                return;
+            }
+        }
+        save(time);
     }
 
+    //**********************************************************
+    private static void save(int i)
+    //**********************************************************
+    {
+        //logger.log("save_current_time_in_song "+i);
+        previous_current_time_in_song = i;
+        File_storage pm = Shared_services.main_properties();
+        pm.set_and_save(Media_instance.AUDIO_PLAYER_CURRENT_TIME, "" + i);
+
+    }
 
 
     //**********************************************************

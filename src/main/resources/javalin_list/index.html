@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <title>List Bridge</title>
+        <style>
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                font-family: sans-serif;
+                background: #fafafa;
+            }
+            #toolbar {
+                height: 48px;
+                background: #f0f0f0;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                border-bottom: 1px solid #ccc;
+                position: relative;
+                flex-shrink: 0; // never shink the top bar
+            }
+
+            #pageTitle {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                font-weight: bold;
+                font-size: 16px;
+                color: #333;
+                white-space: nowrap;
+            }
+            #status {
+                margin-left: auto;
+                color: #666;
+                font-size: 13px;
+            }
+            #list{
+                flex-grow: 1;
+                overflow-y: auto;
+                padding: 8px 16px;
+            }
+            .list-item {
+                padding: 10px 14px;
+                margin-bottom: 4px;
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+            .list-item:hover {
+                background: #e8f0fe;
+                border-color: #007acc;
+            }
+            .list-item:active {
+                background: #d0e4fc;
+            }
+            .list-item .label {
+                font-size: 14px;
+                font-weight: 600;
+                color: #222;
+            }
+            #empty-msg {
+                text-align: center;
+                color: #999;
+                margin-top: 40px;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toolbar">
+            <span id="pageTitle"></span>
+            <span id="status">Connecting...</span>
+        </div>
+        <div id="list">
+            <div id="empty-msg">Loading...</div>
+        </div>
+
+       <script>
+            let ws;
+            const urlParams = new URLSearchParams(window.location.search);
+            const titleParam = urlParams.get("title");
+            if (titleParam) {
+                document.title = titleParam;
+                document.getElementById("pageTitle").innerText = titleParam;
+            }
+
+
+            function connectWebSocket() {
+                const status = document.getElementById("status");
+                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+                const wsUrl = protocol + "//" + window.location.host + "/list-ws";
+
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function () {
+                    status.innerText = "Connected";
+                    status.style.color = "green";
+                    ws.send("REQUEST_INIT");
+                };
+
+                ws.onmessage = function (event) {
+                    let items;
+                    try {
+                        items = JSON.parse(event.data);
+                    } catch (e) {
+                        console.error("bad json from server",e);
+                        return;
+                    }
+
+                    const container = document.getElementById("list");
+                    container.innerHTML = "";
+                    if ( !items || items.length === 0 ) {
+                        container.innerHTML = '<div id="empty-msg">No items</div>';
+                        return;
+                    }
+                    items.forEach((item) => {
+                        const div = document.createElement("div");
+                        div.className = "list-item";
+                        const labelDiv = document.createElement("div");
+                        labelDiv.className = "label";
+                        labelDiv.textContent = item.text;
+                        div.appendChild(labelDiv);
+                        div.onclick = function () {
+                            if ( sw && ws.readyState === WebSocket.OPEN ){
+                                ws.send("CLICK:"+item.id);
+                                div.style.background = "#b3d4fc";
+                                setTimeout(function () {
+                                    div.style.background = "";
+                                },300);
+                            }
+                        };
+                        container.appendChild(div);
+                    });
+                };
+
+                ws.onclose = function () {
+                    status.innerText = "Disconnected";
+                    status.style.color = "red";
+                    setTimeout(connectWebSocket, 2000); // Auto-reconnect
+                };
+
+                ws.onerror = function (err) {
+                    console.error("WS Error", err);
+                    ws.close();
+                };
+            }
+
+
+        </script>
+    </body>
+</html>
