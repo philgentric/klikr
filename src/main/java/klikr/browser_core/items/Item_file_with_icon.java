@@ -58,7 +58,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -112,12 +111,8 @@ public class Item_file_with_icon extends Item_file
         double actual_icon_size = icon_size / 3.0;
         if ( default_icon == null)
         {
-            Optional<Image> op = Look_and_feel_manager.get_default_icon(actual_icon_size, owner, logger);
-            if ( op.isPresent() )
-            {
-                default_icon = op.get();
-            }
-            else
+            default_icon = Look_and_feel_manager.get_default_icon(actual_icon_size, owner, logger);
+            if ( default_icon == null)
             {
                 logger.log("FATAL: Default image not found ");
             }
@@ -190,7 +185,7 @@ public class Item_file_with_icon extends Item_file
             logger.log(Stack_trace_getter.get_stack_trace(""));
             return;
         }
-        if ( Guess_file_type.is_this_path_an_image(p,owner,logger))
+        if ( Guess_file_type.is_this_path_extension_an_image(p,owner,logger))
         {
             open_an_image(path_list_provider,path_comparator_source,p,owner,logger);
         }
@@ -562,7 +557,7 @@ public class Item_file_with_icon extends Item_file
                 if (p != null) {
                     if (Files.exists(p)) {
                         if (
-                                (Guess_file_type.is_this_path_a_video(p, logger)) || (Guess_file_type.is_this_path_a_pdf(p, logger))
+                                (Guess_file_type.is_this_path_extension_a_video(p, logger)) || (Guess_file_type.is_this_path_extension_a_pdf(p, logger))
                         ) {
                             if (dbg) logger.log("✅ PDF or video => rot=0");
                             local_rot = 0;

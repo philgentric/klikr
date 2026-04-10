@@ -115,7 +115,7 @@ public class Browser_for_song_playlist extends Abstract_browser
     public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
     //**********************************************************
     {
-        logger.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere NOT IMPLEMENTED");
+        logger.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere "+ l);
         virtual_landscape.redraw_fx(true,"change received",false);
     }
 

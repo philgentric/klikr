@@ -48,20 +48,20 @@ public class Look_and_feel_manager
 
     //private static Look_and_feel instance = null;
     //public static List<Look_and_feel> registered = new ArrayList<>();
-    private static Optional<Image> default_icon = Optional.empty();
-    private static Optional<Image> music_icon = Optional.empty();
-    public static Optional<Image> denied_icon = Optional.empty();
-    public static Optional<Image> folder_icon = Optional.empty();
-    public static Optional<Image> sky_icon = Optional.empty();
-    public static Optional<Image> floor_icon = Optional.empty();
-    public static Optional<Image> trash_icon = Optional.empty();
-    public static Optional<Image> bookmarks_icon = Optional.empty();
-    public static Optional<Image> view_icon = Optional.empty();
-    public static Optional<Image> up_icon = Optional.empty();
-    public static Optional<Image> preferences_icon = Optional.empty();
-    public static Optional<Image> not_found_icon = Optional.empty();
-    public static Optional<Image> unknown_error_icon = Optional.empty();
-    public static Optional<Image> back_icon = Optional.empty();
+    private static Image default_icon = null;
+    private static Image music_icon = null;
+    public static Image denied_icon = null;
+    public static Image folder_icon = null;
+    public static Image sky_icon = null;
+    public static Image floor_icon = null;
+    public static Image trash_icon = null;
+    public static Image bookmarks_icon = null;
+    public static Image view_icon = null;
+    public static Image up_icon = null;
+    public static Image preferences_icon = null;
+    public static Image not_found_icon = null;
+    public static Image unknown_error_icon = null;
+    public static Image back_icon = null;
 
     private static volatile Look_and_feel instance;
 
@@ -149,60 +149,60 @@ public class Look_and_feel_manager
     //**********************************************************
     {
         instance = null;
-        default_icon = Optional.empty();
-        music_icon = Optional.empty();
-        Jar_utils.broken_icon = Optional.empty();
-        denied_icon = Optional.empty();
-        trash_icon = Optional.empty();
-        folder_icon = Optional.empty();
-        up_icon = Optional.empty();
-        preferences_icon = Optional.empty();
-        back_icon = Optional.empty();
+        default_icon = null;
+        music_icon = null;
+        Jar_utils.broken_icon = null;
+        denied_icon = null;
+        trash_icon = null;
+        folder_icon = null;
+        up_icon = null;
+        preferences_icon = null;
+        back_icon = null;
     }
 
     //**********************************************************
-    public static Optional<Image> get_folder_icon(double icon_size, Window owner,Logger logger)
+    public static Image get_folder_icon(double icon_size, Window owner,Logger logger)
     //**********************************************************
     {
-        if (folder_icon.isPresent())
+        if (folder_icon!= null)
         {
-            if ( folder_icon.get().getHeight() == icon_size) return folder_icon;
+            if ( folder_icon.getHeight() == icon_size) return folder_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_folder_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get folder icon path"));
-            return Optional.empty();
+            return null;
         }
         folder_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return folder_icon;
     }
 
     //**********************************************************
-    public static Optional<Image> get_sky_icon(double icon_size, Window owner,Logger logger)
+    public static Image get_sky_icon(double icon_size, Window owner,Logger logger)
     //**********************************************************
     {
-        if (sky_icon.isPresent())
+        if (sky_icon!= null)
         {
-            if ( sky_icon.get().getHeight() == icon_size) return sky_icon;
+            if ( sky_icon.getHeight() == icon_size) return sky_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_sky_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get folder icon path"));
-            return Optional.empty();
+            return null;
         }
         sky_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return sky_icon;
@@ -210,24 +210,24 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_floor_icon(double icon_size, Window owner,Logger logger)
+    public static Image get_floor_icon(double icon_size, Window owner,Logger logger)
     //**********************************************************
     {
-        if (floor_icon.isPresent())
+        if (floor_icon!= null)
         {
-            if ( floor_icon.get().getHeight() == icon_size) return floor_icon;
+            if ( floor_icon.getHeight() == icon_size) return floor_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_floor_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get folder icon path"));
-            return Optional.empty();
+            return null;
         }
         floor_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return floor_icon;
@@ -237,62 +237,62 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_speaker_on_icon(Window owner, Logger logger)
+    public static Image get_speaker_on_icon(Window owner, Logger logger)
     //**********************************************************
     {
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_speaker_on_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get folder icon path"));
-            return Optional.empty();
+            return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 256, owner,logger);
     }
     //**********************************************************
-    public static Optional<Image> get_speaker_off_icon(Window owner, Logger logger)
+    public static Image get_speaker_off_icon(Window owner, Logger logger)
     //**********************************************************
     {
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_speaker_off_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get folder icon path"));
-            return Optional.empty();
+            return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 256, owner,logger);
     }
 
 
     //**********************************************************
-    public static Optional<Image> get_default_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_default_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (default_icon.isPresent())
+        if (default_icon!= null)
         {
-            if ( default_icon.get().getHeight() == icon_size) return default_icon;
+            if ( default_icon.getHeight() == icon_size) return default_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_default_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get default icon path"));
-            return Optional.empty();
+            return null;
         }
         default_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return default_icon;
@@ -300,24 +300,24 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_denied_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_denied_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (denied_icon.isPresent())
+        if (denied_icon!= null)
         {
-            if ( denied_icon.get().getHeight() == icon_size) return denied_icon;
+            if ( denied_icon.getHeight() == icon_size) return denied_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_denied_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get denied icon path"));
-            return Optional.empty();
+            return null;
         }
         denied_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return denied_icon;
@@ -325,24 +325,24 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_trash_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_trash_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (trash_icon.isPresent())
+        if (trash_icon!= null)
         {
-            if ( trash_icon.get().getHeight() == icon_size) return trash_icon;
+            if ( trash_icon.getHeight() == icon_size) return trash_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_trash_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get trash icon path"));
-            return Optional.empty();
+            return null;
         }
         trash_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return trash_icon;
@@ -350,48 +350,48 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_up_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_up_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (up_icon.isPresent())
+        if (up_icon!= null)
         {
-            if ( up_icon.get().getHeight() == icon_size) return up_icon;
+            if ( up_icon.getHeight() == icon_size) return up_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_up_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get up icon path"));
-            return Optional.empty();
+            return null;
         }
         up_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return up_icon;
     }
 
     //**********************************************************
-    public static Optional<Image> get_back_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_back_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (back_icon.isPresent())
+        if (back_icon!= null)
         {
-            if ( back_icon.get().getHeight() == icon_size) return back_icon;
+            if ( back_icon.getHeight() == icon_size) return back_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_back_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get back icon path"));
-            return Optional.empty();
+            return null;
         }
         back_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return back_icon;
@@ -400,72 +400,72 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_bookmarks_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_bookmarks_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (bookmarks_icon.isPresent())
+        if (bookmarks_icon!= null)
         {
-            if ( bookmarks_icon.get().getHeight() == icon_size) return bookmarks_icon;
+            if ( bookmarks_icon.getHeight() == icon_size) return bookmarks_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_bookmarks_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get up bookmarks path"));
-            return Optional.empty();
+            return null;
         }
         bookmarks_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size,owner,logger);
         return bookmarks_icon;
     }
 
     //**********************************************************
-    public static Optional<Image> get_view_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_view_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (view_icon.isPresent())
+        if (view_icon!= null)
         {
-            if ( view_icon.get().getHeight() == icon_size) return view_icon;
+            if ( view_icon.getHeight() == icon_size) return view_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_view_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get up view icon path"));
-            return Optional.empty();
+            return null;
         }
         view_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return view_icon;
     }
 
     //**********************************************************
-    public static Optional<Image> get_preferences_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_preferences_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (preferences_icon.isPresent())
+        if (preferences_icon!= null)
         {
-            if ( preferences_icon.get().getHeight() == icon_size) return preferences_icon;
+            if ( preferences_icon.getHeight() == icon_size) return preferences_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_preferences_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get up preferences icon path"));
-            return Optional.empty();
+            return null;
         }
         preferences_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return preferences_icon;
@@ -475,24 +475,24 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_not_found_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_not_found_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (not_found_icon.isPresent())
+        if (not_found_icon!= null)
         {
-            if ( not_found_icon.get().getHeight() == icon_size) return not_found_icon;
+            if ( not_found_icon.getHeight() == icon_size) return not_found_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_not_found_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get not_found icon path"));
-            return Optional.empty();
+            return null;
         }
         not_found_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return not_found_icon;
@@ -500,24 +500,24 @@ public class Look_and_feel_manager
 
 
     //**********************************************************
-    public static Optional<Image> get_unknown_error_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_unknown_error_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (unknown_error_icon.isPresent())
+        if (unknown_error_icon!= null)
         {
-            if ( unknown_error_icon.get().getHeight() == icon_size) return unknown_error_icon;
+            if ( unknown_error_icon.getHeight() == icon_size) return unknown_error_icon;
         }
         Look_and_feel local_instance = get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_unknown_error_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get unknown_error icon path"));
-            return Optional.empty();
+            return null;
         }
         unknown_error_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, owner,logger);
         return unknown_error_icon;
@@ -667,11 +667,11 @@ public class Look_and_feel_manager
     public static void set_button_look_as_folder(Button button, double icon_height, Color color, Window owner, Logger logger) // Button is a region
     //**********************************************************
     {
-        if ( folder_icon.isEmpty())
+        if ( folder_icon== null)
         {
             folder_icon = get_folder_icon(icon_height,owner,logger);
         }
-        set_button_and_image_look(button, folder_icon.orElse(null), icon_height, color,true,owner,logger);
+        set_button_and_image_look(button, folder_icon, icon_height, color,true,owner,logger);
     }
 
 
@@ -876,40 +876,40 @@ public class Look_and_feel_manager
     }
 
     //**********************************************************
-    public static Optional<Image> get_running_film_icon(Window owner, Logger logger)
+    public static Image get_running_film_icon(Window owner, Logger logger)
     //**********************************************************
     {
         Look_and_feel i = get_instance(owner,logger);
         if (i == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = i.get_running_film_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get running man icon path"));
-            return Optional.empty();
+            return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 600, owner,logger);
     }
 
 
     //**********************************************************
-    public static Optional<Image> get_the_end_icon(Window owner, Logger logger)
+    public static Image get_the_end_icon(Window owner, Logger logger)
     //**********************************************************
     {
         Look_and_feel i = get_instance(owner,logger);
         if (i == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = i.get_sleeping_man_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ BAD WARNING: cannot get slipping_man icon path"));
-            return Optional.empty();
+            return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 600, owner,logger);
     }
@@ -956,11 +956,11 @@ public class Look_and_feel_manager
         String icon_path = get_main_window_icon_path(look_and_feel, icon_type);
         for (int s : icon_sizes)
         {
-            Optional<Image> icon = Jar_utils.load_jfx_image_from_jar(icon_path, s, owner,logger);
-            if (icon.isPresent())
+            Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, s, owner,logger);
+            if (icon!= null)
             {
-                stage.getIcons().add(icon.get());
-                taskbar_icon = icon.get();
+                stage.getIcons().add(icon);
+                taskbar_icon = icon;
             }
             else
             {

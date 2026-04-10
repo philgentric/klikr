@@ -32,12 +32,12 @@ public class Fast_image_property_from_exif_metadata_extractor
     private record Directory_result(Double w, Double h, Rotation rotation, boolean w_done, boolean h_done, boolean rot_done){}
 
     //**********************************************************
-    public static Optional<Image_properties> get_image_properties(Path path, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
+    public static Image_properties get_image_properties(Path path, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         if (Check_remaining_RAM.RAM_running_low("Image properties extraction",owner, logger)) {
             logger.log("get_image_properties NOT DONE because running low on memory ! ");
-            return Optional.empty();
+            return null;
         }
 
         //logger.log("\n\n\nget_image_properties "+path);
@@ -45,7 +45,7 @@ public class Fast_image_property_from_exif_metadata_extractor
         if ( is == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file "+path));
-            return Optional.empty();
+            return null;
         }
 
         Rotation rotation = Rotation.normal;
@@ -135,14 +135,14 @@ public class Fast_image_property_from_exif_metadata_extractor
                 }
             }
             is.close();
-            return Optional.of(new Image_properties(w,h,rotation));
+            return new Image_properties(w,h,rotation, false);
         }
         catch (ImageProcessingException e)
         {
             if ( dbg) logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
             if ( e.toString().contains("File format could not be determined"))  
             {
-                return Optional.empty();
+                return null;
             }
         }
         catch (IOException e)
@@ -151,7 +151,7 @@ public class Fast_image_property_from_exif_metadata_extractor
             {
                 logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
-            return Optional.empty();
+            return null;
         }
         catch (Exception e)
         {
@@ -159,14 +159,14 @@ public class Fast_image_property_from_exif_metadata_extractor
             {
                 logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
-            return Optional.empty();
+            return null;
         }
 
         if ( dbg)
         {
             logger.log("should not happen?");
         }
-        return Optional.empty();
+        return null;
     }
 
 

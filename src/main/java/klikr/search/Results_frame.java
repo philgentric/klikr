@@ -225,7 +225,7 @@ public class Results_frame implements Results
 		{
 			Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
 		}
-		else if (Guess_file_type.is_this_file_an_image(path.toFile(), owner, logger))
+		else if (Guess_file_type.is_this_file_extension_an_image(path.toFile(), owner, logger))
 		{
 			Path_list_provider new_path_list_provider = new Path_list_provider_for_file_system(path.getParent(), owner,logger);
 			Item_file_with_icon.open_an_image(
@@ -236,12 +236,12 @@ public class Results_frame implements Results
 					logger);
 			//Image_window is = Image_window.get_Image_window(the_browser, path, logger);
 		}
-		else if (Guess_file_type.is_this_path_a_music(path, logger))
+		else if (Guess_file_type.is_this_path_extension_a_music(path, logger))
 		{
 			logger.log("opening audio file: " + path.toAbsolutePath());
 			The_audio_player.play_song_in_folder(application,path,owner,logger);
 		}
-		else if (Guess_file_type.is_this_path_a_text(path, owner, logger))
+		else if (Guess_file_type.is_this_path_extension_a_text(path, owner, logger))
 		{
 			logger.log("opening text file: " + path.toAbsolutePath());
 			if ( Feature_cache.get(Feature.Use_web_browser_for_text_reading))

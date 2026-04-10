@@ -186,9 +186,9 @@ public class Progress_window implements Hourglass
         switch(Look_and_feel_manager.get_instance(owner,logger).get_look_and_feel_style())
         {
             case light, dark, wood:
-				Optional<Image> op = Look_and_feel_manager.get_running_film_icon(owner,logger);
-				if( op.isPresent() ) {
-					iv = new ImageView(op.get());
+				Image film = Look_and_feel_manager.get_running_film_icon(owner,logger);
+				if( film != null) {
+					iv = new ImageView(film);
 					iv.setFitHeight(100);
 					iv.setPreserveRatio(true);
 					vbox.getChildren().add(iv);
@@ -289,8 +289,8 @@ public class Progress_window implements Hourglass
             in_flight_label.setText(message);
             if (iv != null)
             {
-				Optional<Image> op = Look_and_feel_manager.get_the_end_icon(stage, logger);
-                op.ifPresent((Image icon)->iv.setImage(icon));
+				Image end = Look_and_feel_manager.get_the_end_icon(stage, logger);
+                if( end != null) iv.setImage(end);
             }
 		},logger);
 

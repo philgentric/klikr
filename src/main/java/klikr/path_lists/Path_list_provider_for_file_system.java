@@ -153,7 +153,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             if (! consider_also_hidden_files)
             {
                 if ( Guess_file_type.should_ignore(file,logger)) continue;
-                if ( Guess_file_type.is_this_path_an_image(file,owner,logger))
+                if ( Guess_file_type.is_this_path_extension_an_image(file,owner,logger))
                 {
                     imgfnd.image_found();
                 }
@@ -292,7 +292,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
-            if ( !Guess_file_type.is_this_path_an_image(file,owner,logger)) continue;
+            if ( !Guess_file_type.is_this_path_extension_an_image(file,owner,logger)) continue;
             if (! consider_also_hidden_files)
             {
                 if ( Guess_file_type.should_ignore(file,logger)) continue;
@@ -312,7 +312,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
-            if ( !Guess_file_type.is_this_path_a_music(file,logger)) continue;
+            if ( !Guess_file_type.is_this_path_extension_a_music(file,logger)) continue;
             if (! consider_also_hidden_files)
             {
                 if ( Guess_file_type.should_ignore(file,logger)) continue;
@@ -348,7 +348,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
         cached = get_faf(true,aborter);
         // notify listeners
-        change_broadcaster.call_all_change_listeners();
+        change_broadcaster.call_all_change_subscribers();
     }
 
     //**********************************************************
@@ -371,7 +371,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public Move_provider get_move_provider()
+    public Move_provider get_move_in_provider()
     //**********************************************************
     {
         return Moving_files::safe_move_files_or_dirs;

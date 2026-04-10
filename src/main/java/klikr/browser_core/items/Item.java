@@ -20,7 +20,6 @@ import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -29,6 +28,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
+import klikr.browser_core.Image_and_properties;
 import klikr.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.javalin.monaco.Javalin_monaco;
 import klikr.path_lists.Path_list_provider_for_playlist;
@@ -68,9 +68,9 @@ import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 //**********************************************************
@@ -327,7 +327,8 @@ public abstract class Item implements Icon_destination
                 {
                     create_edit_tag_menu_item(get_item_path(), context_menu, dbg, owner, aborter, logger);
                 }*/
-                create_rename_menu_item(local_button, local_label,context_menu);
+                create_rename_menu_item(local_button, local_label, context_menu);
+
                 create_delete_menu_item(context_menu);
                 Menu_items.add_menu_item_for_context_menu_i18n("Copy",
                         null,//(new KeyCodeCombination(KeyCode.C,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
@@ -349,10 +350,10 @@ public abstract class Item implements Icon_destination
         else
         {
             // this is for a FILE
-            if (Guess_file_type.is_this_path_an_image(item_path, owner, logger)) {
+            if (Guess_file_type.is_this_path_extension_an_image(item_path, owner, logger)) {
                 create_open_exif_frame_menu_item(item_path, context_menu);
             }
-            if (Guess_file_type.is_this_path_a_music(item_path,logger)) {
+            if (Guess_file_type.is_this_path_extension_a_music(item_path,logger)) {
                 create_open_mediainfo_frame_menu_item(item_path, context_menu);
                 create_edit_metadata_frame_menu_item(item_path, context_menu);
             }
@@ -551,9 +552,9 @@ public abstract class Item implements Icon_destination
                     if (dbg) logger.log("info");
                     Actor_engine.execute(()-> {
                         if ( path != null) {
-                            Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, owner, aborter, logger);
-                            if (op.isPresent())
-                                Exif_stage.show_exif_stage(op.get(), path, owner, aborter, logger);
+                            Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, owner, aborter, logger);
+                            if (iap != null)
+                                Exif_stage.show_exif_stage(iap.image(), path, owner, aborter, logger);
                         }
                     },"Show EXIF info",logger);
                 },
@@ -706,7 +707,7 @@ public abstract class Item implements Icon_destination
     }
 
     //**********************************************************
-    protected void give_a_menu_to_the_button(Button local_button, Label local_label)
+    protected void give_a_menu_to_the_button(Button local_button, Label details)
     //**********************************************************
     {
         //logger.log(Stack_trace_getter.get_stack_trace("give_a_menu_to_the_button "));
@@ -721,7 +722,7 @@ public abstract class Item implements Icon_destination
                 }
                 logger.log("show context menu of button:"+ item_path.toAbsolutePath());
             }
-            ContextMenu context_menu = make_context_menu(local_button, local_label);
+            ContextMenu context_menu = make_context_menu(local_button, details);
             context_menu.show(local_button, event.getScreenX(), event.getScreenY());
         });
     }
@@ -799,7 +800,7 @@ public abstract class Item implements Icon_destination
                 null,//(new KeyCodeCombination(KeyCode.R)).getDisplayText(),
 
                 event -> {
-            if (dbg) logger.log("Item2_button: Renaming");
+            if (dbg) logger.log("Item: Renaming");
             Path item_path = get_item_path();
             if (item_path == null)
             {
@@ -816,17 +817,17 @@ public abstract class Item implements Icon_destination
             text_edit.setFocusTraversable(true);
             text_edit.setOnAction(actionEvent -> {
 
-                String new_dir_name = text_edit.getText();
+                String new_item_name = text_edit.getText();
                 actionEvent.consume();
-                Path item_path2 = get_item_path();
-                if (item_path2 == null)
+                Path item_path_ = get_item_path();
+                if (item_path_ == null)
                 {
                     logger.log(Stack_trace_getter.get_stack_trace("Should not happen "));
                     return;
                 }
-                if ( item_path2.toFile().isDirectory() )
+                if ( item_path_.toFile().isDirectory() )
                 {
-                    Path new_path = Moving_files.change_dir_name(item_path2, new_dir_name, owner, aborter, logger);
+                    Path new_path = Moving_files.change_dir_name(item_path_, new_item_name, owner, aborter, logger);
                     if ( new_path == null)
                     {
                         if (dbg) logger.log("rename failed");
@@ -834,18 +835,24 @@ public abstract class Item implements Icon_destination
                         local_button.setGraphic(restored);
                         return;
                     }
-                    local_button.setText(new_dir_name);
+                    local_button.setText(new_item_name);
                     local_button.setGraphic(restored);
                     path_list_provider = Path_list_provider.get_approriate(window_type,new_path,owner,aborter,logger);//new Path_list_provider_for_file_system(new_path,owner,logger);
                 }
                 else
                 {
+                    // item is a file
+                    if ( path_list_provider instanceof Path_list_provider_for_playlist plpfpl)
+                    {
+                        Path new_path = Paths.get(item_path_.getParent().toString(), new_item_name);
+                        plpfpl.swap(item_path_.toAbsolutePath().toString(),new_path.toAbsolutePath().toString());
+                    }
                     double x = owner.getX()+100;
                     double y = owner.getY()+100;
-                    Path new_path = Static_files_and_paths_utilities.change_file_name(item_path2, new_dir_name, owner,x,y,aborter, logger);
+                    Path new_path = Static_files_and_paths_utilities.change_file_name(item_path_, new_item_name, owner,x,y,aborter, logger);
                     if ( new_path == null)
                     {
-                        if (dbg) logger.log("rename failed");
+                        logger.log("❗ rename failed");
                         local_button.setText(original_name);
                         local_button.setGraphic(restored);
                         return;
@@ -853,27 +860,27 @@ public abstract class Item implements Icon_destination
                     set_new_path(new_path);
                     if ( local_label == null)
                     {
-                        // TODO: verify this
+                        // TODO: verify this ???
                         // the item is a Item_folder_with_icon
                         if (dbg) logger.log("rename done");
-                        local_button.setText(new_dir_name);
+                        local_button.setText(new_item_name);
                         local_button.setGraphic(restored);
                     }
                     else
                     {
-                        // the item is a Item2_button
-                        String size = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(item_path2.toFile().length(),owner,logger);
+                        String size = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(item_path_.toFile().length(),owner,logger);
                         local_button.setText(size);
-                        local_label.setText(new_dir_name);
+                        local_label.setText(new_item_name);
                         //Font_size.set_preferred_font_size(label,logger);
                         Font_size.apply_global_font_size_to_Node(local_label,owner,logger);
                         local_button.setGraphic(local_label);
                     }
-                    path_list_provider.reload("file name changed: "+new_path, aborter);
+
+                    //no need the disk change will cause  the browser to redraw with a force reload
+                    // path_list_provider.reload("file name changed: "+new_item_name, aborter);
                 }
 
                 if (dbg) logger.log("rename done");
-                // button.setOnAction(the_button_event_handler);
             });
         },context_menu,owner,logger);
     }

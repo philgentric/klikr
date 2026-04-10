@@ -48,6 +48,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     // cached:
     private final String key;
+    // we need a list to keep the same order when we rename
     public final List<String> paths = new ArrayList<>();
 
     //**********************************************************
@@ -164,7 +165,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         for ( String s : paths)
         {
             if ( (new File(s)).isDirectory()) continue;
-            if( !Guess_file_type.is_this_path_a_music(Path.of(s),logger)) continue;
+            if( !Guess_file_type.is_this_path_extension_a_music(Path.of(s),logger)) continue;
             if (! consider_also_hidden_files)
             {
                 if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
@@ -183,7 +184,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         for ( String s : paths)
         {
             if ( (new File(s)).isDirectory()) continue;
-            if( !Guess_file_type.is_this_path_an_image(Path.of(s),owner,logger)) continue;
+            if( !Guess_file_type.is_this_path_extension_an_image(Path.of(s),owner,logger)) continue;
             if (! consider_also_hidden_files)
             {
                 if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
@@ -229,12 +230,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             Files.delete(the_playlist_file_path);
             Files.write(the_playlist_file_path,paths,java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE);
             List<String> lines = Files.readAllLines(the_playlist_file_path, StandardCharsets.UTF_8);
-            logger.log("####### Playlist AFTER SAVE:");
-            for ( String s : lines)
+            if ( dbg)
             {
-                logger.log(s);
+                logger.log("####### Playlist AFTER SAVE:");
+                for (String s : lines) {
+                    logger.log(s);
+                }
+                logger.log("##########################");
             }
-            logger.log("##########################");
         }
         catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
@@ -246,11 +249,12 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public Move_provider get_move_provider_for_file_system()
     //**********************************************************
     {
+        // not a file system thing
         return null;
     }
 
     //**********************************************************
-    public Move_provider get_move_provider()
+    public Move_provider get_move_in_provider()
     //**********************************************************
     {
         Move_provider move_provider = new Move_provider() {
@@ -275,7 +279,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     //**********************************************************
     public void user_wants_to_add_items(
-            List<String> the_list_of_new_songs,
+            List<String> the_list_of_new_items,
             Aborter aborter)
     //**********************************************************
     {
@@ -284,7 +288,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         {
             List<Old_and_new_Path> to_be_renamed_first = new ArrayList<>();
             List<String> oks = new ArrayList<>();
-            for (String path_s : the_list_of_new_songs)
+            for (String path_s : the_list_of_new_items)
             {
                 logger.log(" looking at "+path_s);
                 if ( aborter.should_abort())
@@ -474,7 +478,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        change_broadcaster.call_all_change_listeners();
+        change_broadcaster.call_all_change_subscribers();
     }
 
     @Override
@@ -559,4 +563,20 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         save();
     }
 
+    // **********************************************************
+    public void swap(String old_path, String new_path)
+    // **********************************************************
+    {
+        logger.log("Path_list_provider_for_playlist swapping old path: " + old_path + " new path: " + new_path);
+        int i = paths.indexOf(old_path);
+        if ( i == -1 )
+        {
+            paths.add(new_path);
+        }
+        else
+        {
+            paths.set(i, new_path);
+        }
+        save();
+    }
 }

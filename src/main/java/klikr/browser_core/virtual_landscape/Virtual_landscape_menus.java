@@ -33,7 +33,6 @@ import klikr.audio.player.The_audio_player;
 import klikr.path_lists.Files_and_folders;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.util.External_application;
-import klikr.Klikr_application;
 import klikr.Window_type;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.cache.Cache_folder;
@@ -1152,7 +1151,7 @@ public class Virtual_landscape_menus
                 item.setOnAction(event ->
                 {
                     Path path = Path.of(hi.value);
-                    if ( Guess_file_type.is_this_path_an_audio_playlist(path,logger))
+                    if ( Guess_file_type.is_this_path_extension_an_audio_playlist(path,logger))
                     {
                         Window_builder.additional_no_past(application,Window_type.Song_playlist,new Path_list_provider_for_playlist(path,  owner, aborter, logger),owner,logger);
                     }
@@ -1856,7 +1855,7 @@ public class Virtual_landscape_menus
         }
         for (Path file : faf.folders())
         {
-            if ( !Guess_file_type.is_this_path_an_image(file,owner,logger)) continue;
+            if ( !Guess_file_type.is_this_path_extension_an_image(file,owner,logger)) continue;
             Exif_metadata_extractor e = new Exif_metadata_extractor(file,virtual_landscape.owner,logger);
             e.get_exif_metadata(0, true,virtual_landscape.aborter, false);
             if( !e.is_image_damaged()) continue;

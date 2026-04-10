@@ -140,7 +140,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     void set_new_path(Path newPath)
     //**********************************************************
     {
-        logger.log(Stack_trace_getter.get_stack_trace(""));
+        logger.log(Stack_trace_getter.get_stack_trace("set_new_path???"));
     }
 
     //**********************************************************
@@ -305,8 +305,8 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         List<Path> images_in_folder = new ArrayList<>();
         for ( Path file : faf.files())
         {
-            if (!Guess_file_type.is_this_path_an_image(file,owner,logger)) continue; // ignore non images
-            if (Guess_file_type.is_this_path_a_gif(file,logger))
+            if (!Guess_file_type.is_this_path_extension_an_image(file,owner,logger)) continue; // ignore non images
+            if (Guess_file_type.is_this_path_extension_a_gif(file,logger))
             {
                 if (Guess_file_type.is_this_path_a_animated_gif(file, owner, aborter, logger))
                 {
@@ -325,8 +325,8 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
                 Arrays.sort(files2);
                 for (File f2 : files2) {
                     if (f2.isDirectory()) continue; // ignore folders
-                    if (!Guess_file_type.is_this_file_an_image(f2,owner,logger)) continue; // ignore non images
-                    if (Guess_file_type.is_this_path_a_gif(f2.toPath(),logger)) {
+                    if (!Guess_file_type.is_this_file_extension_an_image(f2,owner,logger)) continue; // ignore non images
+                    if (Guess_file_type.is_this_path_extension_a_gif(f2.toPath(),logger)) {
                         if (Guess_file_type.is_this_path_a_animated_gif(f2.toPath(), owner,aborter, logger)) {
                             return f2.toPath();
                         }

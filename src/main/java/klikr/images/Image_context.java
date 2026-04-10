@@ -14,6 +14,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Klikr_application;
+import klikr.browser_core.Image_and_properties;
 import klikr.settings.String_constants;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -106,13 +107,14 @@ public class Image_context
     //**********************************************************
     {
         if ( !Files.exists(path)) return Optional.empty();
-        Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, owner, aborter,logger_);
-        if (op.isEmpty()) return Optional.empty();
-        Image local_image = op.get();
+        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, owner, aborter,logger_);
+        if (iap == null) return Optional.empty();
+        Image local_image = iap.image();
         if ( local_image.isError())
         {
-            Optional<Image> broken = Jar_utils.get_broken_icon(300,owner,logger_);
-            return Optional.of(new Image_context(path,path,broken.orElse(null),logger_));
+            Image broken = Jar_utils.get_broken_icon(300,owner,logger_);
+            if ( broken == null) return Optional.empty();
+            return Optional.of(new Image_context(path,path,broken,logger_));
         }
 
         Optional<Image_context> returned = Optional.of(new Image_context(path, path, local_image,logger_));

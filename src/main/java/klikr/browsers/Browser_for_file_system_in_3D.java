@@ -657,13 +657,12 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         allFloorTiles.clear();
         PhongMaterial red_material = new PhongMaterial(Color.RED);
 
-        Optional<Image> floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
+        Image floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
 
         PhongMaterial floor_material = null;
-        if ( floor_image.isPresent() )
+        if ( floor_image != null)
         {
-            Image finalFloor_image = floor_image.get();
-            floor_material =new PhongMaterial() {{setDiffuseMap(finalFloor_image); }};
+            floor_material =new PhongMaterial() {{setDiffuseMap(floor_image); }};
         }
         else {
             floor_material = new PhongMaterial(Color.LIGHTGRAY);
@@ -983,13 +982,12 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         dome.setCullFace(CullFace.FRONT); // Render inside only
 
         // Load night sky texture
-        Optional<Image> sky_image = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
+        Image sky_image = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
 
         PhongMaterial dome_material;
-        if (sky_image.isPresent()) {
-            Image final_sky_image = sky_image.get();
+        if (sky_image != null) {
             dome_material = new PhongMaterial() {{
-                setDiffuseMap(final_sky_image);
+                setDiffuseMap(sky_image);
                 setSpecularColor(Color.BLACK); // No reflections
             }};
         } else {

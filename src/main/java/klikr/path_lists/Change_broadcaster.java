@@ -13,7 +13,7 @@ public class Change_broadcaster
 //**********************************************************
 {
     public final Logger logger;
-    List<Runnable> change_listeners = new ArrayList<>();
+    List<Runnable> change_subscribers = new ArrayList<>();
 
     //**********************************************************
     public Change_broadcaster(Logger logger)
@@ -23,19 +23,19 @@ public class Change_broadcaster
     }
 
     //**********************************************************
-    public void add_change_listener(Runnable listener)
+    public void add_change_subscriber(Runnable subscriber)
     //**********************************************************
     {
-        change_listeners.add(listener);
+        change_subscribers.add(subscriber);
     }
     //**********************************************************
-    public void call_all_change_listeners()
+    public void call_all_change_subscribers()
     //**********************************************************
     {
         logger.log("Change_broadcaster: call_change_listeners() ");
-        for (Runnable r : change_listeners)
+        for (Runnable subscriber : change_subscribers)
         {
-            r.run();
+            subscriber.run();
         }
     }
 }

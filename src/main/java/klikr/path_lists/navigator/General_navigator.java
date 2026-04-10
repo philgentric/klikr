@@ -2,7 +2,6 @@ package klikr.path_lists.navigator;
 
 import javafx.stage.Window;
 import klikr.File_comparator_provider;
-import klikr.Owner_provider;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
@@ -62,7 +61,7 @@ public class General_navigator implements Navigator
             index = index - 1;
             if (index < 0) index = paths.size() - 1;
             Path path = paths.get(index);
-            if ( Guess_file_type.is_this_path_a_music(path,logger))
+            if ( Guess_file_type.is_this_path_extension_a_music(path,logger))
             {
                 path_consumer_ie_player.accept(path);
                 return;
@@ -89,7 +88,7 @@ public class General_navigator implements Navigator
             index = index + 1;
             if (index >= paths.size()) index = 0;
             Path path = paths.get(index);
-            if ( Guess_file_type.is_this_path_a_music(path,logger))
+            if ( Guess_file_type.is_this_path_extension_a_music(path,logger))
             {
                 //logger.log("OK, next is a song: "+path);
                 path_consumer_ie_player.accept(path);

@@ -26,17 +26,17 @@ public class Jar_utils
 //**********************************************************
 {
 
-    public static Optional<Image> broken_icon = Optional.empty();
+    public static Image broken_icon = null;
 
     //**********************************************************
-    public static Optional<Image> load_jfx_image_from_jar(String image_file_path, double icon_size, Window owner,Logger logger)
+    public static Image load_jfx_image_from_jar(String image_file_path, double icon_size, Window owner,Logger logger)
     //**********************************************************
     {
         InputStream input_stream = Application_jar.get_jar_InputStream_by_name(image_file_path);
         if ( input_stream == null)
         {
             logger.log("load_icon_fx_from_jar failed for: " + image_file_path);
-            return Optional.empty();
+            return null;
         }
 
         Image image = new Image(input_stream, icon_size, icon_size, true, true);
@@ -45,7 +45,7 @@ public class Jar_utils
             logger.log("WARNING: an error occurred when reading: " + image_file_path);
             return get_broken_icon(icon_size, owner,logger);
         }
-        return Optional.of(image);
+        return image;
     }
 
 
@@ -68,9 +68,7 @@ public class Jar_utils
         if (image.isError())
         {
             logger.log("WARNING: an error occurred when reading: " + image_file_path);
-            Optional<Image> op = get_broken_icon(icon_size, owner,logger);
-            if ( op.isPresent()) image = op.get();
-            else return null;
+            return null;
         }
 
 
@@ -161,24 +159,24 @@ public class Jar_utils
 
 
     //**********************************************************
-    public static Optional<Image> get_broken_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_broken_icon(double icon_size, Window owner, Logger logger)
     //**********************************************************
     {
-        if (broken_icon.isPresent())
+        if (broken_icon != null)
         {
-            if ( broken_icon.get().getHeight() == icon_size) return broken_icon;
+            if ( broken_icon.getHeight() == icon_size) return broken_icon;
         }
         Look_and_feel local_instance = Look_and_feel_manager.get_instance(owner,logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: cannot get look and feel instance"));
-            return Optional.empty();
+            return null;
         }
         String path = local_instance.get_broken_icon_path();
         if (path == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace("❌ FATAL: cannot get broken icon path"));
-            return Optional.empty();
+            return null;
         }
         broken_icon = load_jfx_image_from_jar(path, icon_size,owner,logger);
         return broken_icon;

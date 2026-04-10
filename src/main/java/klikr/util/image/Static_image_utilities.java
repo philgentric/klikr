@@ -9,6 +9,7 @@ import ar.com.hjg.pngj.ImageLineByte;
 import ar.com.hjg.pngj.PngWriter;
 import javafx.scene.image.*;
 import javafx.stage.Window;
+import klikr.browser_core.Image_and_properties;
 import klikr.util.execute.actor.Aborter;
 import klikr.images.Image_context;
 import klikr.look.Jar_utils;
@@ -30,7 +31,7 @@ public class Static_image_utilities
     private static final boolean dbg = false;
 
     //**********************************************************
-    public static void write_png_to_disk(Image image,
+    public static boolean write_png_to_disk(Image image,
                                          Path out_path,
                                          Logger logger)
     //**********************************************************
@@ -39,7 +40,11 @@ public class Static_image_utilities
         int w = (int) image.getWidth();
         int h = (int) image.getHeight();
         PixelReader pr = image.getPixelReader();
-        if (pr == null) throw new IllegalArgumentException("Image has no pixels");
+        if (pr == null)
+        {
+            logger.log("Cannot save as PNG because Image has no PixelReader "+out_path);
+            return false;
+        }
 
         ImageInfo image_info = new ImageInfo(w, h, 8, true); // 8-bit RGBA
 
@@ -66,8 +71,10 @@ public class Static_image_utilities
         catch (IOException e)
         {
             logger.log("Icon_writer_actor: Error writing icon to cache: " + e);
+            return false;
         }
         if (dbg) logger.log("Icon_writer_actor: Icon written to cache: ");
+        return true;
     }
 
 
@@ -81,13 +88,12 @@ public class Static_image_utilities
     //**********************************************************
     {
         if (!Files.exists(path_)) return Optional.empty();
-        Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path_, true, owner, aborter, logger_);
-        if (op.isEmpty()) return Optional.empty();
-        Image local_image = op.get();
+        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path_, true, owner, aborter, logger_);
+        if (iap == null) return Optional.empty();
+        Image local_image = iap.image();
         if (local_image.isError()) {
-            Optional<Image> broken = Jar_utils.get_broken_icon(300, owner, logger_);
-
-            return Optional.of(new Image_context(path_, path_, broken.orElse(null), logger_));
+            Image broken = Jar_utils.get_broken_icon(300, owner, logger_);
+            return Optional.of(new Image_context(path_, path_, broken, logger_));
         }
         logger_.log("using alternate rescaling : "+filter.name());
 

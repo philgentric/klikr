@@ -452,9 +452,8 @@ public class Animated_gifs_from_video
         logger.log("make_animated_gif_in_tmp_folder, video path=" + video_path);
 
         String tag = height +"_"+ start_time_seconds +"_"+ duration_seconds;
-        Optional<Path> op = Icon_caching.path_for_icon_caching(video_path, tag, Icon_caching.gif_extension, owner, logger);
-        if (op.isEmpty()) return null;
-        Path temporary_gif_full_path = op.get();
+        Path temporary_gif_full_path = Icon_caching.path_for_icon_caching(video_path, tag, Icon_caching.gif_extension, owner, logger);
+        if (temporary_gif_full_path == null) return null;
         logger.log("make_animated_gif_in_tmp_folder, icon_file=" + temporary_gif_full_path.toAbsolutePath());
 
         Ffmpeg_utils.video_to_gif(
@@ -470,15 +469,15 @@ public class Animated_gifs_from_video
             logger);
 
 
-        Optional<Image> image = Icons_from_disk.load_icon_from_disk_cache(video_path, height, tag,Icon_caching.gif_extension, Icons_from_disk.dbg, owner,logger);
+        Image image = Icons_from_disk.load_icon_from_disk_cache(video_path, height, tag,Icon_caching.gif_extension, Icons_from_disk.dbg, owner,logger);
         //Image image = Icons_from_disk.get_image_from_cache(video_path, height, owner,logger);
 
-        if ( image.isEmpty())
+        if ( image == null)
         {
             logger.log("❌ FATAL: load_icon_from_disk_cache==null");
             return null;
         }
-        the_imageview.setImage(image.get());
+        the_imageview.setImage(image);
         return temporary_gif_full_path;
     }
 

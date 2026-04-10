@@ -81,9 +81,8 @@ public class Icon_writer_actor implements Actor
     public void write_icon_to_cache_on_disk(Icon_write_message iwm)
     //**********************************************************
     {
-		Optional<Path> op = Icon_caching.path_for_icon_caching(iwm.absolute_path(), String.valueOf(iwm.icon_size()), Icon_caching.png_extension, owner, logger);
-		if (op.isEmpty()) return;
-		Path out_path = op.get();
+		Path out_path = Icon_caching.path_for_icon_caching(iwm.absolute_path(), String.valueOf(iwm.icon_size()), Icon_caching.png_extension, owner, logger);
+		if ( out_path == null) return;
 		if ( use_mmap)
 		{
 			Runnable on_end = ()->

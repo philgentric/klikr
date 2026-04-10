@@ -49,15 +49,15 @@ public class Folder_chooser
         Button up_button = new Button("Up");
         double font_size = Non_booleans_properties.get_font_size(owner,logger);
         double height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
-        Optional<Image> icon = Look_and_feel_manager.get_up_icon(height,owner,logger);
-        if (icon.isEmpty())
+        Image icon = Look_and_feel_manager.get_up_icon(height,owner,logger);
+        if (icon == null)
         {
             logger.log("WARNING: could not load " + Look_and_feel_manager.get_instance(owner,logger).get_up_icon_path());
             Look_and_feel_manager.set_button_look(up_button, true,owner, logger);
         }
         else
         {
-            Look_and_feel_manager.set_button_and_image_look(up_button, icon.get(), height, null, true, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(up_button, icon, height, null, true, owner, logger);
         }
         CheckBox show_hidden_checkbox = new CheckBox("Show hidden folders");
         Look_and_feel_manager.set_CheckBox_look(show_hidden_checkbox,dialog,logger);

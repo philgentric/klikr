@@ -372,7 +372,7 @@ public class Static_files_and_paths_utilities
             else
             {
                 files++;
-                if( Guess_file_type.is_this_file_an_image(f,owner,logger)) images++;
+                if( Guess_file_type.is_this_file_extension_an_image(f,owner,logger)) images++;
                 bytes += f.length();
             }
         }
@@ -407,7 +407,7 @@ public class Static_files_and_paths_utilities
         File_payload fp = (f) -> {
             bytes.addAndGet(f.length());
             files.incrementAndGet();
-            if ( Guess_file_type.is_this_file_an_image(f,owner,logger)) images.incrementAndGet();
+            if ( Guess_file_type.is_this_file_extension_an_image(f,owner,logger)) images.incrementAndGet();
         };
         Dir_payload dp = f -> {
             folders.incrementAndGet();
@@ -876,7 +876,7 @@ public class Static_files_and_paths_utilities
         if (Extensions.get_extension(new_name).isEmpty()) {
             if (!Extensions.get_extension(old_name).isEmpty()) {
                 logger.log("❗ WARNING, should not remove extension");
-                if (Guess_file_type.is_this_path_an_image(path,owner,logger) || Guess_file_type.is_this_path_a_video(path,logger)) {
+                if (Guess_file_type.is_this_path_extension_an_image(path,owner,logger) || Guess_file_type.is_this_path_extension_a_video(path,logger)) {
                     logger.log("❗ WARNING, extension restored");
                     new_name = Extensions.add(new_name ,Extensions.get_extension(old_name));
                     Popups.popup_warning( "❗ extension restored: ", old_name + "=>" + new_name, true, owner,logger);

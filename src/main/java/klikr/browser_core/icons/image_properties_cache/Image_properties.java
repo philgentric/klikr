@@ -9,7 +9,7 @@ import klikr.util.cache.Size_;
 import klikr.util.log.Stack_trace_getter;
 
 //**********************************************************
-public record Image_properties(double w, double h, Rotation rotation)
+public record Image_properties(double w, double h, Rotation rotation, boolean is_broken_icon)
 //**********************************************************
 {
 
@@ -42,7 +42,7 @@ public record Image_properties(double w, double h, Rotation rotation)
         double h = Double.parseDouble(hs.trim());
         String rots = value.substring(second_space+1);
         Rotation rotation = Rotation.valueOf(rots.trim());
-        return new Image_properties(w,h, rotation);
+        return new Image_properties(w,h, rotation,false);
     }
 
     //**********************************************************

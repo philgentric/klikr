@@ -86,7 +86,6 @@ import klikr.util.perf.Perf;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
-import org.jspecify.annotations.NonNull;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -681,7 +680,7 @@ public class Virtual_landscape
                 destination = plpfpl.the_playlist_file_path;
             }
             int n = Drag_and_drop.accept_drag_dropped_as_a_move_in(
-                    path_list_provider.get_move_provider(),
+                    path_list_provider.get_move_in_provider(),
                     drag_event,
                     destination,
                     the_Pane,
@@ -1146,7 +1145,7 @@ public class Virtual_landscape
         }
     }
 
-    private static @NonNull String path_to_string(Path path) {
+    private static String path_to_string(Path path) {
         return path.toAbsolutePath().toString();
     }
 
@@ -1243,7 +1242,7 @@ public class Virtual_landscape
                     double w = dis.readDouble();
                     double h = dis.readDouble();
                     String r = dis.readUTF();
-                    return new Image_properties(w,h,Rotation.valueOf(r));
+                    return new Image_properties(w,h,Rotation.valueOf(r),false);
                 } catch (IOException e) {
                     logger.log(""+e);
                 }
@@ -1259,21 +1258,18 @@ public class Virtual_landscape
             public Image_properties apply(Path path)
             {
 
-                Optional<Image_properties> ip = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter, logger);
-                if (ip.isPresent()) {
-                    return ip.get();
+                Image_properties ip = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter, logger);
+                if (ip != null) {
+                    return ip;
                 }
-                if ( Guess_file_type.is_this_path_an_image(path, owner, logger))
+                if ( Guess_file_type.is_this_path_extension_an_image(path, owner, logger))
                 {
                     // try to load the image
-                    Optional<Image> op = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, null, aborter, logger);
-                    if (op.isPresent()) {
-                        Image image = op.get();
-                        return new Image_properties(image.getWidth(), image.getHeight(), Rotation.normal);
-                    }
+                    Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, null, aborter, logger);
+                    if (iap != null) return iap.properties();
                 }
                 logger.log("EXIF failed to return Image properties for"+path);
-                return new Image_properties(-1,-1, Rotation.normal);
+                return new Image_properties(-1,-1, Rotation.normal, false);
             }
         };
 
@@ -1344,7 +1340,7 @@ public class Virtual_landscape
                     logger.log("✅ Virtual_landscape process_non_iconized_files " + path.toAbsolutePath());
                 String text = path.getFileName().toString();
                 long size = path.toFile().length() / 1000_000L;
-                if (Guess_file_type.is_this_path_a_video(path, logger))
+                if (Guess_file_type.is_this_path_extension_a_video(path, logger))
                     text = size + "MB VIDEO: " + text;
                 Item item = all_items_map.get(path_to_string(path));
                 if (item == null) {
@@ -2127,13 +2123,13 @@ public class Virtual_landscape
                         false,
                         folder_path,
                         logger);
-                
-                    Optional<Image> icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
-                    if (icon.isEmpty()) {
+
+                    Image icon = Look_and_feel_manager.get_up_icon(height, owner, logger);
+                    if (icon == null) {
                         logger.log("❌ BAD: could not load "
                                 + Look_and_feel_manager.get_instance(owner, logger).get_up_icon_path());
                     } else {
-                        Look_and_feel_manager.set_button_and_image_look(up_button, icon.get(), height, null, true, owner, logger);
+                        Look_and_feel_manager.set_button_and_image_look(up_button, icon, height, null, true, owner, logger);
                     }
                     top_buttons.add(up_button);
                 }
@@ -2167,14 +2163,14 @@ public class Virtual_landscape
             }
             else
             {
-                Optional<Image> icon = Look_and_feel_manager.get_trash_icon(height, owner, logger);
-                if (icon.isEmpty()) {
+                Image icon = Look_and_feel_manager.get_trash_icon(height, owner, logger);
+                if (icon == null) {
                     logger.log("❌ BAD: could not load "
                             + Look_and_feel_manager.get_instance(owner, logger).get_bookmarks_icon_path());
                 }
                 else
                 {
-                    Look_and_feel_manager.set_button_and_image_look(trash, icon.get(), height, null, true, owner, logger);
+                    Look_and_feel_manager.set_button_and_image_look(trash, icon, height, null, true, owner, logger);
                 }
 
             }
@@ -2347,8 +2343,8 @@ public class Virtual_landscape
             files_button.setOnAction(e -> button_files(e));
             top_pane.getChildren().add(files_button);
             top_buttons.add(files_button);
-            Optional<Image> icon = Look_and_feel_manager.get_folder_icon(height, owner, logger);
-            Look_and_feel_manager.set_button_and_image_look(files_button, icon.orElse(null), height, null, false, owner, logger);
+            Image icon = Look_and_feel_manager.get_folder_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(files_button, icon, height, null, false, owner, logger);
         }
         if ( window_type == Window_type.File_system_2D)
         {
@@ -2357,8 +2353,8 @@ public class Virtual_landscape
             view_button.setOnAction(e -> button_view(e));
             top_pane.getChildren().add(view_button);
             top_buttons.add(view_button);
-            Optional<Image> icon = Look_and_feel_manager.get_view_icon(height, owner, logger);
-            Look_and_feel_manager.set_button_and_image_look(view_button, icon.orElse(null), height, null, false, owner, logger);
+            Image icon = Look_and_feel_manager.get_view_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(view_button, icon, height, null, false, owner, logger);
         }
         if ( window_type == Window_type.File_system_2D)
         {
@@ -2367,8 +2363,8 @@ public class Virtual_landscape
             preferences_button.setOnAction(e -> button_preferences(e));
             top_pane.getChildren().add(preferences_button);
             top_buttons.add(preferences_button);
-            Optional<Image> icon = Look_and_feel_manager.get_preferences_icon(height, owner, logger);
-            Look_and_feel_manager.set_button_and_image_look(preferences_button, icon.orElse(null), height, null, false, owner,
+            Image icon = Look_and_feel_manager.get_preferences_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(preferences_button, icon, height, null, false, owner,
                     logger);
         }
         if ( window_type == Window_type.File_system_2D)
@@ -2378,8 +2374,8 @@ public class Virtual_landscape
             back_button.setOnAction(e -> back());
             top_pane.getChildren().add(back_button);
             top_buttons.add(back_button);
-            Optional<Image> icon = Look_and_feel_manager.get_back_icon(height, owner, logger);
-            Look_and_feel_manager.set_button_and_image_look(back_button, icon.orElse(null), height, null, false, owner, logger);
+            Image icon = Look_and_feel_manager.get_back_icon(height, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(back_button, icon, height, null, false, owner, logger);
         }
     }
 
@@ -2423,8 +2419,8 @@ public class Virtual_landscape
                 top_left,
                 shutdown_target,
                 window_type, owner, aborter, logger));
-        Optional<Image> icon = Look_and_feel_manager.get_bookmarks_icon(height, owner, logger);
-        Look_and_feel_manager.set_button_and_image_look(undo_bookmark_history_button, icon.orElse(null), height, null, false, owner,
+        Image icon = Look_and_feel_manager.get_bookmarks_icon(height, owner, logger);
+        Look_and_feel_manager.set_button_and_image_look(undo_bookmark_history_button, icon, height, null, false, owner,
                 logger);
         return undo_bookmark_history_button;
     }
@@ -3088,9 +3084,8 @@ public class Virtual_landscape
             }
 
             try {
-                Optional<Image> op = Look_and_feel_manager.get_default_icon(256, owner, logger);
-                if (op.isEmpty()) return;
-                Image default_icon = op.get();
+                Image default_icon = Look_and_feel_manager.get_default_icon(256, owner, logger);
+                if (default_icon == null) return;
                 final double[] local_x = { 0 };
                 final double[] local_y = { 0 };
                 final int[] count = { 0 };
@@ -3257,15 +3252,15 @@ public class Virtual_landscape
 
             double top_delta_y = 2 * Non_booleans_properties.get_font_size(owner, logger);
             if (error_type == Error_type.DENIED) {
-                Optional<Image> op = Look_and_feel_manager.get_denied_icon(icon_size, owner, logger);
-                ImageView iv_denied = new ImageView(op.orElse(null));
+                Image denied = Look_and_feel_manager.get_denied_icon(icon_size, owner, logger);
+                ImageView iv_denied = new ImageView(denied);
                 show_error_icon(iv_denied, top_delta_y);
                 progress_window.ifPresent(Hourglass::close);
                 is_redrawing.set(false);
                 return;
             }
             if (error_type == Error_type.NOT_FOUND) {
-                ImageView not_found = new ImageView(Look_and_feel_manager.get_not_found_icon(icon_size, owner, logger).orElse(null));
+                ImageView not_found = new ImageView(Look_and_feel_manager.get_not_found_icon(icon_size, owner, logger));
                 show_error_icon(not_found, top_delta_y);
                 progress_window.ifPresent(Hourglass::close);
                 is_redrawing.set(false);
@@ -3273,7 +3268,7 @@ public class Virtual_landscape
             }
             if (error_type == Error_type.ERROR) {
                 ImageView unknown_error = new ImageView(
-                        Look_and_feel_manager.get_unknown_error_icon(icon_size, owner, logger).orElse(null));
+                        Look_and_feel_manager.get_unknown_error_icon(icon_size, owner, logger));
                 show_error_icon(unknown_error, top_delta_y);
                 progress_window.ifPresent(Hourglass::close);
                 is_redrawing.set(false);

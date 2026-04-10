@@ -25,10 +25,13 @@ public enum Language
     Portuguese,
     Spanish;
 
+    //**********************************************************
     public Image get_icon(Window owner, Logger logger)
+    //**********************************************************
     {
-        return Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, owner,logger).orElse(null);
+        return Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, owner,logger);
     }
+
     //**********************************************************
     public Locale get_locale()
     //**********************************************************

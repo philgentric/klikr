@@ -25,9 +25,9 @@ public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Window
     {
         if ( Look_and_feel_manager.get_instance(owner,logger).get_look_and_feel_style() != Look_and_feel_style.materiol) {
             if ( dbg) logger.log("Progress: starting an animation");
-            Optional<Image> op = Look_and_feel_manager.get_running_film_icon(owner, logger);
-            if (op.isPresent()) {
-                ImageView iv = new ImageView(op.get());
+            Image film = Look_and_feel_manager.get_running_film_icon(owner, logger);
+            if (film != null) {
+                ImageView iv = new ImageView(film);
                 iv.setFitHeight(100);
                 iv.setPreserveRatio(true);
                 pane.getChildren().add(iv);
@@ -48,8 +48,8 @@ public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Window
     {
         if ( iv() != null)
         {
-            Optional<Image> op = Look_and_feel_manager.get_the_end_icon(owner(), logger());
-            op.ifPresent(icon -> iv().setImage(icon));
+            Image end = Look_and_feel_manager.get_the_end_icon(owner(), logger());
+            if ( end !=null) iv().setImage(end);
         }
         if ( spinner() != null) spinner().stop();
     }

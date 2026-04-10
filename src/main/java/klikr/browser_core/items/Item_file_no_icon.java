@@ -43,6 +43,7 @@ import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
+import klikr.util.ui.Popups;
 import klikr.util.ui.Text_frame;
 
 import java.io.File;
@@ -67,7 +68,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     private static final boolean make_animated_gif = true;
 
     public Button button;
-    public Label label; // may be null, as this is the text displayed when 'Show_single_column_with_details' == true
+    public Label details; // may be null, as this is the text displayed when 'Show_single_column_with_details' == true
     public String text;
     private static DateTimeFormatter date_time_formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
@@ -257,7 +258,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         for ( File f : files)
         {
             if (f.isDirectory()) continue; // ignore folders
-            if (!Guess_file_type.is_this_file_an_image(f,owner,logger)) continue; // ignore non images
+            if (!Guess_file_type.is_this_file_extension_an_image(f,owner,logger)) continue; // ignore non images
             if( make_animated_gif)
             {
                 images_in_folder.add(f.toPath());
@@ -353,10 +354,10 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             } catch (IOException e) {
                 logger.log_exception("",e);
             }
-            label = new Label(sb.toString());
+            details = new Label(sb.toString());
             //Font_size.set_preferred_font_size(label,logger);
-            Font_size.apply_global_font_size_to_Node(label,owner,logger);
-            button = new Button(text,label);
+            Font_size.apply_global_font_size_to_Node(details,owner,logger);
+            button = new Button(text, details);
         }
         else
         {
@@ -373,9 +374,16 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
         button.setOnAction(event -> {
 
+            if ( !item_path.toFile().exists())
+            {
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( "❌  impossible, this path does not exist: " + item_path.toAbsolutePath(), "Sorry", false,owner,logger), logger);
+
+                logger.log("❌  impossible, this path does not exist: " + item_path.toAbsolutePath());
+                return;
+            }
             logger.log("✅ ON ACTION " + item_path.toAbsolutePath());
 
-            if ( Guess_file_type.is_this_path_a_text(item_path,owner,logger))
+            if ( Guess_file_type.is_this_path_extension_a_text(item_path,owner,logger))
             {
                 logger.log("✅ opening text: " + item_path.toAbsolutePath());
                 if ( Feature_cache.get(Feature.Use_monaco_for_text_edition))
@@ -388,14 +396,14 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                 }
                 return;
             }
-            if ( Guess_file_type.is_this_path_an_audio_playlist(item_path,logger))
+            if ( Guess_file_type.is_this_path_extension_an_audio_playlist(item_path,logger))
             {
                 logger.log("✅ opening audio playlist: " + item_path.toAbsolutePath());
                 Window_builder.additional_no_past(application,Window_type.Song_playlist,new Path_list_provider_for_playlist(path,  owner, aborter, logger),owner,logger);
                 return;
             }
 
-            if ( Guess_file_type.is_this_path_a_music(item_path,logger))
+            if ( Guess_file_type.is_this_path_extension_a_music(item_path,logger))
             {
                 if ( Guess_file_type.does_this_file_contain_an_audio_track(item_path,owner,logger))
                 {
@@ -410,7 +418,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             System_open_actor.open_with_system(application, item_path, owner,aborter,logger);
         });
 
-        give_a_menu_to_the_button(button,label);
+        give_a_menu_to_the_button(button, details);
     }
 
     /*

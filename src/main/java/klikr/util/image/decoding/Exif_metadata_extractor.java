@@ -109,13 +109,15 @@ public class Exif_metadata_extractor
             list_of_strings = new ArrayList<>();
         }
 
-        Image_properties image_properties = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter,logger).orElse(new Image_properties(0,0, Rotation.normal));
-        exif_metadata.add("EXIF width="+image_properties.get_image_width());
-        exif_metadata.add("EXIF height="+image_properties.get_image_height());
-        exif_metadata.add("EXIF aspect_ratio="+image_properties.get_aspect_ratio());
-        double aspect_ratio = Fast_aspect_ratio_from_exif_metadata_extractor.get_aspect_ratio(path,report_if_not_found,aborter,list_of_strings,owner,logger).orElse(1.0);
-        exif_metadata.add("Alternative aspect_ratio="+aspect_ratio);
-
+        Image_properties image_properties = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter,logger);
+        if (image_properties != null)
+        {
+            exif_metadata.add("EXIF width=" + image_properties.get_image_width());
+            exif_metadata.add("EXIF height=" + image_properties.get_image_height());
+            exif_metadata.add("EXIF aspect_ratio=" + image_properties.get_aspect_ratio());
+            double aspect_ratio = Fast_aspect_ratio_from_exif_metadata_extractor.get_aspect_ratio(path, report_if_not_found, aborter, list_of_strings, owner, logger).orElse(1.0);
+            exif_metadata.add("Alternative aspect_ratio=" + aspect_ratio);
+        }
 
         {
             long l = 0;

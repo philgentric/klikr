@@ -50,7 +50,7 @@ public class Item_folder extends Item implements Icon_destination
 {
     public static final boolean dbg = false;
     public Button button;
-    public Label label;
+    //public Label label;
     public final boolean is_trash;
     public final Path is_parent_of; // can be null
     public String text;
@@ -160,7 +160,7 @@ public class Item_folder extends Item implements Icon_destination
 
     @Override
     void set_new_path(Path newPath) {
-
+        logger.log(Stack_trace_getter.get_stack_trace("set_new_path???"));
     }
 
     @Override
@@ -295,7 +295,7 @@ public class Item_folder extends Item implements Icon_destination
         for ( File f : files)
         {
             if (f.isDirectory()) continue; // ignore folders
-            if (!Guess_file_type.is_this_file_an_image(f,owner,logger)) continue; // ignore non images
+            if (!Guess_file_type.is_this_file_extension_an_image(f,owner,logger)) continue; // ignore non images
             if( make_animated_gif)
             {
                 Objects.requireNonNull(images_in_folder).add(f.toPath());
@@ -432,9 +432,9 @@ public class Item_folder extends Item implements Icon_destination
 
         });
 
-        Drag_and_drop.init_drag_and_drop_receiver_side(path_list_provider.get_move_provider(),get_Node(),owner,item_path,is_trash(),logger);
+        Drag_and_drop.init_drag_and_drop_receiver_side(path_list_provider.get_move_in_provider(),get_Node(),owner,item_path,is_trash(),logger);
 
-        give_a_menu_to_the_button(button,label);
+        give_a_menu_to_the_button(button,null);
     }
 
 

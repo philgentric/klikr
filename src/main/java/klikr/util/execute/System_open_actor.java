@@ -19,6 +19,7 @@ import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 import klikr.util.log.Stack_trace_getter;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ import java.util.List;
 public class System_open_actor implements Actor
 //**********************************************************
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(System_open_actor.class);
     private static volatile System_open_actor instance;
 
     //**********************************************************
@@ -174,6 +176,22 @@ public class System_open_actor implements Actor
     )
     //**********************************************************
     {
+        if ( som.path == null)
+        {
+            som.logger.log("call_os_specific_open failed, path is null");
+            return false;
+        }
+
+        if ( !som.path.toFile().exists() )
+        {
+            som.logger.log("call_os_specific_open failed, path does not exist: "+som.path);
+            return false;
+        }
+        if ( som.path.getParent() == null )
+        {
+            som.logger.log("call_os_specific_open failed, no parent for path: "+som.path);
+            return false;
+        }
         Operating_system os = Guess_OS.guess(som.logger);
 
         Jfx_batch_injector.inject(() -> Popups.popup_warning( "❗ Calling "+os.name()+" to open: "+som.path, "Please wait ",true,som.owner,som.logger), som.logger);

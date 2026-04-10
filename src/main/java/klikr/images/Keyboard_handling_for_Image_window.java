@@ -7,7 +7,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 import klikr.settings.boolean_features.Feature;
-import klikr.settings.boolean_features.Booleans;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.files_and_paths.Guess_file_type;
@@ -144,7 +143,7 @@ public class Keyboard_handling_for_Image_window
                     if (!Check_remaining_RAM.low_memory.get()) {
                         if (keyboard_dbg) logger.log("UP = previous rescaler");
                         Path p = image_window.image_display_handler.get_image_context().get().path;
-                        if (!Guess_file_type.is_this_path_a_gif(p, logger)) {
+                        if (!Guess_file_type.is_this_path_extension_a_gif(p, logger)) {
                             // JAVAFX Image for GIF does not support PixelReader
                             image_window.rescaler = image_window.rescaler.previous();
                             image_window.redisplay(true);
@@ -160,7 +159,7 @@ public class Keyboard_handling_for_Image_window
                     {
                         if (keyboard_dbg) logger.log("DOWN = next rescaler");
                         Path p = image_window.image_display_handler.get_image_context().get().path;
-                        if (!Guess_file_type.is_this_path_a_gif(p,logger)) {
+                        if (!Guess_file_type.is_this_path_extension_a_gif(p,logger)) {
                             // JAVAFX Image for GIF does not support PixelReader
                             image_window.rescaler = image_window.rescaler.next();
                             image_window.redisplay(true);

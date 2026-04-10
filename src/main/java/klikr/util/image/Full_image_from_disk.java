@@ -6,11 +6,11 @@ package klikr.util.image;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
+import klikr.browser_core.Image_and_properties;
 import klikr.util.External_application;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.experimental.fusk.Fusk_static_core;
-import klikr.look.Jar_utils;
 import klikr.util.cache.Cache_folder;
 import klikr.settings.boolean_features.Booleans;
 import klikr.util.Check_remaining_RAM;
@@ -30,7 +30,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 //**********************************************************
 public class Full_image_from_disk
@@ -116,15 +115,15 @@ public class Full_image_from_disk
             //logger.log("determine_width aborting");
             return null;
         }
-        if(Guess_file_type.is_this_file_an_image(path.toFile(),owner,logger))
+        if(Guess_file_type.is_this_file_extension_an_image(path.toFile(),owner,logger))
         {
-            Optional<Image> op = load_native_resolution_image_from_disk( path,  true, owner, aborter,  logger);
-            if ( op.isEmpty())
+            Image_and_properties iap = load_native_resolution_image_from_disk( path,  true, owner, aborter,  logger);
+            if ( iap == null)
             {
                 logger.log("cannot load image to get aspect ratio(1)"+path);
                 return null;
             }
-            Image i = op.get();
+            Image i = iap.image();
             if (i.isError())
             {
                 logger.log("cannot load image to get aspect ratio(2)"+path);
@@ -148,16 +147,16 @@ public class Full_image_from_disk
             //logger.log("get_aspect_ratio aborting");
             return null;
         }
-        if(Guess_file_type.is_this_file_an_image(path.toFile(),owner, logger))
+        if(Guess_file_type.is_this_file_extension_an_image(path.toFile(),owner, logger))
         {
-            Optional<Image> op = load_native_resolution_image_from_disk( path,  true, owner, aborter,  logger);
-            if ( op.isEmpty())
+            Image_and_properties iap = load_native_resolution_image_from_disk( path,  true, owner, aborter,  logger);
+            if ( iap== null)
             {
                 logger.log("cannot load image to get aspect ratio(1)"+path);
                 return null;
             }
 
-            Image i = op.get();
+            Image i = iap.image();
             if (i.isError())
             {
                 logger.log("cannot load image to get aspect ratio(2)"+path);
@@ -170,14 +169,14 @@ public class Full_image_from_disk
 
 
     //**********************************************************
-    public static Optional<Image> load_native_resolution_image_from_disk(Path original_image_file, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
+    public static Image_and_properties load_native_resolution_image_from_disk(Path original_image_file, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
     //**********************************************************
     {
         //logger.log("load_native_resolution_image_from_disk");
         if (Check_remaining_RAM.RAM_running_low("running low",owner,logger))
         {
             logger.log("load_native_resolution_image_from_disk NOT DONE because running low on memory ! ");
-            return Jar_utils.get_broken_icon(300,owner,logger);
+            return Image_and_properties.broken(owner, logger);
         }
         /*
         if ( Guess_file_type.use_nasa_fits_java_lib)
@@ -198,7 +197,7 @@ public class Full_image_from_disk
         // use javafx Image
 
         InputStream input_stream = get_image_InputStream(original_image_file, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
-        if ( input_stream == null) return Optional.empty();
+        if ( input_stream == null) return null;
         Image image = null;
         try
         {
@@ -209,13 +208,13 @@ public class Full_image_from_disk
         {
             Check_remaining_RAM.RAM_running_low(""+e,owner, logger);
             logger.log("OutOfMemoryError when loading image from disk: "+original_image_file.toAbsolutePath()+" : "+e);
-            return Jar_utils.get_broken_icon(300,owner,logger);
+            return Image_and_properties.broken(owner, logger);
         }
         catch (Exception e)
         {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
             Popups.popup_Exception(e,100,"An error occurred while loading an image from disk",owner,logger);
-            return Jar_utils.get_broken_icon(300,owner,logger);
+            return Image_and_properties.broken(owner, logger);
         }
         try {
             input_stream.close();
@@ -240,14 +239,14 @@ public class Full_image_from_disk
                 logger.log("IMAGE ERROR :"+original_image_file.toAbsolutePath()+" : "+image.getException());
             }
         }
-        return Optional.of(image);
+        return Image_and_properties.build(image,false);
 
     }
 
 
 
     //**********************************************************
-    private static Optional<Image> use_GraphicsMagick_for_full_image(Path original_image_file, Aborter aborter, Window owner, Logger logger)
+    private static Image_and_properties use_GraphicsMagick_for_full_image(Path original_image_file, Aborter aborter, Window owner, Logger logger)
     //**********************************************************
     {
         //logger.log("using GraphicsMagick_for_full_image");
@@ -270,10 +269,10 @@ public class Full_image_from_disk
             logger.log("png (converted image) exists:  "+png_path);
         }
 
-        if ( aborter.should_abort()) return Optional.empty();
+        if ( aborter.should_abort()) return null;
 
         try ( InputStream is = new FileInputStream(png_path.toFile())) {
-            return Optional.of(new Image(is));
+            return Image_and_properties.build(new Image(is),false);
         }
         catch (IOException e)
         {
@@ -284,7 +283,7 @@ public class Full_image_from_disk
     }
 
     //**********************************************************
-    private static Optional<Image> use_ImageMagick_for_full_image(Path original_image_file, Aborter aborter, Window owner, Logger logger)
+    private static Image_and_properties use_ImageMagick_for_full_image(Path original_image_file, Aborter aborter, Window owner, Logger logger)
     //**********************************************************
     {
         logger.log("using ImageMagick (fallback!) to load image by converting it");
@@ -306,16 +305,16 @@ public class Full_image_from_disk
             logger.log("SHOULD NOT HAPPEN ! png (converted image) exists:  "+png_path);
         }
 
-        if ( aborter.should_abort()) return Optional.empty();
+        if ( aborter.should_abort()) return null;
 
         try ( InputStream is = new FileInputStream(png_path.toFile())) {
-            return Optional.of(new Image(is));
+            return Image_and_properties.build(new Image(is),false);
         }
         catch (IOException e)
         {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        return Jar_utils.get_broken_icon(300,owner,logger);
+        return Image_and_properties.broken(owner, logger);
     }
 
 

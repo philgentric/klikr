@@ -266,7 +266,7 @@ public class Draw_command
             if ( !node.is_this_a_directory())
             {
                 Path p = node.get_file().toPath();
-                if (Guess_file_type.is_this_path_an_image(p,owner,logger))
+                if (Guess_file_type.is_this_path_extension_an_image(p,owner,logger))
                 {
                     Menu_items.add_menu_item_for_context_menu_i18n(
                         "Show_Image",

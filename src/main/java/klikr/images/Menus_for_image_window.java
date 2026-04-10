@@ -546,7 +546,7 @@ public class Menus_for_image_window
 
         if (image_window.image_display_handler.get_image_context().isPresent())
         {
-            if (Guess_file_type.is_this_path_a_gif(image_window.image_display_handler.get_image_context().get().path, logger))
+            if (Guess_file_type.is_this_path_extension_a_gif(image_window.image_display_handler.get_image_context().get().path, logger))
             {
                 context_menu.getItems().add(get_gif_repair_menu_item(true,image_window, image_window.image_display_handler, image_window.aborter));
                 context_menu.getItems().add(get_gif_repair_menu_item(false,image_window, image_window.image_display_handler, image_window.aborter));
@@ -556,7 +556,7 @@ public class Menus_for_image_window
         if (Feature_cache.get(Feature.Enable_alternate_image_scaling))
         {
             Path p = image_window.image_display_handler.get_image_context().get().path;
-            if(!Guess_file_type.is_this_path_a_gif(p, logger))
+            if(!Guess_file_type.is_this_path_extension_a_gif(p, logger))
             {
                 // javafx Image for GIF does not support pixelReader
                 context_menu.getItems().add(get_rescaler_menu(image_window,logger));

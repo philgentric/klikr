@@ -101,9 +101,8 @@ public enum Cache_folder
         Path icon_cache_dir = get_cache_dir( Cache_folder.icon_cache,owner,logger);
         int icon_size = Non_booleans_properties.get_icon_size(owner);
 
-        Optional<Path> op = Icon_caching.path_for_icon_caching(path, String.valueOf(icon_size), Icon_caching.png_extension, owner, logger);
-        if (op.isEmpty()) return;
-        Path icon_path = op.get();
+        Path icon_path = Icon_caching.path_for_icon_caching(path, String.valueOf(icon_size), Icon_caching.png_extension, owner, logger);
+        if (icon_path == null) return;
         try {
             Files.delete(icon_path);
             logger.log("one icon deleted from cache:" + icon_path);

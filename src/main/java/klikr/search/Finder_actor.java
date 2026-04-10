@@ -233,7 +233,7 @@ public class Finder_actor implements Actor
                         {
                             if (fm.search_config.look_only_for_images())
                             {
-                                if (Guess_file_type.is_this_path_an_image(path,owner,logger))
+                                if (Guess_file_type.is_this_path_extension_an_image(path,owner,logger))
                                 {
                                     check_if_name_matches_keywords(path, fm);
                                 }
@@ -287,7 +287,7 @@ public class Finder_actor implements Actor
             // is a file
             if ( fm.search_config.look_only_for_images())
             {
-                if (!Guess_file_type.is_this_path_an_image(target_path,owner,logger))
+                if (!Guess_file_type.is_this_path_extension_an_image(target_path,owner,logger))
                 {
                     return;
                 }

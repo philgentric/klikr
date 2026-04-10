@@ -613,7 +613,7 @@ public class Face_recognition_service
                     return false;
                 }
             }
-            if (Guess_file_type.is_this_file_an_image(f,owner, logger))
+            if (Guess_file_type.is_this_file_extension_an_image(f,owner, logger))
             {
                 label_in_flight.increment();
                 Aborter local_never_null = aborter_may_be_null;

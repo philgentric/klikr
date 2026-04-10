@@ -47,7 +47,7 @@ public class Icons_from_disk
 
     // private static long elapsed_read_original_image_from_disk_and_return_icon =0;
     // **********************************************************
-    public static Optional<Image> read_original_image_from_disk_and_return_icon(
+    public static Image read_original_image_from_disk_and_return_icon(
             Path original_image_file,
             Iconifiable_item_type item_type,
             double icon_size,
@@ -85,12 +85,12 @@ public class Icons_from_disk
                 Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger)) {
             if (input_stream == null) {
                 logger.log(Stack_trace_getter.get_stack_trace("input_stream == null for" + original_image_file));
-                return Optional.empty();
+                return null;
             }
             if (aborter.should_abort()) {
                 if (dbg)
                     logger.log("read_original_image_from_disk_and_return_icon aborted");
-                return Optional.empty();
+                return null;
             }
 
             return use_javafx_Image(input_stream, icon_size, logger);
@@ -105,7 +105,7 @@ public class Icons_from_disk
              * logger.log(Stack_trace_getter.
              * get_stack_trace("Icons_from_disk WARNING: unexpected item_type "+ item_type+
              * " for "+original_image_file));
-             * return Optional.empty();
+             * return null;
              * }
              * }
              */
@@ -116,21 +116,19 @@ public class Icons_from_disk
         // long now = System.currentTimeMillis();
         // elapsed_read_original_image_from_disk_and_return_icon += now-start;
         // logger.log("elapsed_read_original_image_from_disk_and_return_icon:"+elapsed_read_original_image_from_disk_and_return_icon);
-        return Optional.of(image);
+        return image;
     }
 
     // **********************************************************
-    private static Optional<Image> use_GraphicsMagick_for_icon(Path original_image_file, double icon_size, Window owner,
+    private static Image use_GraphicsMagick_for_icon(Path original_image_file, double icon_size, Window owner,
             Logger logger)
     // **********************************************************
     {
         logger.log("use_GraphicsMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
-                logger);
-        if ( op.isEmpty() ) return Optional.empty();
-        Path png_path = op.get();
+        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner, logger);
+        if ( png_path == null ) return null;
 
         // String command_string_to_create_tmp_icon = "gm convert
         // "+original_image_file.toAbsolutePath()+ " "+ png_path.toAbsolutePath();
@@ -144,7 +142,7 @@ public class Icons_from_disk
 
         try (InputStream is = new FileInputStream(png_path.toFile())) {
             // use the javafx Image constructor that resizes while loading
-            return Optional.of(new Image(is, icon_size, icon_size, true, true));
+            return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
             // GraphicsMagick failed, let us try the same with imageMagick
@@ -153,17 +151,15 @@ public class Icons_from_disk
     }
 
     // **********************************************************
-    private static Optional<Image> use_ImageMagick_for_icon(Path original_image_file, double icon_size, Window owner,
+    private static Image use_ImageMagick_for_icon(Path original_image_file, double icon_size, Window owner,
             Logger logger)
     // **********************************************************
     {
         logger.log("use_ImageMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner,
-                logger);
-        if ( op.isEmpty() ) return Optional.empty();
-        Path png_path = op.get();
+        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner, logger);
+        if ( png_path == null ) return null;
 
         // String command_string_to_create_tmp_icon = "magick
         // "+original_image_file.toAbsolutePath()+ " "+ png_path.toAbsolutePath();
@@ -175,11 +171,11 @@ public class Icons_from_disk
 
         try (InputStream is = new FileInputStream(png_path.toFile())) {
             // use the javafx Image constructor that resizes while loading
-            return Optional.of(new Image(is, icon_size, icon_size, true, true));
+            return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        return Optional.empty();
+        return null;
     }
 
     /*
@@ -213,20 +209,20 @@ public class Icons_from_disk
      * cdl.await();
      * } catch (InterruptedException e) {
      * logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
-     * return Optional.empty();
+     * return null;
      * }
      * return Optional.of(x.get());
      * }
      */
     // **********************************************************
-    private static Optional<Image> use_javafx_Image(InputStream input_stream, double icon_size, Logger logger)
+    private static Image use_javafx_Image(InputStream input_stream, double icon_size, Logger logger)
     // **********************************************************
     {
         // logger.log("use_javafx_Image");
         Image image = new Image(input_stream, icon_size, icon_size, true, true);
         if (image.isError()) {
             logger.log(("Icons_from_disk WARNING: an error occurred when reading AND resizing: "));
-            return Optional.empty();
+            return null;
 
             // the image format is not supported WITH RESIZE
             // but it may be supported WITHOUT rise e.g. TIF
@@ -238,7 +234,7 @@ public class Icons_from_disk
             // Icons_from_disk.load_native_resolution_image_from_disk(original_image_file,
             // true, null, aborter,logger);
         }
-        return Optional.of(image);
+        return image;
 
         /*
          * this code uses AWT, which is not supported by gluon
@@ -292,7 +288,7 @@ public class Icons_from_disk
 
 
     // **********************************************************
-    public static Optional<Image> load_icon_from_disk_cache(
+    public static Image load_icon_from_disk_cache(
             Path original_image_file, // this is NOT the ICON path, this is the true full length image
             int icon_size, // used for the NAME (not for resizing)
             String tag, // icon length or empty
@@ -308,14 +304,12 @@ public class Icons_from_disk
             logger.log("load_icon_from_disk_cache WARNING: running low on memory ! loading default icon");
             return Look_and_feel_manager.get_default_icon(icon_size, owner, logger);
         }
-        Optional<Path> op = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, owner, logger);
-        if ( op.isEmpty() ) return Optional.empty();
-        Path path = op.get();
+        Path path = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, owner, logger);
+        if ( path == null ) return null;
         if (dbg)
             logger.log("load_icon_from_disk file is:" + path.toAbsolutePath() + " for " + original_image_file);
         try (InputStream input_stream = Files.newInputStream(path)) {
-            Image image = new Image(input_stream);
-            return Optional.of(image);
+            return new Image(input_stream);
         } catch (FileNotFoundException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
@@ -331,7 +325,7 @@ public class Icons_from_disk
         } catch (IOException e) {
             logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
-        return Optional.empty();
+        return null;
     }
 
     // only for icons i.e. NOT general purpose, which requires fusk support

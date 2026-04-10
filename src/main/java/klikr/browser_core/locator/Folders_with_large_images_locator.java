@@ -181,7 +181,7 @@ public class Folders_with_large_images_locator
             }
 
             if (!f.isFile()) continue;
-            if (Guess_file_type.is_this_file_an_image(f,owner,logger))
+            if (Guess_file_type.is_this_file_extension_an_image(f,owner,logger))
             {
                 if ( f.length() >= min_bytes)
                 {

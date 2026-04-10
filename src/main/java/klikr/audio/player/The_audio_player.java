@@ -151,6 +151,11 @@ public class The_audio_player implements Media_callbacks
         else
         {
             path = Path.of(song_s);
+            if (!path.toFile().exists())
+            {
+                String_constants.save_current_song("",owner);
+                return;
+            }
         }
         instance.play_song_internal(path);
     }
@@ -460,12 +465,12 @@ public class The_audio_player implements Media_callbacks
             if( path_list_provider instanceof Path_list_provider_for_playlist path_list_provider_for_playlist)
             {
                 logger.log("path_list_provider is a Path_list_provider_for_playlist");
-                Move_provider move_provider = path_list_provider_for_playlist.get_move_provider();
+                Move_provider move_provider = path_list_provider_for_playlist.get_move_in_provider();
                 move_provider.move(null,false,the_list2,owner,100,100,aborter,logger);
             }
             else if ( path_list_provider instanceof Path_list_provider_for_file_system path_list_provider_for_file_system)
             {
-                Move_provider move_provider = path_list_provider_for_file_system.get_move_provider();
+                Move_provider move_provider = path_list_provider_for_file_system.get_move_in_provider();
                 move_provider.move(path_list_provider_for_file_system.get_folder_path(),false,the_list2,owner,100,100,aborter,logger);
             }
 
@@ -611,10 +616,10 @@ public class The_audio_player implements Media_callbacks
         mute.setOnAction((ActionEvent e) -> {
             if (Media_instance_statics.toggle_mute()) {
                 mute.setText(mute_string);
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
             } else {
                 mute.setText(My_I18n.get_I18n_string("Unmute", stage, logger)); // "Unmute");
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger).orElse(null));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger));
             }
         });
         returned.getChildren().add(mute);
@@ -629,7 +634,7 @@ public class The_audio_player implements Media_callbacks
     {
         HBox volume_hbox = new HBox();
 
-        speaker_image_view = new ImageView(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
+        speaker_image_view = new ImageView(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
         speaker_image_view.setFitHeight(60);
         speaker_image_view.setFitWidth(60);
         volume_hbox.getChildren().add(speaker_image_view);
@@ -643,9 +648,9 @@ public class The_audio_player implements Media_callbacks
             Media_instance_statics.set_volume(volume);
             save_audio_volume(volume, stage);
             if (volume >= 0.01) {
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger).orElse(null));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_on_icon(stage, logger));
             } else {
-                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger).orElse(null));
+                speaker_image_view.setImage(Look_and_feel_manager.get_speaker_off_icon(stage, logger));
             }
         });
         return volume_hbox;
