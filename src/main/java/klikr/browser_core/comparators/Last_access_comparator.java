@@ -24,6 +24,9 @@ public record Last_access_comparator(Logger logger) implements Comparator<Path>
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         BasicFileAttributeView bfav1 = Files.getFileAttributeView(p1, BasicFileAttributeView.class);
         BasicFileAttributeView bfav2 = Files.getFileAttributeView(p2, BasicFileAttributeView.class);
         try
@@ -35,6 +38,7 @@ public record Last_access_comparator(Logger logger) implements Comparator<Path>
             {
                 return diff;
             }
+
             return (p1.toString().compareTo(p2.toString()));
         }
         catch (IOException e)

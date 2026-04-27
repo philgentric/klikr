@@ -51,6 +51,9 @@ public class Aspect_ratio_comparator_random implements Comparator<Path>, Clearab
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         Image_properties ip1 = image_properties_cache.get(p1,aborter,null,owner);
         if ( ip1 == null)
         {

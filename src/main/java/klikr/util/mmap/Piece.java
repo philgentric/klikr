@@ -194,7 +194,6 @@ public class Piece
         PixelReader pr = image.getPixelReader();
         if ( pr == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("❌ PANIC in write_image, PixelReader is null for image: " + image));
             return false;
         }
         int width = (int)image.getWidth();
@@ -240,7 +239,11 @@ public class Piece
     //**********************************************************
     {
         MemorySegment segment = read_MemorySegment(meta);
-        if (segment == null) return Optional.empty();
+        if (segment == null)
+        {
+            logger.log(" mmap failure in read_MemorySegment");
+            return Optional.empty();
+        }
         int width = meta.width();
         if( dbg) logger.log("image w = "+width);
         if ( width <=0)  return Optional.empty();

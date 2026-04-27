@@ -6,6 +6,7 @@ import klikr.util.cache.Cache_folder;
 import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
+import klikr.util.image.decoding.Exif_metadata_extractor;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
@@ -260,24 +261,29 @@ public class Mmap
 
     // takes more file space but faster to reload
     //**********************************************************
-    public void write_image_as_pixels(String tag, Image image, boolean and_save, Runnable on_end)
+    public boolean write_image_as_pixels(String tag, Image image, boolean and_save, Runnable on_end)
     //**********************************************************
     {
         Image_as_pixel_metadata meta = find_room_for_image_as_pixel(image, tag);
         if ( meta == null )
         {
             logger.log("Mmap no room found for "+tag);
-            return;
+            return false;
         }
-        meta.piece().write_image_as_pixels(meta.offset(),image);
+        if (!meta.piece().write_image_as_pixels(meta.offset(),image))
+        {
+            logger.log(Stack_trace_getter.get_stack_trace("❌ PANIC in write_image, PixelReader is null for image: " + tag));
+            return false;
+        };
         record_index(tag, meta, meta.piece());
         if (ultra_dbg) logger.log("Mmap image as pixel: "+tag);
         consider_saving(and_save);
 
         if ( on_end != null ) on_end.run();
+        return true;
     }
 
-    private static ConcurrentLinkedQueue<Long> elapseds = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Long> elapseds = new ConcurrentLinkedQueue<>();
     private static int counter = 0;
     //**********************************************************
     public Optional<Image> read_image_as_pixels(String tag)

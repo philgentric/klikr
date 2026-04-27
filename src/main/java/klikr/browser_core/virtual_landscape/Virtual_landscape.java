@@ -832,39 +832,6 @@ public class Virtual_landscape
             iconized_sorted_queue.add(local_iconized_sorted);
         }
     }
-/*
-    //**********************************************************
-    private void sort_iconized_items(String reason)
-    //**********************************************************
-    {
-        try (Perf p = new Perf("sort_iconized_items")) {
-            List<Path> local_iconized_sorted = new ArrayList<>(paths_holder.iconized_paths);
-            for (int tentative = 0; tentative < 3; tentative++)
-            {
-                // ugly trick due to similarity pursuit
-                // it is NOT a true metric so the sort algorithm
-                // can hiccup ... when that happens we reshuffle and retry
-                try {
-                    if (dbg)
-                        logger.log("sort_iconized_items with " + image_file_comparator.getClass().getName());
-                    // this blocks until icons are sorted
-                    // unless the sort aloo fails
-                    // which happens with similarity metrics
-                    local_iconized_sorted.sort(image_file_comparator);
-                    break;
-                } catch (IllegalArgumentException e) {
-                    // let us retry after a reshuffle
-                    logger.log("image sorting failed, retrying: " + tentative);
-                    if (image_file_comparator instanceof Similarity_comparator) {
-                        Similarity_comparator sc = (Similarity_comparator) image_file_comparator;
-                        sc.shuffle();
-                    }
-                }
-            }
-            iconized_sorted_queue.add(local_iconized_sorted);
-        }
-    }
-*/
 
 
     //**********************************************************

@@ -48,6 +48,9 @@ public class Decreasing_disk_footprint_comparator implements Comparator<Path>, C
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         long s1 = get_disk_footprint_in_bytes(p1, aborter,owner,Shared_services.logger());
         long s2 = get_disk_footprint_in_bytes(p2, aborter,owner,Shared_services.logger());
 

@@ -22,6 +22,9 @@ public record Aspect_ratio_comparator(
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         // blocking calls to the cache will slow the sort
         // but when the sort ends we do have all image properties
         // in the cache
@@ -39,6 +42,8 @@ public record Aspect_ratio_comparator(
         Double d2 = ip2.get_aspect_ratio();
         int diff = d1.compareTo(d2);
         if (diff != 0) return diff;
+
+
         return (p1.getFileName().toString().compareTo(p2.getFileName().toString()));
     }
 

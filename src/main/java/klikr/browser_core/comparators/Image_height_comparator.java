@@ -28,6 +28,9 @@ public record Image_height_comparator(
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         Image_properties ip1 = image_properties_cache.get(p1, aborter,null,owner);
         if (ip1 == null) {
             logger.log(Stack_trace_getter.get_stack_trace("❌ PANIC image_property not found"));
@@ -51,6 +54,7 @@ public record Image_height_comparator(
 
         int diff = d1.compareTo(d2);
         if (diff != 0) return diff;
+
         return (p1.getFileName().toString().compareTo(p2.getFileName().toString()));
     }
 }

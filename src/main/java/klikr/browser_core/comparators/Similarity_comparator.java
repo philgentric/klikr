@@ -86,6 +86,9 @@ public abstract class Similarity_comparator implements Comparator<Path>, Clearab
     public int compare(Path p1, Path p2)
     //**********************************************************
     {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         int i = paths.indexOf(p1);
         if ( i == -1)
         {

@@ -31,6 +31,7 @@ import klikr.settings.Non_booleans_properties;
 import klikr.util.image.Icons_from_disk;
 import klikr.util.execute.Execute_command;
 import klikr.util.image.Static_image_utilities;
+import klikr.util.image.decoding.Exif_metadata_extractor;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -685,7 +686,12 @@ TODO:
                                 // for pdf, the png has been made on disk, it must be deleted to save disk space
                                 on_end = delete_on_end;
                             }
-                            Mmap.instance.write_image_as_pixels(icon_path.toAbsolutePath().toString(), icon_from_cache, true, on_end);
+                            if (!Mmap.instance.write_image_as_pixels(icon_path.toAbsolutePath().toString(), icon_from_cache, true, on_end))
+                            {
+                                Exif_metadata_extractor extractor = new Exif_metadata_extractor(icon_path,owner, logger);
+                                double how_many_pixels = icon_from_cache.getWidth()*icon_from_cache.getHeight();
+                                logger.log("something is wrong with:"+extractor.get_exif_metadata(how_many_pixels,true,new Aborter("dummy",logger),true) );
+                            }
                             if ( dbg) logger.log("Icon caching, WROTE pixels to mmap :" + icon_path.toAbsolutePath().toString() + " w=" + icon_from_cache.getWidth() + " h=" + icon_from_cache.getHeight());
                         }
                         else

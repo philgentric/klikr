@@ -21,6 +21,9 @@ public class Random_comparator implements Comparator<Path>
     }
     @Override
     public int compare(Path p1, Path p2) {
+        Integer x = Hidden_files.show_last(p1, p2);
+        if (x != null) return x;
+
         Long l1 = path_to_long(p1);
         Long l2 = path_to_long(p2);
         return l1.compareTo(l2);
