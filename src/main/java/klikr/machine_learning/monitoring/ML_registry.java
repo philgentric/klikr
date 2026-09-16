@@ -7,6 +7,7 @@ import javafx.stage.Window;
 import klikr.machine_learning.*;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.Simple_json_parser;
 import klikr.util.execute.Execute_command;
 import klikr.util.execute.Execute_result;
@@ -50,11 +51,11 @@ public class ML_registry
         return  instance;
     }
     //**********************************************************
-    public static Map<String,List<ML_server>> scan_all_registry(Window owner, Logger logger)
+    public static Map<String,List<ML_server>> scan_all_registry(Kontext context)
     //**********************************************************
     {
         if (instance == null) instance = get_instance();
-        return instance.scan_all_registry_internal(owner, logger);
+        return instance.scan_all_registry_internal(context);
     }
     //**********************************************************
     private String all_servers_from_file_to_string()
@@ -82,19 +83,19 @@ public class ML_registry
     }
 
     //**********************************************************
-    public static List<ML_server> get_servers_of_type(ML_server_type server_type, Window owner, Logger logger)
+    public static List<ML_server> get_servers_of_type(ML_server_type server_type, Kontext context)
     //**********************************************************
     {
         if (instance == null) instance = get_instance();
 
         // try to find some server that would be already running
         // by reading the file registry (this is fast)
-        return instance.scan_file_registry_for(server_type, owner, logger);
+        return instance.scan_file_registry_for(server_type, context);
     }
 
 /*
     //**********************************************************
-    private List<ML_server> get_from_registry_file_count_of_servers_of_type(ML_server_type server_type, Window owner, Logger logger)
+    private List<ML_server> get_from_registry_file_count_of_servers_of_type(ML_server_type server_type, Kontext context)
     //**********************************************************
     {
         if ( servers_from_file.get(server_type.name()) == null) return new ArrayList<>();
@@ -105,12 +106,12 @@ public class ML_registry
 
 
     //**********************************************************
-    private Map<String,List<ML_server>> scan_all_registry_internal(Window owner, Logger logger)
+    private Map<String,List<ML_server>> scan_all_registry_internal(Kontext context)
     //**********************************************************
     {
         for (ML_server_type st : ML_server_type.values())
         {
-            scan_file_registry_for(st,owner,logger);
+            scan_file_registry_for(st,context);
 
         }
         return servers_from_file;
@@ -118,37 +119,37 @@ public class ML_registry
 
     // returns 'new servers' count
     //**********************************************************
-    private List<ML_server> scan_file_registry_for(ML_server_type target_server_type, Window owner, Logger logger)
+    private List<ML_server> scan_file_registry_for(ML_server_type target_server_type, Kontext context)
     //**********************************************************
     {
         List<ML_server> list = servers_from_file.computeIfAbsent(target_server_type.name(), k -> new ArrayList<>());
 
         boolean live_dbg = Feature_cache.get(Feature.Enable_ML_server_debug);
-        if ( dbg) logger.log("for " + target_server_type.name() + " SCANNING registry: "+target_server_type.registry_path(owner, logger));
+        if ( dbg) context.log("for " + target_server_type.name() + " SCANNING registry: "+target_server_type.registry_path(context));
         try
         {
-            File[] files = (target_server_type.registry_path(owner, logger).toFile()).listFiles();
+            File[] files = (target_server_type.registry_path(context).toFile()).listFiles();
             if ( files == null)
             {
-                if (dbg) logger.log(" registry directory is empty");
+                if (dbg) context.log(" registry directory is empty");
                 return list;
             }
             if ( files.length == 0)
             {
-                if (dbg) logger.log(" registry directory is empty");
+                if (dbg) context.log(" registry directory is empty");
                 return list;
             }
             for ( File f : files )
             {
-                if ( dbg) logger.log("considering registry FILE: " + f.getAbsolutePath());
+                if ( dbg) context.log("considering registry FILE: " + f.getAbsolutePath());
                 // the file content is like this:
                 // {"type": "MobileNet",
                 // "port": 54225,
                 // "uuid": "072ff019-5884-44f9-8b40-fe4ea967d4f8"}
                 String content = Files.readString(f.toPath());
 
-                String type = Simple_json_parser.read_key(content,"type",logger);
-                if ( dbg) logger.log("looking for " + target_server_type.name() + " found instance type: " + type);
+                String type = Simple_json_parser.read_key(content,"type",context.logger());
+                if ( dbg) context.log("looking for " + target_server_type.name() + " found instance type: " + type);
                 if ( type == null)
                 {
                     // assume NOT a registry file
@@ -159,71 +160,71 @@ public class ML_registry
                 if ( !target_server_type.name().equals(type))
                 {
                     // not what we are looking for
-                    if ( dbg) logger.log("->"+target_server_type.name()+ "<- does not match ->" + type+ "<-");
+                    if ( dbg) context.log("->"+target_server_type.name()+ "<- does not match ->" + type+ "<-");
                     continue;
                 }
-                if ( dbg) logger.log("OK ->"+target_server_type.name()+ "<- matches ->" + type+ "<-");
+                if ( dbg) context.log("OK ->"+target_server_type.name()+ "<- matches ->" + type+ "<-");
 
-                String port_s = Simple_json_parser.read_key(content,"port",logger);
+                String port_s = Simple_json_parser.read_key(content,"port",context.logger());
                 if ( port_s == null)
                 {
                     // assume invalid registry file
-                    if ( dbg) logger.log(" port not found in json: deleting invalid registry file " + f.getAbsolutePath());
+                    if ( dbg) context.log(" port not found in json: deleting invalid registry file " + f.getAbsolutePath());
                     Files.delete(f.toPath());
                     continue;
                 }
-                if ( dbg) logger.log("for " + target_server_type.name() + " found PORT: " + port_s);
+                if ( dbg) context.log("for " + target_server_type.name() + " found PORT: " + port_s);
                 int port = Integer.parseInt(port_s);
 
-                String uuid = Simple_json_parser.read_key(content,"uuid",logger);
+                String uuid = Simple_json_parser.read_key(content,"uuid",context.logger());
                 if ( uuid == null)
                 {
                     // assume invalid registry file
-                    if ( dbg) logger.log(" uuid not found in json: deleting invalid registry file " + f.getAbsolutePath());
+                    if ( dbg) context.log(" uuid not found in json: deleting invalid registry file " + f.getAbsolutePath());
                     Files.delete(f.toPath());
                     continue;
                 }
-                if ( dbg) logger.log("for " + target_server_type.name() + " found uuid: " + uuid);
+                if ( dbg) context.log("for " + target_server_type.name() + " found uuid: " + uuid);
 
                 // is this server alive?
                 ML_server ml_server = new ML_server(port,uuid,type);
 
-                if ( is_server_alive_light_version(port, logger))
+                if ( is_server_alive_light_version(port, context.logger()))
                 {
                     if ( !list.contains(ml_server) )
                     {
                         list.add(ml_server);
-                        if (dbg) logger.log(Logger.ok+" " + target_server_type.name() + " detected a live server at port " + port);
+                        if (dbg) context.log(Logger.ok+" " + target_server_type.name() + " detected a live server at port " + port);
                     }
-                    ML_servers_monitor.refresh_add(ml_server, owner, logger);
+                    ML_servers_monitor.refresh_add(ml_server, context);
                 }
                 else
                 {
-                    logger.log(Logger.error+"" + target_server_type.name() + " server at port " + port + " is not responding to health check.");
-                    remove(list, f, ml_server,live_dbg,  owner, logger);
+                    context.log(Logger.error+"" + target_server_type.name() + " server at port " + port + " is not responding to health check.");
+                    remove(list, f, ml_server,live_dbg,  context);
                 }
             }
         } catch (IOException e) {
-            logger.log("Error reading registry directory: " + e);
+            context.log("Error reading registry directory: " + e);
         }
 
         return list;
     }
 
     //**********************************************************
-    private void remove(List<ML_server> list, File f, ML_server ml_server, boolean live_dbg, Window owner, Logger logger)
+    private void remove(List<ML_server> list, File f, ML_server ml_server, boolean live_dbg, Kontext context)
     //**********************************************************
     {
         if ( list != null) list.remove(ml_server);
-        ML_servers_monitor.refresh_remove(ml_server, owner, logger);
+        ML_servers_monitor.refresh_remove(ml_server);
         try
         {
             Files.delete(f.toPath());
-            if (live_dbg) logger.log("Deleted stale registry file: " + f.getAbsolutePath());
+            if (live_dbg) context.log("Deleted stale registry file: " + f.getAbsolutePath());
         }
         catch (IOException e)
         {
-            logger.log("Failed to delete stale registry file: " + f.getAbsolutePath() + " Error: " + e);
+            context.log("Failed to delete stale registry file: " + f.getAbsolutePath() + " Error: " + e);
         }
     }
 
@@ -278,7 +279,7 @@ public class ML_registry
 
 
     //**********************************************************
-    public int check_processes(String server_python_name, Logger logger)
+    public int check_processes(String server_python_name, Kontext context)
     //**********************************************************
     {
         try {
@@ -287,7 +288,7 @@ public class ML_registry
             throw new RuntimeException(e);
         }
         List<String> list = new ArrayList<>();
-        if (Guess_OS.guess(logger)== Operating_system.Windows)
+        if (Guess_OS.guess(context.logger())== Operating_system.Windows)
         {
             list.add("powershell.exe");
             list.add("-Command");
@@ -304,7 +305,7 @@ public class ML_registry
         }
         StringBuilder sb = new StringBuilder();
         File wd = new File (".");
-        Execute_result er = Execute_command.execute_command_list(list, wd, 2000, sb, logger);
+        Execute_result er = Execute_command.execute_command_list(list, wd, 2000, sb, context);
         if (!er.status())
         {
             // logger.log("WARNING, checking if servers are running => failed(1)" );
@@ -316,24 +317,24 @@ public class ML_registry
             limit.release();
             return 0;
         }
-        logger.log("checking if servers are running check():->" + result+"<-");
+        context.log("checking if servers are running check():->" + result+"<-");
         String[] parts = result.split("\\r?\\n"); // Split on new lines
         int count = 0;
         for ( String p : parts)
         {
             try {
                 int pid = Integer.parseInt(p);
-                logger.log("found matching pid:" + pid+ " for servers named: "+server_python_name);
+                context.log("found matching pid:" + pid+ " for servers named: "+server_python_name);
                 count++;
             }
             catch (NumberFormatException e)
             {
-                logger.log(Logger.error+"WARNING, checking if servers named like "+server_python_name+" are running => failed, non integer found in pgrep reply:"+p );
+                context.log(Logger.error+"WARNING, checking if servers named like "+server_python_name+" are running => failed, non integer found in pgrep reply:"+p );
                 limit.release();
                 return 0;
             }
         }
-        logger.log(Logger.ok+"  OK, found "+count+" PIDs for servers named like "+server_python_name);
+        context.log(Logger.ok+"  OK, found "+count+" PIDs for servers named like "+server_python_name);
         limit.release();
         return count;
     }

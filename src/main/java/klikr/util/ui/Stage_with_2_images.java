@@ -21,14 +21,14 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.Window;
-import klikr.experimental.audio.player.The_audio_player;
-import klikr.browser_core.Image_and_properties;
+import klikr.audio.player.The_audio_player;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.util.Kontext;
 import klikr.util.deduplicate.manual.Againor;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser_core.items.Item_file_with_icon;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.items.Item_file_with_icon;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.change.old_and_new.Command;
 import klikr.change.old_and_new.Old_and_new_Path;
@@ -38,7 +38,6 @@ import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.*;
 import klikr.look.Look_and_feel_manager;
 import klikr.settings.Sort_files_by;
-import klikr.util.log.Logger;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -54,10 +53,8 @@ public class Stage_with_2_images
 	Stage stage;
 	public double H = 1000;
 	public double W = 1400;
-	Logger logger;
 
-	public final Window owner;
-	public final Aborter aborter;
+	public final Kontext context;
 	VBox the_big_vbox;
 	Againor againor;
 	private final LongAdder count_deleted;
@@ -72,38 +69,34 @@ public class Stage_with_2_images
 			LongAdder count_deleted,
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
-			Aborter private_aborter,
-            Window owner,
-			Logger logger
+            Kontext context
 			)
 	//**********************************************************
 	{
 		this.application = application;
-		this.owner = owner;
-        this.logger = logger;
+		this.context = context;
         this.count_deleted = count_deleted;
-        this.aborter = private_aborter;
 
 		// there was an obscure bug with random order?
-		if (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), owner,logger) == Sort_files_by.RANDOM_ASPECT_RATIO) {
-				Sort_files_by.set_sort_files_by_for_folder(path_list_provider.get_key(), Sort_files_by.FILE_NAME, false, owner, logger);
+		if (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), context) == Sort_files_by.RANDOM_ASPECT_RATIO) {
+				Sort_files_by.set_sort_files_by_for_folder(path_list_provider.get_key(), Sort_files_by.FILE_NAME, false, context);
 		}
-		logger.log("Stage_with_2_images !");
+		context.log("Stage_with_2_images !");
 
         this.againor = againor;
 
 
 		Jfx_batch_injector.inject(() ->{
 				stage = new Stage();
-                stage.initOwner(owner);
+                stage.initOwner(context.owner());
 				//stage.setAlwaysOnTop(true);
 				the_big_vbox = new VBox();
-				Look_and_feel_manager.set_region_look(the_big_vbox,stage,logger);
+				Look_and_feel_manager.set_region_look(the_big_vbox,context.logger());
 				Scene scene = new Scene(the_big_vbox);
 				stage.setScene(scene);//, W, H));
-				stage.setOnCloseRequest((e) -> aborter.abort("Stage_with_2_images closing"));
+				stage.setOnCloseRequest((e) -> context.abort("Stage_with_2_images closing"));
 
-				if (!set_images_by_files(title,pair,path_list_provider, path_comparator_source,aborter))
+				if (!set_images_by_files(title,pair,path_list_provider, path_comparator_source,context.aborter()))
 				{
 					stage.hide();
 					againor.again();
@@ -111,7 +104,7 @@ public class Stage_with_2_images
 				}
 				stage.show();
 				//set_stage_size_to_fullscreen(stage);
-			},logger);
+			},context);
 
 
 	}
@@ -129,7 +122,7 @@ public class Stage_with_2_images
 
 		Button skip = new Button("Skip this pair");
 		the_big_vbox.getChildren().add(skip);
-		Look_and_feel_manager.set_region_look(skip,true,stage,logger);
+		Look_and_feel_manager.set_region_look(skip,true,context.logger());
 		skip.setOnAction((ActionEvent e) -> {
             againor.again();
             if ( stage != null) stage.hide();
@@ -174,12 +167,12 @@ public class Stage_with_2_images
 		VBox the_vbox = new VBox();
 		if ( file == null)
 		{
-			logger.log("file == null");
+			context.log("file == null");
 			return null;
 		}
 		if (!file.exists())
 		{
-			logger.log("file already gone");
+			context.log("file already gone");
 			return null;
 		}
 		String title = previous.title()+" "+file.getName();
@@ -187,40 +180,40 @@ public class Stage_with_2_images
 		double height = 0;
 
 		Button view = new Button("Open this one");
-		Look_and_feel_manager.set_region_look(view,true,stage,logger);
+		Look_and_feel_manager.set_region_look(view,true,context.logger());
 		view.setOnAction(event -> {
 			boolean is_image = true;
-			if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f1(),owner,logger)) is_image = false;
-			if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f2(),owner,logger)) is_image = false;
+			if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f1(),context)) is_image = false;
+			if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f2(),context)) is_image = false;
             if (is_image)
 			{
-				Runnable r = () -> Platform.runLater(()->Item_file_with_icon.open_an_image(path_list_provider, path_comparator_source,file.toPath(),owner,logger));
-				Actor_engine.execute(r,"Open image",logger);
+				Runnable r = () -> Platform.runLater(()->Item_file_with_icon.open_an_image(path_list_provider, path_comparator_source,file.toPath(),context));
+				Actor_engine.execute(r,"Open image",context.logger());
             }
 			else
 			{
 				if ( Guess_file_type.is_this_extension_an_audio(Extensions.get_extension(file.getName())))
 				{
-					The_audio_player.play_song_in_folder(application,file.toPath(),owner,logger);
+					The_audio_player.play_song_in_folder(application,file.toPath(),context);
 				}
 				else
 				{
-					System_open_actor.open_with_system(application,file.toPath(), owner, aborter, logger);
+					System_open_actor.open_with_system(application,file.toPath(), context);
 				}
             }
         });
 		the_vbox.getChildren().add(view);
 
 		Button delete_button = new Button("Delete this one");
-		Look_and_feel_manager.set_region_look(delete_button,true,stage,logger);
+		Look_and_feel_manager.set_region_look(delete_button,true,context.logger());
 		delete_button.setOnAction(event -> {
             List<Old_and_new_Path> l = new ArrayList<>();
 			Path p = file.toPath();
-			Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(p,owner,logger);
+			Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(p,context);
 			Path new_Path = (Paths.get(trash_dir.toString(), p.getFileName().toString()));
 
 			l.add(new Old_and_new_Path(p, new_Path, Command.command_move_to_trash, Status.before_command,false));
-            Moving_files.safe_delete_files(l, stage,aborter,logger);
+            Moving_files.safe_delete_files(l, context);
 			count_deleted.increment();
 
 			againor.again();
@@ -232,14 +225,14 @@ public class Stage_with_2_images
 			HBox hbox2 = new HBox();
 			{
 				Label label = new Label("Folder:"+file.getParentFile().getAbsolutePath());
-				Look_and_feel_manager.set_region_look(label,stage,logger);
+				Look_and_feel_manager.set_region_look(label,context.logger());
 				label.setMinWidth(w);
 				label.setWrapText(true);
 				label.setTextOverrun(OverrunStyle.LEADING_WORD_ELLIPSIS);
 				hbox2.getChildren().add(label);
 			}
 			Region spacer = new Region();
-            Look_and_feel_manager.set_region_look(spacer,owner,logger);
+            Look_and_feel_manager.set_region_look(spacer,context.logger());
 			HBox.setHgrow(spacer, Priority.ALWAYS);
 			hbox2.getChildren().add(spacer);
 			the_vbox.getChildren().add(hbox2);
@@ -248,14 +241,14 @@ public class Stage_with_2_images
 			HBox hbox2 = new HBox();
 			{
 				Label label = new Label("File:"+file.getName());
-				Look_and_feel_manager.set_region_look(label,stage,logger);
+				Look_and_feel_manager.set_region_look(label,context.logger());
 				label.setMinWidth(w);
 				label.setWrapText(true);
 				hbox2.getChildren().add(label);
 
 			}
 			Region spacer = new Region();
-            Look_and_feel_manager.set_region_look(spacer,owner,logger);
+            Look_and_feel_manager.set_region_look(spacer,context.logger());
             HBox.setHgrow(spacer, Priority.ALWAYS);
 			hbox2.getChildren().add(spacer);
 			the_vbox.getChildren().add(hbox2);
@@ -263,26 +256,26 @@ public class Stage_with_2_images
 		{
 			HBox hbox2 = new HBox();
 			{
-				String size = Static_files_and_paths_utilities.get_1_line_string_with_size(file.toPath(),owner,logger);
+				String size = Static_files_and_paths_utilities.get_1_line_string_with_size(file.toPath(),context);
 				Label label = new Label("File length: "+size);
-				Look_and_feel_manager.set_region_look(label,stage,logger);
+				Look_and_feel_manager.set_region_look(label,context.logger());
 				label.setMinWidth(w);
 				label.setWrapText(true);
 				hbox2.getChildren().add(label);
 
 			}
 			Region spacer = new Region();
-            Look_and_feel_manager.set_region_look(spacer,owner,logger);
+            Look_and_feel_manager.set_region_look(spacer,context.logger());
             HBox.setHgrow(spacer, Priority.ALWAYS);
 			hbox2.getChildren().add(spacer);
 			the_vbox.getChildren().add(hbox2);
 		}
 		boolean is_image = true;
-		if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f1(),owner,logger)) is_image = false;
-		if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f2(),owner,logger)) is_image = false;
+		if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f1(),context)) is_image = false;
+		if ( !Guess_file_type.is_this_file_extension_an_image(the_pair.f2(),context)) is_image = false;
 		if ( is_image)
 		{
-			Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(file.toPath(), true, owner,aborter, logger);
+			Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(file.toPath(), true, context);
             if (iap != null)
             {
                 Image image = iap.image();
@@ -298,13 +291,13 @@ public class Stage_with_2_images
                         lab += " ========  SAME SIZE";
                     }
                     Label label = new Label(lab);
-                    Look_and_feel_manager.set_region_look(label, stage, logger);
+                    Look_and_feel_manager.set_region_look(label, context.logger());
                     label.setMinWidth(w);
                     label.setWrapText(true);
                     hbox2.getChildren().add(label);
                 }
                 Region spacer = new Region();
-                Look_and_feel_manager.set_region_look(spacer,owner,logger);
+                Look_and_feel_manager.set_region_look(spacer,context.logger());
                 HBox.setHgrow(spacer, Priority.ALWAYS);
                 hbox2.getChildren().add(spacer);
                 the_vbox.getChildren().add(hbox2);

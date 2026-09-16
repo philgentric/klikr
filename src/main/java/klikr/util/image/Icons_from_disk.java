@@ -8,12 +8,13 @@
 package klikr.util.image;
 
 import javafx.stage.Window;
-import klikr.browser_core.Image_and_properties;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.util.External_application;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.items.Iconifiable_item_type;
+import klikr.browsers.browser_core.items.Iconifiable_item_type;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
 
@@ -23,7 +24,6 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.execute.Execute_command;
 //import klik.util.image.decoding.FITS;
-import klikr.util.image.decoding.Fast_image_property_from_exif_metadata_extractor;
 import klikr.util.image.decoding.Fast_rotation_from_exif_metadata_extractor;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
@@ -56,15 +56,15 @@ public class Icons_from_disk
             Iconifiable_item_type item_type,
             double icon_size,
             boolean report_if_not_found,
-            Window owner, Aborter aborter, Logger logger)
+            Kontext context)
     // **********************************************************
     {
-        // logger.log("read_original_image_from_disk_and_return_icon");
+        // context.log("read_original_image_from_disk_and_return_icon");
 
-        if (Check_remaining_RAM.RAM_running_low("icon creation",owner,logger)) {
+        if (Check_remaining_RAM.RAM_running_low("icon creation",context)) {
 
-            logger.log("read_original_image_from_disk_and_return_icon NOT DONE because running low on memory ! ");
-            Image i = Jar_utils.get_broken_icon(icon_size, owner, logger);
+            context.log("read_original_image_from_disk_and_return_icon NOT DONE because running low on memory ! ");
+            Image i = Jar_utils.get_broken_icon(icon_size, context.logger());
             if (i == null) return null;
             return Image_and_properties.build(i,true);
         }
@@ -73,13 +73,13 @@ public class Icons_from_disk
             /*
              * we use GraphicsMagick for FITS images now
              * case image_fits -> {
-             * logger.log("using FITS for "+ item_type+ " "+original_image_file);
+             * context.log("using FITS for "+ item_type+ " "+original_image_file);
              * return use_fits_NASA(original_image_file,icon_size,aborter,owner, logger);
              * }
              */
             case non_javafx_image -> {
-                logger.log("using NON-javafx for " + item_type + " " + original_image_file);
-                Image i =  use_GraphicsMagick_for_icon(original_image_file, icon_size, owner, logger);
+                context.log("using NON-javafx for " + item_type + " " + original_image_file);
+                Image i =  use_GraphicsMagick_for_icon(original_image_file, icon_size, context);
                 if (i == null) return null;
                 return Image_and_properties.build(i,false);
             }
@@ -90,38 +90,37 @@ public class Icons_from_disk
         // long start = System.currentTimeMillis();
         Image image = null;
         try (InputStream input_stream = Full_image_from_disk.get_image_InputStream(original_image_file,
-                Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger)) {
+                Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context)) {
             if (input_stream == null) {
-                logger.log(Stack_trace_getter.get_stack_trace("input_stream == null for" + original_image_file));
+                context.log(Stack_trace_getter.get_stack_trace("input_stream == null for" + original_image_file));
                 return null;
             }
-            if (aborter.should_abort()) {
+            if (context.should_abort()) {
                 if (dbg)
-                    logger.log("read_original_image_from_disk_and_return_icon aborted");
+                    context.log("read_original_image_from_disk_and_return_icon aborted");
                 return null;
             }
 
             byte[] bytes = input_stream.readAllBytes();
-            return use_javafx_Image(bytes, original_image_file,icon_size, logger);
+            return use_javafx_Image(bytes, original_image_file,icon_size, context);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
 
         // long now = System.currentTimeMillis();
         // elapsed_read_original_image_from_disk_and_return_icon += now-start;
-        // logger.log("elapsed_read_original_image_from_disk_and_return_icon:"+elapsed_read_original_image_from_disk_and_return_icon);
+        // context.log("elapsed_read_original_image_from_disk_and_return_icon:"+elapsed_read_original_image_from_disk_and_return_icon);
         return null;
     }
 
     // **********************************************************
-    private static Image use_GraphicsMagick_for_icon(Path original_image_file, double icon_size, Window owner,
-            Logger logger)
+    private static Image use_GraphicsMagick_for_icon(Path original_image_file, double icon_size, Kontext context)
     // **********************************************************
     {
-        logger.log("use_GraphicsMagick_for_icon");
+        context.log("use_GraphicsMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner, logger);
+        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, context);
         if ( png_path == null ) return null;
 
         // String command_string_to_create_tmp_icon = "gm convert
@@ -129,45 +128,44 @@ public class Icons_from_disk
         // Execute_via_script_in_tmp_file.execute(command_string_to_create_tmp_icon,
         // false, owner, logger);
         List<String> list = List.of(
-                External_application.GraphicsMagick.get_command(owner,logger),
+                External_application.GraphicsMagick.get_command(context),
                 "convert", original_image_file.toAbsolutePath().toString(),
                 png_path.toAbsolutePath().toString());
-        Execute_command.execute_command_list(list, new File("."), 20_000, null, logger);
+        Execute_command.execute_command_list(list, new File("."), 20_000, null, context);
 
         try (InputStream is = new FileInputStream(png_path.toFile())) {
             // use the javafx Image constructor that resizes while loading
             return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
             // GraphicsMagick failed, let us try the same with imageMagick
-            return use_ImageMagick_for_icon(original_image_file, icon_size, owner, logger);
+            return use_ImageMagick_for_icon(original_image_file, icon_size, context);
         }
     }
 
     // **********************************************************
-    private static Image use_ImageMagick_for_icon(Path original_image_file, double icon_size, Window owner,
-            Logger logger)
+    private static Image use_ImageMagick_for_icon(Path original_image_file, double icon_size, Kontext context)
     // **********************************************************
     {
-        logger.log("use_ImageMagick_for_icon");
+        context.log("use_ImageMagick_for_icon");
 
         String tag = String.valueOf((int) icon_size);
-        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, owner, logger);
+        Path png_path = Icon_caching.path_for_icon_caching(original_image_file, tag, Icon_caching.png_extension, context);
         if ( png_path == null ) return null;
 
         // String command_string_to_create_tmp_icon = "magick
         // "+original_image_file.toAbsolutePath()+ " "+ png_path.toAbsolutePath();
         // Execute_via_script_in_tmp_file.execute(command_string_to_create_tmp_icon,
         // false, owner,logger);
-        List<String> list = List.of(External_application.ImageMagick.get_command(owner,logger), original_image_file.toAbsolutePath().toString(),
+        List<String> list = List.of(External_application.ImageMagick.get_command(context), original_image_file.toAbsolutePath().toString(),
                 png_path.toAbsolutePath().toString());
-        Execute_command.execute_command_list(list, new File("."), 20_000, null, logger);
+        Execute_command.execute_command_list(list, new File("."), 20_000, null, context);
 
         try (InputStream is = new FileInputStream(png_path.toFile())) {
             // use the javafx Image constructor that resizes while loading
             return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
         return null;
     }
@@ -175,7 +173,7 @@ public class Icons_from_disk
     /*
      * //**********************************************************
      * private static Optional<Image> use_fits_NASA(Path original_image_file, double
-     * icon_size, Aborter aborter, Window owner, Logger logger)
+     * icon_size, Aborter aborter, Kontext context)
      * //**********************************************************
      * {
      * logger.log("use_fits_NASA");
@@ -209,14 +207,14 @@ public class Icons_from_disk
      * }
      */
     // **********************************************************
-    private static Image_and_properties use_javafx_Image(byte[] bytes, Path path_for_dbg, double icon_size, Logger logger)
+    private static Image_and_properties use_javafx_Image(byte[] bytes, Path path_for_dbg, double icon_size, Kontext context)
     // **********************************************************
     {
-        // logger.log("use_javafx_Image");
+        // context.log("use_javafx_Image");
         InputStream is1 = new ByteArrayInputStream(bytes);
         Image image = new Image(is1, icon_size, icon_size, true, true);
         if (image.isError()) {
-            logger.log(("Icons_from_disk WARNING: an error occurred when reading AND resizing: "));
+            context.log(("Icons_from_disk WARNING: an error occurred when reading AND resizing: "));
             return null;
 
             // the image format is not supported WITH RESIZE
@@ -232,10 +230,10 @@ public class Icons_from_disk
 
         // find out if the image is rotated
         InputStream is2 = new ByteArrayInputStream(bytes);
-        Rotation rot = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(is2,path_for_dbg,logger);
+        Rotation rot = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(is2,path_for_dbg,context);
         if ( rot == null )
         {
-            //logger.log(Stack_trace_getter.get_stack_trace(" WARNING rotation not found for "+path_for_dbg));
+            //context.log(Stack_trace_getter.get_stack_trace(" WARNING rotation not found for "+path_for_dbg));
             rot = Rotation.normal;
         }
         return new Image_and_properties(image,new Image_properties(image.getWidth(),image.getHeight(),rot,false));
@@ -298,21 +296,20 @@ public class Icons_from_disk
             String tag, // icon length or empty
             String extension,
             boolean dbg_local,
-            Window owner,
-            Logger logger)
+            Kontext context)
     // **********************************************************
     {
         // logger.log("load_icon_from_disk_cache");
 
-        if (Check_remaining_RAM.RAM_running_low("icon from disk",owner,logger)) {
-            logger.log("load_icon_from_disk_cache WARNING: running low on memory ! loading default icon");
-            Image i = Look_and_feel_manager.get_default_icon(icon_size, owner, logger);
+        if (Check_remaining_RAM.RAM_running_low("icon from disk",context)) {
+            context.log("load_icon_from_disk_cache WARNING: running low on memory ! loading default icon");
+            Image i = Look_and_feel_manager.get_default_icon(icon_size, context.logger());
             return Image_and_properties.build(i,false);
         }
-        Path path = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, owner, logger);
+        Path path = Icon_caching.path_for_icon_caching(original_image_file, tag, extension, context);
         if ( path == null ) return null;
         if (dbg)
-            logger.log("load_icon_from_disk file is:" + path.toAbsolutePath() + " for " + original_image_file);
+            context.log("load_icon_from_disk file is:" + path.toAbsolutePath() + " for " + original_image_file);
         try (InputStream input_stream = Files.newInputStream(path))
         {
             Image i = new Image(input_stream);
@@ -322,15 +319,15 @@ public class Icons_from_disk
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg_local)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         } catch (NoSuchFileException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg_local)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
         return null;
     }

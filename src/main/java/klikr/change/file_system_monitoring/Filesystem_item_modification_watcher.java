@@ -7,6 +7,7 @@
 package klikr.change.file_system_monitoring;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.change.Change_gang;
 import klikr.util.execute.Scheduled_thread_pool;
@@ -27,7 +28,7 @@ public class Filesystem_item_modification_watcher
 {
     private final static boolean dbg = false;
     private ScheduledFuture<?> t = null;
-    private Aborter aborter;
+    private Kontext context;
 
 
     //**********************************************************
@@ -36,39 +37,38 @@ public class Filesystem_item_modification_watcher
             Filesystem_modification_reporter reporter,
             boolean abort_on_change,
             int timeout_in_minutes,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        this.aborter = aborter;
+        this.context = context;
         final Filesystem_item_signature[] signature = new Filesystem_item_signature[1];
-        signature[0] = new Filesystem_item_signature(logger);
+        signature[0] = new Filesystem_item_signature(context.logger());
         File_status file_status = signature[0].init(path);
         if (file_status != File_status.OK)
         {
-            logger.log("WARNING: signature failed for :"+path);
+            context.log("WARNING: signature failed for :"+path);
             return file_status;
         }
 
         Runnable r = () ->
         {
-            if ( aborter.should_abort())
+            if ( context.should_abort())
             {
                 t.cancel(true);
-                logger.log("Filesystem_item_modification_watcher for "+path+" aborted");
+                context.log("Filesystem_item_modification_watcher for "+path+" aborted");
                 return;
             }
-            Filesystem_item_signature local = new Filesystem_item_signature(logger);
+            Filesystem_item_signature local = new Filesystem_item_signature(context.logger());
             File_status file_status2 = local.init(path);
             if ( file_status2 != File_status.OK )
             {
                 t.cancel(true);
                 return;
             }
-            //logger.log("Filesystem_item_modification_watcher for "+path+" init done "+local.file_signature_array.length);
+            //context.log("Filesystem_item_modification_watcher for "+path+" init done "+local.file_signature_array.length);
             if (!local.is_same(signature[0]))
             {
-                if ( dbg) logger.log("Filesystem_item_modification_watcher, change detected for: "+path.toAbsolutePath());
+                if ( dbg) context.log("Filesystem_item_modification_watcher, change detected for: "+path.toAbsolutePath());
                 // yes it's new ! the file has changed (or the folder content has changed)
                 reporter.report_modified();
                 if ( abort_on_change) t.cancel(true); // abort watch if changed
@@ -81,7 +81,7 @@ public class Filesystem_item_modification_watcher
         // use another task to monitor the timeout
         Runnable r2 = () -> t.cancel(true);
         Scheduled_thread_pool.execute(r2,timeout_in_minutes,TimeUnit.MINUTES);
-        //if (dbg) logger.log("Filesystem_item_modification_watcher init done for:"+path);
+        //if (dbg) context.log("Filesystem_item_modification_watcher init done for:"+path);
         return File_status.OK;
     }
 
@@ -94,7 +94,7 @@ public class Filesystem_item_modification_watcher
 
 
     //**********************************************************
-    public static Filesystem_item_modification_watcher monitor_folder(Path folder_path, int timeout_in_minutes, Window owner, Aborter monitoring_aborter, Logger logger)
+    public static Filesystem_item_modification_watcher monitor_folder(Path folder_path, int timeout_in_minutes, Kontext context)
     //**********************************************************
     {
         Filesystem_modification_reporter reporter = () ->
@@ -103,12 +103,12 @@ public class Filesystem_item_modification_watcher
             Command cmd = Command.command_move;
             Old_and_new_Path oan = new Old_and_new_Path(folder_path, folder_path, cmd, Status.a_change_occurred_in_this_folder,false);
             oanps.add(oan);
-            if (dbg) logger.log("Filesystem_item_modification_watcher event:"+oan.to_string());
+            if (dbg) context.log("Filesystem_item_modification_watcher event:"+oan.to_string());
 
-            Change_gang.report_changes(oanps,owner);
+            Change_gang.report_changes(oanps, context.owner());
         };
         Filesystem_item_modification_watcher fimw = new Filesystem_item_modification_watcher();
-        if ( fimw.init(folder_path,reporter,false,timeout_in_minutes,monitoring_aborter,logger) == File_status.OK)
+        if ( fimw.init(folder_path,reporter,false,timeout_in_minutes,context) == File_status.OK)
         {
             return fimw;
         }

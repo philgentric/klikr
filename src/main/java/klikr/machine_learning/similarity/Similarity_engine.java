@@ -8,14 +8,15 @@ package klikr.machine_learning.similarity;
 import javafx.geometry.Point2D;
 import javafx.stage.Window;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.P2S;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.cache.Clearable_RAM_cache;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.feature_vector.Feature_vector_double;
@@ -38,7 +39,6 @@ public class Similarity_engine implements Clearable_RAM_cache
 //**********************************************************
 {
     private final static boolean dbg = false;
-
     public static final double W = 300;
     public static final double H = 300;
 
@@ -46,24 +46,21 @@ public class Similarity_engine implements Clearable_RAM_cache
     Map<String,Map<String,Double>> similarities = new HashMap<>();
     public final Path_list_provider path_list_provider;
     public final Path_comparator_source path_comparator_source;
-    public final Logger logger;
-    public final Aborter aborter;
+    public final Kontext context;
 
-    private boolean show_vector_differences;
+    private final boolean show_vector_differences;
 
     //**********************************************************
     public Similarity_engine(
             List<Path> paths,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
-            Window owner,
-            Aborter aborter, Logger logger)
+            Kontext context)
     //**********************************************************
     {
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
-        this.logger = logger;
-        this.aborter = aborter;
+        this.context = context;
         this.paths = paths;
         show_vector_differences = Feature_cache.get(Feature.Display_image_distances);
     }
@@ -87,10 +84,8 @@ public class Similarity_engine implements Clearable_RAM_cache
             int N,
             double too_far_away,
             Supplier<Feature_vector_cache> fv_cache_supplier,
-            Window owner,
-            double x, double y,
             LongAdder count_pairs_examined,
-            Aborter browser_aborter)
+            Kontext context)
     //**********************************************************
     {
         if (paths.isEmpty())
@@ -100,21 +95,20 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector_cache fv_cache = fv_cache_supplier.get();
         if ( fv_cache == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
             return new ArrayList<>();
         }
 
         Optional<Hourglass> hourglass = Progress_window.show(
                 "wait, looking for similar items",
                 20000,
-                owner,
-                logger);
+                context);
 
-        Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, owner, browser_aborter);
+        Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, context);
         if ( fv0 ==null)
         {
             hourglass.ifPresent(Hourglass::close);
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv0 not acquired"));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv0 not acquired"));
             return new ArrayList<>();
         }
 
@@ -130,8 +124,7 @@ public class Similarity_engine implements Clearable_RAM_cache
                 fv_cache_supplier,
                 to_be_compared,
                 count_pairs_examined,
-                owner,
-                browser_aborter);
+                context);
 
         if ( already_done!= null) already_done.add(reference_item_path);
         hourglass.ifPresent(Hourglass::close);
@@ -149,10 +142,9 @@ public class Similarity_engine implements Clearable_RAM_cache
             boolean display_found_images,
             double too_far_away_image,
             Supplier<Feature_vector_cache> fv_cache_supplier,
-            Window owner,
             double x, double y,
             LongAdder count_pairs_examined,
-            Aborter browser_aborter)
+            Kontext context)
     //**********************************************************
     {
         Optional<Hourglass>  hourglass = Optional.empty();
@@ -160,8 +152,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             hourglass = Progress_window.show(
                     "wait, looking for similar items",
                     20000,
-                    owner,
-                    logger);
+                    context);
         }
 
         if (paths.isEmpty())
@@ -173,14 +164,14 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector_cache fv_cache = fv_cache_supplier.get();
         if ( fv_cache == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
             hourglass.ifPresent(Hourglass::close);
             return new ArrayList<>();
         }
-        Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, owner, browser_aborter);
+        Feature_vector fv0 = fv_cache.get_from_cache_or_make(reference_item_path, null, true, context);
         if ( fv0 ==null)
         {
-            logger.log(
+            context.log(
                     //Stack_trace_getter.get_stack_trace
                             ("fv0 not acquired"));
             hourglass.ifPresent(Hourglass::close);
@@ -198,8 +189,7 @@ public class Similarity_engine implements Clearable_RAM_cache
                 fv_cache_supplier,
                 to_be_compared,
                 count_pairs_examined,
-                owner,
-                browser_aborter);
+                context);
 
         if ( already_done!= null) already_done.add(reference_item_path);
         if ( !display_found_images)
@@ -215,7 +205,7 @@ public class Similarity_engine implements Clearable_RAM_cache
                 double xxx = xx;
                 double yyy = yy;
 
-                Image_window local = show_one_at(new Most_similar(reference_item_path,fv0,fv0,0.0),owner,xxx,yyy);
+                Image_window local = show_one_at(new Most_similar(reference_item_path,fv0,fv0,0.0), context.owner(), xxx,yyy);
                 Image_window.stage_group.add(local);
                 yyy += H;
                 for ( Most_similar ms : most_similars)
@@ -223,21 +213,21 @@ public class Similarity_engine implements Clearable_RAM_cache
                     Point2D p = Screen_utils.verify(xxx,yyy,W,H);
                     xxx = p.getX();
                     yyy = p.getY();
-                    local = show_one_at(ms,owner,xxx,yyy);
+                    local = show_one_at(ms, context.owner(), xxx,yyy);
                     Image_window.stage_group.add(local);
                     xxx += W;
                 }
 
                 if ( Feature_cache.get(Feature.Show_can_use_ESC_to_close_windows))
                 {
-                    if (Popups.info_popup("After selecting one, you can use ESC to close these small windows one by one",null,owner,logger))
+                    if (Popups.info_popup("After selecting one, you can use ESC to close these small windows one by one",null,context))
                     {
-                        Feature_cache.update_cached_boolean(Feature.Show_can_use_ESC_to_close_windows, true,owner);
+                        Feature_cache.update_cached_boolean(Feature.Show_can_use_ESC_to_close_windows, true,context);
                     }
                 }
             }
         };
-        Jfx_batch_injector.inject(rr, logger);
+        Jfx_batch_injector.inject(rr, context);
         hourglass.ifPresent(Hourglass::close);
         return most_similars;
     }
@@ -249,12 +239,11 @@ public class Similarity_engine implements Clearable_RAM_cache
     {
         String s = String.format("%.4f",ms.similarity());
         Image_window returned = new Image_window(
-                ms.path(), owner, x, y, W, H, s, false,path_list_provider,
-                path_comparator_source,
-                new Aborter("dummy34",logger),logger);
+                ms.path(), x, y, W, H, s, false,path_list_provider,
+                path_comparator_source,context);
         returned.stage.setX(x);
         returned.stage.setY(y);
-        //logger.log("show_one_at path"+ms.path()+" x="+returned.the_Stage.getX()+" y="+returned.the_Stage.getY());
+        //context.log("show_one_at path"+ms.path()+" x="+returned.the_Stage.getX()+" y="+returned.the_Stage.getY());
 
         if (show_vector_differences)
         {
@@ -262,7 +251,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             {
                 if (ms.fv2() instanceof Feature_vector_double fvd2)
                 {
-                    Vector_window vw = new Vector_window("Distance: " + ms.similarity(), owner, x, y, fvd1, fvd2, false, true, logger);
+                    Vector_window vw = new Vector_window(x,y+H,"Distance: " + ms.similarity(), fvd1, fvd2, false, true, context);
                 }
             }
         }
@@ -279,8 +268,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             Supplier<Feature_vector_cache> fv_cache_supplier,
             List<Path> targets,
             LongAdder count_pairs_examined,
-            Window owner,
-            Aborter browser_aborter)
+            Kontext context)
     //**********************************************************
     {
         List<Most_similar> returned =  new ArrayList<>();
@@ -290,20 +278,20 @@ public class Similarity_engine implements Clearable_RAM_cache
         {
             if ( count_pairs_examined!= null) count_pairs_examined.increment();
 
-            Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, owner, browser_aborter);
+            Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, context);
             if (fv1 == null) continue; // server failure
 
             Double distance  = read_similarity_from_cache(path0, path1);
             if (distance == null)
             {
-                    distance = fv0.distance(fv1,logger);
-                    logger.log("Distance " + distance + " between " + path0 + " and " + path1);
+                    distance = fv0.distance(fv1, context.logger());
+                    context.log("Distance " + distance + " between " + path0 + " and " + path1);
                     save_similarity_in_cache(distance, path0, path1);
             }
 
             if ( distance > too_far_away) // ignore if too far
             {
-                logger.log("IGNORING, as Distance " + distance + " larger than max " + too_far_away + " for " + path1);
+                context.log("IGNORING, as Distance " + distance + " larger than max " + too_far_away + " for " + path1);
 
                 continue;
             }
@@ -311,7 +299,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             Most_similar ms = new Most_similar(path1,fv0,fv1,distance);
             min = keep_N_closest(N,returned,ms, min);
             //count++;
-            //if ( count % 100 == 0) logger.log("image compared count="+count);
+            //if ( count % 100 == 0) context.log("image compared count="+count);
         }
         return returned;
     }
@@ -327,8 +315,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             Supplier<Feature_vector_cache> fv_cache_supplier,
             List<Path> targets,
             LongAdder count_pairs_examined,
-            Window owner,
-            Aborter browser_aborter)
+            Kontext context)
     //**********************************************************
     {
         List<Most_similar> returned =  new ArrayList<>();
@@ -336,7 +323,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         Image_properties image_properties_0 = null;
         if ( image_properties_cache != null)
         {
-            image_properties_0 = image_properties_cache.get(path0,aborter,null,owner);
+            image_properties_0 = image_properties_cache.get(path0,null,context);
         }
         for(Path path1 : targets)
         {
@@ -344,36 +331,36 @@ public class Similarity_engine implements Clearable_RAM_cache
             if ( image_properties_cache != null)
             {
                 // skip images of different length
-                Image_properties image_properties_1 = image_properties_cache.get(path1,aborter,null,owner);
+                Image_properties image_properties_1 = image_properties_cache.get(path1,null,context);
                 if ( image_properties_1 == null)
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("image_properties_1 == null"));
+                    context.log(Stack_trace_getter.get_stack_trace("image_properties_1 == null"));
                     continue;
                 }
                 if ( image_properties_0.w() != image_properties_1.w())
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("different image width"));
+                    context.log(Stack_trace_getter.get_stack_trace("different image width"));
                     continue;
                 }
                 if ( image_properties_0.h() != image_properties_1.h())
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("different image height"));
+                    context.log(Stack_trace_getter.get_stack_trace("different image height"));
                     continue;
                 }
             }
 
-            Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, owner, browser_aborter);
+            Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, context);
             if (fv1 == null)
             {
-                logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv1 not acquired"));
+                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv1 not acquired"));
                 continue; // server failure
             }
 
             Double distance = null;
             distance = read_similarity_from_cache(path0, path1);
             if (distance == null) {
-                distance = fv0.distance(fv1,logger);
-                if (dbg) logger.log("distance " + distance + " between " + path0 + " and " + path1);
+                distance = fv0.distance(fv1,context.logger());
+                if (dbg) context.log("distance " + distance + " between " + path0 + " and " + path1);
                 save_similarity_in_cache(distance, path0, path1);
             }
             if ( image_properties_cache != null)
@@ -382,21 +369,21 @@ public class Similarity_engine implements Clearable_RAM_cache
                 if ( distance > 0) // ignore if not zero
                 {
                     // we will return only images that are at zero distance
-                    if (dbg) logger.log("SKIPPING distance " + distance + " because image_properties_cache!= null" );
+                    if (dbg) context.log("SKIPPING distance " + distance + " because image_properties_cache!= null" );
                     continue;
                 }
             }
             if ( distance > too_far_away) // ignore if too far
             {
                 // we will not return images that are too far away
-                if (dbg) logger.log("SKIPPING distance > too_far_away : " + distance + " > "+ too_far_away );
+                if (dbg) context.log("SKIPPING distance > too_far_away : " + distance + " > "+ too_far_away );
                 continue;
             }
 
             Most_similar ms = new Most_similar(path1,fv0,fv1,distance);
             min = keep_N_closest(N,returned,ms, min);
             //count++;
-            //if ( count % 100 == 0) logger.log("image compared count="+count);
+            //if ( count % 100 == 0) context.log("image compared count="+count);
         }
         return returned;
     }

@@ -2,6 +2,7 @@ package klikr.machine_learning;
 
 import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 
@@ -30,18 +31,18 @@ public enum ML_server_type
     }
 
     //**********************************************************
-    public Path registry_path(Window owner, Logger logger)
+    public Path registry_path(Kontext context)
     //**********************************************************
     {
         switch(this)
         {
             case FaceNet, MTCNN, Haar_alt1, Haar_alt2, Haar_default, Haar_tree:
             {
-                return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("face_recognition_server_registry", false, owner, logger);
+                return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("face_recognition_server_registry", false, context);
             }
             case MobileNet:
             {
-                return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("image_similarity_server_registry", false, owner, logger);
+                return Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("image_similarity_server_registry", false,context);
             }
         }
         return null;
@@ -65,7 +66,7 @@ public enum ML_server_type
             }
             case MobileNet:
             {
-                if ( number_of_image_similarity_servers < 0 ) number_of_image_similarity_servers = Non_booleans_properties.get_number_of_image_similarity_servers(owner);
+                if ( number_of_image_similarity_servers < 0 ) number_of_image_similarity_servers = Non_booleans_properties.get_number_of_image_similarity_servers();
                 return number_of_image_similarity_servers;
             }
         }

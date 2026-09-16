@@ -15,9 +15,10 @@ import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.change.undo.Undo_for_moves;
 import klikr.change.undo.Undo_item;
 import klikr.javalin.Javalin_common;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,8 +43,7 @@ public class Javalin_undos_app extends Application {
     private Label statusLabel;
     private Javalin javalin;
     private int port_number;
-    Stage stage;
-    Logger logger;
+    
 
     public static void main(String[] args) {
         launch(args);
@@ -52,11 +52,10 @@ public class Javalin_undos_app extends Application {
     @Override
     public void start(Stage primaryStage) {
         Shared_services.init("undos test app", primaryStage);
-        logger = Shared_services.logger();
-        port_number = Javalin_common.find_free_port(logger);
-        stage = primaryStage;
+        Kontext context = new Kontext(primaryStage,null,new Simple_logger());
+        port_number = Javalin_common.find_free_port(context.logger());
 
-        start_javalin_server();
+        start_javalin_server(context);
 
         // Setup JavaFX UI
         VBox root = new VBox(10);
@@ -74,7 +73,7 @@ public class Javalin_undos_app extends Application {
 
         Button undoButton = new Button("↩️ Show Undo History");
         undoButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 10 20;");
-        undoButton.setOnAction(e -> showUndoTest(logger));
+        undoButton.setOnAction(e -> showUndoTest(context));
 
         Button clearButton = new Button("Clear Browser");
         clearButton.setOnAction(e -> {
@@ -110,7 +109,7 @@ public class Javalin_undos_app extends Application {
         );
     }
 
-    private void showUndoTest(Logger logger) {
+    private void showUndoTest(Kontext context) {
         Platform.runLater(() -> {
             the_TextArea.appendText("\n=== Test: Undo History ===\n");
 
@@ -127,7 +126,7 @@ public class Javalin_undos_app extends Application {
                         statusLabel.setText("Undo item clicked!");
                     });
                 },
-                logger
+                context
             );
         });
     }
@@ -135,11 +134,11 @@ public class Javalin_undos_app extends Application {
     private final AtomicReference<List<Undo_item>> undo_items = new AtomicReference<>(new ArrayList<>());
     private final AtomicReference<Consumer<Undo_item>> onItemClick = new AtomicReference<>(null);
 
-    public void show_undos(Consumer<Undo_item> on_click, Logger logger) {
+    public void show_undos(Consumer<Undo_item> on_click, Kontext context) {
         // Generate some sample undo items for testing
         //List<Undo_item> items = generateSampleUndoItems(logger);
 
-        Undo_for_moves ufm = Undo_for_moves.get_instance(stage, logger);
+        Undo_for_moves ufm = Undo_for_moves.get_instance(context);
         Map<LocalDateTime, String> map = ufm.get_map_of_date_to_signature();
         List<LocalDateTime> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys);
@@ -161,10 +160,10 @@ public class Javalin_undos_app extends Application {
             }
         });
 
-        Javalin_common.open_browser(this, true, "Undo History", port_number, logger);
+        Javalin_common.open_browser(this, true, "Undo History", port_number, context.logger());
     }
 
-    private List<Undo_item> generateSampleUndoItems(Logger logger) {
+    private List<Undo_item> generateSampleUndoItems(Kontext context) {
         List<Undo_item> items = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 .withZone(ZoneId.systemDefault());
@@ -190,7 +189,7 @@ public class Javalin_undos_app extends Application {
                 oans,
                 LocalDateTime.now().minusHours(i * 2),
                 UUID.randomUUID(),
-                logger
+                context
             );
 
             items.add(undoItem);
@@ -217,7 +216,7 @@ public class Javalin_undos_app extends Application {
                 oans,
                 LocalDateTime.now().minusHours(50 + i),
                 UUID.randomUUID(),
-                logger
+                context
             );
 
             items.add(undoItem);
@@ -227,7 +226,7 @@ public class Javalin_undos_app extends Application {
     }
 
     //**********************************************************
-    private void start_javalin_server()
+    private void start_javalin_server(Kontext context)
     //**********************************************************
     {
         CountDownLatch started = new CountDownLatch(1);
@@ -245,7 +244,7 @@ public class Javalin_undos_app extends Application {
                 ws.onConnect(ctx ->
                 {
                     ctx.session.setIdleTimeout(Duration.ofMillis(3600000L)); // 1 hour timeout
-                    logger.log("Javalin_undos WebSocket connected");
+                    context.log("Javalin_undos WebSocket connected");
 
                     // Send current undo items to newly connected client
                     sendUndoItems(ctx);
@@ -263,30 +262,30 @@ public class Javalin_undos_app extends Application {
                     if (msg.startsWith("SELECT:")) {
                         // Browser selected an undo item - trigger the click callback
                         String selectedId = msg.substring("SELECT:".length());
-                        logger.log("Selected undo item from browser: " + selectedId);
+                        context.log("Selected undo item from browser: " + selectedId);
                         handleUndoClick(selectedId);
                         return;
                     }
 
-                    if ( ultra_dbg) logger.log("Received from browser: " + msg);
+                    if ( ultra_dbg) context.log("Received from browser: " + msg);
 
                 });
                 ws.onClose(ctx -> {
-                    logger.log("Javalin_undos server disconnected");
+                    context.log("Javalin_undos server disconnected");
                 });
             });
 
             started.countDown();
         };
 
-        Actor_engine.execute(r,"Javalin_undos server",logger);
+        Actor_engine.execute(r,"Javalin_undos server", context.logger());
         try {
             started.await();
         } catch (InterruptedException e) {
-            logger.log("Javalin_undos server interrupted"+e);
+            context.log("Javalin_undos server interrupted"+e);
             return;
         }
-        logger.log("Javalin_undos server started on port " + port_number);
+        context.log("Javalin_undos server started on port " + port_number);
     }
 
     //**********************************************************

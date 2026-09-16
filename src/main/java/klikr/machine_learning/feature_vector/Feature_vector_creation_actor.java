@@ -9,7 +9,6 @@ import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.execute.actor.virtual_threads.Concurrency_limiter;
 import klikr.util.mmap.Mmap;
-import klikr.util.mmap.Save_and_what;
 
 import java.util.Optional;
 
@@ -49,22 +48,22 @@ public class Feature_vector_creation_actor implements Actor
             }
         }
         Feature_vector_build_message image_feature_vector_message = (Feature_vector_build_message) m;
-        if (dbg) image_feature_vector_message.logger.log("Feature_vector_creation_actor START for"+image_feature_vector_message.path);
+        if (dbg) image_feature_vector_message.context.log("Feature_vector_creation_actor START for"+image_feature_vector_message.path);
 
-        if (image_feature_vector_message.aborter.should_abort())
+        if (image_feature_vector_message.context.should_abort())
         {
-            if ( dbg) image_feature_vector_message.logger.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
+            if ( dbg) image_feature_vector_message.context.log("Feature_vector_creation_actor aborting "+image_feature_vector_message.path);
             if ( cl != null) cl.release();
             Mmap.instance.save_index();
             return "aborted";
         }
 
-        Optional<Feature_vector_double> fv = fvs.get_feature_vector(image_feature_vector_message.path, image_feature_vector_message.owner, image_feature_vector_message.aborter, image_feature_vector_message.logger);
+        Optional<Feature_vector_double> fv = fvs.get_feature_vector(image_feature_vector_message.path, image_feature_vector_message.context);
         if ( cl != null) cl.release();
 
         if ( fv.isEmpty())
         {
-            image_feature_vector_message.logger.log("Warning: fv source failed for "+ image_feature_vector_message.path);
+            image_feature_vector_message.context.log("Warning: fv source failed for "+ image_feature_vector_message.path);
             Mmap.instance.save_index();
             return "Warning: embeddings server failed";
         }

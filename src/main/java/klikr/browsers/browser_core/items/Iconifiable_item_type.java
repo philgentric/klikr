@@ -1,0 +1,82 @@
+// Copyright (c) 2025 Philippe Gentric
+// SPDX-License-Identifier: MIT
+
+package klikr.browsers.browser_core.items;
+
+import klikr.util.Kontext;
+import klikr.util.files_and_paths.Extensions;
+import klikr.util.files_and_paths.Guess_file_type;
+import klikr.util.log.Stack_trace_getter;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+//**********************************************************
+public enum Iconifiable_item_type
+//**********************************************************
+{
+    folder,
+    symbolic_link_on_folder,
+    non_javafx_image, // lots of formats, either via GraphicsMagick or ImageMagick
+    javafx_image_not_gif_not_png, // which includes jpeg
+    png,
+    gif,
+    animated_gif,
+    //image_fits, // with the nasa java fits library, but we support it via non_javafx_image
+    video,
+    pdf,
+    no_path,
+    other;
+
+    //**********************************************************
+    public static Iconifiable_item_type determine(Path path, Kontext context)
+    //**********************************************************
+    {
+        if ( path == null )
+        {
+            context.log(Stack_trace_getter.get_stack_trace("WARNING: path_ is null"));
+            return no_path;
+        }
+        if ( path.getFileName() == null )
+        {
+            System.out.println(Stack_trace_getter.get_stack_trace("path.getFileName() is null"));
+            return no_path;
+        }
+
+        /*
+        // special macos
+        if (path.getFileName().toString().startsWith("._"))
+        {
+            //System.out.println(Stack_trace_getter.get_stack_trace("path.getFileName() starts with ._"));
+            return no_path;
+        }*/
+
+        if ( path.toFile().isDirectory())
+        {
+            if (Files.isSymbolicLink(path)) return symbolic_link_on_folder;
+            else return folder;
+        }
+
+        String extension = Extensions.get_extension(path.getFileName().toString());
+        if (Guess_file_type.is_this_extension_a_video(extension)) return video;
+        if (Guess_file_type.is_this_extension_a_pdf(extension)) return pdf;
+        /* this WAY too expensive !!!
+        if (Guess_file_type.is_this_path_a_animated_gif(path, owner,aborter,logger))
+        {
+            return animated_gif;
+        }*/
+        if (Guess_file_type.is_this_extension_a_gif(extension))
+        {
+
+            return gif;
+        }
+        if (Guess_file_type.is_this_extension_a_png(extension)) return png;
+        if (Guess_file_type.is_this_extension_a_non_javafx_type(extension)) return non_javafx_image;
+        //if (Guess_file_type.is_this_extension_a_fits(extension)) return image_fits;
+        if (Guess_file_type.is_this_extension_an_image_not_gif_not_png(extension)) return javafx_image_not_gif_not_png;
+
+        //logger.log("WARNING: item type detector returns DEFAULT 'other'' for path: " + path);
+
+        return other;
+    }
+}

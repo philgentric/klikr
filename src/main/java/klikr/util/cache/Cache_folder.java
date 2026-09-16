@@ -3,9 +3,8 @@
 
 package klikr.util.cache;
 
-import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
-import klikr.util.execute.actor.Aborter;
+import klikr.util.Kontext;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
@@ -49,65 +48,65 @@ public enum Cache_folder
     private static final boolean dbg = false;
 
     //**********************************************************
-    public static List<Disk_cleared> clear_all_disk_caches(Window owner, Aborter aborter, Logger logger)
+    public static List<Disk_cleared> clear_all_disk_caches(Kontext context)
     //**********************************************************
     {
         double total = 0;
         List<Disk_cleared> returned = new ArrayList<>();
         for ( Cache_folder cache_folder : Cache_folder.values())
         {
-            Disk_cleared dc = clear_disk_cache( cache_folder, false,  owner,  aborter,  logger);
+            Disk_cleared dc = clear_disk_cache( cache_folder, false,  context);
             returned.add(dc);
             total += dc.bytes();
         }
 
         total += Mmap.instance.clear_cache();
 
-        String size_in_bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(total,owner,logger);
-        logger.log("\n\n"+ Logger.ok+" Total cleared disk bytes: " + size_in_bytes+"\n\n");
+        String size_in_bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(total,context);
+        context.log("\n\n"+ Logger.ok+" Total cleared disk bytes: " + size_in_bytes+"\n\n");
         return returned;
     }
 
 
     //**********************************************************
-    public static Disk_cleared clear_disk_cache(Cache_folder cache_folder, boolean show_popup, Window owner, Aborter aborter, Logger logger)
+    public static Disk_cleared clear_disk_cache(Cache_folder cache_folder, boolean show_popup, Kontext context)
     //**********************************************************
     {
-        Path path = get_cache_dir(cache_folder,owner,logger);
-        return new Disk_cleared(path, Static_files_and_paths_utilities.clear_folder(path, cache_folder.name()+" cache on disk", show_popup, true, owner, aborter, logger));
+        Path path = get_cache_dir(cache_folder,context);
+        return new Disk_cleared(path, Static_files_and_paths_utilities.clear_folder(path, cache_folder.name()+" cache on disk", show_popup, true, context));
     }
 
     //**********************************************************
-    public static Path get_cache_dir(Cache_folder cache_folder, Window owner,Logger logger)
+    public static Path get_cache_dir(Cache_folder cache_folder, Kontext context)
     //**********************************************************
     {
-        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(cache_folder.name(), false, owner,logger);
+        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(cache_folder.name(), false, context);
         if (tmp_dir == null)
         {
-            logger.log("WARNING get_absolute_hidden_dir_on_user_homer=" + null);
+            context.log("WARNING get_absolute_hidden_dir_on_user_homer=" + null);
         }
         else
         {
-            if (dbg) logger.log("get_absolute_hidden_dir_on_user_home=" + tmp_dir.toAbsolutePath());
+            if (dbg) context.log("get_absolute_hidden_dir_on_user_home=" + tmp_dir.toAbsolutePath());
         }
         return tmp_dir;
     }
 
     //**********************************************************
-    public static void clear_one_icon_from_cache_on_disk(Path path, Window owner,Logger logger)
+    public static void clear_one_icon_from_cache_on_disk(Path path, Kontext context)
     //**********************************************************
     {
-        Path icon_cache_dir = get_cache_dir( Cache_folder.icon_cache,owner,logger);
-        int icon_size = Non_booleans_properties.get_icon_size(owner);
+        Path icon_cache_dir = get_cache_dir( Cache_folder.icon_cache,context);
+        int icon_size = Non_booleans_properties.get_icon_size();
 
-        Path icon_path = Icon_caching.path_for_icon_caching(path, String.valueOf(icon_size), Icon_caching.png_extension, owner, logger);
+        Path icon_path = Icon_caching.path_for_icon_caching(path, String.valueOf(icon_size), Icon_caching.png_extension, context);
         if (icon_path == null) return;
         try {
             Files.delete(icon_path);
-            logger.log("one icon deleted from cache:" + icon_path);
+            context.log("one icon deleted from cache:" + icon_path);
 
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("WARNING: deleting one icon FAILED: " + e));
+            context.log(Stack_trace_getter.get_stack_trace("WARNING: deleting one icon FAILED: " + e));
         }
     }
 

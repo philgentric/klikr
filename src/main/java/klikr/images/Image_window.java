@@ -20,12 +20,13 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.browser_core.Window_manager;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.Window_manager;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.browsers.Browser_for_file_system_in_2D;
-import klikr.browser_core.comparators.Last_access_comparator;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.comparators.Last_access_comparator;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.settings.Sort_files_by;
+import klikr.util.Kontext;
 import klikr.util.cache.RAM_caches;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
@@ -33,9 +34,9 @@ import klikr.images.caching.Image_cache_cafeine;
 import klikr.images.caching.Image_cache_interface;
 import klikr.images.caching.Image_cache_linkedhashmap;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser_core.virtual_landscape.Virtual_landscape;
+import klikr.browsers.browser_core.virtual_landscape.Virtual_landscape;
 import klikr.change.Change_gang;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.look.my_i18n.My_I18n;
@@ -46,8 +47,8 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.files_and_paths.*;
-import klikr.experimental.fusk.Fusk_static_core;
-import klikr.experimental.fusk.Fusk_strings;
+import klikr.fusk.Fusk_static_core;
+import klikr.fusk.Fusk_strings;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.change.old_and_new.Command;
@@ -80,11 +81,10 @@ public class Image_window
     public final Stage stage;
     public final Pane the_image_Pane;
     public Label the_info_label; // maybe null
-    public final Logger logger;
+    public final Kontext context;
     public final Image_display_handler image_display_handler;
     public final Mouse_handling_for_Image_window mouse_handling_for_image_window;
-    public final Window owner;
-    public final Aborter aborter;
+    //public final Window owner;
     public String title_optional_addendum;
 
     // this is used to manage the closing using ESC
@@ -107,30 +107,30 @@ public class Image_window
     public final int ID;
 
     //**********************************************************
-    public static Image_window get_Image_window(Path path, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source,Window owner, Aborter aborter, Logger logger_)
+    public static Image_window get_Image_window(Path path, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source,Kontext context)
     //**********************************************************
     {
         try ( Perf p = new Perf("get_Image_window")) {
-            Last_access_comparator.set_last_access(path,logger_);
-            Image_window returned = on_same_screen(path, path_list_provider, path_comparator_source, owner, aborter, logger_);
+            Last_access_comparator.set_last_access(path,context);
+            Image_window returned = on_same_screen(path, path_list_provider, path_comparator_source, context);
 
             return returned;
         }
     }
 
     //**********************************************************
-    private static Image_window on_same_screen(Path path, Path_list_provider path_list_provider,Path_comparator_source path_comparator_source,Window owner,Aborter aborter, Logger logger_)
+    private static Image_window on_same_screen(Path path, Path_list_provider path_list_provider,Path_comparator_source path_comparator_source, Kontext context)
     //**********************************************************
     {
 
-        Rectangle2D bounds = Non_booleans_properties.get_window_bounds(IMAGE_WINDOW,owner);
+        Rectangle2D bounds = Non_booleans_properties.get_window_bounds(IMAGE_WINDOW);
         double x = bounds.getMinX();
         double y = bounds.getMinY();
         double w = bounds.getWidth();
         double h = bounds.getHeight();
 
-
-        Image_window returned = new Image_window(path, null/*to prevent modality*/,x, y,w, h, null, true,path_list_provider,path_comparator_source,aborter,logger_);
+        Kontext k = new Kontext(null/*to prevent modality*/,context.aborter(), context.logger());
+        Image_window returned = new Image_window(path, x, y,w, h, null, true,path_list_provider,path_comparator_source,k);
         returned.stage.setX(x);
         returned.stage.setY(y);
         return returned;
@@ -140,42 +140,39 @@ public class Image_window
     //**********************************************************
     public Image_window(
             Path first_image_path,
-            Window owner, // is null for 'stand alone' windows
             double x, double y,
             double w, double h,
             String title_optional_addendum, // this is used to display image similarity
             boolean save_window_bounds,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
-            Aborter aborter,
-            Logger logger_)
+            Kontext context) // owner is null for 'stand alone' windows
     //**********************************************************
     {
         try (Perf p = new Perf("Image_window creation"))
         {
             this.ID =  Window_manager.register();
-            this.aborter = aborter;
-            this.owner = owner;
             this.path_list_provider = path_list_provider;
             this.title_optional_addendum = title_optional_addendum;
-            logger = logger_;
             dir = first_image_path.getParent();
             stage = new Stage();
-            if (owner != null) {
-                stage.initOwner(owner);
+            Aborter private_aborter = new Aborter("image_window_for:"+image_cache, context.logger());
+            this.context = new Kontext(stage,private_aborter,context.logger());
+            if (context.owner() != null) {
+                stage.initOwner(context.owner());
             }
             the_image_Pane = new StackPane();
-            Look_and_feel_manager.set_region_look(the_image_Pane, owner, logger);
+            Look_and_feel_manager.set_region_look(the_image_Pane, context.logger());
 
             path_list_provider.get_change_broadcaster().add_change_subscriber(() -> rescan_folder_indexes("Image_window constructor"));
 
             {
-                long remaining_RAM = Check_remaining_RAM.get_remaining_memory(logger);
+                long remaining_RAM = Check_remaining_RAM.get_remaining_memory(context);
                 int average_estimated_cache_slot_size = 50_000_000; // 50 MB per image, i.e. assume ~3000x~4000 pix on 4 byte
                 int cache_slots = (int) (remaining_RAM / average_estimated_cache_slot_size);
                 int forward_size = cache_slots / 2;
                 if (forward_size > 10) forward_size = 10;
-                //logger.log("cache_slots="+cache_slots);
+                //context.log("cache_slots="+cache_slots);
 
                 Optional<Path> folder_path = path_list_provider.get_folder_path();
                 if ( folder_path .isPresent())
@@ -187,9 +184,9 @@ public class Image_window
                 {
                     if (use_linkedhashmap_for_cache)
                     {
-                        image_cache = new Image_cache_linkedhashmap(forward_size, aborter, logger);
+                        image_cache = new Image_cache_linkedhashmap(forward_size, context);
                     } else {
-                        image_cache = new Image_cache_cafeine(forward_size, owner, aborter, logger);
+                        image_cache = new Image_cache_cafeine(forward_size, context);
                     }
                     if(folder_path .isPresent())
                     {
@@ -199,10 +196,10 @@ public class Image_window
             }
 
 
-            if (owner == null) {
+            if (context.owner() == null) {
                 if (!Feature_cache.get(Feature.Hide_beginners_text_on_images)) {
-                    String text = My_I18n.get_I18n_string("Image_window_info", owner, logger);
-                    text = text.replaceAll(",", "\n");
+                    String text = My_I18n.get_I18n_string("Image_window_info", context);
+                    text = text.replace(",", "\n");
                     the_info_label = new Label(text);
                     the_info_label.setMaxWidth(400);
                     the_info_label.setWrapText(true);
@@ -213,7 +210,7 @@ public class Image_window
             Klikr_cache<Path, Image_properties> tmp_cache = RAM_caches.image_properties_cache_of_caches.get(path_list_provider.get_key());
             if (tmp_cache == null)
             {
-                tmp_cache = Virtual_landscape.make_image_properties_cache(path_list_provider, aborter, owner, logger);
+                tmp_cache = Virtual_landscape.make_image_properties_cache(path_list_provider, context);
                 RAM_caches.image_properties_cache_of_caches.put(path_list_provider.get_key(), tmp_cache);
             }
             image_properties_cache = tmp_cache;
@@ -222,18 +219,18 @@ public class Image_window
             fv_cache_supplier = () ->
             {
                 if (fv_cache == null) {
-                    Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(stage,logger);
-                    List<Path> paths = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
-                    fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, stage, aborter, logger);
+                    Feature_vector_source fvs = new Feature_vector_source_for_image_similarity(context);
+                    List<Path> paths = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),context.aborter());
+                    fv_cache = Feature_vector_cache.preload_all_feature_vector_in_cache(fvs, paths, path_list_provider, context);
                 }
                 return fv_cache;
             };
 
             String extension = Extensions.get_extension(first_image_path.getFileName().toString());
-            set_background(the_image_Pane, extension, owner);
+            set_background(the_image_Pane, extension, context.owner());
             the_Scene = new Scene(the_image_Pane);
             //Look_and_feel_manager.set_scene_look(the_Scene,owner,logger);
-            Color background = Look_and_feel_manager.get_instance(owner, logger).get_background_color();
+            Color background = Look_and_feel_manager.get_instance(context.logger()).get_background_color();
             the_Scene.setFill(background);
             register_shortcuts(the_Scene);
             stage.setScene(the_Scene);
@@ -246,7 +243,7 @@ public class Image_window
                 // only for escape, accelerators
                 Image_window local = this;
                 stage.addEventHandler(KeyEvent.KEY_PRESSED,
-                        keyEvent -> Keyboard_handling_for_Image_window.handle_keyboard(local, keyEvent, logger));
+                        keyEvent -> Keyboard_handling_for_Image_window.handle_keyboard(local, keyEvent, context.logger()));
             }
             Comparator<Path> local_comp = null;
             if (path_comparator_source != null)
@@ -255,17 +252,17 @@ public class Image_window
             }
             if (local_comp != null)
             {
-                if ( dbg) logger.log("path_comparator from browser " +local_comp);
+                if ( dbg) context.log("path_comparator from browser " +local_comp);
             }
             else
             {
                 // this is going to take possibly a long time !!!
                 long start = System.currentTimeMillis();
-                local_comp = Sort_files_by.get_image_comparator(new Path_list_provider_for_file_system(first_image_path.getParent(),owner,logger), path_comparator_source, image_properties_cache, stage, aborter, logger);
+                local_comp = Sort_files_by.get_image_comparator(new Path_list_provider_for_file_system(first_image_path.getParent(),context), path_comparator_source, image_properties_cache, context);
                 long now = System.currentTimeMillis();
-                logger.log("get_image_comparator took " + (now - start) + " ms");
+                context.log("get_image_comparator took " + (now - start) + " ms");
             }
-            Optional<Image_display_handler> option = Image_display_handler.get_Image_display_handler_instance(path_list_provider, first_image_path, this, path_comparator_source, aborter, owner, logger);
+            Optional<Image_display_handler> option = Image_display_handler.get_Image_display_handler_instance(path_list_provider, first_image_path, this, path_comparator_source, context);
             if (option.isEmpty()) {
                 image_display_handler = null;
                 mouse_handling_for_image_window = null;
@@ -277,15 +274,15 @@ public class Image_window
             image_display_handler.set_image_properties_cache(image_properties_cache);
 
 
-            mouse_handling_for_image_window = new Mouse_handling_for_Image_window(this, logger);
+            mouse_handling_for_image_window = new Mouse_handling_for_Image_window(this, context.logger());
 
             image_display_handler.change_image_relative(0, false);
 
 
             ChangeListener<Number> change_listener = (observableValue, number, t1) -> {
                 if (dbg)
-                    logger.log("ChangeListener: image window position and/or length changed: " + stage.getWidth() + "," + stage.getHeight());
-                if (save_window_bounds) Non_booleans_properties.save_window_bounds(stage, IMAGE_WINDOW, logger);
+                    context.log("ChangeListener: image window position and/or length changed: " + stage.getWidth() + "," + stage.getHeight());
+                if (save_window_bounds) Non_booleans_properties.save_window_bounds(stage, IMAGE_WINDOW, context.logger());
             };
             stage.xProperty().addListener(change_listener);
             stage.yProperty().addListener(change_listener);
@@ -300,13 +297,13 @@ public class Image_window
             the_Scene.setOnScroll(event -> {
                 double dy = -event.getDeltaY();
                 if (dy == 0) return;
-                //logger.log("SCROLL dy=" + dy);
+                //context.log("SCROLL dy=" + dy);
                 int yy = (int) (dy / 10.0);
                 if (yy == 0) {
                     if (dy < 0) yy = -1;
                     else yy = 1;
                 }
-                //logger.log("SCROLL after round up=" + yy);
+                //context.log("SCROLL after round up=" + yy);
                 image_display_handler.change_image_relative(yy, false);
 
             });
@@ -322,7 +319,7 @@ public class Image_window
             });
 
             the_Scene.setOnZoom(event -> {
-                if ( dbg) logger.log("on zoom "+event);
+                if ( dbg) context.log("on zoom "+event);
                 double zoom = event.getZoomFactor();
 
                 Optional<Image_context> op = image_display_handler.get_image_context();
@@ -453,7 +450,7 @@ public class Image_window
             // slide show start/stop
             slideshow_start_stop = new KeyCodeCombination(KeyCode.S);
             scene.getAccelerators().put(slideshow_start_stop, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is SPACE = start/stop scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is SPACE = start/stop scan");
                 toggle_slideshow();
             });
         }
@@ -461,7 +458,7 @@ public class Image_window
             // slide show slow down
             KeyCombination kc = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl + <- = slowdown scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is ctrl + <- = slowdown scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -469,7 +466,7 @@ public class Image_window
             // slide show speed up
             speed_up_scan = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(speed_up_scan, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl + -> = speed up scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is ctrl + -> = speed up scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -477,7 +474,7 @@ public class Image_window
             // slide show slow down
             slow_down_scan = new KeyCodeCombination(KeyCode.LEFT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(slow_down_scan, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is meta + <- = slowdown scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is meta + <- = slowdown scan");
                 if (is_slide_show_running()) slow_down();
             });
         }
@@ -485,7 +482,7 @@ public class Image_window
             // slide show speed up
             KeyCombination kc = new KeyCodeCombination(KeyCode.RIGHT,KeyCombination.META_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is meta + -> = speed up scan");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is meta + -> = speed up scan");
                 if (is_slide_show_running()) speed_up();
             });
         }
@@ -495,7 +492,7 @@ public class Image_window
             // undo
             undo = new KeyCodeCombination(KeyCode.Z,KeyCombination.CONTROL_DOWN);
             scene.getAccelerators().put(undo, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -503,7 +500,7 @@ public class Image_window
             // redo same MOVE
             KeyCombination kc = new KeyCodeCombination(KeyCode.Y);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -511,7 +508,7 @@ public class Image_window
             // redo same MOVE
             KeyCombination kc = new KeyCodeCombination(KeyCode.Y,KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is y > = redo same move");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is y > = redo same move");
                 Menus_for_image_window.do_same_move(this);
             });
         }
@@ -520,7 +517,7 @@ public class Image_window
             // rename
             rename = new KeyCodeCombination(KeyCode.R);
             scene.getAccelerators().put(rename, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is r, rename");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is r, rename");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().rename_file_for_an_image_window(this);
             });
@@ -529,7 +526,7 @@ public class Image_window
             // rename
             KeyCombination kc = new KeyCodeCombination(KeyCode.R,KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is r, rename");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is r, rename");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().rename_file_for_an_image_window(this);
             });
@@ -539,9 +536,9 @@ public class Image_window
             // OPEN
             open = new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(open, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl or meta O = open");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is ctrl or meta O = open");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
-                image_display_handler.get_image_context().get().open(stage,aborter);
+                image_display_handler.get_image_context().get().open();
             });
         }
 
@@ -549,14 +546,13 @@ public class Image_window
             // Browse
             browse = new KeyCodeCombination(KeyCode.B, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(browse, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl or meta B = browse");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is ctrl or meta B = browse");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 Window_builder.additional_no_past(
                         Klikr_application.application,
                         Window_type.File_system_2D,
-                        new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(), stage,logger),
-                        stage,
-                        logger);
+                        new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(), context),
+                        context);
             });
         }
 
@@ -564,7 +560,7 @@ public class Image_window
             // FULLSCREEN
             KeyCombination kc = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.ALT_DOWN);
             scene.getAccelerators().put(kc, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is alt+enter = fullscreen");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is alt+enter = fullscreen");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 Menus_for_image_window.toggle_fullscreen(this);
 
@@ -576,13 +572,11 @@ public class Image_window
             // FIND
             find = new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(find, () -> {
-                if (Browser_for_file_system_in_2D.kbd_dbg) logger.log("character is ctrl or meta f = keyword search");
+                if (Browser_for_file_system_in_2D.kbd_dbg) context.log("character is ctrl or meta f = keyword search");
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 image_display_handler.get_image_context().get().search_using_keywords_from_the_name(
                         path_list_provider,
-                        path_comparator_source,
-                        aborter,
-                        stage);
+                        path_comparator_source);
             });
         }
 
@@ -593,8 +587,8 @@ public class Image_window
             KeyCombination kc = new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN);
             scene.getAccelerators().put(kc, () -> {
                 Window_builder.additional_no_past(Klikr_application.application, Window_type.File_system_2D,
-                        new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(),stage,logger),
-                        stage,logger);
+                        new Path_list_provider_for_file_system(image_display_handler.get_image_context().get().path.getParent(),context),
+                        context);
             });
         }
         {
@@ -603,7 +597,7 @@ public class Image_window
             scene.getAccelerators().put(copy, () -> {
                 if ( image_display_handler.get_image_context().isEmpty()) return;
                 Runnable after = () ->
-                        image_display_handler.image_indexer.signal_file_copied(aborter);
+                        image_display_handler.image_indexer.signal_file_copied(context.aborter());
                 image_display_handler.get_image_context().get().copy(
                         path_list_provider,
                         path_comparator_source,
@@ -701,7 +695,7 @@ public class Image_window
     public void start_slide_show()
     //**********************************************************
     {
-        slide_show = new Slide_show(image_display_handler, ultim_mode, logger);
+        slide_show = new Slide_show(image_display_handler, ultim_mode, context.logger());
     }
     //**********************************************************
     public void stop_slide_show()
@@ -756,7 +750,7 @@ public class Image_window
         }
         else
         {
-            Look_and_feel laf = Look_and_feel_manager.get_instance(owner,logger);
+            Look_and_feel laf = Look_and_feel_manager.get_instance(context.logger());
             background_fill = laf.get_background_fill();
         }
         return background_fill;
@@ -768,7 +762,7 @@ public class Image_window
     //**********************************************************
     {
         stage.getScene().getRoot().setCursor(Cursor.WAIT);
-        if ( dbg) logger.log("cursor = wait");
+        if ( dbg) context.log("cursor = wait");
     }
 
     //**********************************************************
@@ -776,7 +770,7 @@ public class Image_window
     //**********************************************************
     {
         stage.getScene().getRoot().setCursor(Cursor.DEFAULT);
-        if ( dbg) logger.log("cursor = default");
+        if ( dbg) context.log("cursor = default");
     }
 
 
@@ -795,12 +789,12 @@ public class Image_window
             double width = stage.getWidth();
             double height = stage.getHeight();
             Rectangle2D r = new Rectangle2D(minX + 10, minY + 10, width - 100, height - 100);
-            //logger.log("application rec"+r);
+            //context.log("application rec"+r);
             ObservableList<Screen> screens = Screen.getScreensForRectangle(r);
             for (Screen s : screens)
             {
                 //Rectangle2D bounds = s.getVisualBounds();
-                //logger.log("screen in rec"+bounds);
+                //context.log("screen in rec"+bounds);
                 screen = s;
             }
 
@@ -819,8 +813,8 @@ public class Image_window
             Non_booleans_properties.save_bounds(bounds,logger);
         }
         Scene scene = stage.getScene();
-        //logger.log("scene getX" + scene.getX());
-        //logger.log("scene getY" + scene.getY());
+        //context.log("scene getX" + scene.getX());
+        //context.log("scene getY" + scene.getY());
         stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
         stage.setWidth(bounds.getWidth());
@@ -838,7 +832,7 @@ public class Image_window
     {
         if (ic == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(
+            context.log(Stack_trace_getter.get_stack_trace(
                     Logger.error+"PANIC ic==null"));
             return;
         }
@@ -858,7 +852,7 @@ public class Image_window
             if ( extension.equalsIgnoreCase(Fusk_static_core.FUSK_EXTENSION))
             {
                 String base = Extensions.get_base_name(ic.path.toAbsolutePath().toString());
-                local_title.append(Fusk_strings.defusk_string(base, logger)).append("*");
+                local_title.append(Fusk_strings.defusk_string(base, context.logger())).append("*");
             }
             else
             {
@@ -870,7 +864,7 @@ public class Image_window
 
             if (ic.path.toFile().length() == 0)
             {
-                logger.log("\n\n empty file ???? ic.path = "+ic.path);
+                context.log("\n\n empty file ???? ic.path = "+ic.path);
                 local_title.append(" empty file:->").append(ic.path.toAbsolutePath().toString()).append("<-");
             }
             else if (ic.image_is_damaged)
@@ -937,7 +931,7 @@ public class Image_window
             if( dir_ != null) stage.setTitle("No image to display in: " + dir_.toAbsolutePath());
             else stage.setTitle("No image to display");
             restore_cursor();
-        },logger);
+        },context);
 
     }
 
@@ -946,11 +940,11 @@ public class Image_window
     public void my_close()
     //**********************************************************
     {
-        //logger.log("Image_window is closing");
-        Window_manager.unregister(ID,logger);
-        aborter.abort("Image_window is closing");
+        //context.log("Image_window is closing");
+        Window_manager.unregister(ID,context);
+        context.abort("Image_window is closing");
         Virtual_landscape.show_progress_window_on_redraw = true;
-        Change_gang.deregister(image_display_handler, aborter);
+        Change_gang.deregister(image_display_handler, context.aborter());
     }
 
     //**********************************************************
@@ -959,14 +953,14 @@ public class Image_window
     {
         try(Perf p = new Perf("set_image_internal"))
         {
-            //logger.log(Stack_trace_getter.get_stack_trace("set_image: "+local_image_context.path));
+            //context.log(Stack_trace_getter.get_stack_trace("set_image: "+local_image_context.path));
 
             if (local_image_context == null) {
-                logger.log_stack_trace(Logger.error+"FATAL: Image_context is null, should not happen");
+                context.log_stack_trace(Logger.error+"FATAL: Image_context is null, should not happen");
                 return;
             }
             if (local_image_context.image == null) {
-                logger.log_stack_trace(Logger.error+"FATAL: Image_context.Image is null, should not happen");
+                context.log_stack_trace(Logger.error+"FATAL: Image_context.Image is null, should not happen");
                 return;
             }
             // if pix-for-pix was used on a very large image, the window length is very large too..
@@ -975,7 +969,7 @@ public class Image_window
 
                 local_image_context.the_image_view.setPreserveRatio(true);
                 //local_image_context.the_image_view.setSmooth(true);
-                Rotation rotation = local_image_context.get_rotation(owner, aborter);
+                Rotation rotation = local_image_context.get_rotation();
                 double rot = 0.0;
                 if   (rotation != null) rot = rotation.as_double();
 
@@ -992,7 +986,7 @@ public class Image_window
                     double pane_width = the_image_Pane.getWidth();
                     if ((image.getHeight() < pane_height) && (image.getWidth() < pane_width)) {
                         if (dbg)
-                            logger.log("preventing resize since " + image.getHeight() + " < " + pane_height + " and " + image.getWidth() + " < " + pane_width);
+                            context.log("preventing resize since " + image.getHeight() + " < " + pane_height + " and " + image.getWidth() + " < " + pane_width);
 
                         local_image_context.the_image_view.fitWidthProperty().unbind();
                         local_image_context.the_image_view.fitHeightProperty().unbind();
@@ -1000,7 +994,7 @@ public class Image_window
                         local_image_context.the_image_view.setFitHeight(local_image_context.image.getHeight());
                         normal = false;
                     } else {
-                        if (dbg) logger.log("NOT preventing resize");
+                        if (dbg) context.log("NOT preventing resize");
                     }
                 }
                 if (normal) {
@@ -1019,7 +1013,7 @@ public class Image_window
                 the_image_Pane.getChildren().add(local_image_context.the_image_view); // <<<< this is what causes the image to be displayed
                 if (the_info_label != null) the_image_Pane.getChildren().add(the_info_label);
                 set_stage_title(local_image_context);
-            }, logger);
+            }, context);
         }
     }
 
@@ -1032,8 +1026,8 @@ public class Image_window
         // check if there is a ALREADY a file with the new name
         if (new_path.toFile().exists())
         {
-            logger.log("name change aborted: there is already a file with that name!");
-            Popups.popup_warning(Logger.warning+" Not done","You cannot use this name:"+new_path.getFileName()+", because there is already a file with that name in the folder",false, stage,logger);
+            context.log("name change aborted: there is already a file with that name!");
+            Popups.popup_warning(Logger.warning+" Not done","You cannot use this name:"+new_path.getFileName()+", because there is already a file with that name in the folder",false, context);
             return Optional.empty();
         }
 
@@ -1042,19 +1036,19 @@ public class Image_window
 
         // set the new context: keep the previous path so that multiple renames can be performed
         // and the indexer will find the right "unchanged" index
-        Image_context local_new_image_context = new Image_context(new_path, old_path, image_display_handler.get_image_context().get().image, logger);
-        logger.log("change_name_of_file local_new_image_context\n      previous="+local_new_image_context.previous_path+"\n      path="+local_new_image_context.previous_path);
+        Image_context local_new_image_context = new Image_context(new_path, old_path, image_display_handler.get_image_context().get().image, context);
+        context.log("change_name_of_file local_new_image_context\n      previous="+local_new_image_context.previous_path+"\n      path="+local_new_image_context.previous_path);
         image_display_handler.set_image_context(local_new_image_context);
 
         // now do the actual renaming
         {
             List<Old_and_new_Path> l = new ArrayList<>();
             Old_and_new_Path oandn = new Old_and_new_Path(old_path, new_path, Command.command_rename, Status.before_command,false);
-            oandn.run_after = () -> Jfx_batch_injector.inject(() -> set_stage_title(local_new_image_context),logger);
+            oandn.run_after = () -> Jfx_batch_injector.inject(() -> set_stage_title(local_new_image_context),context);
             l.add(oandn);
 
 
-            Moving_files.perform_safe_moves_in_a_thread(l, true,stage,aborter,logger);
+            Moving_files.perform_safe_moves_in_a_thread(l, true,context);
         }
         return Optional.of(local_new_image_context);
     }
@@ -1073,23 +1067,23 @@ public class Image_window
     {
         if ( clear_cache)
         {
-            logger.log("clearing cache for: "+image_display_handler.get_image_context().get().path);
-            image_cache.evict(image_display_handler.get_image_context().get().path, stage);
+            context.log("clearing cache for: "+image_display_handler.get_image_context().get().path);
+            image_cache.evict(image_display_handler.get_image_context().get().path);
         }
-        Optional<Image_context> option = Image_context.build_Image_context(image_display_handler.get_image_context().get().path, this, aborter, logger);
+        Optional<Image_context> option = Image_context.build_Image_context(image_display_handler.get_image_context().get().path, this);
         if (option.isPresent())
         {
             image_display_handler.set_image_context(option.get());
             image_display_handler.change_image_relative(0,false);
             if ( rescaler != Image_rescaling_filter.Native)
             {
-                logger.log("image has been re-displayed with alternate rescaler: "+rescaler.name()+" details= "+rescaler.get_String());
+                context.log("image has been re-displayed with alternate rescaler: "+rescaler.name()+" details= "+rescaler.get_String());
             }
-            else logger.log("image has been re-displayed with default rescaling");
+            else context.log("image has been re-displayed with default rescaling");
         }
         else
         {
-            logger.log("WARNING: image has NOT been re-displayed???");
+            context.log("WARNING: image has NOT been re-displayed???");
         }
     }
 
@@ -1111,9 +1105,9 @@ public class Image_window
 
 
     //**********************************************************
-    public void evict_from_cache(Path path, Window owner)
+    public void evict_from_cache(Path path)
     //**********************************************************
     {
-        image_cache.evict(path, owner);
+        image_cache.evict(path);
     }
 }

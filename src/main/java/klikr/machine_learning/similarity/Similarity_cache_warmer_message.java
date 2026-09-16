@@ -4,6 +4,7 @@
 package klikr.machine_learning.similarity;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Message;
 
@@ -14,17 +15,15 @@ public class Similarity_cache_warmer_message implements Message
 //**********************************************************
 {
 
-    private final Aborter browser_aborter;
+    private final Kontext context;
     final Path p1;
     final int index_of_p1;
-    private final Window owner;
 
     //**********************************************************
-    public Similarity_cache_warmer_message(Window owner, Aborter browser_aborter, Path p1, int index)
+    public Similarity_cache_warmer_message(Path p1, int index, Kontext context)
     //**********************************************************
     {
-        this.owner = owner;
-        this.browser_aborter = browser_aborter;
+        this.context = context;
         this.p1 = p1;
         this.index_of_p1 = index;
     }
@@ -35,9 +34,9 @@ public class Similarity_cache_warmer_message implements Message
 
     @Override
     public Aborter get_aborter() {
-        return browser_aborter;
+        return context.aborter();
     }
 
-    public Window get_owner() { return owner; }
+    public Window get_owner() { return context.owner(); }
 
 }

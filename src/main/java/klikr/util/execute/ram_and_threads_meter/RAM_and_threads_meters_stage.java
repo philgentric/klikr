@@ -11,10 +11,9 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
-import klikr.util.log.Logger;
 import klikr.util.execute.Scheduled_thread_pool;
 import klikr.util.ui.Menu_items;
 
@@ -29,7 +28,7 @@ public class RAM_and_threads_meters_stage
     private static volatile Stage instance;
 
     //**********************************************************
-    public static void show_stage(Window originator, Logger logger)
+    public static void show_stage(Kontext context)
     //**********************************************************
     {
         if (instance == null)
@@ -38,7 +37,7 @@ public class RAM_and_threads_meters_stage
             {
                 if (instance == null)
                 {
-                    instance = create_stage(originator,logger);
+                    instance = create_stage(context);
                 }
             }
         }
@@ -46,12 +45,12 @@ public class RAM_and_threads_meters_stage
     }
 
     //**********************************************************
-    private static Stage create_stage(Window owner,Logger logger)
+    private static Stage create_stage(Kontext context)
     //**********************************************************
     {
         Stage stage = new Stage();
-        stage.setX(owner.getX()+100);
-        stage.setY(owner.getY()+100);
+        stage.setX(context.getX()+100);
+        stage.setY(context.getY()+100);
 
         //stage.initOwner(owner); dont do that as the user wants
         // this one to survive changing folder
@@ -62,20 +61,20 @@ public class RAM_and_threads_meters_stage
         int width = 0;
         int x_offset = 5;
         {
-            Value_getter value_getter = new Value_getter() {
+            Value_getter value_getter = new Value_getter()
+            {
                 @Override
-                public int get_val() {
-                    return Actor_engine.how_many_threads_are_in_flight(logger);
+                public int get_val()
+                {
+                    return Actor_engine.how_many_threads_are_in_flight(context.logger());
                 }
             };
             double the_scale_max = 10;
-            Real_to_pixel real_to_pixel = new Real_to_pixel() {
-                @Override
-                public double val_to_pixel(double val,double max_val) {
-                    return  0.8*DISPLAY_PIXEL_HEIGHT*val/max_val;
-                }
-            };
-            Graph_for_meters graph = new Graph_for_meters("Executor",the_scale_max, value_getter, real_to_pixel, x_offset,Color.RED, stage,logger);
+            Real_to_pixel real_to_pixel = (val, max_val) -> 0.8*DISPLAY_PIXEL_HEIGHT*val/max_val;
+            Graph_for_meters graph = new Graph_for_meters(
+                    "Executor",the_scale_max,
+                    value_getter, real_to_pixel,
+                    x_offset,Color.RED, new Kontext(stage,context.aborter(),context.logger()));
             hbox.getChildren().add(graph.vbox);
             width+= graph.get_width();
             Scheduled_thread_pool.execute(graph.runnable, HEARTH_BEAT, TimeUnit.MILLISECONDS);
@@ -96,7 +95,7 @@ public class RAM_and_threads_meters_stage
                 }
             };
             x_offset += width;
-            Graph_for_meters graph = new Graph_for_meters("MB RAM", the_scale_max, value_getter, real_to_pixel, x_offset,Color.BLUE, stage,logger);
+            Graph_for_meters graph = new Graph_for_meters("MB RAM", the_scale_max, value_getter, real_to_pixel, x_offset,Color.BLUE, context);
 
             width += graph.get_width();
             hbox.getChildren().add(graph.vbox);
@@ -104,9 +103,9 @@ public class RAM_and_threads_meters_stage
         }
 
 
-        Scene scene = new Scene(hbox, Look_and_feel_manager.get_instance(stage,logger).get_background_color());
+        Scene scene = new Scene(hbox, Look_and_feel_manager.get_instance(context.logger()).get_background_color());
         stage.setScene(scene);
-        Look_and_feel_manager.set_scene_look(scene,stage, logger);
+        Look_and_feel_manager.set_scene_look(scene,context.logger());
         double context_length = Math.round((double)HEARTH_BEAT*(double)(Graph_for_meters.how_many_rectangles)/100.0)/10.0;
         stage.setTitle("Last "+context_length+" seconds");
 
@@ -116,12 +115,12 @@ public class RAM_and_threads_meters_stage
             Menu_items.add_menu_item_for_context_menu("Call_GC",true,null,
                     event2 -> {
                         System.gc();
-                        logger.log("Garbage collector was called");
-                    },context_menu,stage,logger);
+                        context.log("Garbage collector was called");
+                    },context_menu,context);
             Menu_items.add_menu_item_for_context_menu("List_threads",true,null,
                     event3 -> {
-                        Actor_engine.list_jobs(logger);
-                    },context_menu,stage,logger);
+                        Actor_engine.list_jobs(context.logger());
+                    },context_menu,context);
             //scene.setOnMouseClicked(event -> {
             //    context_menu.show(stage, event.getScreenX(), event.getScreenY());
             //});

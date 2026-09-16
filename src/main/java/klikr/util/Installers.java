@@ -4,7 +4,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.look.Look_and_feel;
 import klikr.machine_learning.ML_server_type;
@@ -23,7 +22,6 @@ import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,14 +32,14 @@ public class Installers
 {
 
     //**********************************************************
-    public static HBox make_ui_to_start_image_similarity_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static HBox make_ui_to_start_image_similarity_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Start_Image_Similarity_Servers";
-        int num_servers = Non_booleans_properties.get_number_of_image_similarity_servers(owner);
+        int num_servers = Non_booleans_properties.get_number_of_image_similarity_servers();
 
         EventHandler<ActionEvent> handler = e -> {
-            Actor_engine.execute(()->ML_servers_util.start_N_ML_servers(num_servers, ML_server_type.MobileNet,owner, logger), "Starting image similarity servers", logger);
+            Actor_engine.execute(()->ML_servers_util.start_N_ML_servers(num_servers, ML_server_type.MobileNet,context), "Starting image similarity servers", context.logger());
         };
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
@@ -49,85 +47,80 @@ public class Installers
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
         return hb;
     }
 
     //**********************************************************
-    public static HBox make_ui_to_stop_image_similarity_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static HBox make_ui_to_stop_image_similarity_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Stop_Image_Similarity_Servers";
-        EventHandler<ActionEvent> handler = e -> ML_servers_util.stop_image_similarity_servers(owner,logger);
+        EventHandler<ActionEvent> handler = e -> ML_servers_util.stop_image_similarity_servers(context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
         return hb;
     }
 
     //**********************************************************
-    public static HBox make_ui_to_start_face_recognition_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static HBox make_ui_to_start_face_recognition_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Start_Face_Recognition_Servers";
-        EventHandler<ActionEvent> handler = e -> ML_servers_util.start_face_recognition_servers(owner, logger);;
+        EventHandler<ActionEvent> handler = e -> ML_servers_util.start_face_recognition_servers(context);;
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
         return hb;
     }
 
     //**********************************************************
-    public static HBox make_ui_to_stop_face_recognition_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static HBox make_ui_to_stop_face_recognition_servers(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Stop_Face_Recognition_Servers";
-        EventHandler<ActionEvent> handler = e -> ML_servers_util.stop_face_recognition_servers(owner,logger);
+        EventHandler<ActionEvent> handler = e -> ML_servers_util.stop_face_recognition_servers(context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
         return hb;
     }
 
     //**********************************************************
-    public static void make_ui_to_install_python_libs_for_ML(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static void make_ui_to_install_python_libs_for_ML(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Install_Python_Libs_For_ML";
-        EventHandler<ActionEvent> handler = e -> ML_servers_util.install_python_libs_for_ML(owner, logger);
+        EventHandler<ActionEvent> handler = e -> ML_servers_util.install_python_libs_for_ML(context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
     }
 
     //**********************************************************
-    public static void make_ui_to_install_all_apps(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static void make_ui_to_install_all_apps(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         for(External_application app :External_application.values())
@@ -137,7 +130,7 @@ public class Installers
                 // assume ffprobe is installed with ffmpeg
                 continue;
             }
-            HBox hb = app.get_button(width, icon_size, look_and_feel, owner, logger);
+            HBox hb = app.get_button(width, icon_size, look_and_feel, context);
             vbox.getChildren().add(hb);
         }
     }
@@ -145,96 +138,92 @@ public class Installers
 
 
     //**********************************************************
-    public static void make_ui_to_install_everything(boolean also_python_ML_libs,double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static void make_ui_to_install_everything(boolean also_python_ML_libs,double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Install_All_Tools";
-        EventHandler<ActionEvent> handler = e -> Installers.install_everything(also_python_ML_libs,owner, logger);
+        EventHandler<ActionEvent> handler = e -> Installers.install_everything(also_python_ML_libs,context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
     }
 
 
     //**********************************************************
-    private static void install_everything(boolean also_python_ML_libs,Window owner, Logger logger)
+    private static void install_everything(boolean also_python_ML_libs,Kontext context)
     //**********************************************************
     {
-        Actor_engine.execute(() -> install_everything_in_a_thread(also_python_ML_libs,owner, logger), "Installing all tools", logger);
+        Actor_engine.execute(() -> install_everything_in_a_thread(also_python_ML_libs,context), "Installing all tools", context.logger());
     }
 
     //**********************************************************
-    private static void install_everything_in_a_thread(boolean also_python_ML_libs, Window owner, Logger logger)
+    private static void install_everything_in_a_thread(boolean also_python_ML_libs, Kontext context)
     //**********************************************************
     {
-        if ( also_python_ML_libs) ML_servers_util.install_python_libs_for_ML(owner, logger);
+        if ( also_python_ML_libs) ML_servers_util.install_python_libs_for_ML(context);
         for (External_application app : External_application.values())
         {
             if ( app==External_application.Ffprobe) continue; // installs with ffmpeg
-            String cmd = app.get_command_string_to_install(owner, logger);
+            String cmd = app.get_command_string_to_install(context);
             if (cmd == null) continue;
             boolean dbg = Feature_cache.get(Feature.Enable_install_debug);
             // must exec in trash
 
-            Script_executor.execute(List.of(cmd), dbg, owner,logger);
+            Script_executor.execute(List.of(cmd), dbg, context);
         }
     }
 
 
     //**********************************************************
-    public static void make_ui_to_show_version(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static void make_ui_to_show_version(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Show_Version";
-        EventHandler<ActionEvent> handler =e -> show_version(owner, logger);
+        EventHandler<ActionEvent> handler =e -> show_version(context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
     }
 
     //**********************************************************
-    public static void make_ui_get_most_recent_version(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Window owner, Logger logger)
+    public static void make_ui_get_most_recent_version(double width, double icon_size, Look_and_feel look_and_feel, VBox vbox, Kontext context)
     //**********************************************************
     {
         String key = "Get_Most_Recent_Version";
-        EventHandler<ActionEvent> handler =e -> get_most_recent_version(owner, logger);
+        EventHandler<ActionEvent> handler =e -> get_most_recent_version(context);
         HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                 key,
                 handler,
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
     }
 
     //**********************************************************
-    public static void show_version(Window owner, Logger logger)
+    public static void show_version(Kontext context)
     //**********************************************************
     {
         Optional<Hourglass> local_hourglass = Progress_window.show(
                 "Please wait ... getting version",
                 30*60,
-                owner,
-                logger);
+                context);
 
-        String git_version_string = get_version_string(logger);
-        logger.log("git_version_string: "+git_version_string);
+        String git_version_string = get_version_string(context);
+        context.log("git_version_string: "+git_version_string);
         String code_version_string = Klikr_application.class.getPackage().getImplementationVersion();
-        logger.log("code_version_string: "+code_version_string);
+        context.log("code_version_string: "+code_version_string);
 
         String version_string = git_version_string;
         if ( version_string == null)
@@ -243,25 +232,25 @@ public class Installers
             version_string = code_version_string;
         }
 
-        Popups.simple_alert("version is "+version_string,owner,logger);
+        Popups.simple_alert("version is "+version_string,context);
 
         local_hourglass.ifPresent(Hourglass::close);
 
     }
 
     //**********************************************************
-    private static String get_version_string(Logger logger)
+    private static String get_version_string(Kontext context)
     //**********************************************************
     {
-        String version =get_version_from_gradle_build(logger);
+        String version =get_version_from_gradle_build(context);
         if ( version == null) return null;
-        String commit_count =get_commit_count(logger);
+        String commit_count =get_commit_count(context);
         String version_string = version+"."+commit_count;
         return version_string;
     }
 
     //**********************************************************
-    private static String get_commit_count(Logger logger)
+    private static String get_commit_count(Kontext context)
     //**********************************************************
     {
         List<String> cmds = new ArrayList<>();
@@ -270,10 +259,10 @@ public class Installers
         cmds.add("--count");
         cmds.add("HEAD");
 
-        Execute_result res = Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, null, logger);
+        Execute_result res = Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, null, context);
         if ( !res.status())
         {
-            logger.log(Logger.warning+"Warning cannot get commit count, is git installed ?");
+            context.log(Logger.warning+"Warning cannot get commit count, is git installed ?");
             return Logger.warning+"Warning cannot get commit count, is git installed ?";
         }
         String commit_count = res.output();
@@ -281,7 +270,7 @@ public class Installers
     }
 
     //**********************************************************
-    private static String get_version_from_gradle_build(Logger logger)
+    private static String get_version_from_gradle_build(Kontext context)
     //**********************************************************
     {
         List<String> cmds = new ArrayList<>();
@@ -290,10 +279,10 @@ public class Installers
         cmds.add("build.gradle");
 
         StringBuilder sb = null;//new StringBuilder();
-        Execute_result res = Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, logger);
+        Execute_result res = Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, context);
         if ( !res.status())
         {
-            logger.log(Logger.warning+"Warning cannot get version from build.gradle");
+            context.log(Logger.warning+"Warning cannot get version from build.gradle");
             return Logger.warning+"Warning cannot get version from build.gradle";
         }
         String version_string = res.output();
@@ -319,26 +308,25 @@ public class Installers
 
 
     //**********************************************************
-    private static void get_most_recent_version(Window owner, Logger logger)
+    private static void get_most_recent_version(Kontext context)
     //**********************************************************
     {
         Optional<Hourglass> local_hourglass = Progress_window.show(
                 "Please wait ... getting version",
                 30*60,
-                owner,
-                logger);
+                context);
 
 
-        if (Popups.popup_ask_for_confirmation(Logger.warning+" Are you sure you want to get the most recent version?","Developers: This will stash changes you made (if you made any changes),\n switch to the master branch (if you are on a different one)\nand get the most recent version from the repository\n\nIf you are not a developer, this is transparent, you just get the last and best, but of course, things need to be restarted for changes to take effect",owner,logger))
+        if (Popups.popup_ask_for_confirmation(Logger.warning+" Are you sure you want to get the most recent version?","Developers: This will stash changes you made (if you made any changes),\n switch to the master branch (if you are on a different one)\nand get the most recent version from the repository\n\nIf you are not a developer, this is transparent, you just get the last and best, but of course, things need to be restarted for changes to take effect",context))
         {
-            logger.log("version before:"+get_version_string(logger));
+            context.log("version before:"+get_version_string(context));
             {
                 List<String> cmds = new ArrayList<>();
                 cmds.add("git");
                 cmds.add("stash");
                 StringBuilder sb = new StringBuilder();
-                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, logger);
-                logger.log(sb.toString());
+                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, context);
+                context.log(sb.toString());
             }
             {
                 List<String> cmds = new ArrayList<>();
@@ -347,8 +335,8 @@ public class Installers
                 cmds.add("master");
 
                 StringBuilder sb = new StringBuilder();
-                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, logger);
-                logger.log(sb.toString());
+                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, context);
+                context.log(sb.toString());
             }
             {
                 List<String> cmds = new ArrayList<>();
@@ -356,10 +344,10 @@ public class Installers
                 cmds.add("pull");
 
                 StringBuilder sb = new StringBuilder();
-                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, logger);
-                logger.log(sb.toString());
+                Execute_command.execute_command_list(cmds, new File("."), 20 * 1000, sb, context);
+                context.log(sb.toString());
             }
-            logger.log("version after:"+get_version_string(logger));
+            context.log("version after:"+get_version_string(context));
         }
         local_hourglass.ifPresent(Hourglass::close);
     }

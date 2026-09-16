@@ -23,6 +23,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.execute.Application_jar;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
@@ -69,12 +70,12 @@ public abstract class Look_and_feel
     //private final BackgroundFill image_playlist_fill;
 
     //**********************************************************
-    public Look_and_feel(String name, Window owner, Logger logger)
+    public Look_and_feel(String name, Logger logger)
     //**********************************************************
     {
         this.logger = logger;
         this.name = name;
-        URL style_sheet_url = get_CSS_URL(owner);
+        URL style_sheet_url = get_CSS_URL();
         if (style_sheet_url == null)
         {
             logger.log(Logger.error+"style:'" + name + "' Look_and_feel: BAD WARNING cannot load style sheet as style_sheet_url is null");
@@ -123,7 +124,7 @@ public abstract class Look_and_feel
 
     public abstract Look_and_feel_style get_look_and_feel_style();
 
-    abstract public URL get_CSS_URL(Window owner);
+    abstract public URL get_CSS_URL();
 
 
     abstract public String get_sleeping_man_icon_path();
@@ -242,27 +243,27 @@ public abstract class Look_and_feel
     }
 
     //**********************************************************
-    protected void set_directory_style(Node node, Window owner)
+    protected void set_directory_style(Node node)
     //**********************************************************
     {
-        Font_size.apply_global_font_size_to_Node(node, owner, logger);
+        Font_size.apply_global_font_size_to_Node(node, logger);
     }
 
     //**********************************************************
-    protected void set_file_style(Node node, Window owner)
+    protected void set_file_style(Node node)
     //**********************************************************
     {
         //logger.log("set_file_style");
-        Font_size.apply_global_font_size_to_Node(node, owner, logger);
+        Font_size.apply_global_font_size_to_Node(node, logger);
         set_text_color(node, get_text_color());//"-fx-text-fill: #704040;");
     }
 
     //**********************************************************
-    protected void set_selected_file_style(Node node, Window owner)
+    protected void set_selected_file_style(Node node)
     //**********************************************************
     {
         //logger.log("set_selected_file_style");
-        Font_size.apply_global_font_size_to_Node(node, owner, logger);
+        Font_size.apply_global_font_size_to_Node(node, logger);
         set_text_color(node, get_selected_text_color());//"-fx-text-fill: #704040;");
     }
 
@@ -329,26 +330,7 @@ public abstract class Look_and_feel
             return false;
         }
     }
-    //**********************************************************
-    protected URL get_CSS_URL2(String css, Window owner)
-    //**********************************************************
-    {
-        Path klik_trash = Static_files_and_paths_utilities.get_trash_dir_of(Path.of("").toAbsolutePath(),owner,logger);
-        try {
-            Path script_path = klik_trash.resolve("tmp.css");
-            Files.write(script_path, css.getBytes());
-            Files.setPosixFilePermissions(script_path, PosixFilePermissions.fromString("rwxr-xr-x"));
-            return script_path.toUri().toURL();
-        }
-        catch (MalformedURLException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("" + e));
-            return null;
-        }
-        catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("Error with script file: " + e));
-            return null;
-        }
-    }
+
 
     static Double estimated_text_label_height = null;
 
@@ -358,10 +340,10 @@ public abstract class Look_and_feel
             double width,
             double icon_size,
             Look_and_feel_manager.Icon_type icon_type,
-            Window owner, Logger logger)
+            Logger logger)
     //**********************************************************
     {
-        Look_and_feel_manager.set_region_look(b, true,owner,logger);
+        Look_and_feel_manager.set_region_look(b, true,logger);
         b.setPrefWidth(width);
         b.setAlignment(Pos.CENTER);
         b.setTextAlignment(TextAlignment.CENTER);
@@ -381,14 +363,14 @@ public abstract class Look_and_feel
 
 
             String icon_path = Look_and_feel_manager.get_main_window_icon_path(this, icon_type);
-            Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, icon_size, owner,logger);
+            Image icon = Jar_utils.load_jfx_image_from_jar(icon_path, icon_size, logger);
 
             the_image_view.setImage(icon);
             the_image_view.setPreserveRatio(true);
 
             if ( estimated_text_label_height == null)
             {
-                double font_size = Non_booleans_properties.get_font_size(owner,logger);
+                double font_size = Non_booleans_properties.get_font_size();
                 estimated_text_label_height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
             }
             double h = icon_size + estimated_text_label_height;

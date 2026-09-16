@@ -14,6 +14,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Look_and_feel_manager;
@@ -46,11 +47,9 @@ public class Text_frame
     private Path the_path = null;
     private List<String> the_lines = null;
     private final WebView web_view = new WebView();
-    private final Logger logger;
-    private Stage stage;
+    private Kontext context;
     private final AtomicLong font_size_times_1000 = new AtomicLong(2000);
 
-    private Aborter aborter;
     private String marked = "";
     private List<Integer> line_numbers_of_marked_items = new ArrayList<>();
     private int scroll = 0;
@@ -76,26 +75,22 @@ public class Text_frame
     // is like a console output window
     // read-only, take a queue as input
     //**********************************************************
-    public static void show(String command, LinkedBlockingQueue<String> queue, double x, double y, Logger logger)
+    public static void show(String command, LinkedBlockingQueue<String> queue, Logger logger)
     //**********************************************************
     {
-        new Text_frame(command,queue,x,y,logger);
+        new Text_frame(command,queue,logger);
     }
 
     //**********************************************************
     private Text_frame(
             String command,
-            LinkedBlockingQueue<String> queue,
-            Double x, Double y, Logger logger)
+            LinkedBlockingQueue<String> queue, Logger logger)
     //**********************************************************
     {
-        this.logger = logger;
+        init(command,logger);
         this.the_path = null;
         this.the_lines = null;
         this.the_queue = queue;
-
-
-        init(command,x,y);
 
         Runnable r = () -> {
             try {
@@ -109,7 +104,7 @@ public class Text_frame
                     }
                     if ( dbg) logger.log("text frame received: " + line);
 
-                    if ( aborter.should_abort()) break;
+                    if ( context.should_abort()) break;
 
                     Platform.runLater(() -> {
                         String jsSafe = "<br>"+ line
@@ -143,11 +138,10 @@ public class Text_frame
             Logger logger)
     //**********************************************************
     {
-        this.logger = logger;
+        init("",logger);
         this.the_path = null;
         this.the_lines = the_lines;
 
-        init("",null,null);
     }
 
     //**********************************************************
@@ -156,28 +150,27 @@ public class Text_frame
             Logger logger)
     //**********************************************************
     {
-        this.logger = logger;
+        init(the_path.toAbsolutePath().toString(),logger);
         this.the_path = the_path;
         this.the_lines =null;
-
-        init(the_path.toAbsolutePath().toString(), null,null);
-
         Filesystem_item_modification_watcher watcher = new Filesystem_item_modification_watcher();
         Filesystem_modification_reporter reporter = () -> {
             //logger.log("Filesystem_item_modification_watcher event ==> RELOADING");
             Platform.runLater(() -> Text_frame.this.reload());
         };
-        watcher.init(the_path, reporter, false, 100000, aborter, logger);
+        watcher.init(the_path, reporter, false, 100000, context);
     }
 
 
 
     //**********************************************************
-    private void init(String title_header, Double x, Double y)
+    private void init(String title_header, Logger logger)
     //**********************************************************
     {
         web_view.setFontScale(2.0);
-        aborter = new Aborter("Text_frame", logger);
+        Aborter aborter = new Aborter("Text_frame", logger);
+        Stage stage = new Stage();
+        this.context = new Kontext(stage,aborter,logger);
 
         String fontUrl = null;
         try {
@@ -235,30 +228,22 @@ public class Text_frame
 
 
         Scene scene = new Scene(web_view);
-        
-        stage = new Stage();
-
-        if ( x!= null && y!=null)
+        Rectangle2D r = Non_booleans_properties.get_window_bounds(TEXT_FRAME);
+        if (r == null)
         {
-            stage.setX(x);
-            stage.setY(y);
+            stage.setX(context.getX()+100);
+            stage.setY(context.getY()+100);
             stage.setWidth(800);
             stage.setHeight(600);
         }
-        else {
-            Rectangle2D r = Non_booleans_properties.get_window_bounds(TEXT_FRAME, stage);
-            if (r == null) {
-                stage.setX(100);
-                stage.setY(100);
-                stage.setWidth(800);
-                stage.setHeight(600);
-            } else {
-                stage.setX(r.getMinX());
-                stage.setY(r.getMinY());
-                stage.setWidth(r.getWidth());
-                stage.setHeight(r.getHeight());
-            }
+        else
+        {
+            stage.setX(r.getMinX());
+            stage.setY(r.getMinY());
+            stage.setWidth(r.getWidth());
+            stage.setHeight(r.getHeight());
         }
+
         String title = title_header;//+" / Select text and press s,k or m to highlight all instances, then d or n to jump down and u or p to jump up";
         stage.setTitle(title);
         stage.setScene(scene);
@@ -289,11 +274,11 @@ public class Text_frame
             Stage stage)
     //**********************************************************
     {
-        if ( dbg) logger.log("process_key_event in Text_frame:"+key_event);
+        if ( dbg) context.log("process_key_event in Text_frame:"+key_event);
 
         if (key_event.getCode().equals(KeyCode.ESCAPE))
         {
-            if ( dbg) logger.log("process_key_event in Text_frame: ESCAPE");
+            if ( dbg) context.log("process_key_event in Text_frame: ESCAPE");
 
             stage.close();
             key_event.consume();
@@ -342,7 +327,7 @@ public class Text_frame
             process_down();
 
         }
-        if ( dbg) logger.log("process_key_event in Text_frame: DONE");
+        if ( dbg) context.log("process_key_event in Text_frame: DONE");
 
         return false;
     }
@@ -351,11 +336,11 @@ public class Text_frame
     private void process_down()
     //**********************************************************
     {
-        if ( dbg) logger.log("process_key_event in Text_frame: DOWN");
+        if ( dbg) context.log("process_key_event in Text_frame: DOWN");
         if (marked_item_index>= line_numbers_of_marked_items.size()) return;
 
         int target_id = line_numbers_of_marked_items.get(marked_item_index);
-        if ( dbg) logger.log("process_key_event in Text_frame: " + marked_item_index + " => " + target_id);
+        if ( dbg) context.log("process_key_event in Text_frame: " + marked_item_index + " => " + target_id);
 
         marked_item_index++;
         if (marked_item_index >= line_numbers_of_marked_items.size()) marked_item_index = 0;
@@ -373,11 +358,11 @@ public class Text_frame
     private void process_up()
     //**********************************************************
     {
-        if ( dbg) logger.log("process_key_event in Text_frame: UP");
+        if ( dbg) context.log("process_key_event in Text_frame: UP");
         if (marked_item_index>= line_numbers_of_marked_items.size()) return;
 
         int target_id = line_numbers_of_marked_items.get(marked_item_index);
-        if ( dbg) logger.log("process_key_event in Text_frame: "+ marked_item_index +" => "+target_id);
+        if ( dbg) context.log("process_key_event in Text_frame: "+ marked_item_index +" => "+target_id);
 
         marked_item_index--;
         if ( marked_item_index < 0) marked_item_index = line_numbers_of_marked_items.size()-1;
@@ -395,14 +380,14 @@ public class Text_frame
     private boolean search_and_mark()
     //**********************************************************
     {
-        if ( dbg) logger.log("process_key_event in Text_frame: ");
+        if ( dbg) context.log("process_key_event in Text_frame: ");
         marked = (String) web_view.getEngine().executeScript("window.getSelection().toString()");
         if( marked.isEmpty())
         {
-            if ( dbg) logger.log("process_key_event in Text_frame: marked is empty");
+            if ( dbg) context.log("process_key_event in Text_frame: marked is empty");
             TextInputDialog dialog = new TextInputDialog("Enter text");
-            Look_and_feel_manager.set_dialog_look(dialog,stage,logger);
-            dialog.initOwner(stage);
+            Look_and_feel_manager.set_dialog_look(dialog, context.logger());
+            dialog.initOwner(context.owner());
             dialog.setTitle("Enter text to search");
             dialog.setHeaderText("Enter text to search, then use 'd' or 'n' to jump down and 'u' or 'p' to jump up");
             dialog.setContentText("Text:");
@@ -455,12 +440,12 @@ public class Text_frame
             }
             catch (IOException ee)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("" + ee));
+                context.log(Stack_trace_getter.get_stack_trace("" + ee));
                 web_view.getEngine().loadContent(" ======= CANNOT READ THIS FILE AT ALL ????  =========" + "\n");
             }
         }
         catch (IOException eee) {
-            logger.log(Stack_trace_getter.get_stack_trace("" + eee));
+            context.log(Stack_trace_getter.get_stack_trace("" + eee));
         }
 
     }
@@ -468,10 +453,10 @@ public class Text_frame
     private void load_lines(List<String> lines)
     //**********************************************************
     {
-        if ( dbg) logger.log("Text_frame, got " + lines.size() + " lines");
+        if ( dbg) context.log("Text_frame, got " + lines.size() + " lines");
 
         scroll = (int) web_view.getEngine().executeScript("window.scrollY");
-        if ( dbg) logger.log("scroll=" + scroll);
+        if ( dbg) context.log("scroll=" + scroll);
 
         web_view.getEngine().load("about:blank");
         line_numbers_of_marked_items.clear();
@@ -509,7 +494,7 @@ public class Text_frame
     private List<String> try_binary(Path the_path)
     //**********************************************************
     {
-        if ( dbg) logger.log("file is binary? ");
+        if ( dbg) context.log("file is binary? ");
         List<String> returned = new ArrayList<>();
         try
         {
@@ -532,7 +517,7 @@ public class Text_frame
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
             returned.add(" ======= CANNOT READ THIS FILE AT ALL ????  ========="+"\n");
         }
         return returned;

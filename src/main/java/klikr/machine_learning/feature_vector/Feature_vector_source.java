@@ -4,6 +4,7 @@
 package klikr.machine_learning.feature_vector;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
@@ -14,5 +15,5 @@ import java.util.Optional;
 public interface Feature_vector_source
 //**********************************************************
 {
-    Optional<Feature_vector_double> get_feature_vector(Path path, Window owner, Aborter can_be_null, Logger logger);
+    Optional<Feature_vector_double> get_feature_vector(Path path, Kontext context);
 }

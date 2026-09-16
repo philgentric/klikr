@@ -50,19 +50,20 @@ public class Shared_services
 
         Logger tmp_logger = new Simple_logger();
         aborter = new Aborter("Shared_services", tmp_logger);
+        Kontext context = new Kontext(owner,aborter,tmp_logger);
         // this properties file holds both the Non-booleans AND the Booleans
-        main_properties = new File_storage_using_Properties(name+" main properties", "klikr", true,owner, aborter, tmp_logger);
-        logger = get_logger(name);
+        main_properties = new File_storage_using_Properties(name+" main properties", "klikr", true,context);
+        logger = get_logger(name,context);
     }
 
     //**********************************************************
-    public static Logger get_logger(String prefix)
+    public static Logger get_logger(String prefix, Kontext context)
     //**********************************************************
     {
         Logger logger;
         if (Feature_cache.get(Feature.Log_to_file))
         {
-            logger = new File_logger(prefix);
+            logger = new File_logger(prefix, context);
         }
         else
         {

@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.deduplicate.Abortable;
 import klikr.util.files_and_paths.File_with_a_few_bytes;
@@ -36,9 +37,7 @@ public class Deduplication_console_window
 {
     private static final boolean dbg = false;
     public static final String STATUS = "Status: ";
-    Aborter private_aborter;
     //Browser_for_file_system_in_2D browser;
-    Window owner;
     public LongAdder count_directory_examined = new LongAdder();
     Label label_directory_examined;
     Label label_total_files_to_be_examined;
@@ -56,8 +55,7 @@ public class Deduplication_console_window
     Label label_status;
     private final boolean just_count;
 
-    Logger logger;
-
+    Kontext context;
     Abortable abortable;
 
     //**********************************************************
@@ -66,29 +64,24 @@ public class Deduplication_console_window
             String title,
             double w, double h,
             boolean just_count_,
-            Window owner,
-            Aborter aborter_,
-            Logger logger)
+            Kontext k)
     //**********************************************************
     {
-        this.owner = owner;
         abortable = abortable_;
-        private_aborter = aborter_;
         just_count = just_count_;
-        this.logger = logger;
-        //the_console = new Deduplication_console_interface(this, logger);
         Stage stage = new Stage();
-        stage.initOwner(owner);
+        this.context = new Kontext(stage,new Aborter("Deduplication_console_window",k.logger()),k.logger());
+        stage.initOwner(k.owner());
 
-        stage.setX(owner.getX()+100);
-        stage.setY(owner.getY()+100);
+        context.setX(k.getX()+100);
+        context.setY(k.getY()+100);
 
         stage.setHeight(h);
         stage.setWidth(w);
 
         stage.setTitle(title);
         VBox vbox = new VBox();
-        Look_and_feel_manager.set_region_look(vbox,owner,logger);
+        Look_and_feel_manager.set_region_look(vbox,context.logger());
         Scene scene = new Scene(vbox);//, w, h, Color.WHITE);
         stage.setScene(scene);
         stage.show();
@@ -97,17 +90,17 @@ public class Deduplication_console_window
             @Override
             public void handle(WindowEvent windowEvent) {
 
-                logger.log("Deduplication_console_window: closing the window");
+                context.log("Deduplication_console_window: closing the window");
                 abort("OnCloseRequest");
             }
         });
         Button cancel = new Button("Cancel");
-        Look_and_feel_manager.set_region_look(cancel,true,owner,logger);
+        Look_and_feel_manager.set_region_look(cancel,true,context.logger());
         {
             cancel.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent actionEvent) {
-                    logger.log("Deduplication_console_window: cancel button");
+                    context.log("Deduplication_console_window: cancel button");
                     abort("user cancel");
                     stage.close();
                 }
@@ -116,23 +109,23 @@ public class Deduplication_console_window
         vbox.getChildren().add(cancel);
         {
             label_status = new Label(STATUS);
-            Look_and_feel_manager.set_region_look(label_status,owner,logger);
+            Look_and_feel_manager.set_region_look(label_status,context.logger());
             vbox.getChildren().add(label_status);
         }
         {
             label_directory_examined = new Label();
-            Look_and_feel_manager.set_region_look(label_directory_examined,owner,logger);
+            Look_and_feel_manager.set_region_look(label_directory_examined,context.logger());
             vbox.getChildren().add(label_directory_examined);
             label_total_files_to_be_examined= new Label();
-            Look_and_feel_manager.set_region_look(label_total_files_to_be_examined,owner,logger);
+            Look_and_feel_manager.set_region_look(label_total_files_to_be_examined,context.logger());
             vbox.getChildren().add(label_total_files_to_be_examined);
             label_total_pairs_to_be_examined= new Label();
-            Look_and_feel_manager.set_region_look(label_total_pairs_to_be_examined,owner,logger);
+            Look_and_feel_manager.set_region_look(label_total_pairs_to_be_examined,context.logger());
             vbox.getChildren().add(label_total_pairs_to_be_examined);
         }
         {
             label_examined = new Label();
-            Look_and_feel_manager.set_region_look(label_examined,owner,logger);
+            Look_and_feel_manager.set_region_look(label_examined,context.logger());
 
             //label_examined.setWrapText(true);
             vbox.getChildren().add(label_examined);
@@ -142,14 +135,14 @@ public class Deduplication_console_window
         }
 
         label_count_to_be_deleted = new Label();
-        Look_and_feel_manager.set_region_look(label_count_to_be_deleted,owner,logger);
+        Look_and_feel_manager.set_region_look(label_count_to_be_deleted,context.logger());
         vbox.getChildren().add(label_count_to_be_deleted);
 
 
         if ( !just_count)
         {
             label_count_deleted = new Label();
-            Look_and_feel_manager.set_region_look(label_count_deleted,owner,logger);
+            Look_and_feel_manager.set_region_look(label_count_deleted,context.logger());
             //label_examined.setWrapText(true);
             vbox.getChildren().add(label_count_deleted);
             progress_bar_deleted = new ProgressBar();
@@ -166,17 +159,17 @@ public class Deduplication_console_window
     //**********************************************************
     {
         abortable.abort(reason);
-        private_aborter.abort("Deduplication_console_window::abort()");
+        context.abort("Deduplication_console_window::abort()");
     }
 
     //**********************************************************
     private void start_display_updating_event_pump()
     //**********************************************************
     {
-        logger.log("starting thing to do thread");
+        context.log("starting thing to do thread");
         Runnable r = () -> {
             {
-                if (private_aborter.should_abort()) return;
+                if (context.should_abort()) return;
                 refresh_UI();
             }
         };
@@ -194,8 +187,8 @@ public class Deduplication_console_window
             label_total_files_to_be_examined.setText("Files to examine: " + total_files_to_be_examined.doubleValue());
             label_total_pairs_to_be_examined.setText("Pairs to examine: " + total_pairs_to_be_examined.doubleValue());
             label_examined.setText("Examined file pairs: " + count_pairs_examined.doubleValue());//+" "+new_text_examined);
-            if (dbg) logger.log("count_pairs_examined=" + count_pairs_examined.doubleValue());
-            if (dbg) logger.log("total_pairs_to_be_examined=" + total_pairs_to_be_examined.doubleValue());
+            if (dbg) context.log("count_pairs_examined=" + count_pairs_examined.doubleValue());
+            if (dbg) context.log("total_pairs_to_be_examined=" + total_pairs_to_be_examined.doubleValue());
             progress_bar_examined.setProgress((double) count_pairs_examined.doubleValue() / (double) total_pairs_to_be_examined.doubleValue());
             label_count_to_be_deleted.setText("Duplicates found: " + count_duplicates.doubleValue());// + " " + new_text_to_be_deleted);
             if (!just_count) {
@@ -204,7 +197,7 @@ public class Deduplication_console_window
             }
         });
 
-        Jfx_batch_injector.inject(r,logger);
+        Jfx_batch_injector.inject(r,context);
     }
 
 
@@ -214,13 +207,13 @@ public class Deduplication_console_window
     public void set_end_examined()
     //**********************************************************
     {
-        Jfx_batch_injector.inject(() -> progress_bar_examined.setProgress(1.0),logger);
+        Jfx_batch_injector.inject(() -> progress_bar_examined.setProgress(1.0),context);
     }
     //**********************************************************
     public void set_end_deleted()
     //**********************************************************
     {
-        Jfx_batch_injector.inject(() -> { if ( !just_count) progress_bar_deleted.setProgress(1.0);},logger);
+        Jfx_batch_injector.inject(() -> { if ( !just_count) progress_bar_deleted.setProgress(1.0);},context);
     }
 
     //**********************************************************
@@ -229,9 +222,9 @@ public class Deduplication_console_window
     {
         Jfx_batch_injector.inject(() ->{
 
-            if (private_aborter.should_abort()) return;
+            if (context.should_abort()) return;
             label_status.setText(STATUS+ status);
-        },logger);
+        },context);
     }
 
     //**********************************************************

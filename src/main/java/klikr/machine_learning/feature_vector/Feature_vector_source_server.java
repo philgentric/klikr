@@ -4,6 +4,7 @@
 package klikr.machine_learning.feature_vector;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -26,7 +27,8 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
     private static final boolean ultra_dbg = false;
 
     // get_random_port is actually going to start servers, when needed
-    protected abstract int get_random_port(Window owner, Logger logger);
+    protected abstract int get_random_port(Kontext context);
+
     public static long start = System.nanoTime();
     static LongAdder tx_count = new LongAdder();
     static LongAdder SUM_dur_us = new LongAdder(); // microseconds
@@ -34,7 +36,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
     static final boolean monitoring_on = false;
 
     //**********************************************************
-    public Feature_vector_source_server(Window owner,  Logger logger)
+    public Feature_vector_source_server(Kontext context)
     //**********************************************************
     {
         if ( monitoring_on)
@@ -64,12 +66,12 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
     }
 
     //**********************************************************
-    public Optional<Feature_vector_double> get_feature_vector_from_server(Path path, Window owner, Aborter can_be_null, Logger logger)
+    public Optional<Feature_vector_double> get_feature_vector_from_server(Path path, Kontext context)
     //**********************************************************
     {
-        if(can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting Feature_vector_source::get_feature_vector_from_server, reason: " + can_be_null.reason());
+        if(context.aborter() != null) {
+            if (context.should_abort()) {
+                context.log("aborting Feature_vector_source::get_feature_vector_from_server, reason: " + context.aborter().reason());
                 return Optional.empty();
             }
         }
@@ -77,29 +79,29 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         long local_start = System.nanoTime();
         if ( path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("BAD!"));
+            context.log(Stack_trace_getter.get_stack_trace("BAD!"));
             return Optional.empty();
         }
-        int random_port = get_random_port(owner,logger);
+        int random_port = get_random_port(context);
 
-        if ( dbg) logger.log("random_port="+random_port);
+        if ( dbg) context.log("random_port="+random_port);
         if (random_port == -1) {
-            logger.log("No valid port from registry");
+            context.log("No valid port from registry");
             return Optional.empty();
         }
 
-        Optional<Feature_vector_double> op = Feature_vector_source_server.get_feature_vector_from_server_generic(path, random_port, owner, can_be_null,logger);
+        Optional<Feature_vector_double> op = Feature_vector_source_server.get_feature_vector_from_server_generic(path, random_port,context);
 
         if ( op.isEmpty())
         {
             if ( path.toFile().exists())
             {
                 // The server failed to return a vector. the file may be corrupted?
-                logger.log(Logger.warning+" WARNING: File MAY BE CORRUPTED: "+path);
+                context.log(Logger.warning+" WARNING: File MAY BE CORRUPTED: "+path);
             }
             else
             {
-                logger.log("get_feature_vector_from_server_generic: FAILED because file does not exist: "+path);
+                context.log("get_feature_vector_from_server_generic: FAILED because file does not exist: "+path);
             }
         }
         long local_end = System.nanoTime();
@@ -120,46 +122,46 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
     }
 
     //**********************************************************
-    static Feature_vector_double parse_json(String response, Logger logger)
+    static Feature_vector_double parse_json(String response, Kontext context)
     //**********************************************************
     {
-        //logger.log("going to parse a JSON feature vector ->" + response + "<-");
+        //context.log("going to parse a JSON feature vector ->" + response + "<-");
 
         // expecting {"features":[0.1,0.2,0.3,...]}
         response = response.trim();
         if ( !response.startsWith("{") || !response.endsWith("}"))
         {
-            logger.log("json parsing failed: does not start with { or end with }");
+            context.log("json parsing failed: does not start with { or end with }");
             return null;
         }
         int features_index = response.indexOf("\"features\"");
         if ( features_index == -1)
         {
-            logger.log("json parsing failed: no \"features\" key found");
+            context.log("json parsing failed: no \"features\" key found");
             return null;
         }
         int colon_index = response.indexOf(":", features_index);
         if ( colon_index == -1)
         {
-            logger.log("json parsing failed: no : after \"features\" key");
+            context.log("json parsing failed: no : after \"features\" key");
             return null;
         }
         int open_bracket_index = response.indexOf("[", colon_index);
         if ( open_bracket_index == -1)
         {
-            logger.log("json parsing failed: no [ after \"features\":");
+            context.log("json parsing failed: no [ after \"features\":");
             return null;
         }
         int close_bracket_index = response.indexOf("]", open_bracket_index);
         if ( close_bracket_index == -1)
         {
-            logger.log("json parsing failed: no ] after \"features\":[");
+            context.log("json parsing failed: no ] after \"features\":[");
             return null;
         }
         String array_string = response.substring(open_bracket_index + 1, close_bracket_index).trim();
         if ( array_string.isEmpty())
         {
-            logger.log("json parsing failed: empty features array");
+            context.log("json parsing failed: empty features array");
             return null;
         }
         String[] parts = array_string.split(",");
@@ -172,30 +174,30 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
             }
             catch ( NumberFormatException e)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("parse_json: NumberFormatException for part="+parts[i]+" "+e));
+                context.log(Stack_trace_getter.get_stack_trace("parse_json: NumberFormatException for part="+parts[i]+" "+e));
                 return null;
             }
         }
         Feature_vector_double fv = new Feature_vector_double(features,"from_json");
-        if ( dbg) logger.log("parsed a feature vector, length: " + fv.features.length);
+        if ( dbg) context.log("parsed a feature vector, length: " + fv.features.length);
         return fv;
 
     }
 
     //**********************************************************
-    static Optional<Feature_vector_double> get_feature_vector_from_server_generic(Path path, int random_port, Window owner, Aborter can_be_null, Logger logger)
+    static Optional<Feature_vector_double> get_feature_vector_from_server_generic(Path path, int random_port, Kontext context)
     //**********************************************************
     {
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(1) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
+        if ( context.aborter() != null) {
+            if (context.should_abort()) {
+                context.log("aborting(1) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.aborter().reason());
                 return Optional.empty();
             }
         }
 
         if ( path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("BAD!"));
+            context.log(Stack_trace_getter.get_stack_trace("BAD!"));
             return Optional.empty();
         }
 
@@ -206,11 +208,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (UnsupportedEncodingException e) {
-            logger.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (Error#1): "+e));
+            context.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (Error#1): "+e));
             return Optional.empty();
         }
         URL url = null;
@@ -219,11 +221,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (MalformedURLException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#2): "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#2): "+e));
             return Optional.empty();
         }
         HttpURLConnection connection = null;
@@ -232,11 +234,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#3)"+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#3)"+e));
             return Optional.empty();
         }
         try {
@@ -245,83 +247,77 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (ProtocolException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#4): "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#4): "+e));
             return Optional.empty();
         }
 
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(2) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
-                return Optional.empty();
-            }
+        if (context.should_abort()) {
+            context.log("aborting(2) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.aborter().reason());
+            return Optional.empty();
         }
+
 
         try {
             connection.connect();
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (IOException e) {
-            //logger.log(Stack_trace_getter.get_stack_trace(""+e));
-            logger.log((url_string+": get_feature_vector_from_server_generic (Error#5): "+e));
+            //context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log((url_string+": get_feature_vector_from_server_generic (Error#5): "+e));
             return Optional.empty();
         }
 
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(3) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
-                return Optional.empty();
-            }
+        if (context.should_abort()) {
+            context.log("aborting(3) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.abort_reason());
+            return Optional.empty();
         }
 
         try {
             int response_code = connection.getResponseCode();
-            //logger.log("response code="+response_code);
+            //context.log("response code="+response_code);
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (IOException e) {
-            //logger.log(Stack_trace_getter.get_stack_trace(""+e));
-            logger.log((url_string+": get_feature_vector_from_server_generic cannot get response code (Error#6):"+e));
+            //context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log((url_string+": get_feature_vector_from_server_generic cannot get response code (Error#6):"+e));
             return Optional.empty();
         }
 
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(4) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
-                return Optional.empty();
-            }
+        if (context.should_abort()) {
+            context.log("aborting(4) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.abort_reason());
+            return Optional.empty();
         }
+
         try {
             String response_message = connection.getResponseMessage();
-            //logger.log("response message="+response_message);
+            //context.log("response message="+response_message);
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#7): "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#7): "+e));
             return Optional.empty();
         }
 
 
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(5) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
-                return Optional.empty();
-            }
+        if (context.should_abort()) {
+            context.log("aborting(5) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.abort_reason());
+            return Optional.empty();
         }
 
 
@@ -341,12 +337,12 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log(Stack_trace_getter.get_stack_trace("OOM"));
             return Optional.empty();
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (8): "+e));
+            context.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (8): "+e));
             return Optional.empty();
         }
         finally
@@ -354,21 +350,20 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
             connection.disconnect();
         }
 
-        if ( can_be_null != null) {
-            if (can_be_null.should_abort()) {
-                logger.log("aborting(6) Feature_vector_source::get_feature_vector_from_server_generic reason: " + can_be_null.reason());
-                return Optional.empty();
-            }
+        if (context.should_abort()) {
+            context.log("aborting(6) Feature_vector_source::get_feature_vector_from_server_generic reason: " + context.abort_reason());
+            return Optional.empty();
         }
+
         String json = sb.toString();
-        //logger.log("json ="+json);
-        Feature_vector_double fv = Feature_vector_source_server.parse_json(json,logger);
+        //context.log("json ="+json);
+        Feature_vector_double fv = Feature_vector_source_server.parse_json(json,context);
         if ( fv == null) {
-            logger.log("json parsing failed: feature vector is null");
+            context.log("json parsing failed: feature vector is null");
             return Optional.empty();
         }
         else {
-            //logger.log("GOT a feature vector of length:"+fv.features.length);
+            //context.log("GOT a feature vector of length:"+fv.features.length);
         }
         return Optional.of(fv);
     }

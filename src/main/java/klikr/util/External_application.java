@@ -37,19 +37,19 @@ public enum External_application
 
 
     //**********************************************************
-    public HBox get_button(double width, double icon_size, Look_and_feel look_and_feel, Window owner, Logger logger)
+    public HBox get_button(double width, double icon_size, Look_and_feel look_and_feel, Kontext context)
     //**********************************************************
     {
         EventHandler<ActionEvent> handler =  e ->
         {
             boolean enable_install_debug = Feature_cache.get(Feature.Enable_install_debug);
-            String line = get_command_string_to_install(owner,logger);
+            String line = get_command_string_to_install(context);
             if ( line == null)
             {
-                logger.log("FATAL get_command_string_to_install() returns null for "+name());
+                context.log("FATAL get_command_string_to_install() returns null for "+name());
                 return;
             }
-            Script_executor.execute(List.of(line),enable_install_debug,owner, logger);
+            Script_executor.execute(List.of(line),enable_install_debug,context);
         };
 
         return Items_with_explanation.make_hbox_with_button_and_explanation(
@@ -58,20 +58,19 @@ public enum External_application
                 width,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
     }
 
 
 
     //**********************************************************
-    public String get_command_string_to_install(Window owner, Logger logger)
+    public String get_command_string_to_install(Kontext context)
     //**********************************************************
     {
-        switch(Guess_OS.guess(logger))
+        switch(Guess_OS.guess(context.logger()))
         {
             case MacOS -> {return get_macOS_install_command();}
-            case Linux -> {return get_Linux_install_command(owner,logger);}
+            case Linux -> {return get_Linux_install_command(context);}
             case Windows -> {return get_Windows_install_command();}
             case Unknown -> {return "";}
         }
@@ -133,7 +132,7 @@ public enum External_application
 
 
     //**********************************************************
-    public String get_Linux_install_command(Window owner, Logger logger)
+    public String get_Linux_install_command(Kontext context)
     //**********************************************************
     {
         // this is NOT for display: this MUST be the exact required string
@@ -145,19 +144,19 @@ public enum External_application
             case Vips -> "brew install vips";
             case GraphicsMagick -> "brew install graphicsmagick";
             case MediaInfo -> "brew install mediainfo";
-            case Ffmpeg, Ffprobe -> special(owner,logger);
+            case Ffmpeg, Ffprobe -> special(context);
         };
     }
 
     //**********************************************************
-    private String special(Window owner, Logger logger)
+    private String special(Kontext context)
     //**********************************************************
     {
         {
             // super important: on Linux javaFX audio i.e. the audio player REQUIRES ffmpeg
             TextInputDialog dialog = new TextInputDialog("");
-            Look_and_feel_manager.set_dialog_look(dialog,owner,logger);
-            dialog.initOwner(owner);
+            Look_and_feel_manager.set_dialog_look(dialog,context.logger());
+            dialog.initOwner(context.owner());
             dialog.setWidth(1200);
             VBox vbox = new VBox();
             //PasswordField pwf = new PasswordField();
@@ -177,13 +176,13 @@ public enum External_application
     }
 
     //**********************************************************
-    public String get_command(Window owner, Logger logger)
+    public String get_command(Kontext context)
     //**********************************************************
     {
-        switch(Guess_OS.guess(logger))
+        switch(Guess_OS.guess(context.logger()))
         {
             case MacOS -> {return get_macOS_command();}
-            case Linux -> {return get_Linux_command(owner,logger);}
+            case Linux -> {return get_Linux_command(context);}
             case Windows -> {return get_Windows_command();}
             case Unknown -> {return "";}
         }
@@ -207,7 +206,7 @@ public enum External_application
     }
 
     //**********************************************************
-    private String get_Linux_command(Window owner, Logger logger)
+    private String get_Linux_command(Kontext context)
     //**********************************************************
     {
         return switch (this) {

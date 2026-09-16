@@ -4,14 +4,14 @@
 package klikr.path_lists;
 
 import javafx.stage.Window;
-import klikr.browser_core.virtual_landscape.Image_found;
+import klikr.browsers.browser_core.virtual_landscape.Image_found;
 import klikr.search.Search_result;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Guess_file_type;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.browser_core.virtual_landscape.Redrawer;
+import klikr.browsers.browser_core.virtual_landscape.Redrawer;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -28,8 +28,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
     HashMap<String, Boolean> search_results_is_max;
 
 
-    public final Logger logger;
-    private final Window owner;
+    public final Kontext context;
     private final Change_broadcaster change_broadcaster;
 
     // cached:
@@ -39,16 +38,13 @@ public class Path_list_provider_for_search_results implements Path_list_provider
     private Redrawer redrawer;
     //**********************************************************
     public Path_list_provider_for_search_results(
-            Window owner,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
-        change_broadcaster = new Change_broadcaster(logger);
-        this.owner = owner;
+        this.context = context;
+        change_broadcaster = new Change_broadcaster(context.logger());
         this.key = "search results";
-        reload("constructor", aborter);
+        reload("constructor", context.aborter());
     }
 
     //**********************************************************
@@ -110,13 +106,13 @@ public class Path_list_provider_for_search_results implements Path_list_provider
             if (aborter.should_abort()) return 0;
             if ((new File(s)).isDirectory()) {
                 if (!consider_also_hidden_folders) {
-                    if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                    if (Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
                     returned++;
                     continue;
                 }
             }
             if (!consider_also_hidden_files) {
-                if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                if (Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned++;
         }
@@ -134,7 +130,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         for (String s : paths) {
             if ((new File(s)).isDirectory()) continue;
             if (!consider_also_hidden_files) {
-                if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                if (Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -149,9 +145,9 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (String s : paths) {
             if ((new File(s)).isDirectory()) continue;
-            if (!Guess_file_type.is_this_path_extension_a_music(Path.of(s), logger)) continue;
+            if (!Guess_file_type.is_this_path_extension_a_music(Path.of(s), context.logger())) continue;
             if (!consider_also_hidden_files) {
-                if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                if (Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -166,9 +162,9 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (String s : paths) {
             if ((new File(s)).isDirectory()) continue;
-            if (!Guess_file_type.is_this_path_extension_an_image(Path.of(s), owner, logger)) continue;
+            if (!Guess_file_type.is_this_path_extension_an_image(Path.of(s),  context)) continue;
             if (!consider_also_hidden_files) {
-                if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                if (Guess_file_type.should_ignore(Path.of(s),  context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -185,7 +181,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         for (String s : paths) {
             if (!(new File(s)).isDirectory()) continue;
             if (!consider_also_hidden_folders) {
-                if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                if (Guess_file_type.should_ignore(Path.of(s),  context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -215,16 +211,16 @@ public class Path_list_provider_for_search_results implements Path_list_provider
     {
         Move_provider move_provider = new Move_provider() {
             @Override
-            public void move(Path destination, boolean destination_is_trash, List<File> the_list, Window owner, double x, double y, Aborter aborter, Logger logger) {
+            public void move(Path destination, boolean destination_is_trash, List<File> the_list, Kontext context) {
 
-                logger.log("Entering move() for Path_list_provider_for_playlist " + the_list.size());
+                context.log("Entering move() for Path_list_provider_for_playlist " + the_list.size());
                 List<String> the_list2 = new ArrayList<>();
                 for (File f : the_list) {
                     the_list2.add(f.getAbsolutePath());
                 }
-                user_wants_to_add_items(the_list2, aborter);
+                user_wants_to_add_items(the_list2, context.aborter());
 
-                report_change(owner);
+                report_change(context.owner());
 
             }
         };
@@ -243,14 +239,14 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         {
             List<String> oks = new ArrayList<>();
             for (String path_s : the_list_of_new_items) {
-                logger.log(" looking at " + path_s);
+                context.log(" looking at " + path_s);
                 if (aborter.should_abort()) {
-                    logger.log(" ABORTING " + aborter.reason());
+                    context.log(" ABORTING " + aborter.reason());
                     return;
                 }
                 File f = new File(path_s);
                 if (f.isDirectory()) {
-                    logger.log("IGNORED: " + f + " is a directory");
+                    context.log("IGNORED: " + f + " is a directory");
                 }
             }
             String last = null;
@@ -261,11 +257,11 @@ public class Path_list_provider_for_search_results implements Path_list_provider
                     last = f;
                 }
             }
-            logger.log(final_dest.size() + " files accepted as possible songs");
+            context.log(final_dest.size() + " files accepted as possible songs");
             paths.addAll(final_dest);
 
         };
-        Actor_engine.execute(r, "Adding multiple songs to playlist", logger);
+        Actor_engine.execute(r, "Adding multiple songs to playlist",  context.logger());
 
     }
 
@@ -277,37 +273,37 @@ public class Path_list_provider_for_search_results implements Path_list_provider
 
     //**********************************************************
     @Override
-    public void delete(Path path, Window owner, Aborter aborter, Logger logger)
+    public void delete(Path path, Kontext context)
     //**********************************************************
     {
-        logger.log("Path_list_provider_for_playlist.delete(): " + path.toAbsolutePath().toString());
+        context.log("Path_list_provider_for_playlist.delete(): " + path.toAbsolutePath().toString());
         //dump("paths before delete");
         paths.remove(path.toAbsolutePath().toString());
         //dump("paths after delete");
         //dump("paths after save");
-        report_change(owner);
+        report_change(context.owner());
     }
 
     //**********************************************************
     private void dump(String msg)
     //**********************************************************
     {
-        logger.log("===== Path_list_provider_for_playlist.paths: " + msg + " =====");
+        context.log("===== Path_list_provider_for_playlist.paths: " + msg + " =====");
         for (String s : paths) {
-            logger.log("   " + s);
+            context.log("   " + s);
         }
-        logger.log("=========================================");
+        context.log("=========================================");
     }
 
     //**********************************************************
     @Override
-    public void delete_multiple(List<Path> paths, Window owner, Aborter aborter, Logger logger)
+    public void delete_multiple(List<Path> paths, Kontext context)
     //**********************************************************
     {
         for (Path p : paths) {
             paths.remove(p.toAbsolutePath().toString());
         }
-        report_change(owner);
+        report_change(context.owner());
     }
 
     //**********************************************************
@@ -336,12 +332,12 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         for (String s : paths) {
             if ((new File(s)).isDirectory()) {
                 if (!consider_also_hidden_folders) {
-                    if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                    if (Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
                 }
                 folders.add(Path.of(s));
             } else {
                 if (!consider_also_hidden_files) {
-                    if (Guess_file_type.should_ignore(Path.of(s), logger)) continue;
+                    if (Guess_file_type.should_ignore(Path.of(s),  context.logger())) continue;
                 }
                 files.add(Path.of(s));
             }
@@ -362,10 +358,10 @@ public class Path_list_provider_for_search_results implements Path_list_provider
         List<Path> path_set = path_sets.computeIfAbsent(keys, (s) -> new ArrayList<>());
         path_set.add(sr.path());
 
-        if ( is_max) logger.log("plpfsr is max for : " + keys);
+        if ( is_max) context.log("plpfsr is max for : " + keys);
         //make_one_button(keys, is_max, sr.path(),window);
         for (Path p : path_set) {
-            logger.log("plpfsr adding: " + p.toAbsolutePath().toString());
+            context.log("plpfsr adding: " + p.toAbsolutePath().toString());
             paths.add(p.toAbsolutePath().toString());
         }
         redraw("plpfsr inject_search_results");
@@ -382,7 +378,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
             Boolean bool = search_results_is_max.get(keys);
             if (bool == null)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
             }
             else
             {
@@ -395,7 +391,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
             if ( r != null)
             {
                 for (Path p : r) {
-                    logger.log("plpfsr removing: " + p.toAbsolutePath().toString());
+                    context.log("plpfsr removing: " + p.toAbsolutePath().toString());
 
                     paths.remove(p.toAbsolutePath().toString());
                 }
@@ -417,7 +413,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
     private void redraw(String reason)
     //**********************************************************
     {
-        logger.log(("plpfsr, redraw: "+reason));
+        context.log(("plpfsr, redraw: "+reason));
         redrawer.redraw("path_list_privider_fpr_search_results "+reason);
     }
 }

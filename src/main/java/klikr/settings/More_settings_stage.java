@@ -8,9 +8,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.stage.Window;
-import klikr.browser_core.virtual_landscape.Scroll_position_cache;
+import klikr.browsers.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.util.Check_remaining_RAM;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.System_info;
 import klikr.look.Look_and_feel;
@@ -86,24 +86,21 @@ public class More_settings_stage
             //Feature.Show_can_use_ESC_to_close_windows,
     };
 
-    private final Window owner;
-    private final Logger logger;
-    private final Scene scene;
+    private final Kontext context;
 
     //**********************************************************
-    public More_settings_stage(String title, Window owner, Logger logger)
+    public More_settings_stage(String title, Kontext context)
     //**********************************************************
     {
         double w = 600;
         double icon_size = 128;
-        Look_and_feel look_and_feel = Look_and_feel_manager.get_instance(owner, logger);
+        Look_and_feel look_and_feel = Look_and_feel_manager.get_instance(context.logger());
 
-        this.owner = owner;
-        this.logger = logger;
+        this.context = context;
         Accordion accordion = new Accordion();
-        scene = new Scene(accordion);
+        Scene scene = new Scene(accordion);
 
-        Look_and_feel_manager.set_region_look(accordion,owner,logger);
+        Look_and_feel_manager.set_region_look(accordion,context.logger());
         {
             VBox box = new VBox(10);
             for (Feature f : basic_features)
@@ -124,15 +121,14 @@ public class More_settings_stage
 
             {
                 String key = "Set_The_VM_Max_RAM";
-                EventHandler<ActionEvent> handler = e -> show_max_ram_dialog(owner, logger);
+                EventHandler<ActionEvent> handler = e -> show_max_ram_dialog(context);
                 HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                         key,
                         handler,
                         w,
                         icon_size,
                         look_and_feel,
-                        owner,
-                        logger);
+                        context);
                 box.getChildren().add(hb);
             }
             {
@@ -144,8 +140,7 @@ public class More_settings_stage
                         w,
                         icon_size,
                         look_and_feel,
-                        owner,
-                        logger);
+                        context);
                 box.getChildren().add(hb);
             }
 
@@ -154,9 +149,9 @@ public class More_settings_stage
                 add_one_line(true,f, box);
             }
             {
-                String text = My_I18n.get_I18n_string("Max_Cache_Files_Life_In_Days",owner,logger);
+                String text = My_I18n.get_I18n_string("Max_Cache_Files_Life_In_Days",context);
                 MenuButton mb = new MenuButton(text);
-                Look_and_feel_manager.set_region_look(mb,owner, logger);
+                Look_and_feel_manager.set_region_look(mb,context.logger());
 
                 List<CheckMenuItem> all_check_menu_items = new ArrayList<>();
                 int[] possible_lenghts ={2,Non_booleans_properties.DEFAULT_CACHE_FILE_MAX_LIFE,30,365};
@@ -167,9 +162,9 @@ public class More_settings_stage
                 box.getChildren().add(mb);
             }
             {
-                String text = My_I18n.get_I18n_string("Length_of_video_sample",owner,logger);
+                String text = My_I18n.get_I18n_string("Length_of_video_sample",context);
                 MenuButton mb = new MenuButton(text);
-                Look_and_feel_manager.set_region_look(mb,owner, logger);
+                Look_and_feel_manager.set_region_look(mb,context.logger());
 
                 List<CheckMenuItem> all_check_menu_items = new ArrayList<>();
                 int[] possible_lenghts ={Non_booleans_properties.DEFAULT_VIDEO_LENGTH,2,3,5,7,10,15,20};
@@ -201,8 +196,8 @@ public class More_settings_stage
             // INSTALL
             VBox box = new VBox(10);
             add_one_line(true,Feature.Enable_install_debug, box);
-            Installers.make_ui_to_install_everything(false,w,icon_size,look_and_feel,box,owner,logger);
-            Installers.make_ui_to_install_all_apps(w,icon_size,look_and_feel,box,owner,logger);
+            Installers.make_ui_to_install_everything(false,w,icon_size,look_and_feel,box,context);
+            Installers.make_ui_to_install_all_apps(w,icon_size,look_and_feel,box,context);
             ScrollPane sp = new ScrollPane(box);
             sp.setFitToWidth(true);          // stretch items horizontally
             sp.setPrefViewportHeight(200);   // limit visible height
@@ -214,24 +209,24 @@ public class More_settings_stage
         if (Check_remaining_RAM.low_memory.get()) similarity_enabled = false;
         {
             VBox box = new VBox(10);
-            Installers.make_ui_to_install_python_libs_for_ML(w, icon_size, look_and_feel,box, owner, logger);
+            Installers.make_ui_to_install_python_libs_for_ML(w, icon_size, look_and_feel,box, context);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_ML_server_debug,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_ML_server_debug,false,context);
             add_one_line(similarity_enabled,Feature.Enable_ML_server_debug, box);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Display_image_distances,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Display_image_distances,false,context);
             add_one_line(similarity_enabled,Feature.Display_image_distances, box);
 
-            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_image_similarity,false,owner);
+            if ( !similarity_enabled) Feature_cache.update_cached_boolean(Feature.Enable_image_similarity,false,context);
             add_one_line(similarity_enabled,Feature.Enable_image_similarity,box);
             {
-                HBox hb = Installers.make_ui_to_start_image_similarity_servers(w, icon_size, look_and_feel, box, owner, logger);
+                HBox hb = Installers.make_ui_to_start_image_similarity_servers(w, icon_size, look_and_feel, box, context);
                 if (!Feature_cache.get(Feature.Enable_image_similarity)) {
                     disable_button(hb);
                 }
             }
             {
-                HBox hb = Installers.make_ui_to_stop_image_similarity_servers(w, icon_size, look_and_feel, box, owner, logger);
+                HBox hb = Installers.make_ui_to_stop_image_similarity_servers(w, icon_size, look_and_feel, box, context);
                 if (!Feature_cache.get(Feature.Enable_image_similarity)) {
                     disable_button(hb);
                 }
@@ -239,13 +234,13 @@ public class More_settings_stage
 
             add_one_line(true,Feature.Enable_face_recognition,box);
             {
-                HBox hb = Installers.make_ui_to_start_face_recognition_servers(w, icon_size, look_and_feel, box, owner, logger);
+                HBox hb = Installers.make_ui_to_start_face_recognition_servers(w, icon_size, look_and_feel, box, context);
                 if (!Feature_cache.get(Feature.Enable_face_recognition)) {
                     disable_button(hb);
                 }
             }
             {
-                HBox hb = Installers.make_ui_to_stop_face_recognition_servers(w, icon_size, look_and_feel, box, owner, logger);
+                HBox hb = Installers.make_ui_to_stop_face_recognition_servers(w, icon_size, look_and_feel, box, context);
                 if (!Feature_cache.get(Feature.Enable_face_recognition)) {
                     disable_button(hb);
                 }
@@ -266,18 +261,17 @@ public class More_settings_stage
             }
             {
                 String key = "Show_Version";
-                EventHandler<ActionEvent> handler = e -> Installers.show_version(owner,logger);
+                EventHandler<ActionEvent> handler = e -> Installers.show_version(context);
                 HBox hb = Items_with_explanation.make_hbox_with_button_and_explanation(
                         key,
                         handler,
                         w,
                         icon_size,
                         look_and_feel,
-                        owner,
-                        logger);
+                        context);
                 box.getChildren().add(hb);
             }
-            box.getChildren().add(Debug_console.get_button(owner,logger));
+            box.getChildren().add(Debug_console.get_button(context));
             ScrollPane sp = new ScrollPane(box);
             sp.setFitToWidth(true);          // stretch items horizontally
             sp.setPrefViewportHeight(200);   // limit visible height
@@ -304,7 +298,7 @@ public class More_settings_stage
         Stage stage = new Stage();
         stage.setTitle(title);
         stage.setScene(scene);
-        stage.initOwner(owner);
+        stage.initOwner(context.owner());
         stage.setMinWidth(1000);
         stage.show();
     }
@@ -312,10 +306,10 @@ public class More_settings_stage
     public void create_menu_item_for_one_video_length( MenuButton menu, int length, List<CheckMenuItem> all_check_menu_items)
     //**********************************************************
     {
-        String text = My_I18n.get_I18n_string("Length_of_video_sample",owner,logger);
+        String text = My_I18n.get_I18n_string("Length_of_video_sample",context);
         CheckMenuItem item = new CheckMenuItem(text + " = " +length+" s");
-        Look_and_feel_manager.set_menu_item_look(item, owner, logger);
-        int actual_size = Non_booleans_properties.get_animated_gif_duration_for_a_video(owner);
+        Look_and_feel_manager.set_menu_item_look(item, context.logger());
+        int actual_size = Non_booleans_properties.get_animated_gif_duration_for_a_video();
         item.setSelected(actual_size == length);
         item.setOnAction(actionEvent -> {
             CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
@@ -324,8 +318,8 @@ public class More_settings_stage
                 {
                     if ( cmi != local) cmi.setSelected(false);
                 }
-                Non_booleans_properties.set_animated_gif_duration_for_a_video(length,owner);
-                Popups.popup_warning( Logger.warning+" Note well:","You have to clear the icon cache to see the effect for already visited folders",false,owner,logger);
+                Non_booleans_properties.set_animated_gif_duration_for_a_video(length);
+                Popups.popup_warning( Logger.warning+" Note well:","You have to clear the icon cache to see the effect for already visited folders",false,context);
             }
         });
         menu.getItems().add(item);
@@ -336,10 +330,10 @@ public class More_settings_stage
     public void create_menu_item_for_one_max_cache_life( MenuButton mb, int length, List<CheckMenuItem> all_check_menu_items)
     //**********************************************************
     {
-        String text = My_I18n.get_I18n_string("Life_Time_Of_Cache_Files",owner,logger);
+        String text = My_I18n.get_I18n_string("Life_Time_Of_Cache_Files",context);
         CheckMenuItem item = new CheckMenuItem(text + " = " +length+" days");
-        Look_and_feel_manager.set_menu_item_look(item, owner, logger);
-        int actual_size = Non_booleans_properties.get_cache_files_max_life_in_days(owner);
+        Look_and_feel_manager.set_menu_item_look(item, context.logger());
+        int actual_size = Non_booleans_properties.get_cache_files_max_life_in_days();
         item.setSelected(actual_size == length);
         item.setOnAction(actionEvent -> {
             CheckMenuItem local = (CheckMenuItem) actionEvent.getSource();
@@ -348,7 +342,7 @@ public class More_settings_stage
                 {
                     if ( cmi != local) cmi.setSelected(false);
                 }
-                Non_booleans_properties.set_cache_files_max_life_in_days(length,owner);
+                Non_booleans_properties.set_cache_files_max_life_in_days(length);
             }
         });
         mb.getItems().add(item);
@@ -360,7 +354,7 @@ public class More_settings_stage
     private void add_one_line (boolean enabled, Feature bf, VBox vbox)
     //**********************************************************
     {
-        String text = My_I18n.get_I18n_string(bf.name(), owner, logger);
+        String text = My_I18n.get_I18n_string(bf.name(), context);
         HBox hbox = new HBox();
         {
             CheckBox cb = new CheckBox(text);
@@ -368,7 +362,7 @@ public class More_settings_stage
             cb.setMnemonicParsing(false);
             boolean value0 = Feature_cache.get(bf);
             cb.setSelected(value0);
-            Look_and_feel_manager.set_CheckBox_look(cb, owner, logger);
+            Look_and_feel_manager.set_CheckBox_look(cb, context.logger());
 
             cb.setOnAction((ActionEvent e) ->
             {
@@ -376,7 +370,7 @@ public class More_settings_stage
             });
             hbox.getChildren().add(cb);
 
-            Button button = Items_with_explanation.make_explanation_button(bf.name(), owner, logger);
+            Button button = Items_with_explanation.make_explanation_button(bf.name(), context);
             if (button == null) return;
             hbox.getChildren().add(button);
 
@@ -389,8 +383,8 @@ public class More_settings_stage
     //**********************************************************
     {
         boolean value = cb.isSelected();
-        logger.log("Preference changing for: " + bf + "new value:" + value);
-        Feature_cache.update_cached_boolean(bf, value, owner);
+        context.log("Preference changing for: " + bf + "new value:" + value);
+        Feature_cache.update_cached_boolean(bf, value, context);
     }
 
     //**********************************************************
@@ -418,7 +412,7 @@ public class More_settings_stage
     {
         {
             add_one_button("Clear_All_RAM_Caches", w, icon_size, look_and_feel, vbox,
-                    event -> RAM_caches.clear_all_RAM_caches(owner, logger));
+                    event -> RAM_caches.clear_all_RAM_caches(context));
             add_one_button("Clear_Image_Properties_RAM_Cache", w, icon_size, look_and_feel, vbox,
                     event -> RAM_caches.image_properties_cache_of_caches.clear());
             add_one_button("Clear_Image_Comparators_Caches", w, icon_size, look_and_feel, vbox,
@@ -426,21 +420,21 @@ public class More_settings_stage
             add_one_button("Clear_Scroll_Position_Cache", w, icon_size, look_and_feel, vbox,
                     event -> Scroll_position_cache.scroll_position_cache_clear());
 
-        }
+        }Kontext k = new Kontext(context.owner(),Shared_services.aborter(), context.logger());
         {
             add_one_button("Clear_All_Disk_Caches", w, icon_size, look_and_feel, vbox,
-                    event -> Cache_folder.clear_all_disk_caches(owner,Shared_services.aborter(), logger));
+                    event -> Cache_folder.clear_all_disk_caches(k));
             add_one_button("Clear_Icon_Cache_On_Disk", w, icon_size, look_and_feel, vbox,
                     event -> {
-                        Cache_folder.clear_disk_cache(Cache_folder.icon_cache, true, owner, Shared_services.aborter(), logger);
-                        Cache_folder.clear_disk_cache(Cache_folder.folder_icon_cache, false, owner, Shared_services.aborter(), logger);
+                        Cache_folder.clear_disk_cache(Cache_folder.icon_cache, true, context);
+                        Cache_folder.clear_disk_cache(Cache_folder.folder_icon_cache, false, context);
                     });
             add_one_button("Clear_Image_Properties_Disk_Cache", w, icon_size, look_and_feel, vbox,
-                    event -> Cache_folder.clear_disk_cache(Cache_folder.image_properties_cache, false, owner, Shared_services.aborter(), logger));
+                    event -> Cache_folder.clear_disk_cache(Cache_folder.image_properties_cache, false, context));
             add_one_button("Clear_Image_Feature_Vector_Disk_Cache", w, icon_size, look_and_feel, vbox,
-                    event -> Cache_folder.clear_disk_cache(Cache_folder.feature_vectors_cache, true, owner, Shared_services.aborter(), logger));
+                    event -> Cache_folder.clear_disk_cache(Cache_folder.feature_vectors_cache, true, context));
             add_one_button("Clear_Image_Similarity_Disk_Cache", w, icon_size, look_and_feel, vbox,
-                    event -> Cache_folder.clear_disk_cache(Cache_folder.similarity_cache, true, owner, Shared_services.aborter(), logger));
+                    event -> Cache_folder.clear_disk_cache(Cache_folder.similarity_cache, true, context));
 
 
         }
@@ -463,8 +457,7 @@ public class More_settings_stage
                 w,
                 icon_size,
                 look_and_feel,
-                owner,
-                logger);
+                context);
         vbox.getChildren().add(hb);
     }
 
@@ -474,13 +467,13 @@ public class More_settings_stage
     private void show_cache_size_limit_input_dialog()
     //**********************************************************
     {
-        TextInputDialog dialog = new TextInputDialog(""+ Non_booleans_properties.get_folder_warning_size(owner));
-        Look_and_feel_manager.set_dialog_look(dialog, owner,logger);
-        dialog.initOwner(owner);
+        TextInputDialog dialog = new TextInputDialog(""+ Non_booleans_properties.get_folder_warning_size());
+        Look_and_feel_manager.set_dialog_look(dialog, context.logger());
+        dialog.initOwner(context.owner());
         dialog.setWidth(1200);
-        dialog.setTitle(My_I18n.get_I18n_string("Cache_Size_Warning_Limit",owner,logger));
+        dialog.setTitle(My_I18n.get_I18n_string("Cache_Size_Warning_Limit",context));
         dialog.setHeaderText("If the cache on disk gets larger than this, you will receive a warning. Entering zero means no limit.");
-        dialog.setContentText(My_I18n.get_I18n_string("Set_The_Cache_Size_Warning_Limit",owner,logger)+" (MB)");
+        dialog.setContentText(My_I18n.get_I18n_string("Set_The_Cache_Size_Warning_Limit",context)+" (MB)");
 
 
         Optional<String> result = dialog.showAndWait();
@@ -489,28 +482,28 @@ public class More_settings_stage
             try
             {
                 int val = Integer.parseInt(new_val);
-                Non_booleans_properties.set_cache_size_limit_warning_megabytes_fx(val,owner);
+                Non_booleans_properties.set_cache_size_limit_warning_megabytes_fx(val);
 
             }
             catch (NumberFormatException e)
             {
-                Popups.popup_warning(Logger.warning+" Integer only!","Please retry with an integer value!",false,owner,logger);
+                Popups.popup_warning(Logger.warning+" Integer only!","Please retry with an integer value!",false,context);
             }
         }
     }
 
     //**********************************************************
-    private void show_max_ram_dialog(Window owner, Logger logger)
+    private void show_max_ram_dialog(Kontext context)
     //**********************************************************
     {
-        TextInputDialog dialog = new TextInputDialog(""+ Non_booleans_properties.get_java_VM_max_RAM(owner, logger));
-        Look_and_feel_manager.set_dialog_look(dialog, owner,logger);
-        dialog.initOwner(owner);
+        TextInputDialog dialog = new TextInputDialog(""+ Non_booleans_properties.get_java_VM_max_RAM(context));
+        Look_and_feel_manager.set_dialog_look(dialog, context.logger());
+        dialog.initOwner(context.owner());
         dialog.setWidth(1200);
         dialog.setHeight(800);
         dialog.setTitle("Java VM max RAM length");
         dialog.setHeaderText("This is the max RAM that the java VM will be allowed to reserve THE NEXT TIME you run klik.");
-        int max = System_info.get_total_machine_RAM_in_GBytes(logger).orElse(4);
+        int max = System_info.get_total_machine_RAM_in_GBytes(context.logger()).orElse(4);
         dialog.setContentText("This machine RAM length is: "+max+ "GB.\nEnter JVM max RAM in GB: ");
         Node old = dialog.getDialogPane().getContent();
         Label lab = new Label(
@@ -531,12 +524,12 @@ public class More_settings_stage
             {
                 int val = Integer.parseInt(new_val);
                 if ( val > max ) val = (int)max;
-                Non_booleans_properties.save_java_VM_max_RAM(val,owner, logger);
+                Non_booleans_properties.save_java_VM_max_RAM(val,context);
 
             }
             catch (NumberFormatException e)
             {
-                Popups.popup_warning(Logger.warning+" Integer only!","Please retry with an integer value!",false,owner,logger);
+                Popups.popup_warning(Logger.warning+" Integer only!","Please retry with an integer value!",false,context);
             }
         }
     }

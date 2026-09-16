@@ -11,6 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 //**********************************************************
@@ -26,7 +27,7 @@ public class Keyword_slot
     public final HBox hbox2;
 
     //**********************************************************
-    public Keyword_slot(String keyword_, Finder_frame finder_frame, boolean is_extension, Logger logger)
+    public Keyword_slot(String keyword_, Finder_frame finder_frame, boolean is_extension, Kontext context)
     //**********************************************************
     {
         keyword_holder[0] = keyword_;
@@ -36,7 +37,7 @@ public class Keyword_slot
         hbox2 = new HBox();
         TextField the_keyword_textfield;
         result_keyword_label = new Label(keyword_holder[0]);
-        Look_and_feel_manager.set_region_look(result_keyword_label,finder_frame.stage,logger);
+        Look_and_feel_manager.set_region_look(result_keyword_label,context.logger());
         //result_keyword_label.setTextFill(Color.BLUE);
         result_keyword_label.setStyle(result_keyword_label.getStyle()+"-fx-text-fill: blue;");
 
@@ -44,7 +45,7 @@ public class Keyword_slot
         {
             finder_frame.top_keyword_vbox.getChildren().add(hbox1);
             the_keyword_textfield = new TextField(keyword_holder[0]);
-            Look_and_feel_manager.set_TextField_look(the_keyword_textfield,false,finder_frame.stage,logger);
+            Look_and_feel_manager.set_TextField_look(the_keyword_textfield,false,context.logger());
             the_keyword_textfield.setStyle("-fx-text-inner-color: blue;");
 
             hbox1.getChildren().add(the_keyword_textfield);
@@ -77,10 +78,10 @@ public class Keyword_slot
                 }
             });
 
-            hbox1.getChildren().add(Finder_frame.horizontal_spacer(finder_frame.stage,logger));
+            hbox1.getChildren().add(Finder_frame.horizontal_spacer(context));
 
-            Button t4 = new Button(My_I18n.get_I18n_string("Remove_This_Keyword", finder_frame.stage,logger));
-            Look_and_feel_manager.set_region_look(t4, true,finder_frame.stage,logger);
+            Button t4 = new Button(My_I18n.get_I18n_string("Remove_This_Keyword", context));
+            Look_and_feel_manager.set_region_look(t4, true,context.logger());
             t4.setOnAction(new EventHandler<>() {
                 @Override
                 public void handle(ActionEvent actionEvent) {
@@ -99,20 +100,20 @@ public class Keyword_slot
 
 
             hbox2.getChildren().add(result_keyword_label);
-            hbox2.getChildren().add(Finder_frame.horizontal_spacer(finder_frame.stage,logger));
+            hbox2.getChildren().add(Finder_frame.horizontal_spacer(context));
 
-            Label t2 = new Label(My_I18n.get_I18n_string("Was_Found_In", finder_frame.stage,logger));
-            Look_and_feel_manager.set_region_look(t2,finder_frame.stage,logger);
+            Label t2 = new Label(My_I18n.get_I18n_string("Was_Found_In", context));
+            Look_and_feel_manager.set_region_look(t2,context.logger());
             hbox2.getChildren().add(t2);
-            hbox2.getChildren().add(Finder_frame.horizontal_spacer(finder_frame.stage,logger));
+            hbox2.getChildren().add(Finder_frame.horizontal_spacer(context));
 
             result_count_label= new Label(""); // this is the label that will be updated during search with the match count
-            Look_and_feel_manager.set_region_look(result_count_label,finder_frame.stage,logger);
+            Look_and_feel_manager.set_region_look(result_count_label,context.logger());
             hbox2.getChildren().add(result_count_label);
-            hbox2.getChildren().add(Finder_frame.horizontal_spacer(finder_frame.stage,logger));
+            hbox2.getChildren().add(Finder_frame.horizontal_spacer(context));
 
-            Label t4 = new Label( My_I18n.get_I18n_string("File_Names",finder_frame.stage,logger));
-            Look_and_feel_manager.set_region_look(t4,finder_frame.stage,logger);
+            Label t4 = new Label( My_I18n.get_I18n_string("File_Names",context));
+            Look_and_feel_manager.set_region_look(t4,context.logger());
             hbox2.getChildren().add(t4);
             finder_frame.bottom_keyword_vbox.getChildren().add(hbox2);
         }

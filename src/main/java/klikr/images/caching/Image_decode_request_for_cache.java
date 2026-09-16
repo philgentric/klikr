@@ -16,19 +16,17 @@ public class Image_decode_request_for_cache implements Message
 {
     public final Path path;
     public final Image_cache_interface cache;
-    public final Aborter aborter;
     public final Image_window image_window;
 
     //**********************************************************
     public Image_decode_request_for_cache(Path path_,
                                           Image_cache_interface preloaded_,
-                                          Image_window image_window,Aborter aborter)
+                                          Image_window image_window)
     //**********************************************************
     {
         path = Objects.requireNonNull(path_);
         cache = preloaded_;
         this.image_window = image_window;
-        this.aborter = aborter;
     }
 
     //**********************************************************
@@ -66,6 +64,6 @@ public class Image_decode_request_for_cache implements Message
 
     @Override
     public Aborter get_aborter() {
-        return aborter;
+        return image_window.context.aborter();
     }
 }

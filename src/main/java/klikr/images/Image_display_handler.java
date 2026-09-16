@@ -10,14 +10,14 @@ package klikr.images;
 
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
-import javafx.stage.Window;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.*;
 import klikr.path_lists.Path_list_provider;
-import klikr.browser_core.virtual_landscape.Virtual_landscape;
+import klikr.browsers.browser_core.virtual_landscape.Virtual_landscape;
 import klikr.change.Change_gang;
 import klikr.change.Change_receiver;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
@@ -44,17 +44,9 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
     private static final boolean dbg_change = true;
 
     public final Image_window image_window; // 'parent'
-    public final Logger logger;
-
-
-    //public final Image_cache_interface image_cache;
-
     // STATE:
     public Indexer image_indexer; // can be null at the beginning
     private Image_context image_context; // can CHANGE when image is edited or renamed
-
-    public final Aborter aborter;
-
 
     //**********************************************************
     public static Optional<Image_display_handler> get_Image_display_handler_instance(
@@ -62,18 +54,18 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
             Path path,
             Image_window image_window,
             Path_comparator_source path_comparator_source,
-            Aborter aborter, Window owner, Logger logger_)
+            Kontext context)
     //**********************************************************
     {
-        Optional<Image_context> image_context_ = Image_context.build_Image_context(path,image_window,aborter, logger_);
+        Optional<Image_context> image_context_ = Image_context.build_Image_context(path,image_window);
         if (image_context_.isEmpty())
         {
-            logger_.log("WARNING: cannot load image " + path.toAbsolutePath());
+            context.log("WARNING: cannot load image " + path.toAbsolutePath());
 
             return Optional.empty();
         }
 
-        Optional<Image_display_handler> returned = Optional.of(new Image_display_handler(path_list_provider, image_context_.get(), image_window, path_comparator_source,aborter, logger_));
+        Optional<Image_display_handler> returned = Optional.of(new Image_display_handler(path_list_provider, image_context_.get(), image_window, path_comparator_source));
         return returned;
     }
 
@@ -83,23 +75,20 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
             Path_list_provider path_list_provider,
             Image_context image_context_,
             Image_window v_,
-            Path_comparator_source path_comparator_source,
-            Aborter aborter, Logger logger_)
+            Path_comparator_source path_comparator_source)
     //**********************************************************
     {
-        this.aborter = aborter;
         image_context = image_context_;
-        logger = logger_;
         image_window = v_;
-        if ( dbg) logger.log("image_context.path.getParent()="+image_context_.path.toAbsolutePath().getParent());
+        if ( dbg) image_context.context.log("image_context.path.getParent()="+image_context_.path.toAbsolutePath().getParent());
         {
             // get the indexer in the background
             image_indexer = null;
-            Runnable r = () -> image_indexer = Optional.of(Indexer.build(Type.images, path_list_provider, path_comparator_source, aborter, logger)).orElse(null);
-            Actor_engine.execute(r, "Get image indexer", logger);
+            Runnable r = () -> image_indexer = Optional.of(Indexer.build(Type.images, path_list_provider, path_comparator_source,image_context.context)).orElse(null);
+            Actor_engine.execute(r, "Get image indexer", image_context.context.logger());
         }
 
-        Change_gang.register(this,aborter,logger); // image_context must be valid!
+        Change_gang.register(this,image_context.context); // image_context must be valid!
 
 
 
@@ -150,26 +139,26 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
 
     //**********************************************************
     @Override //Change_receiver
-    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner,Logger logger2)
+    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
 
-        if ( dbg_change) logger2.log("Image_display_handler: you_receive_this_because_a_file_event_occurred_somewhere");
+        if ( dbg_change) context.log("Image_display_handler: you_receive_this_because_a_file_event_occurred_somewhere");
 
         if ( image_context == null) return;
         //boolean found = false;
         for (Old_and_new_Path oanf : l)
         {
-            if ( dbg_change) logger2.log("Image_display_handler, getting a you_receive_this_because_a_move_occurred_somewhere " + oanf.to_string());
+            if ( dbg_change) context.log("Image_display_handler, getting a you_receive_this_because_a_move_occurred_somewhere " + oanf.to_string());
 
             if (image_context.path == null)
             {
-                logger2.log("Image_display_handler, image_context.paath == null");
+                context.log("Image_display_handler, image_context.paath == null");
                 continue;
             }
-            if ( Static_files_and_paths_utilities.is_same_path(oanf.old_Path,image_context.path,logger))
+            if ( Static_files_and_paths_utilities.is_same_path(oanf.old_Path,image_context.path, context))
             {
-                if ( dbg_change) logger.log(oanf.old_Path.toAbsolutePath()+ " OLD path corresponds to currently displayed image "+image_context.path.toAbsolutePath());
+                if ( dbg_change) context.log(oanf.old_Path.toAbsolutePath()+ " OLD path corresponds to currently displayed image "+image_context.path.toAbsolutePath());
                 // the case when the image has been dragged away is handled directly
                 // by the setOnDragDone event handler
 
@@ -177,13 +166,13 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                 // for example the image was renamed
                 if (image_indexer.is_known(oanf.new_Path))
                 {
-                    if ( dbg_change) logger.log("image RENAMED or MODIFIED (change in same dir):" + oanf.to_string());
+                    if ( dbg_change) context.log("image RENAMED or MODIFIED (change in same dir):" + oanf.to_string());
                     Jfx_batch_injector.inject(() -> {
                         // clear the cache entry in case the file was MODIFIED
-                        image_window.evict_from_cache(image_context.path,owner);
-                        Cache_folder.clear_one_icon_from_cache_on_disk(image_context.path,image_window.stage,logger);
+                        image_window.evict_from_cache(image_context.path);
+                        Cache_folder.clear_one_icon_from_cache_on_disk(image_context.path,context);
                         // reload the image
-                        Optional<Image_context> option = Image_context.build_Image_context(image_context.path, image_window,aborter,logger);
+                        Optional<Image_context> option = Image_context.build_Image_context(image_context.path, image_window);
                         if ( option.isPresent())
                         {
                             // this CHANGES image_context
@@ -192,20 +181,20 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                         }
                         else
                         {
-                            logger.log(Stack_trace_getter.get_stack_trace("RE-loading image failed "+image_context.path));
+                            context.log(Stack_trace_getter.get_stack_trace("RE-loading image failed "+image_context.path));
                         }
-                    },logger);
+                    },context);
                 }
                 else
                 {
                     // the image was moved out of the current directory
-                    if ( dbg_change) logger.log("image moved out:" + oanf.to_string());
+                    if ( dbg_change) context.log("image moved out:" + oanf.to_string());
                 }
 
             }
             else
             {
-                if ( dbg_change) logger.log(oanf.old_Path.toAbsolutePath()+ "OLD path DOES NOT corresponds to currently displayed image "+image_context.path.toAbsolutePath());
+                if ( dbg_change) context.log(oanf.old_Path.toAbsolutePath()+ "OLD path DOES NOT corresponds to currently displayed image "+image_context.path.toAbsolutePath());
             }
         }
 
@@ -221,11 +210,11 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         if ( image_context == null) return;
         Path to_be_deleted = image_context.path;
         change_image_relative(1, image_window.ultim_mode);
-        Runnable r = () -> image_indexer.signal_deleted_file(to_be_deleted,aborter);
+        Runnable r = () -> image_indexer.signal_deleted_file(to_be_deleted,image_context.context.aborter());
         double x = image_window.stage.getX()+100;
         double y = image_window.stage.getY()+100;
 
-        Static_files_and_paths_utilities.move_to_trash(to_be_deleted,image_window.stage,r, aborter,logger);
+        Static_files_and_paths_utilities.move_to_trash(to_be_deleted,r, image_context.context);
     }
 
 
@@ -240,7 +229,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         {
             if ( block.get())
             {
-                if ( dbg) logger.log("change_image_relative BLOCKED");
+                if ( dbg) image_context.context.log("change_image_relative BLOCKED");
                 return;
             }
             block.set(true);
@@ -251,9 +240,9 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                 Path p = image_indexer.path_from_index(0);
                 if (p == null) return;
                 // image_context CHANGES here
-                image_context = Image_context.build_Image_context(p, image_window, aborter, logger).orElse(null);
+                image_context = Image_context.build_Image_context(p, image_window).orElse(null);
             }
-            if (dbg) logger.log("change_image_relative delta=" + delta);
+            if (dbg) image_context.context.log("change_image_relative delta=" + delta);
 
             // first RESET the display mode
             if (image_window.mouse_handling_for_image_window.mouse_mode != Mouse_mode.drag_and_drop) {
@@ -264,7 +253,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
             if (image_context == null) return;
 
             Image_context[] returned_new_image_context = new Image_context[1];
-            Change_image_message change_image_message = new Change_image_message(delta, image_context, image_window, ultimate, returned_new_image_context, aborter, logger);
+            Change_image_message change_image_message = new Change_image_message(delta, image_context, image_window, ultimate, returned_new_image_context);
             // Job_termination_reporter will recover the NEW image_context
 
 
@@ -281,7 +270,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                         return;
                     }
                     if (image_context.path == null) {
-                        logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"Panic"));
+                        image_context.context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Panic"));
                         image_context = null;
                         return;
                     }
@@ -289,7 +278,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
 
                 }
             };
-            Actor_engine.run(Change_image_actor.get_instance(), change_image_message, tr, logger);
+            Actor_engine.run(Change_image_actor.get_instance(), change_image_message, tr, image_context.context.logger());
         }
     }
 
@@ -297,7 +286,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
     private void last_steps_in_a_thread()
     //**********************************************************
     {
-        Actor_engine.execute(()->last_steps_javafX(),"last_steps_in_a_thread",logger);
+        Actor_engine.execute(()->last_steps_javafX(),"last_steps_in_a_thread",image_context.context.logger());
     }
     //**********************************************************
     private void last_steps_javafX()
@@ -318,7 +307,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                         ContextMenu contextMenu = Menus_for_image_window.make_context_menu(
                                 image_window,
                                 fv_cache_supplier,
-                                logger);
+                                image_context.context.logger());
                         contextMenu.show(image_window.stage, event.getScreenX(), event.getScreenY());
 
                     }
@@ -328,7 +317,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
         {
 
             if (image_indexer == null) {
-                logger.log(Logger.error+"image_indexer not available yet ");
+                image_context.context.log(Logger.error+"image_indexer not available yet ");
             } else {
                 /*
                 Index_reporter index_reporter = index -> {
@@ -375,7 +364,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
     {
         if ( image_indexer != null)
         {
-            image_indexer.rescan(reason,aborter);
+            image_indexer.rescan(reason,image_context.context.aborter());
         }
     }
 

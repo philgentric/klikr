@@ -8,20 +8,19 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.look.my_i18n.My_I18n;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.files_and_paths.Extensions;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
-import klikr.experimental.fusk.Fusk_static_core;
-import klikr.experimental.fusk.Fusk_strings;
+import klikr.fusk.Fusk_static_core;
+import klikr.fusk.Fusk_strings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,26 +40,24 @@ public class Exif_metadata_extractor
     public String title="";
     List<String> exif_metadata = null;
     private Rotation rotation = Rotation.normal;
-    Logger logger;
-    Window owner;
+    Kontext context;
 
     //**********************************************************
-    public Exif_metadata_extractor(Path path, Window owner, Logger logger)
+    public Exif_metadata_extractor(Path path, Kontext context)
     //**********************************************************
     {
-        this.owner = owner;
+        this.context = context;
         this.path = path;
-        this.logger = logger;
     }
 
     //**********************************************************
     @Deprecated
-    public Rotation get_rotation(boolean report_if_not_found, Aborter aborter)
+    public Rotation get_rotation(boolean report_if_not_found)
     //**********************************************************
     {
         if ( exif_metadata != null ) return rotation;
-        logger.log(Stack_trace_getter.get_stack_trace("WARNING"));
-        rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(path, report_if_not_found, owner, aborter, logger);
+        context.log(Stack_trace_getter.get_stack_trace("WARNING"));
+        rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(path, report_if_not_found, context);
         if ( rotation == null) rotation = Rotation.normal;
         return rotation;
     }
@@ -93,9 +90,9 @@ public class Exif_metadata_extractor
         if ( extension.equalsIgnoreCase(Fusk_static_core.FUSK_EXTENSION))
         {
             if (Feature_cache.get(Feature.Fusk_is_on)) {
-                if (Fusk_static_core.is_fusk(path,logger)) {
+                if (Fusk_static_core.is_fusk(path,context)) {
                     String base = Extensions.get_base_name(path.toAbsolutePath().toString());
-                    exif_metadata.add("... which is a fusk of: ->" + Fusk_strings.defusk_string(base, logger) + "<-");
+                    exif_metadata.add("... which is a fusk of: ->" + Fusk_strings.defusk_string(base, context.logger()) + "<-");
                 } else {
                     exif_metadata.add("... which has a fusk extension BUT IS NOT!");
                 }
@@ -110,13 +107,13 @@ public class Exif_metadata_extractor
             list_of_strings = new ArrayList<>();
         }
 
-        Image_properties image_properties = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,owner,aborter,logger);
+        Image_properties image_properties = Fast_image_property_from_exif_metadata_extractor.get_image_properties(path,true,context);
         if (image_properties != null)
         {
             exif_metadata.add("EXIF width=" + image_properties.get_image_width());
             exif_metadata.add("EXIF height=" + image_properties.get_image_height());
             exif_metadata.add("EXIF aspect_ratio=" + image_properties.get_aspect_ratio());
-            double aspect_ratio = Fast_aspect_ratio_from_exif_metadata_extractor.get_aspect_ratio(path, report_if_not_found, aborter, list_of_strings, owner, logger).orElse(1.0);
+            double aspect_ratio = Fast_aspect_ratio_from_exif_metadata_extractor.get_aspect_ratio(path, report_if_not_found, list_of_strings, context).orElse(1.0);
             exif_metadata.add("Alternative aspect_ratio=" + aspect_ratio);
         }
 
@@ -127,10 +124,10 @@ public class Exif_metadata_extractor
                 l = Files.size(path);
             } catch (IOException e)
             {
-                logger.log("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath());
+                context.log("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath());
             }
             double bits_per_pixel = (double)l*8.0/how_many_pixels;
-            String s_bits_per_pixel = My_I18n.get_I18n_string("Bits_per_pixel",owner,logger);
+            String s_bits_per_pixel = My_I18n.get_I18n_string("Bits_per_pixel",context);
             exif_metadata.add(s_bits_per_pixel+": "+bits_per_pixel);
         }
 
@@ -147,19 +144,19 @@ public class Exif_metadata_extractor
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
             return exif_metadata;
         }
 
         image_is_damaged = false;
 
-        if (Check_remaining_RAM.RAM_running_low("exif read", owner, logger)) {
-            logger.log("get_exif_metadata NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("exif read", context)) {
+            context.log("get_exif_metadata NOT DONE because running low on memory ! ");
             return exif_metadata;
         }
 
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if ( is == null)
         {
             image_is_damaged = true;
@@ -217,21 +214,21 @@ public class Exif_metadata_extractor
             }
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
            }
         }
         catch (IOException e)
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
            }
         }
         catch (Exception e)
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
         }
 

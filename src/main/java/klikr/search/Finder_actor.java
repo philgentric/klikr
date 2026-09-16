@@ -3,18 +3,17 @@
 
 package klikr.search;
 
-import javafx.stage.Window;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.path_lists.Path_list_provider_for_search_results;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.files_and_paths.Ding;
 import klikr.util.files_and_paths.Extensions;
 import klikr.util.files_and_paths.Guess_file_type;
-import klikr.util.log.Logger;
 import org.jspecify.annotations.Nullable;
 
 import java.io.File;
@@ -27,21 +26,19 @@ public class Finder_actor implements Actor
 //**********************************************************
 {
 
-    static final boolean dbg = true;
-    private static final boolean ultra_dbg = true;
+    static final boolean dbg = false;
+    private static final boolean ultra_dbg = false;
     private int visited_folders;
     private int visited_files;
     Map<String,Integer> matched_keyword_counts = new HashMap<>();
-    private final Logger logger;
-    private final Window owner;
+    private final Kontext context;
     long start;
 
     //**********************************************************
-    public Finder_actor(Window owner, Logger logger)
+    public Finder_actor(Kontext context)
     //**********************************************************
     {
-        this.owner = owner;
-        this.logger = logger;
+        this.context = context;
     }
 
 
@@ -65,15 +62,15 @@ public class Finder_actor implements Actor
         {
             if (fm.search_config.extension() == null)
             {
-                logger.log("no keywords ? aborting search");
+                 context.log("no keywords ? aborting search");
                 fm.callback.has_ended(Search_status.no_keywords);
-                Ding.play("Aborting file search: no keywords",logger);
+                Ding.play("Aborting file search: no keywords", context.logger());
                 return "no keywords ? aborting search";
             }
         }
         visited_files = 0;
         visited_folders =0;
-        logger.log("Finder::search() in folder: "+fm.search_config.path_list_provider().get_key());
+         context.log("Finder::search() in folder: "+fm.search_config.path_list_provider().get_key());
         print_keywords(fm.search_config.keywords());
 
         if( fm.search_config.path_list_provider() instanceof Path_list_provider_for_file_system)
@@ -98,11 +95,11 @@ public class Finder_actor implements Actor
     private Search_status find_similar_files(Finder_message fm)
     //**********************************************************
     {
-        //logger.log("find_similar_files()");
+        // context.log("find_similar_files()");
         Optional<Path> p = fm.search_config.path_list_provider().get_folder_path();
         if ( p.isEmpty())
         {
-            logger.log("no folder path found");
+             context.log("no folder path found");
             return Search_status.invalid;
         }
         Path dir = p.get();
@@ -119,11 +116,11 @@ public class Finder_actor implements Actor
     private Search_status find_similar_search_results(Finder_message fm)
     //**********************************************************
     {
-        //logger.log("find_similar_files()");
-        List<Path> all_paths = fm.search_config.path_list_provider().only_file_paths(true, Feature_cache.get(Feature.Show_hidden_files),fm.aborter);
+        // context.log("find_similar_files()");
+        List<Path> all_paths = fm.search_config.path_list_provider().only_file_paths(true, Feature_cache.get(Feature.Show_hidden_files),fm.get_aborter());
         if ( all_paths.isEmpty())
         {
-            logger.log("no files ?");
+             context.log("no files ?");
             return Search_status.invalid;
         }
 
@@ -145,20 +142,20 @@ public class Finder_actor implements Actor
     //**********************************************************
     {
         start = System.currentTimeMillis();
-        if ( ultra_dbg) logger.log("finder find_similar_strings");
-        if ( fm.aborter.should_abort() )
+        if ( ultra_dbg)  context.log("finder find_similar_strings");
+        if ( fm.get_aborter().should_abort() )
         {
-            if ( ultra_dbg) logger.log("finder abort");
+            if ( ultra_dbg)  context.log("finder abort");
             return Search_status.interrupted;
         }
 
-        List<Path> paths = fm.search_config.path_list_provider().only_song_paths(true,false,fm.aborter);
+        List<Path> paths = fm.search_config.path_list_provider().only_song_paths(true,false,fm.get_aborter());
         for ( Path path : paths)
         {
-            //logger.log("looking at:"+f.getAbsolutePath());
-            if ( fm.aborter.should_abort() )
+            // context.log("looking at:"+f.getAbsolutePath());
+            if ( fm.get_aborter().should_abort() )
             {
-                if ( ultra_dbg) logger.log("finder abort");
+                if ( ultra_dbg)  context.log("finder abort");
                 return Search_status.interrupted;
             }
             check_if_name_matches_keywords(path, fm);
@@ -182,10 +179,10 @@ public class Finder_actor implements Actor
     private Search_status extract_dir(Path dir, Finder_message fm)
     //**********************************************************
     {
-        if ( ultra_dbg) logger.log("finder extract_dir");
-        if ( fm.aborter.should_abort() )
+        if ( ultra_dbg)  context.log("finder extract_dir");
+        if ( fm.get_aborter().should_abort() )
         {
-            if ( ultra_dbg) logger.log("finder abort");
+            if ( ultra_dbg)  context.log("finder abort");
             return Search_status.interrupted;
         }
         if ( !Files.isDirectory(dir) )
@@ -194,16 +191,16 @@ public class Finder_actor implements Actor
         }
         if ( fm.search_config.ignore_hidden())
         {
-            if( Guess_file_type.should_ignore(dir,logger))
+            if( Guess_file_type.should_ignore(dir, context.logger()))
             {
                 //if ( dbg)
-                    logger.log("ignoring hidden folder:"+dir.toAbsolutePath());
+                     context.log("ignoring hidden folder:"+dir.toAbsolutePath());
                 return Search_status.done;
             }
 
         }
 
-        if ( dbg) logger.log("Now looking into dir:"+dir.toAbsolutePath());
+        if ( dbg)  context.log("Now looking into dir:"+dir.toAbsolutePath());
         visited_folders++;
         {
             File files[] = dir.toFile().listFiles();
@@ -211,7 +208,7 @@ public class Finder_actor implements Actor
             {
                 for ( File f : files)
                 {
-                    //logger.log("looking at:"+f.getAbsolutePath());
+                    // context.log("looking at:"+f.getAbsolutePath());
                     Path path = f.toPath();
                     Search_status interrupted = scan_path(fm, path);
                     if (interrupted != null) return interrupted;
@@ -227,9 +224,9 @@ public class Finder_actor implements Actor
     private @Nullable Search_status scan_path(Finder_message fm, Path path)
     //**********************************************************
     {
-        if ( fm.aborter.should_abort() )
+        if ( fm.get_aborter().should_abort() )
         {
-            if ( ultra_dbg) logger.log("finder abort");
+            if ( ultra_dbg)  context.log("finder abort");
             return Search_status.interrupted;
         }
         if ( Files.isDirectory(path))
@@ -237,11 +234,11 @@ public class Finder_actor implements Actor
             visited_folders++;
             if (Files.isSymbolicLink(path))
             {
-                if ( dbg) logger.log("NOT following symbolic link:"+ path);
+                if ( dbg)  context.log("NOT following symbolic link:"+ path);
             }
             else
             {
-                if ( dbg) logger.log("going down? trying folder:"+ path);
+                if ( dbg)  context.log("going down? trying folder:"+ path);
                 switch(extract_dir(path, fm))
                 {
                     case interrupted:
@@ -266,27 +263,27 @@ public class Finder_actor implements Actor
         else
         {
             visited_files++;
-            //logger.log("looking at file:"+path.toAbsolutePath());
+            // context.log("looking at file:"+path.toAbsolutePath());
             boolean do_this_file = true;
             if ( fm.search_config.ignore_hidden())
             {
-                if( Guess_file_type.should_ignore(path,logger))
+                if( Guess_file_type.should_ignore(path, context.logger()))
                 {
-                    if ( dbg) logger.log("ignoring hidden file:"+ path.toAbsolutePath());
+                    if ( dbg)  context.log("ignoring hidden file:"+ path.toAbsolutePath());
                     do_this_file = false;
                 }
 
             }
             if (!fm.search_config.search_files())
             {
-                if ( dbg) logger.log("ignoring files");
+                if ( dbg)  context.log("ignoring files");
 
                 // we are not interested in files
                 do_this_file = false;
             }
             if (fm.search_config.look_only_for_images())
             {
-                if (!Guess_file_type.is_this_path_extension_an_image(path, owner, logger))
+                if (!Guess_file_type.is_this_path_extension_an_image(path, context))
                 {
                     do_this_file = false;
                 }
@@ -312,7 +309,7 @@ public class Finder_actor implements Actor
     private void check_if_name_matches_keywords(Path target_path, Finder_message fm)
     //**********************************************************
     {
-        //logger.log("checking "+target_path.toAbsolutePath());
+        // context.log("checking "+target_path.toAbsolutePath());
         if ( fm.search_config.keywords().isEmpty())
         {
             search_with_extension_only(target_path, fm);
@@ -334,7 +331,7 @@ public class Finder_actor implements Actor
             // is a file
             if ( fm.search_config.look_only_for_images())
             {
-                if (!Guess_file_type.is_this_path_extension_an_image(target_path,owner,logger))
+                if (!Guess_file_type.is_this_path_extension_an_image(target_path,context))
                 {
                     return;
                 }
@@ -348,7 +345,7 @@ public class Finder_actor implements Actor
 
 
         if ( ultra_dbg)
-            logger.log(target_path.toAbsolutePath()+" checking if all keywords are present for: "+name);
+             context.log(target_path.toAbsolutePath()+" checking if all keywords are present for: "+name);
         // look for ALL of them
         for ( String keyword : fm.search_config.keywords())
         {
@@ -358,7 +355,7 @@ public class Finder_actor implements Actor
             {
                 // if one keyword is missing we give up
                 if ( ultra_dbg)
-                logger.log(target_path.toAbsolutePath()+" checking if all keywords are present for: "+name+" keyword="+kk+ " not found");
+                 context.log(target_path.toAbsolutePath()+" checking if all keywords are present for: "+name+" keyword="+kk+ " not found");
                 break;
             }
 
@@ -366,13 +363,13 @@ public class Finder_actor implements Actor
             all_matched_keywords.add(keyword);
         }
 
-        if ( fm.aborter.should_abort()) return;
+        if ( fm.get_aborter().should_abort()) return;
 
         if ( all_matched_keywords.isEmpty())
         {
             // second chance: trying matching only some keywords
             if (ultra_dbg)
-                logger.log("checking if a few keywords are present for: " + name);
+                 context.log("checking if a few keywords are present for: " + name);
             List<String> shorter_keyword_list = new ArrayList<>();
             for (String keyword : fm.search_config.keywords())
             {
@@ -385,7 +382,7 @@ public class Finder_actor implements Actor
                 }
                 else
                 {
-                    //logger.log(k+ " not found in " + name);
+                    // context.log(k+ " not found in " + name);
                 }
             }
             if ( !shorter_keyword_list.isEmpty())
@@ -395,7 +392,7 @@ public class Finder_actor implements Actor
         }
         else
         {
-            if ( dbg) logger.log("MATCHED keywords ->"+all_matched_keywords+"<- for ->"+target_path.getFileName()+"<-");
+            if ( dbg)  context.log("MATCHED keywords ->"+all_matched_keywords+"<- for ->"+target_path.getFileName()+"<-");
             record_found(target_path, all_matched_keywords, fm);
         }
     }
@@ -417,7 +414,7 @@ public class Finder_actor implements Actor
         if ( fm.search_config.extension()==null) return false;
 
         String ext = Extensions.get_extension(target_path.getFileName().toString()).toLowerCase();
-        //logger.log("ext="+ext+" vs "+fm.search_config.extension());
+        // context.log("ext="+ext+" vs "+fm.search_config.extension());
 
         return ext.equals(fm.search_config.extension());
     }
@@ -448,7 +445,7 @@ public class Finder_actor implements Actor
                 }
                 else
                 {
-                    if (ultra_dbg) logger.log("extensions dont match" + ext + " vs " + fm.extension);
+                    if (ultra_dbg)  context.log("extensions dont match" + ext + " vs " + fm.extension);
                     return;
                 }
             }
@@ -457,7 +454,7 @@ public class Finder_actor implements Actor
 
         if ( ultra_dbg)
         {
-            logger.log("Matching item found: "+target_path.toAbsolutePath());
+             context.log("Matching item found: "+target_path.toAbsolutePath());
             print_keywords(matched_keywords);
         }
         if ( fm.callback != null)
@@ -471,14 +468,14 @@ public class Finder_actor implements Actor
     private void print_keywords(List<String> keywords)
     //**********************************************************
     {
-        logger.log("--- keywords found------");
+         context.log("--- keywords found------");
         for( String s: keywords)
         {
             Integer count = matched_keyword_counts.get(s);
             if (count == null) count = Integer.valueOf(0);
-            logger.log("->"+s+"<-"+count+" times");
+             context.log("->"+s+"<-"+count+" times");
         }
-        logger.log("------------------------");
+         context.log("------------------------");
     }
 
 

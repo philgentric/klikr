@@ -5,6 +5,7 @@ package klikr.machine_learning.monitoring;
 
 import javafx.application.Platform;
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
@@ -25,22 +26,22 @@ public class UDP_traffic_monitor implements AutoCloseable
     private DatagramSocket socket;
     private final byte[] buffer = new byte[1024];
     private volatile boolean running = true;
-    private final Logger logger;
+    private final Kontext context;
     public final int port = 65123;
     private static ML_servers_monitor monitoring_frame; // may be null
 
     // used when we start servers
     //**********************************************************
-    public static int get_servers_monitor_udp_port(Window owner, Logger logger)
+    public static int get_servers_monitor_udp_port(Kontext context)
     //**********************************************************
     {
-        start_servers_monitoring(owner, logger);
+        start_servers_monitoring(context);
         return instance.port;
     }
 
     // used when we start servers
     //**********************************************************
-    public static void start_servers_monitoring(Window owner, Logger logger)
+    public static void start_servers_monitoring(Kontext context)
     //**********************************************************
     {
         if (instance == null)
@@ -49,9 +50,9 @@ public class UDP_traffic_monitor implements AutoCloseable
             {
                 if (instance == null)
                 {
-                    instance = new UDP_traffic_monitor(owner,logger);
-                    ML_servers_monitor.start_ML_servers_monitor(owner, logger);
-                    logger.log("ML servers monitoring is running");
+                    instance = new UDP_traffic_monitor(context);
+                    ML_servers_monitor.start_ML_servers_monitor(context);
+                    context.log("ML servers monitoring is running");
                 }
             }
         }
@@ -59,21 +60,21 @@ public class UDP_traffic_monitor implements AutoCloseable
     }
 
     //**********************************************************
-    private UDP_traffic_monitor(Window owner, Logger logger)
+    private UDP_traffic_monitor(Kontext context)
     //**********************************************************
     {
 
         //int port_tmp;
-        this.logger = logger;
+        this.context = context;
         //port_tmp = -1;
         socket = null;
         try {
             // find FREE UDP port
             socket = new DatagramSocket(port);
             //port_tmp = socket.getLocalPort();
-            logger.log("Servers monitor started on UDP port: "+port);
+            context.log("Servers monitor started on UDP port: "+port);
         } catch (SocketException e) {
-            logger.log("WARNING: UDP socket failed"+e);
+            context.log("WARNING: UDP socket failed"+e);
             running = false;
             return;
         }
@@ -81,7 +82,7 @@ public class UDP_traffic_monitor implements AutoCloseable
                 //monitoring_frame = new UDP_traffic_monitoring_stage(owner, logger);
             });
 */
-        Actor_engine.execute(this::receive_messages,"Receive embedding server UDP monitoring packets",logger);
+        Actor_engine.execute(this::receive_messages,"Receive embedding server UDP monitoring packets", context.logger());
     }
 
     public static void set_monitoring_reception_frame(ML_servers_monitor ml_servers_monitor)
@@ -98,13 +99,13 @@ public class UDP_traffic_monitor implements AutoCloseable
         while (running) {
             try {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                if ( dbg) logger.log("Waiting for UDP packet...");
+                if ( dbg) context.log("Waiting for UDP packet...");
                 socket.receive(packet);
                 String message = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
-                if ( dbg) logger.log("UDP packet received: "+message);
+                if ( dbg) context.log("UDP packet received: "+message);
                 process_message(message);
             } catch (Exception e) {
-                logger.log(""+e);
+                context.log(""+e);
             }
         }
     }
@@ -115,7 +116,7 @@ public class UDP_traffic_monitor implements AutoCloseable
     private void process_message(String message)
     //**********************************************************
     {
-        if ( dbg) logger.log("Embeddings servers monitor received->"+message+"<-");
+        if ( dbg) context.log("Embeddings servers monitor received->"+message+"<-");
         String[] parts = message.split(",");
         if (parts.length == 4)
         {
@@ -127,12 +128,12 @@ public class UDP_traffic_monitor implements AutoCloseable
 
             UDP_report report = new UDP_report(server_uuid, model_name, image_path, processing_time_ms);
 
-            if (dbg) logger.log("UDP ML servers traffic monitoring Server: "+server_uuid+" Model: "+model_name+" processed "+image_path+" in "+processing_time_ms+" milliseconds");
+            if (dbg) context.log("UDP ML servers traffic monitoring Server: "+server_uuid+" Model: "+model_name+" processed "+image_path+" in "+processing_time_ms+" milliseconds");
             if ( monitoring_frame!=null) monitoring_frame.inject(report);
         }
         else
         {
-            logger.log("Invalid message format, expecting 4 parts got this:->"+message+"<-");
+            context.log("Invalid message format, expecting 4 parts got this:->"+message+"<-");
         }
     }
 

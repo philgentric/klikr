@@ -6,18 +6,17 @@ package klikr.browsers;
 import javafx.scene.paint.Color;
 import javafx.stage.Window;
 import klikr.Window_builder;
-import klikr.browser_core.Abstract_browser;
-import klikr.browser_core.Window_manager;
-import klikr.browser_core.virtual_landscape.Redrawer;
+import klikr.browsers.browser_core.Abstract_browser;
+import klikr.browsers.browser_core.Window_manager;
+import klikr.browsers.browser_core.virtual_landscape.Redrawer;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.path_lists.Path_list_provider_for_search_results;
 import klikr.search.Results;
 import klikr.search.Search_result;
-import klikr.util.execute.actor.Aborter;
+import klikr.util.Kontext;
 import klikr.change.old_and_new.Old_and_new_Path;
-import klikr.util.log.Logger;
 
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -30,35 +29,33 @@ public class Browser_for_search_results extends Abstract_browser implements Resu
     public Path_list_provider_for_search_results path_list_provider_for_search_results;
 
     //**********************************************************
-    public Browser_for_search_results(Window_builder window_builder, Logger logger)
+    public Browser_for_search_results(Window_builder window_builder, Kontext k)
     //**********************************************************
     {
-        super(Color.BEIGE, logger);
-        logger.log("Browser_for_search_results\n");
+        super(window_builder,"search results","search results",Color.BEIGE, k);
+        k.log("Browser_for_search_results\n");
         if (window_builder.path_list_provider instanceof Path_list_provider_for_file_system)
         {
-            logger.log("Browser_for_search_results FATAL, need a Path_list_provider_for_search_results\n");
+            context.log("Browser_for_search_results FATAL, need a Path_list_provider_for_search_results\n");
             return;
         }
         if (window_builder.path_list_provider instanceof Path_list_provider_for_playlist)
         {
-            logger.log("Browser_for_search_results FATAL, need a Path_list_provider_for_search_results\n");
+            context.log("Browser_for_search_results FATAL, need a Path_list_provider_for_search_results\n");
             return;
         }
-        aborter = new Aborter("Abstract_browser for: " + get_name(), logger);
-
+        init_base(this);
         path_list_provider_for_search_results = (Path_list_provider_for_search_results) window_builder.path_list_provider;
         Redrawer r = origin -> virtual_landscape.redraw_fx(true,"AbstractBrowser for: " + get_name()+" "+origin, true);
         path_list_provider_for_search_results.set_redrawer(r);
 
-        logger.log("Browser_for_search_results created with path_list_provider: " + path_list_provider_for_search_results.get_key());
+        context.log("Browser_for_search_results created with path_list_provider: " + path_list_provider_for_search_results.get_key());
 
 
-        init_abstract_browser(window_builder, this, "song_playlist",aborter);
 
-        my_Stage.the_Stage.setOnCloseRequest(event ->
+        my_Stage.context.get_Stage().setOnCloseRequest(event ->
             {
-                Window_manager.unregister(ID,logger);
+                Window_manager.unregister(ID,context);
             });
     }
 
@@ -107,7 +104,7 @@ public class Browser_for_search_results extends Abstract_browser implements Resu
     protected void monitor_current_path_list_source()
     //**********************************************************
     {
-        logger.log("Browser_for_search_results monitor_current_path_list_source NOT IMPLEMENTED");
+        context.log("Browser_for_search_results monitor_current_path_list_source NOT IMPLEMENTED");
     }
 
     //**********************************************************
@@ -115,16 +112,16 @@ public class Browser_for_search_results extends Abstract_browser implements Resu
     public void set_title()
     //**********************************************************
     {
-        my_Stage.the_Stage.setTitle("Search results (this is NOT a folder!)");
+        context.setTitle("Search results (this is NOT a folder!)");
 
     }
 
     //**********************************************************
     @Override // Change_receiver
-    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
+    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
-        logger.log("Browser_for_search_results you_receive_this_because_a_file_event_occurred_somewhere "+ l);
+        context.log("Browser_for_search_results you_receive_this_because_a_file_event_occurred_somewhere "+ l);
         virtual_landscape.redraw_fx(true,"change received",false);
     }
 

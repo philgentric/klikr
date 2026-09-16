@@ -53,7 +53,7 @@ public class String_constants
     }
 
     //**********************************************************
-    public static void save_current_song(String path, Window owner)
+    public static void save_current_song(String path)
     //**********************************************************
     {
         File_storage pm = Shared_services.main_properties();

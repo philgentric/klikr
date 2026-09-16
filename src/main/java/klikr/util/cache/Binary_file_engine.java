@@ -1,6 +1,7 @@
 package klikr.util.cache;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -10,6 +11,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+
+import static klikr.util.Shared_services.aborter;
 
 //**********************************************************
 public class Binary_file_engine<V> implements Disk_engine<V>
@@ -22,9 +25,7 @@ public class Binary_file_engine<V> implements Disk_engine<V>
     public final Path cache_file_path;
     public final BiPredicate<V, DataOutputStream> value_serializer;
     public final Function<DataInputStream, V> value_deserializer;
-    public final Aborter aborter;
-    public final Window owner;
-    public final Logger logger;
+    public final Kontext context;
 
     //**********************************************************
     public Binary_file_engine(
@@ -32,17 +33,15 @@ public class Binary_file_engine<V> implements Disk_engine<V>
             Path cache_file_path,
             BiPredicate<V, DataOutputStream> value_serializer,
             Function<DataInputStream, V> value_deserializer,
-            Window owner, Aborter aborter, Logger logger
+            Kontext context
     )
     //**********************************************************
     {
         this.cache_file_path = cache_file_path;
         this.value_serializer = value_serializer;
         this.value_deserializer = value_deserializer;
-        this.logger = logger;
+        this.context = context;
         this.name = name;
-        this.aborter = aborter;
-        this.owner = owner;
     }
 
     //**********************************************************
@@ -56,40 +55,40 @@ public class Binary_file_engine<V> implements Disk_engine<V>
         try(DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(cache_file_path.toFile()))))
         {
             int number_of_items = dis.readInt();
-            if (dbg) logger.log("number_of_items in cache :"+number_of_items);
+            if (dbg) context.log("number_of_items in cache :"+number_of_items);
 
             for ( int k = 0; k < number_of_items; k++)
             {
-                if ( aborter.should_abort())
+                if ( context.should_abort())
                 {
-                    if (dbg) logger.log("aborting cal reload "+aborter.reason());
+                    if (dbg) context.log("aborting cal reload "+context.aborter().reason());
                     return reloaded;
                 }
                 String key = dis.readUTF();
-                if (ultra_dbg) logger.log("key "+key);
+                if (ultra_dbg) context.log("key "+key);
                 V value = value_deserializer.apply(dis);
                 if ( value == null)
                 {
-                    if (dbg) logger.log(Stack_trace_getter.get_stack_trace("FATAL"));
+                    if (dbg) context.log(Stack_trace_getter.get_stack_trace("FATAL"));
                     return reloaded;
                 }
-                if (ultra_dbg) logger.log("value "+value);
+                if (ultra_dbg) context.log("value "+value);
                 cache.put(key,value);
-                if ( k%10000 == 0) logger.log(k +" items loaded from disk ....");
+                if ( k%10000 == 0) context.log(k +" items loaded from disk ....");
                 reloaded++;
             }
-            if (dbg) logger.log("Done: "+reloaded+" items loaded from disk");
+            if (dbg) context.log("Done: "+reloaded+" items loaded from disk");
             return reloaded;
         }
         catch (FileNotFoundException e)
         {
-            if (dbg) logger.log("first time in this folder: "+e);
+            if (dbg) context.log("first time in this folder: "+e);
         }
         catch (IOException e)
         {
-            if (dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if (dbg) context.log(Stack_trace_getter.get_stack_trace(""+e));
         }
-        logger.log("reloading "+reloaded+" similarities from disk took "+(System.currentTimeMillis()-start)+" ms");
+        context.log("reloading "+reloaded+" similarities from disk took "+(System.currentTimeMillis()-start)+" ms");
 
         return reloaded;
     }
@@ -110,19 +109,19 @@ public class Binary_file_engine<V> implements Disk_engine<V>
                 dos.writeUTF(key);
                 if ( !value_serializer.test(e.getValue(),dos))
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace(" Panic"));
+                    context.log(Stack_trace_getter.get_stack_trace(" Panic"));
                     break;
                 }
                 saved++;
-                //logger.log("to disk similarity "+e.getValue()+" for "+pi1.getFileName().toString()+" "+pi2.getFileName().toString());
+                //context.log("to disk similarity "+e.getValue()+" for "+pi1.getFileName().toString()+" "+pi2.getFileName().toString());
             }
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
         }
 
-        if (dbg) logger.log(saved +" items from cache saved to file");
+        if (dbg) context.log(saved +" items from cache saved to file");
         return saved;
     }
 

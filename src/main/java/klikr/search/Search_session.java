@@ -10,17 +10,15 @@
 package klikr.search;
 
 import javafx.application.Application;
-import javafx.stage.Window;
 import klikr.Owner_provider;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.path_lists.Path_list_provider_for_search_results;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.util.log.Logger;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -35,13 +33,11 @@ public class Search_session implements Callback_for_file_found_publish
 	private static final boolean dbg = false;
 	// the key is a string composed of the concatenated keywords
 	private HashMap<String, List<Path>> search_results;
-	Logger logger;
 	Search_status status = Search_status.undefined;
 	public final Search_config search_config;
-	private final Aborter local_aborter;
 	private final Search_receiver search_receiver;
 	//private final Browser_for_file_system_in_2D browser;
-	private final Window owner;
+	private final Kontext context;
 	final Results find_result_frame;
     boolean is_max_at_least_once = false;
 
@@ -52,33 +48,20 @@ public class Search_session implements Callback_for_file_found_publish
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
 			Search_config search_config,
-			Search_receiver search_receiver, Window owner, Logger logger)
+			Search_receiver search_receiver, Kontext k)
 	//**********************************************************
 	{
-		this.owner = owner;
-		this.logger = logger;
-		local_aborter = new Aborter("Search_session",logger);
+		
+		Aborter local_aborter = new Aborter("Search_session",k.logger());
+		this.context = new Kontext(k.owner(),local_aborter,k.logger());
 		status = Search_status.ready;
 		this.search_config = search_config;
 		this.search_receiver = search_receiver;
-		//this.the_browser = browser;
-		/*
-		this.find_result_frame = new Results_frame(
-				application,
-				path_list_provider,
-				path_comparator_source,
-				local_aborter, owner, logger);
-
-		 */
-		Path_list_provider search_results_path_list_provider = new Path_list_provider_for_search_results(owner,local_aborter,logger);
-		Owner_provider x = Window_builder.additional_no_past(application, Window_type.Search_results, search_results_path_list_provider, owner, logger);
+		
+		Path_list_provider search_results_path_list_provider = new Path_list_provider_for_search_results( context);
+		Owner_provider x = Window_builder.additional_no_past(application, Window_type.Search_results, search_results_path_list_provider,  context);
 		this.find_result_frame = (Results) x;
 
-	/*this.find_result_frame = new Web_results(
-				application,
-				path_list_provider,
-				path_comparator_source,
-				local_aborter, owner, logger);*/
 	}
 
 	//**********************************************************
@@ -86,22 +69,22 @@ public class Search_session implements Callback_for_file_found_publish
 	//**********************************************************
 	{
 		status = Search_status.searching;
-		if ( dbg) logger.log("launching search actor on path:"+search_config.path_list_provider().get_key());
+		if ( dbg) context.log("launching search actor on path:"+search_config.path_list_provider().get_key());
 
-		Actor_engine.run(new Finder_actor(owner,logger),new Finder_message(search_config,this,local_aborter, owner),null,logger);
+		Actor_engine.run(new Finder_actor( context),new Finder_message(search_config,this,context),null,context.logger());
 	}
 
 	//**********************************************************
 	void stop_search()
 	//**********************************************************
 	{
-		if ( dbg) logger.log("stop_search()");
-		local_aborter.abort("stop search");
+		if ( dbg) context.log("stop_search()");
+		context.abort("stop search");
 		status = Search_status.interrupted;
 	}
 
 	//**********************************************************
-	private static Comparator<? super String> keyword_comparator_no_case = new Comparator<String>()
+	private static final Comparator<? super String> keyword_comparator_no_case = new Comparator<String>()
 	{
 		@Override
 		public int compare(String o1, String o2) {
@@ -110,7 +93,7 @@ public class Search_session implements Callback_for_file_found_publish
 	};
 
 	//**********************************************************
-	private static Comparator<? super String> keyword_comparator_with_case = new Comparator<String>()
+	private static final Comparator<? super String> keyword_comparator_with_case = new Comparator<String>()
 	{
 		@Override
 		public int compare(String o1, String o2) {
@@ -188,7 +171,7 @@ public class Search_session implements Callback_for_file_found_publish
 		else
 		{
 			if (dbg)
-				logger.log("Search_session on_the_fly_stats, matched keyword: " + sr.matched_keywords() + " =>" + sr.path());
+				context.log("Search_session on_the_fly_stats, matched keyword: " + sr.matched_keywords() + " =>" + sr.path());
 			String keys = list_of_keywords_to_key(sr.matched_keywords(),search_config.check_case());
 			if ( search_results != null)
 			{
@@ -203,13 +186,13 @@ public class Search_session implements Callback_for_file_found_publish
                 if ( is_max)
                 {
                     is_max_at_least_once = true;
-                    find_result_frame.inject_search_results(sr,keys, is_max, owner);
+                    find_result_frame.inject_search_results(sr,keys, is_max, context.owner());
                     find_result_frame.erase_all_non_max();
                 }
                 else
                 {
                     // once we have one max, dont display the others
-                    if (!is_max_at_least_once) 	find_result_frame.inject_search_results(sr,keys, is_max, owner);
+                    if (!is_max_at_least_once) 	find_result_frame.inject_search_results(sr,keys, is_max, context.owner());
                 }
 			}
 		}
@@ -223,7 +206,7 @@ public class Search_session implements Callback_for_file_found_publish
 	public void has_ended(Search_status search_status)
 	//**********************************************************
 	{
-		if ( dbg) logger.log("Search_session has_ended() called: "+search_status );
+		if ( dbg) context.log("Search_session has_ended() called: "+search_status );
 		search_receiver.has_ended(search_status);
 		if ( find_result_frame != null)
 		{

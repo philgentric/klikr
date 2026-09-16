@@ -5,6 +5,7 @@ package klikr.machine_learning.similarity;
 
 import javafx.stage.Window;
 import klikr.machine_learning.feature_vector.Top_k;
+import klikr.util.Kontext;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor;
@@ -55,11 +56,12 @@ public class Similarity_cache_warmer_actor implements Actor
         Similarity_cache_warmer_message scwm = (Similarity_cache_warmer_message)m;
         Aborter browser_aborter = scwm.get_aborter();
         Window owner = scwm.get_owner();
+        Kontext context = new Kontext(owner,browser_aborter,logger);
         Path p1 = scwm.p1;
-        Feature_vector emb1 = cache.get_from_cache_or_make(p1,null,true,owner,browser_aborter);
+        Feature_vector emb1 = cache.get_from_cache_or_make(p1,null,true,context);
         if ( emb1 == null)
         {
-            emb1 = cache.get_from_cache_or_make(scwm.p1,null,true,owner,browser_aborter);
+            emb1 = cache.get_from_cache_or_make(scwm.p1,null,true,context);
             if ( emb1 == null)
             {
                 logger.log(" emb1 == null for "+scwm.p1);
@@ -76,7 +78,7 @@ public class Similarity_cache_warmer_actor implements Actor
 
             Integer_pair pp = Integer_pair.build(scwm.index_of_p1, j);
             // already in cache?
-            if ( similarities.get(pp,browser_aborter,null,owner) != null)
+            if ( similarities.get(pp,null,context) != null)
             {
                 //logger.log("not computed: similarity already in cache "+p1+" vs "+p2);
                 continue;
@@ -88,9 +90,9 @@ public class Similarity_cache_warmer_actor implements Actor
             }
 
             //logger.log("processing "+p1+" vs "+p2);
-            Feature_vector emb2 = cache.get_from_cache_or_make(p2, null, true,owner, browser_aborter);
+            Feature_vector emb2 = cache.get_from_cache_or_make(p2, null, true,context);
             if (emb2 == null) {
-                emb2 = cache.get_from_cache_or_make(p2, null, true,owner, browser_aborter);
+                emb2 = cache.get_from_cache_or_make(p2, null, true,context);
                 if (emb2 == null) {
                     logger.log(" emb2 == null for " + p2);
                     continue;

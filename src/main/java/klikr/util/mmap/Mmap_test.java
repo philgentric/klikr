@@ -6,9 +6,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import klikr.browser_core.Image_and_properties;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;
 
@@ -41,7 +40,8 @@ public class Mmap_test extends Application
         stage.setMinWidth(800);
         stage.show();
         Logger logger = new Simple_logger();
-        Mmap mmap = Mmap.get_instance(100, null, logger);
+        Kontext context = new Kontext(stage,null,logger);
+        Mmap mmap = Mmap.get_instance(100, context);
         mmap.clear_cache();
         {
             String tag1 = "src/main/resources/icons/Breton.png";

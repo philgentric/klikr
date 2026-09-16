@@ -26,13 +26,15 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
-import klikr.browser_core.Window_manager;
-import klikr.browser_core.in3D.*;
-import klikr.browser_core.virtual_landscape.Shutdown_target;
+import klikr.browsers.browser_core.Window_manager;
+import klikr.browsers.browser_core.in3D.*;
+import klikr.browsers.browser_core.virtual_landscape.Shutdown_target;
+import klikr.path_lists.File_comparator_provider;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.Sort_files_by;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.images.Image_window;
@@ -74,9 +76,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     final PhongMaterial grey_material = new PhongMaterial(Color.LIGHTGRAY);
 
     private final Image_source item_source;
-    private final Logger logger;
-    private final Aborter aborter;
-    private final Stage stage;
+    private final Kontext context;
     private final Path  the_path;
     double inner_box_size;
     double outer_box_size;
@@ -100,53 +100,49 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     public final int ID;
 
     //*******************************************************
-    public Browser_for_file_system_in_3D(Window_builder window_builder, Logger logger)
+    public Browser_for_file_system_in_3D(Window_builder window_builder, Kontext k)
     //*******************************************************
     {
         this.application = window_builder.application;
         this.path_list_provider = window_builder.path_list_provider;
         this.large_icon_size = (int) CORRIDOR_HEIGHT;
         this.small_icon_size = 64;
-        this.stage = (Stage)window_builder.owner;
-        this.logger = logger;
-
         ID = Window_manager.register();
-
-        aborter = new Aborter("Browser_for_file_system_in_3D", logger);
-
+        Stage stage = window_builder.context.get_Stage();
+        Aborter aborter = new Aborter("Browser_for_file_system_in_3D", k.logger());
+        this.context = new Kontext(stage,aborter,k.logger());
         String title = "Circle 3D";
         if( window_builder.path_list_provider.get_folder_path().isEmpty())
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""));
+            context.log(Stack_trace_getter.get_stack_trace(""));
             this.the_path = null;
             this.item_source = null;
         }
         else {
             this.the_path = window_builder.path_list_provider.get_folder_path().get();
             //History_engine.get(get_owner()).add(the_path.toAbsolutePath().toString());
-            this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,stage,aborter,logger);
+            this.item_source = new Image_source_from_files( the_path,small_icon_size,large_icon_size,context);
             title = the_path.toAbsolutePath().toString();
         }
-        material_cache_large = new Image_cache_cafeine_for_3D(400,aborter,logger);
+        material_cache_large = new Image_cache_cafeine_for_3D(400,context);
         //image_source = new Dummy_text_image_source(icon_size,30000);
 
 
-        Sort_files_by sort_files_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), stage,logger);
+        Sort_files_by sort_files_by = Sort_files_by.get_sort_files_by(path_list_provider.get_key(), context);
         if ( sort_files_by != Sort_files_by.FILE_NAME)
         {
-            Sort_files_by.set_sort_files_by_for_folder(path_list_provider.get_key(),Sort_files_by.FILE_NAME, false, stage,logger);
+            Sort_files_by.set_sort_files_by_for_folder(path_list_provider.get_key(),Sort_files_by.FILE_NAME, false, context);
         }
         Optional<Hourglass> hourglass = Progress_window.show(
                 "Wait, loading in 3D",
                 20000,
-                stage,
-                logger);
+                context);
 
         Scene scene = get_scene();
         stage.setScene(scene);
 
         stage.show();
-        stage.setTitle(title);
+        context.setTitle(title);
         stage.setOnCloseRequest(event->{
             shutdown();
         });
@@ -159,7 +155,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     //*******************************************************
     {
         // todo
-        logger.log("replace_current_item not implemented for Browser_for_file_system_in_3D");
+        context.log("replace_current_item not implemented for Browser_for_file_system_in_3D");
     }
     //*******************************************************
     public Scene get_scene()
@@ -181,7 +177,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         // For inner wall: arcLength = radius * angleRad, so radius = arcLength / angleRad
         circle_radius = desiredBoxWidth / angleStepRad;
 
-        logger.log("Using " + num_segments + " segments with radius " + circle_radius);
+        context.log("Using " + num_segments + " segments with radius " + circle_radius);
 
         double boxDepth = 10;
 
@@ -201,10 +197,10 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
                   outerRadius);
 
 
-        create_floor(stage,logger);
+        create_floor(context);
 
         double dome_radius = circle_radius * 20;
-        Group ceilingGroup = create_sky_ceiling(dome_radius,stage,logger);
+        Group ceilingGroup = create_sky_ceiling(dome_radius,context);
 
         AmbientLight ambientLight = new AmbientLight(Color.LIGHTGRAY);
 
@@ -227,7 +223,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         // Camera setup
         perspective_camera.setNearClip(1.0);
         perspective_camera.setFarClip(dome_radius*1.5);
-        logger.log("camera FarClip = " + perspective_camera.getFarClip());
+        context.log("camera FarClip = " + perspective_camera.getFarClip());
         perspective_camera.setFieldOfView(60);
 
         Map< LocalDateTime,String> the_whole_history = new HashMap<>();
@@ -244,23 +240,23 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         if ( the_path.getParent() != null)
         {
             Button up = new Button("Up");
-            Look_and_feel_manager.set_region_look(up, true, stage, logger);
+            Look_and_feel_manager.set_region_look(up, true, context.logger());
             up.setOnAction(event -> {
                 Window_builder.replace_different_folder(
                         application,
                         this,
                         Window_type.File_system_3D,
-                        new Path_list_provider_for_file_system(the_path.getParent(),stage,logger),
+                        new Path_list_provider_for_file_system(the_path.getParent(),context),
                         null,
                         null,
-                        stage,logger);
-                Window_manager.unregister(ID,logger);
+                        context);
+                Window_manager.unregister(ID,context);
             });
             buttons_box.getChildren().add(up);
         }
         {
             Button up = new Button("2D");
-            Look_and_feel_manager.set_region_look(up, true, stage, logger);
+            Look_and_feel_manager.set_region_look(up, true, context.logger());
             up.setOnAction(event -> {
                 Window_builder.replace_same_folder(
                         application,
@@ -269,8 +265,8 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
                         path_list_provider,
                         null,
                         null,
-                        stage,logger);
-                Window_manager.unregister(ID,logger);
+                        context);
+                Window_manager.unregister(ID,context);
             });
             buttons_box.getChildren().add(up);
         }
@@ -286,7 +282,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
             buttons_box.getChildren().add(mb);
         }
 */
-        setupClickHandling(scene,logger);
+        setup_click_handling(scene, context.logger());
 
         scene.setOnMousePressed(me -> mouse_old_X = me.getSceneX());
         scene.setOnMouseDragged(me -> {
@@ -492,12 +488,12 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         {
             if ( distance_to_camera < 2*CORRIDOR_WIDTH)
             {
-                //logger.log(iap.path +" IS CLOSE => large image");
+                //context.log(iap.path +" IS CLOSE => large image");
                 materials_to_apply.add(get_phong_large(iap));
             }
             else
             {
-                //logger.log(iap.path +" IS far => large image");
+                //context.log(iap.path +" IS far => large image");
                 materials_to_apply.add(get_phong_small(iap));
             }
             box.setUserData(iap.path);
@@ -539,7 +535,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
                 setDiffuseMap(local_image);
             }
         });
-        Actor_engine.execute(()->preload_in_a_thread(iap.path),"3D image cache preload",logger);
+        Actor_engine.execute(()->preload_in_a_thread(iap.path),"3D image cache preload", context.logger());
 
         return material_cache_large.get(iap.path);
     }
@@ -549,7 +545,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     //*******************************************************
     {
         List<Path> list = get_paths(path);
-        material_cache_large.preload(list, stage);
+        material_cache_large.preload(list, context.owner());
     }
 
     //*******************************************************
@@ -559,7 +555,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         List<Path> list = new ArrayList<>();
         // files are in alpha order
 
-        List<Path> images = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),aborter);
+        List<Path> images = path_list_provider.only_image_paths(false,Feature_cache.get(Feature.Show_hidden_files),context.aborter());
         Collections.sort(images);
 
         int i = images.indexOf(path);
@@ -579,58 +575,58 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
 
 
     //*******************************************************
-    private void setupClickHandling(Scene scene, Logger logger)
+    private void setup_click_handling(Scene scene, Logger logger)
     //*******************************************************
     {
         scene.setOnMouseClicked(event -> {
             //if ( dbg)
 
-                logger.log(event.toString());
+                context.log(event.toString());
             if (event.getClickCount() < 2) return; // Only handle double-clicks
             if (event.getClickCount() == 3)
             {
                 toggle_boxes_are_facing_camera();
                 return;
             }
-            logger.log(" double click !");
+            context.log(" double click !");
             PickResult pickResult = event.getPickResult();
             Node clickedNode = pickResult.getIntersectedNode();
 
             if (clickedNode instanceof Box)
             {
-                logger.log(" clicked item is a Box");
+                context.log(" clicked item is a Box");
                 Box clickedBox = (Box) clickedNode;
                 Path p = (Path) clickedBox.getUserData();
                 if ( p == null)
                 {
                     //if ( dbg)
-                        logger.log("No user data!");
+                        context.log("No user data!");
                     return;
                 }
 
-                logger.log("Clicked on: " + p);
+                context.log("Clicked on: " + p);
 
                 if (Files.isDirectory(p))
                 {
-                    logger.log("is folder: "+p);
+                    context.log("is folder: "+p);
                     Window_builder.replace_different_folder(
                             application,
                             this,
                             Window_type.File_system_3D,
-                            new Path_list_provider_for_file_system(p,stage,logger),
+                            new Path_list_provider_for_file_system(p,context),
                             null,
                             null,
-                            stage,logger);
+                            context);
                 }
                 else 
                 {
-                    logger.log("is not folder : "+p);
-                    Image_window image_stage = Image_window.get_Image_window(p, new Path_list_provider_for_file_system(p.getParent(),stage,logger), null,scene.getWindow(),aborter,logger);
+                    context.log("is not folder : "+p);
+                    Image_window image_stage = Image_window.get_Image_window(p, new Path_list_provider_for_file_system(p.getParent(),context), null,context);
                 }
             }
             else
             {
-                logger.log("clicked item is not a Box but a "+clickedNode.getClass().getCanonicalName());
+                context.log("clicked item is not a Box but a "+clickedNode.getClass().getCanonicalName());
             }
         });
     }
@@ -647,14 +643,14 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
 
 
     //*******************************************************
-    private void create_floor(Window owner, Logger logger)
+    private void create_floor(Kontext context)
     //*******************************************************
     {
         floor_group = new Group();
         allFloorTiles.clear();
         PhongMaterial red_material = new PhongMaterial(Color.RED);
 
-        Image floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size,owner,logger);
+        Image floor_image = Look_and_feel_manager.get_floor_icon(small_icon_size, context.logger());
 
         PhongMaterial floor_material = null;
         if ( floor_image != null)
@@ -723,7 +719,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
 
 
 
-        logger.log("Created " + tiles_created + " floor tiles");
+        context.log("Created " + tiles_created + " floor tiles");
     }
 
     //*******************************************************
@@ -767,7 +763,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
             }
         }
 
-        logger.log("Created " + tiles_created + " ceiling tiles");
+        context.log("Created " + tiles_created + " ceiling tiles");
         return ceilin_group;
     }
 
@@ -790,24 +786,24 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
             else if ( now-start_shift_down> 3000)
             {
                 step_angle *= 40000;
-                if ( dbg) logger.log("40000 stepAngle="+step_angle);
+                if ( dbg) context.log("40000 stepAngle="+step_angle);
 
             }
             else if ( now-start_shift_down> 1000)
             {
                 step_angle *= 1000;
-                if ( dbg) logger.log("1000 stepAngle="+step_angle);
+                if ( dbg) context.log("1000 stepAngle="+step_angle);
             }
             else
             {
                 step_angle *= 100;
-                if ( dbg) logger.log("100 stepAngle="+step_angle);
+                if ( dbg) context.log("100 stepAngle="+step_angle);
             }
         }
         else
         {
             start_shift_down = -1;
-            if ( dbg) logger.log("zero stepAngle="+step_angle);
+            if ( dbg) context.log("zero stepAngle="+step_angle);
         }
         if ( se.isControlDown()) step_angle /= 10;
         if ( mouse_delta_X < 0)
@@ -840,11 +836,11 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     private void on_key_pressed(KeyEvent event)
     //*******************************************************
     {
-        //logger.log("on_key_pressed="+event);
+        //context.log("on_key_pressed="+event);
 
         if (event.getCode() == KeyCode.ESCAPE)
         {
-            logger.log(Logger.ok+" 3D Window RECEIVED ESCAPE");
+            context.log(Logger.ok+" 3D Window RECEIVED ESCAPE");
             event.consume();
 
             if (Feature_cache.get(Feature.Use_escape_to_close_windows))
@@ -853,48 +849,48 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
             }
             else
             {
-                logger.log(Logger.ok+" ESCAPE ignored by user preference");
+                context.log(Logger.ok+" ESCAPE ignored by user preference");
             }
             return;
         }
 
         long now = System.currentTimeMillis();
         double step_angle =  360.0 / (num_segments * 10.0);
-        //logger.log("stepAngle="+stepAngle);
+        //context.log("stepAngle="+stepAngle);
 
         if (now - last_time[0] < 100)
         {
             step_angle *= 3;
             count[0]++;
-            //logger.log("stepAngle, count="+count[0]);
+            //context.log("stepAngle, count="+count[0]);
             if (count[0] > 30) // 3 seconds
             {
                 step_angle *= 1000;
                 if ( dbg)
-                    logger.log("1000 stepAngle="+step_angle);
+                    context.log("1000 stepAngle="+step_angle);
             }
             else if (count[0] > 10) // 1 seconds
             {
                 step_angle *= 100;
                 if ( dbg)
-                    logger.log("100 stepAngle="+step_angle);
+                    context.log("100 stepAngle="+step_angle);
             }
             else if (count[0] > 5)
             {
                 step_angle *= 10;
                 if ( dbg)
-                    logger.log("10 stepAngle="+step_angle);
+                    context.log("10 stepAngle="+step_angle);
             }
             else
             {
                 if ( dbg)
-                    logger.log("stepAngle="+step_angle);
+                    context.log("stepAngle="+step_angle);
             }
 
         }
         else
         {
-            if ( dbg) logger.log("stepAngle, count="+0);
+            if ( dbg) context.log("stepAngle, count="+0);
             count[0] = 0;
         }
 
@@ -925,7 +921,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
 
         double small_andle = 360.0 / (num_segments * 50.0);
         int iterations = (int)(delta_camera_path_angle/small_andle)*3;
-        //logger.log("iterations ="+ iterations);
+        //context.log("iterations ="+ iterations);
         if ( iterations <0) iterations = -iterations;
         if ( iterations == 0) iterations = 1;
         if ( iterations > 100) iterations = 100;
@@ -962,14 +958,14 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
                 try {
                     Thread.sleep(20/(i+1));
                 } catch (InterruptedException e) {
-                    logger.log(""+e);
+                    context.log(""+e);
                 }
             }
-        },"smoother",logger);
+        },"smoother", context.logger());
     }
 
     //*******************************************************
-    private Group create_sky_ceiling(double dome_radius,Window owner, Logger logger)
+    private Group create_sky_ceiling(double dome_radius,Kontext context)
     //*******************************************************
     {
         Group ceiling_group = new Group();
@@ -979,7 +975,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         dome.setCullFace(CullFace.FRONT); // Render inside only
 
         // Load night sky texture
-        Image sky_image = Look_and_feel_manager.get_sky_icon(small_icon_size,owner,logger);
+        Image sky_image = Look_and_feel_manager.get_sky_icon(small_icon_size, context.logger());
 
         PhongMaterial dome_material;
         if (sky_image != null) {
@@ -989,7 +985,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
             }};
         } else {
             // Fallback to dark blue if no texture
-            logger.log("falling back to solid color for dome");
+            context.log("falling back to solid color for dome");
             dome_material = new PhongMaterial(Color.MIDNIGHTBLUE);
         }
 
@@ -1000,7 +996,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
 
         ceiling_group.getChildren().add(dome);
 
-        logger.log("Created dome ceiling with radius: " + dome_radius);
+        context.log("Created dome ceiling with radius: " + dome_radius);
         return ceiling_group;
     }
 
@@ -1050,7 +1046,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     public Window get_owner()
     //*******************************************************
     {
-        return stage;
+        return context.owner();
     }
 
     //*******************************************************
@@ -1058,7 +1054,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
     public void shutdown()
     //*******************************************************
     {
-        Window_manager.unregister(ID,logger);
-        stage.close();
+        Window_manager.unregister(ID,context);
+        context.get_Stage().close();
     }
 }

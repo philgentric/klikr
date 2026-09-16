@@ -5,6 +5,7 @@
 package klikr.util.execute.actor.workers;
 
 import klikr.System_info;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.*;
 import klikr.util.log.Logger;
 
@@ -23,25 +24,23 @@ public class Actor_engine_based_on_workers implements Actor_engine_interface
      */
 
     private static final boolean dbg = false;
-    private final Aborter cleanup_aborter;
-    private final Logger logger;
+    private final Kontext context;
     ConcurrentLinkedQueue<Worker> runners = new ConcurrentLinkedQueue<>();
     LinkedBlockingQueue<Job> input_queue_single = new LinkedBlockingQueue<>();
 
 
     //**********************************************************
-    public Actor_engine_based_on_workers(String purpose, Aborter actor_engine_cleanup_aborter, Logger logger)
+    public Actor_engine_based_on_workers(String purpose, Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
-        this.cleanup_aborter = actor_engine_cleanup_aborter;
+        this.context = context;
         int number_of_runners = System_info.how_many_cores() -1;
         if ( number_of_runners < 1) number_of_runners = 1;
-        if ( dbg) logger.log(Logger.ok+" Actor_engine_based_on_workers starting with "+number_of_runners+" workers");
+        if ( dbg) context.log(Logger.ok+" Actor_engine_based_on_workers starting with "+number_of_runners+" workers");
 
         for (int i = 0; i < number_of_runners; i++)
         {
-            Worker r = new Worker("worker_"+i+" of "+purpose,input_queue_single, cleanup_aborter, logger);
+            Worker r = new Worker("worker_"+i+" of "+purpose,input_queue_single, context);
             runners.add(r);
         }
         start();
@@ -72,7 +71,7 @@ public class Actor_engine_based_on_workers implements Actor_engine_interface
     //**********************************************************
     {
         input_queue_single.add(am);
-        if ( dbg) logger.log(Logger.ok+" "+am.to_string()+" scheduled for execution");
+        if ( dbg) context.log(Logger.ok+" "+am.to_string()+" scheduled for execution");
     }
 
     //**********************************************************
@@ -89,7 +88,7 @@ public class Actor_engine_based_on_workers implements Actor_engine_interface
     {
         if ( input_queue_single.remove(job))
         {
-            if ( Actor_engine.cancel_dbg) logger.log(Logger.ok+" Actor-Message removed from queue (canceled before start): "+job.to_string());
+            if ( Actor_engine.cancel_dbg) context.log(Logger.ok+" Actor-Message removed from queue (canceled before start): "+job.to_string());
         }
     }
 

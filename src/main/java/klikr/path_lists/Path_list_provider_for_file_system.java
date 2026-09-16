@@ -3,14 +3,13 @@
 
 package klikr.path_lists;
 
-import javafx.stage.Window;
-import klikr.browser_core.virtual_landscape.Image_found;
+import klikr.browsers.browser_core.virtual_landscape.Image_found;
+import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.perf.Perf;
 import org.msgpack.core.MessageBufferPacker;
@@ -32,24 +31,22 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     private final static boolean cache_dbg = false;
     private final Path folder_path;
     private final String key;
-    private final Logger logger;
-    private final Window owner;
+    private final Kontext context;
     private final Change_broadcaster change_broadcaster;
     long timestamp = -1;
     private Files_and_folders cached;
     private volatile long cache_creation_time;
 
     //**********************************************************
-    public Path_list_provider_for_file_system(Path folder_path, Window owner, Logger logger)
+    public Path_list_provider_for_file_system(Path folder_path, Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
-        change_broadcaster = new Change_broadcaster(logger);
-        this.owner = owner;
         this.folder_path = folder_path;
+        this.context = context;
+        change_broadcaster = new Change_broadcaster(context.logger());
         if( folder_path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+" Panic : null folder_path"));
+            context.log(Stack_trace_getter.get_stack_trace(context.logger().error+" Panic : null folder_path"));
             this.key = null;
             return;
         }
@@ -60,10 +57,12 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             this.key = p;
             return;
         }
-        if( p.startsWith(home) ) {
+        if( p.startsWith(home) )
+        {
             this.key = p.substring(home.length());
         }
-        else {
+        else
+        {
             this.key = p;
         }
     }
@@ -98,13 +97,13 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public Path get_cache_save_path()
     //**********************************************************
     {
-        Path folder_cache_dir = Cache_folder.get_cache_dir( Cache_folder.folder_cache,owner,logger);
+        Path folder_cache_dir = Cache_folder.get_cache_dir( Cache_folder.folder_cache,context);
         if ( cache_dbg)
-            logger.log("folder_cache_dir="+folder_cache_dir);
+            context.log("folder_cache_dir="+folder_cache_dir);
         String local = folder_path.toAbsolutePath().toString();
         local = local.replace(":","_");
         local = local.replace(File.separator,"_");
-        //logger.log("local="+local);
+        //context.log("local="+local);
         return Path.of(folder_cache_dir.toAbsolutePath().toString(),local+".cache");
     }
 
@@ -124,7 +123,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             timestamp = as_of_now;
             return  returned;
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
             return  true;
         }
     }
@@ -149,28 +148,28 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         for (Path file : faf.files())
         {
             if ( aborter.should_abort()) return 0;
-            if ( Guess_file_type.should_ignore(file,logger))
+            if ( Guess_file_type.should_ignore(file,context.logger()))
             {
                 if (consider_also_hidden_files)
                 {
                     returned++;
-                    //logger.log(file.toString()+ " hidden, but counted");
+                    //context.log(file.toString()+ " hidden, but counted");
                 }
                 else {
-                    //logger.log(file.toString()+ " hidden, not counted");
+                    //context.log(file.toString()+ " hidden, not counted");
                 }
 
             }
             else
             {
-                //logger.log(file.toString()+ " not hidden, counted");
+                //context.log(file.toString()+ " not hidden, counted");
                 returned++;
             }
         }
         for (Path folder : faf.folders())
         {
             if ( aborter.should_abort()) return 0;
-            if ( Guess_file_type.should_ignore(folder,logger))
+            if ( Guess_file_type.should_ignore(folder,context.logger()))
             {
                 if (consider_also_hidden_folders)
                 {
@@ -204,8 +203,8 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         {
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(file,logger)) continue;
-                if ( Guess_file_type.is_this_path_extension_an_image(file,owner,logger))
+                if ( Guess_file_type.should_ignore(file,context.logger())) continue;
+                if ( Guess_file_type.is_this_path_extension_an_image(file,context))
                 {
                     if ( imgfnd!=null) imgfnd.image_found();
                 }
@@ -217,13 +216,13 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         {
             if ( ! consider_also_hidden_folders)
             {
-                if ( Guess_file_type.should_ignore(folder,logger)) continue;
+                if ( Guess_file_type.should_ignore(folder,context.logger())) continue;
             }
             folder_paths.add(folder);
             if ( aborter.should_abort()) break;
         }
         Files_and_folders returned = new Files_and_folders(file_paths,folder_paths);
-        save_cache_to_disk(returned,aborter,logger);
+        save_cache_to_disk(returned,context);
         return returned;
     }
 
@@ -233,7 +232,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     {
         try (Perf p = new Perf("get Files_and_folders")) {
             if (cached == null) {
-                cached = load_cache_from_disk(aborter, logger);
+                cached = load_cache_from_disk(context);
                 // cached may be null
             }
             Files_and_folders faf;
@@ -247,7 +246,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                     faf = null;
                 }
             } catch (IOException e) {
-                logger.log(Stack_trace_getter.get_stack_trace("" + e));
+                context.log(Stack_trace_getter.get_stack_trace("" + e));
                 return new Files_and_folders(new ArrayList<>(), new ArrayList<>());
             }
 
@@ -294,7 +293,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             }
         }
         Files_and_folders returned = new Files_and_folders(file_paths,folder_paths);
-        save_cache_to_disk(returned,aborter,logger);
+        save_cache_to_disk(returned,context);
         return returned;
     }
 
@@ -310,7 +309,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         {
             if (! consider_also_hidden_folders)
             {
-                if ( Guess_file_type.should_ignore(folder,logger)) continue;
+                if ( Guess_file_type.should_ignore(folder,context.logger())) continue;
             }
             returned.add(folder);
         }
@@ -328,7 +327,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         {
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(file,logger)) continue;
+                if ( Guess_file_type.should_ignore(file,context.logger())) continue;
             }
             returned.add(file);
         }
@@ -344,10 +343,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
-            if ( !Guess_file_type.is_this_path_extension_an_image(file,owner,logger)) continue;
+            if ( !Guess_file_type.is_this_path_extension_an_image(file,context)) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(file,logger)) continue;
+                if ( Guess_file_type.should_ignore(file,context.logger())) continue;
             }
             returned.add(file);
         }
@@ -364,10 +363,10 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         List<Path> returned = new ArrayList<>();
         for (Path file : faf.files())
         {
-            if ( !Guess_file_type.is_this_path_extension_a_music(file,logger)) continue;
+            if ( !Guess_file_type.is_this_path_extension_a_music(file,context.logger())) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(file,logger)) continue;
+                if ( Guess_file_type.should_ignore(file,context.logger())) continue;
             }
             returned.add(file);
         }
@@ -396,7 +395,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
     public void reload(String origin, Aborter aborter)
     //**********************************************************
     {
-        logger.log("Path_list_provider_for_file_system.reload(), reason ="+origin);
+        context.log("Path_list_provider_for_file_system.reload(), reason ="+origin);
 
         cached = get_faf(true,aborter);
         // notify listeners
@@ -432,30 +431,30 @@ public class Path_list_provider_for_file_system implements Path_list_provider
 
     //**********************************************************
     @Override
-    public void delete(Path path, Window owner, Aborter aborter, Logger logger)
+    public void delete(Path path, Kontext context)
     //**********************************************************
     {
-        Static_files_and_paths_utilities.move_to_trash(path,owner, null, aborter, logger);
+        Static_files_and_paths_utilities.move_to_trash(path, null, context);
     }
 
     //**********************************************************
     @Override
-    public void delete_multiple(List<Path> paths, Window owner, Aborter aborter, Logger logger)
+    public void delete_multiple(List<Path> paths, Kontext context)
     //**********************************************************
     {
-        Static_files_and_paths_utilities.move_to_trash_multiple(paths,owner, null, aborter, logger);
+        Static_files_and_paths_utilities.move_to_trash_multiple(paths, null, context);
     }
 
 
     // returns null if the cache does not exist or is stale
     //**********************************************************
-    Files_and_folders load_cache_from_disk(Aborter aborter, Logger logger)
+    Files_and_folders load_cache_from_disk(Kontext context)
     //**********************************************************
     {
         Optional<Path> op = get_folder_path();
         if (  op.isEmpty())
         {
-            logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            context.log(Stack_trace_getter.get_stack_trace("PANIC "));
             return null;
         }
         byte[] bytes = null;
@@ -465,7 +464,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         catch (IOException e)
         {
             // happens the first time
-            // logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            // context.log(Stack_trace_getter.get_stack_trace(""+e));
             return  null;
         }
         try {
@@ -473,7 +472,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             String folder_path2 = unpacker.unpackString();
             if ( !folder_path.toAbsolutePath().toString().equals(folder_path2))
             {
-                logger.log(Stack_trace_getter.get_stack_trace("PANIC different folder paths ?"));
+                context.log(Stack_trace_getter.get_stack_trace("PANIC different folder paths ?"));
                 unpacker.close();
                 return null;
             }
@@ -482,7 +481,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             long folder_modification_time = Files.getLastModifiedTime(folder_path).toMillis();
             if ( folder_modification_time > cache_creation_time)
             {
-                logger.log("stale folder cache for "+get_folder_path());
+                context.log("stale folder cache for "+get_folder_path());
                 unpacker.close();
                 return null;
             }
@@ -493,7 +492,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 files = new ArrayList<>(files_count);
                 for (int i = 0; i < files_count; i++)
                 {
-                    if ( aborter.should_abort())
+                    if ( context.should_abort())
                     {
                         unpacker.close();
                         return null;
@@ -508,7 +507,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 folders = new ArrayList<>(folders_count);
                 for (int i = 0; i < folders_count; i++)
                 {
-                    if ( aborter.should_abort())
+                    if ( context.should_abort())
                     {
                         unpacker.close();
                         return null;
@@ -522,19 +521,19 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
             return  null;
         }
     }
 
     //**********************************************************
-    boolean save_cache_to_disk(Files_and_folders faf, Aborter aborter, Logger logger)
+    boolean save_cache_to_disk(Files_and_folders faf, Kontext context)
     //**********************************************************
     {
         Optional<Path> folder_path = get_folder_path();
         if (  folder_path.isEmpty())
         {
-            logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            context.log(Stack_trace_getter.get_stack_trace("PANIC "));
             return false;
         }
         try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
@@ -548,7 +547,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 packer.packArrayHeader(files.size());
                 for (Path entry : files)
                 {
-                    if ( aborter.should_abort())
+                    if ( context.should_abort())
                     {
                         packer.close();
                         return false;
@@ -561,7 +560,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 packer.packArrayHeader(folders.size());
                 for (Path entry : folders)
                 {
-                    if ( aborter.should_abort())
+                    if ( context.should_abort())
                     {
                         packer.close();
                         return false;
@@ -570,12 +569,12 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                 }
             }
             Path cache_save_path = get_cache_save_path();
-            if ( cache_dbg) logger.log("get_cache_save_path()="+cache_save_path);
+            if ( cache_dbg) context.log("get_cache_save_path()="+cache_save_path);
             Files.write(cache_save_path, packer.toByteArray());
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
             return false;
         }
         return true;

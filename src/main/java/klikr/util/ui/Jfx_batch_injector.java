@@ -4,6 +4,7 @@
 package klikr.util.ui;
 
 import javafx.application.Platform;
+import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -40,7 +41,7 @@ public class Jfx_batch_injector
     private final Aborter aborter;
 
     //**********************************************************
-    public static void inject(Runnable r, Logger logger)
+    public static void inject(Runnable r, Kontext context)
     //**********************************************************
     {
         if ( enable)
@@ -51,7 +52,7 @@ public class Jfx_batch_injector
                 {
                     if (instance == null)
                     {
-                        instance = new Jfx_batch_injector(logger);
+                        instance = new Jfx_batch_injector(context);
                     }
                 }
             }
@@ -78,11 +79,11 @@ public class Jfx_batch_injector
     }
 
     //**********************************************************
-    private Jfx_batch_injector(Logger logger)
+    private Jfx_batch_injector(Kontext context)
     //**********************************************************
     {
-        aborter = new Aborter("Jfx_batch_injector",logger);
-        this.logger = logger;
+        aborter = new Aborter("Jfx_batch_injector", context.logger());
+        this.logger = context.logger();
 
         // batch building pump
         Runnable r = () -> {

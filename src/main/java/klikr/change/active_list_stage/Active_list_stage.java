@@ -14,6 +14,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.look.Look_and_feel_manager;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.time.LocalDateTime;
@@ -32,22 +33,20 @@ public class Active_list_stage
     public final VBox vbox;
     Datetime_to_signature_source source;
     public final Active_list_stage_action on_action;
-    public final Logger logger;
-    private final Stage stage;
+    private final Kontext context;
 
     //**********************************************************
-    public static Active_list_stage show_active_list_stage(String title, Datetime_to_signature_source source_, Active_list_stage_action on_action, Window owner, Logger logger_)
+    public static Active_list_stage show_active_list_stage(String title, Datetime_to_signature_source source_, Active_list_stage_action on_action, Kontext context)
     //**********************************************************
     {
-        Active_list_stage returned = new Active_list_stage(title,source_,on_action,owner,logger_);
+        Active_list_stage returned = new Active_list_stage(title,source_,on_action,context);
         return returned;
     }
 
     //**********************************************************
-    private Active_list_stage(String title, Datetime_to_signature_source source_, Active_list_stage_action on_action, Window owner, Logger logger_)
+    private Active_list_stage(String title, Datetime_to_signature_source source_, Active_list_stage_action on_action, Kontext k)
     //**********************************************************
     {
-        logger = logger_;
         source = source_;
         this.on_action = on_action;
         // List<Button> list = new ArrayList<>();
@@ -58,10 +57,11 @@ public class Active_list_stage
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
 
-        stage = new Stage();
-        stage.initOwner(owner);
-        stage.setX(owner.getX()+100);
-        stage.setY(owner.getY()+100);
+        Stage stage = new Stage();
+        this.context = new Kontext(stage,k.aborter(),k.logger());
+        stage.initOwner(k.owner());
+        stage.setX(k.getX()+100);
+        stage.setY(k.getY()+100);
         stage.setHeight(600);
         stage.setWidth(1000);
 
@@ -108,14 +108,14 @@ public class Active_list_stage
             b.setTextAlignment(TextAlignment.LEFT);
             b.setPrefWidth(WIDTH);
             //Font_size.apply_font_size(b,logger);
-            Look_and_feel_manager.set_region_look(b, true, stage,logger);
+            Look_and_feel_manager.set_region_look(b, true, context.logger());
 
             if (on_action != null)
             {
                 b.setOnAction(actionEvent ->
                 {
                     String signature = map.get(local_date_time_as_key);
-                    logger.log("ACTION for: "+signature);
+                    context.log("ACTION for: "+signature);
                     on_action.on_click(signature);
                 });
             }

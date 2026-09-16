@@ -64,10 +64,9 @@ public class System_info
                     java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()));
                     String line = reader.readLine();
                     if (line != null && line.startsWith("hw.memsize: ")) {
-                        String s = line;
-                        if (line.length()>12) line = line.substring("hw.memsize: ".length()).trim();
-                        long bytes = Long.parseLong(s);
-                        return Optional.of((int)(bytes / (1024L * 1024L * 1024L)));
+                       line = line.substring("hw.memsize: ".length()).trim();
+                       long bytes = Long.parseLong(line);
+                       return Optional.of((int)(bytes / (1024L * 1024L * 1024L)));
                     }
                 } catch (Exception e) {
                     System.out.println("Error when executing command: " + cmd);

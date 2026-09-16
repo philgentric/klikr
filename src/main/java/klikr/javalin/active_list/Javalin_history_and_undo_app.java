@@ -12,6 +12,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import klikr.change.undo.Undo_item;
 import klikr.change.old_and_new.Old_and_new_Path;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;
 
@@ -41,7 +42,7 @@ public class Javalin_history_and_undo_app extends Application {
     @Override
     public void start(Stage primaryStage) {
         Logger logger = new Simple_logger();
-
+        Kontext context = new Kontext(null,null,logger);
         // 1. Setup JavaFX UI
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
@@ -63,7 +64,7 @@ public class Javalin_history_and_undo_app extends Application {
 
         Button undoButton = new Button("↩️ Show Undo History");
         undoButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 10 20;");
-        undoButton.setOnAction(e -> showUndoTest(logger));
+        undoButton.setOnAction(e -> showUndoTest(context));
 
         Button clearButton = new Button("Clear Browser");
         clearButton.setOnAction(e -> {
@@ -133,7 +134,7 @@ public class Javalin_history_and_undo_app extends Application {
         });
     }
 
-    private void showUndoTest(Logger logger) {
+    private void showUndoTest(Kontext context) {
         Platform.runLater(() -> {
             the_TextArea.appendText("\n=== Test 2: Undo History ===\n");
 
@@ -158,7 +159,7 @@ public class Javalin_history_and_undo_app extends Application {
                     oans,
                     LocalDateTime.now().minusHours(i),
                     UUID.randomUUID(),
-                    logger
+                    context
                 );
 
                 undoItems.add(undoItem);
@@ -178,7 +179,7 @@ public class Javalin_history_and_undo_app extends Application {
                         statusLabel.setText("Undo item clicked!");
                     });
                 },
-                logger
+                    context.logger()
             );
         });
     }

@@ -1,7 +1,6 @@
 package klikr.path_lists.navigator;
 
-import klikr.File_comparator_provider;
-import klikr.Owner_provider;
+import klikr.path_lists.File_comparator_provider;
 import klikr.path_lists.Path_list_provider;
 import klikr.util.execute.actor.Aborter;
 

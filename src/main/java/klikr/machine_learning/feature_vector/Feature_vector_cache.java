@@ -9,8 +9,7 @@ package klikr.machine_learning.feature_vector;
 
 
 
-import javafx.stage.Stage;
-import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.cache.*;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -102,13 +101,13 @@ public class Feature_vector_cache implements Clearable_RAM_cache
 
 
     //**********************************************************
-    public static Path get_feature_vector_cache_dir(Stage owner, Logger logger)
+    public static Path get_feature_vector_cache_dir(Kontext context)
     //**********************************************************
     {
 
-        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.feature_vectors_cache.name(), false,owner,logger);
+        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.feature_vectors_cache.name(), false,context);
         if (dbg) if (tmp_dir != null) {
-            logger.log("Feature vector cache folder=" + tmp_dir.toAbsolutePath());
+            context.log("Feature vector cache folder=" + tmp_dir.toAbsolutePath());
         }
         return tmp_dir;
     }
@@ -120,8 +119,7 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             Path p,
             Job_termination_reporter tr,
             boolean wait_if_needed,
-            Window owner,
-            Aborter aborter)
+            Kontext context)
     //**********************************************************
     {
         String key = key_from_path(p);
@@ -153,16 +151,16 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         }
 
 
-        if ( aborter.should_abort())
+        if ( context.should_abort())
         {
-            logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+aborter.name+"<- reason="+aborter.reason()+ " target path="+p));
+            logger.log(("feature vector cache instance#"+instance_number+" request aborted: ->"+context.aborter().name+"<- reason="+context.abort_reason()+ " target path="+p));
             if (tr != null) tr.has_ended("aborted", null);
             return null;
         }
 
         if ( dbg) logger.log("going to make feature_vector for "+p);
 
-        Feature_vector_build_message imp = new Feature_vector_build_message(p,this,owner,aborter,logger);
+        Feature_vector_build_message imp = new Feature_vector_build_message(p,this,context);
         if ( wait_if_needed)
         {
             //logger.log("blocking FV creation call for "+p);
@@ -264,51 +262,47 @@ public class Feature_vector_cache implements Clearable_RAM_cache
             Feature_vector_source fvs,
             List<Path> paths,
             Path_list_provider path_list_provider,
-            Window owner,
-            Aborter browser_aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         try( Perf p = new Perf("preload_all_feature_vector_in_cache"))
         {
-            logger.log("\n\n"+ Logger.ok+" Going to preload_all_feature_vector_in_cache\n\n");
+            context.log("\n\n"+ Logger.ok+" Going to preload_all_feature_vector_in_cache\n\n");
             Feature_vector_cache feature_vector_cache = RAM_caches.fv_cache_of_caches.get(path_list_provider.get_key());
             AtomicInteger in_flight = new AtomicInteger(1); // '1' to keep it alive until update settles the final count
 
             if ( feature_vector_cache == null)
             {
                 Optional<Hourglass> hourglass = Progress_window.show_with_in_flight(
-                        browser_aborter,
                         in_flight,
                         "Wait, making feature vectors",
                         3600*60,
-                        owner,
-                        logger);
+                        context);
 
 
-                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_key(), fvs,logger);
-                feature_vector_cache.read_from_disk_and_update(paths,in_flight, owner, browser_aborter,logger);
+                feature_vector_cache = new Feature_vector_cache(path_list_provider.get_key(), fvs, context.logger());
+                feature_vector_cache.read_from_disk_and_update(paths,in_flight, context);
                 RAM_caches.fv_cache_of_caches.put(path_list_provider.get_key(),feature_vector_cache);
                 hourglass.ifPresent(Hourglass::close);
                 return feature_vector_cache;
             }
-            feature_vector_cache.update(paths, in_flight,owner, browser_aborter,logger);
+            feature_vector_cache.update(paths, in_flight,context);
             return feature_vector_cache;
         }
     }
 
     //**********************************************************
-    private void read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Window owner, Aborter aborter, Logger logger)
+    private void read_from_disk_and_update(List<Path>paths , AtomicInteger in_flight, Kontext context)
     //**********************************************************
     {
-        List<Path> missing = reload_cache_from_disk(paths, in_flight,aborter);
+        List<Path> missing = reload_cache_from_disk(paths, in_flight,context.aborter());
         //logger.log("read_from_disk "+ the_cache.size()+" fv reloaded from disk");
-        update( missing, in_flight, owner, aborter, logger);
+        update( missing, in_flight, context);
     }
 
     //**********************************************************
     private void update(List<Path> missing_paths,
-            AtomicInteger in_flight, Window owner, Aborter aborter,Logger logger)
+            AtomicInteger in_flight, Kontext context)
     //**********************************************************
     {
         if ( ultra_dbg) logger.log("update: "+missing_paths.size()+" missing fv to be rebuild");
@@ -334,12 +328,12 @@ public class Feature_vector_cache implements Clearable_RAM_cache
         };
         for (Path p :missing_paths)
         {
-            if ( aborter.should_abort())
+            if ( context.should_abort())
             {
                 while ( cdl.getCount() > 0 ) cdl.countDown();
                 break;
             }
-            get_from_cache_or_make(p,tr,false, owner, aborter);
+            get_from_cache_or_make(p,tr,false, context);
         }
         try {
             cdl.await();

@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Klikr_application;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Actor_engine;
@@ -35,39 +36,35 @@ public class System_open_actor implements Actor
     public static void open_with_system(
             Application application,
             Path path,
-            Window window,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
     Actor_engine.run(
             System_open_actor.get(),
-            new System_open_message(false,false, application,window, path, aborter,logger),null,logger);
+            new System_open_message(false,false, application, path, context),null, context.logger());
     }
 
     //**********************************************************
     public static void open_with_web_browser(
             Application application,
             Path path,
-            Window window,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         Actor_engine.run(
                 System_open_actor.get(),
-                new System_open_message(false,true, application,window, path, aborter,logger),null,logger);
+                new System_open_message(false,true, application, path, context),null, context.logger());
     }
 
     //**********************************************************
     public static void open_with_registered_application(
-            Path path, Window owner, Aborter aborter, Logger logger)
+            Path path, Kontext context)
     //**********************************************************
     {
-        logger.log("open_with_click_registered_application " + path);
+        context.log("open_with_click_registered_application " + path);
         Actor_engine.run(
                 System_open_actor.get(),
-                new System_open_message(true, false, Klikr_application.application, owner, path, aborter,logger),null,logger);
+                new System_open_message(true, false, Klikr_application.application, path, context),null, context.logger());
     }
 
     //**********************************************************
@@ -126,22 +123,22 @@ public class System_open_actor implements Actor
     {
         try
         {
-            som.logger.log("going to call showDocument for "+ som.path);
+            som.context.log("going to call showDocument for "+ som.path);
             som.application.getHostServices().showDocument(som.path.toUri().toString());
             // dont use this, it is AWT
             //Desktop.getDesktop().open(som.path.toAbsolutePath().toFile());
         }
         catch (Exception e)
         {
-            som.logger.log(Stack_trace_getter.get_stack_trace(Logger.warning+" open failed :" + e));
+            som.context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" open failed :" + e));
 
             if (e.toString().contains("doesn't exist."))
             {
-                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Failed", "Your OS/GUI could not open this file, the error is:\n" + e,false, som.owner, som.logger), som.logger);
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Failed", "Your OS/GUI could not open this file, the error is:\n" + e,false, som.context), som.context);
             }
             else
             {
-                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Failed", "Your OS/GUI could not open this file, the error is:\n" + e + "\nMaybe it is just not properly configured e.g. most often the file extension has to be registered?",false, som.owner, som.logger), som.logger);
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Failed", "Your OS/GUI could not open this file, the error is:\n" + e + "\nMaybe it is just not properly configured e.g. most often the file extension has to be registered?",false, som.context), som.context);
             }
             return "failed";
         }
@@ -154,14 +151,14 @@ public class System_open_actor implements Actor
     //**********************************************************
     {
         String extension = Extensions.get_extension(som.path.toFile().getName());
-        String app = Registered_applications.get_registered_application(extension, som.owner, som.aborter,som.logger);
+        String app = Registered_applications.get_registered_application(extension, som.context);
 
         if ( app == null)
         {
-            som.logger.log(Logger.error+"open with_click_registered_application aborted, no registered operation for this extension ");
+            som.context.log(Logger.error+"open with_click_registered_application aborted, no registered operation for this extension ");
             return "error";
         }
-        som.logger.log(Logger.warning+" open with click registered application for " + som.path + " with " + app);
+        som.context.log(Logger.warning+" open with click registered application for " + som.path + " with " + app);
 
         call_os_specific_open(som,app);
 
@@ -176,23 +173,23 @@ public class System_open_actor implements Actor
     {
         if ( som.path == null)
         {
-            som.logger.log("call_os_specific_open failed, path is null");
+            som.context.log("call_os_specific_open failed, path is null");
             return false;
         }
 
         if ( !som.path.toFile().exists() )
         {
-            som.logger.log("call_os_specific_open failed, path does not exist: "+som.path);
+            som.context.log("call_os_specific_open failed, path does not exist: "+som.path);
             return false;
         }
         if ( som.path.getParent() == null )
         {
-            som.logger.log("call_os_specific_open failed, no parent for path: "+som.path);
+            som.context.log("call_os_specific_open failed, no parent for path: "+som.path);
             return false;
         }
-        Operating_system os = Guess_OS.guess(som.logger);
+        Operating_system os = Guess_OS.guess(som.context.logger());
 
-        Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Calling "+os.name()+" to open: "+som.path, "Please wait ",true,som.owner,som.logger), som.logger);
+        Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Calling "+os.name()+" to open: "+som.path, "Please wait ",true,som.context), som.context);
 
         List<String> list = new ArrayList<>();
         switch ( os)
@@ -237,9 +234,9 @@ public class System_open_actor implements Actor
 
 
 
-        if (som.aborter.should_abort())
+        if (som.context.should_abort())
         {
-            som.logger.log("open with os-specific aborted");
+            som.context.log("open with os-specific aborted");
             return false;
         }
         File wd = som.path.toFile().getParentFile();
@@ -248,20 +245,20 @@ public class System_open_actor implements Actor
             // on macOS the app 'does not show' because the JVM puts kikr back on top TOO FAST
             //  trick: we hide the app for a while
             Platform.runLater(() -> {
-                ((Stage) som.owner).hide();
+                som.context.get_Stage().hide();
             });
         }
 
 
 
 
-        Execute_result res = Execute_command.execute_command_list_no_wait(list, wd, som.logger);
+        Execute_result res = Execute_command.execute_command_list_no_wait(list, wd, som.context.logger());
         if ( !res.status())
         {
-            som.logger.log("open with "+os.name()+" failed:\n"+ res.output() +"\n\n\n");
+            som.context.log("open with "+os.name()+" failed:\n"+ res.output() +"\n\n\n");
             return false;
         }
-        som.logger.log("\n\n\n open with "+os.name()+" output :\n"+ res.output() +"\n\n\n");
+        som.context.log("\n\n\n open with "+os.name()+" output :\n"+ res.output() +"\n\n\n");
 
 
         if (os == Operating_system.MacOS)
@@ -273,18 +270,18 @@ public class System_open_actor implements Actor
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    som.logger.log("" + e);
+                    som.context.log("" + e);
                     return;
                 }
                 Platform.runLater(() ->
                 {
-                    ((Stage) som.owner).show();
-                    ((Stage) som.owner).setOpacity(0.3);
+                    som.context.get_Stage().show();
+                    som.context.get_Stage().setOpacity(0.3);
                 });
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    som.logger.log("" + e);
+                    som.context.log("" + e);
                     return;
                 }
                 // then we restore klikr ..
@@ -292,11 +289,11 @@ public class System_open_actor implements Actor
                 // case B: klikr is on top, but the user could SEE that the other app HAS OPENED
                 Platform.runLater(() ->
                 {
-                    ((Stage) som.owner).show();
-                    ((Stage) som.owner).setOpacity(1);
+                    som.context.get_Stage().show();
+                    som.context.get_Stage().setOpacity(1);
                 });
 
-            }, "macos trick", som.logger);
+            }, "macos trick", som.context.logger());
         }
 
 

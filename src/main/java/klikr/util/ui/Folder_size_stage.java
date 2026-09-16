@@ -11,8 +11,8 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.look.Font_size;
@@ -41,40 +41,38 @@ public class Folder_size_stage
 
 
     //**********************************************************
-    public static void get_folder_size(Path path,
-                                       Window owner,
-                                       Logger logger)
+    public static void get_folder_size(Path path, Kontext k)
     //**********************************************************
     {
         // open a window to display what is going on and the final result
         Stage local_stage = new Stage();
-        local_stage.initOwner(owner);
-        local_stage.setX(owner.getX()+100);
-        local_stage.setY(owner.getY()+100);
-
-
+        Aborter local_aborter = new Aborter("get_folder_size",k.logger());
+        Kontext context = new Kontext(local_stage,local_aborter,k.logger());
+        local_stage.initOwner(k.owner());
+        local_stage.setX(context.getX()+100);
+        local_stage.setY(context.getY()+100);
         local_stage.setHeight(size_stage_height);
         local_stage.setWidth(size_stage_width);
         VBox vbox = new VBox();
-        Look_and_feel_manager.set_region_look(vbox,owner,logger);
-
+        Look_and_feel_manager.set_region_look(vbox,context.logger());
         vbox.setAlignment(javafx.geometry.Pos.CENTER);
 
-        Progress progress = Progress.start(vbox,owner,logger);
+        Progress progress = Progress.start(vbox,context);
 
         TextArea textarea2 = new TextArea();
         vbox.getChildren().add(textarea2);
         textarea2.setMinHeight(icon_height);
-        Font_size.apply_this_font_size_to_Node(textarea2,20,logger);
+
+        Font_size.apply_this_font_size_to_Node(textarea2,20,context.logger());
 
         Scene scene = new Scene(vbox, Color.WHITE);
+
         local_stage.setTitle(path.toAbsolutePath().toString());
         local_stage.setScene(scene);
         local_stage.show();
         //local_stage.setAlwaysOnTop(true);
 
 
-        Aborter local_aborter = new Aborter("get_folder_size",logger);
         local_stage.setOnCloseRequest(new EventHandler<WindowEvent>()
         {
             @Override
@@ -91,12 +89,13 @@ public class Folder_size_stage
                         key_event.consume();
                     }
                 });
+
         Runnable r = () -> {
             // this call is blocking until tree has been explored
-            Sizes sizes = Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(path,local_aborter, owner, logger);
+            Sizes sizes = Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(path,context);
+            String bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(sizes.bytes(),context);
 
             Jfx_batch_injector.inject(() -> {
-                String bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(sizes.bytes(),owner,logger);
 
                 progress.remove();
                 if (sizes.bytes() < 0)
@@ -104,20 +103,20 @@ public class Folder_size_stage
                     textarea2.setText(path+ "\nAn error occurred, probably Access Denied, check the logs");
                 }
 
-                String folders_s = My_I18n.get_I18n_string("Folders", owner,logger);
-                String files_s = My_I18n.get_I18n_string("Files", owner,logger);
-                String image_s = My_I18n.get_I18n_string("Images", owner,logger);
-                String bytes_s = My_I18n.get_I18n_string("Bytes", owner,logger);
+                String folders_s = My_I18n.get_I18n_string("Folders", context);
+                String files_s = My_I18n.get_I18n_string("Files", context);
+                String image_s = My_I18n.get_I18n_string("Images", context);
+                String bytes_s = My_I18n.get_I18n_string("Bytes", context);
 
                 textarea2.setText(folders_s+":\t\t\t"+ sizes.folders() + "\n"+
                         files_s+":\t\t\t" + sizes.files() + "\n" +
                         image_s+":\t\t\t"+sizes.images()+ "\n" +
                         bytes_s+":\t\t\t"+bytes);
-                logger.log(path + " :  " + sizes.folders() + " " + folders_s + " , " + sizes.files() + " " + files_s + " , " + sizes.images() + " " + image_s+" , "+bytes+" "+bytes_s);
+                k.log(path + " :  " + sizes.folders() + " " + folders_s + " , " + sizes.files() + " " + files_s + " , " + sizes.images() + " " + image_s+" , "+bytes+" "+bytes_s);
 
-            },logger);
+            },context);
         };
-        Actor_engine.execute(r, "Explore tree",logger);
+        Actor_engine.execute(r, "Explore tree", k.logger());
 
     }
 

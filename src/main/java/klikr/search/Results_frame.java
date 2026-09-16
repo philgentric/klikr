@@ -20,18 +20,18 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.Window_type;
-import klikr.experimental.audio.player.The_audio_player;
+import klikr.audio.player.The_audio_player;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Scrollable_text_field;
 import klikr.util.ui.progress.Progress;
-import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.Drag_and_drop;
+import klikr.browsers.browser_core.Drag_and_drop;
 import klikr.path_lists.Path_list_provider_for_file_system;
-import klikr.browser_core.items.Item_file_with_icon;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.items.Item_file_with_icon;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -39,7 +39,6 @@ import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.look.Look_and_feel_manager;
-import klikr.util.log.Logger;
 import klikr.util.ui.Menu_items;
 import klikr.util.ui.Text_frame;
 
@@ -51,7 +50,6 @@ import java.util.*;
 public class Results_frame implements Results
 //**********************************************************
 {
-	final Logger logger;
 	VBox the_result_vbox = new VBox();
     HashMap<String, List<Path>> search_results;
     HashMap<Search_result, Boolean> search_results_is_max;
@@ -60,7 +58,7 @@ public class Results_frame implements Results
     Progress progress;
 	VBox vbox;
 	//final Browser_for_file_system_in_2D browser;
-	final Aborter aborter;
+	final Kontext context;
 	private final Path_list_provider path_list_provider;
 	private final Path_comparator_source path_comparator_source;
 	private final Application application;
@@ -72,30 +70,27 @@ public class Results_frame implements Results
 			Application application,
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
-			Aborter aborter,
-            Window owner,
-			Logger logger)
+			Kontext k)
 	//**********************************************************
 	{
 		this.application = application;
 		this.path_list_provider = path_list_provider;
 		this.path_comparator_source = path_comparator_source;
-		this.aborter = aborter;
-		this.logger = logger;
+		this.context = new Kontext(stage,k.aborter(),k.logger());
 
-        stage.initOwner(owner);
+        stage.initOwner(k.owner());
 
 		vbox = new VBox();
-		Look_and_feel_manager.set_region_look(vbox,stage,logger);
+		Look_and_feel_manager.set_region_look(vbox,context.logger());
 		vbox.setAlignment(javafx.geometry.Pos.CENTER);
-        progress = Progress.start(vbox,stage,logger);
+        progress = Progress.start(vbox,context);
         the_result_vbox.getChildren().add(vbox);
 
 		ScrollPane scroll_pane = new ScrollPane(the_result_vbox);
         Scene scene = new Scene(scroll_pane, 1000, 800);
-		Look_and_feel_manager.set_region_look(scroll_pane,stage,logger);
+		Look_and_feel_manager.set_region_look(scroll_pane,context.logger());
 
-		stage.setTitle(My_I18n.get_I18n_string("Search_Results", stage,logger));
+		stage.setTitle(My_I18n.get_I18n_string("Search_Results", context));
 		stage.setScene(scene);
 		stage.setX(Finder_frame.MIN_WIDTH);
 		stage.setY(0);
@@ -135,7 +130,7 @@ public class Results_frame implements Results
         Node graphic = null;
         if ( use_scrollable_textfield)
         {
-            graphic = new Scrollable_text_field(application,displayed_text,path, b,owner,aborter,logger);
+            graphic = new Scrollable_text_field(application,displayed_text,path, b,context);
         }
         else
 		{
@@ -156,47 +151,47 @@ public class Results_frame implements Results
         b.setGraphic(graphic);
         b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 
-		//Look_and_feel_manager.set_button_look(b, true,owner,logger);
+		//Look_and_feel_manager.set_button_look(b, true,context.logger());
 		if (Files.isDirectory(path))
         {
-            Look_and_feel_manager.set_region_look(b, true,owner,logger);
+            Look_and_feel_manager.set_region_look(b, true,context.logger());
 		}
         else
         {
-            Look_and_feel_manager.set_region_look(b, false,owner,logger);
+            Look_and_feel_manager.set_region_look(b, false,context.logger());
         }
 		the_result_vbox.getChildren().add(b);
 		b.setOnAction((ActionEvent e) -> {
 
-			logger.log("Search Results : going to open on menu select: " + path);
+			context.log("Search Results : going to open on menu select: " + path);
 
 			open(path, owner);
 		});
 
 		// add a menu to the button
 		b.setOnContextMenuRequested((ContextMenuEvent event) -> {
-			//logger.log("show context menu of button:"+ path.toAbsolutePath());
+			//context.log("show context menu of button:"+ path.toAbsolutePath());
 			ContextMenu context_menu = new ContextMenu();
-			Look_and_feel_manager.set_context_menu_look(context_menu,stage,logger);
+			Look_and_feel_manager.set_context_menu_look(context_menu,context.logger());
 
 
-			Menu_items.create_browse_in_new_window_menu_item(application, context_menu,path,owner,logger);
+			Menu_items.create_browse_in_new_window_menu_item(application, context_menu,path,context);
 
 			if (! path.toFile().isDirectory())
 			{
-				Menu_items.create_open_with_registered_application_menu_item(context_menu,path,owner,aborter,logger);
+				Menu_items.create_open_with_registered_application_menu_item(context_menu,path,context);
 
 				Menu_items.add_menu_item_for_context_menu("Delete",true,
 						(new KeyCodeCombination(KeyCode.BACK_SPACE)).getDisplayText(),
 						e -> {
-							logger.log("Delete");
-							Static_files_and_paths_utilities.move_to_trash(path,stage, null, aborter, logger);
+							context.log("Delete");
+							Static_files_and_paths_utilities.move_to_trash(path,null,context);
 							// need to remove the button from the list
 							the_result_vbox.getChildren().remove(b);
-						},context_menu,owner,logger);
+						},context_menu,context);
 
 				{
-					MenuItem rename = Item_file_with_icon.get_rename_MenuItem(path,stage, aborter,logger);
+					MenuItem rename = Item_file_with_icon.get_rename_MenuItem(path, context);
 					context_menu.getItems().add(rename);
 				}
 
@@ -204,7 +199,7 @@ public class Results_frame implements Results
 		});
 
 
-		Drag_and_drop.init_drag_and_drop_sender_side(b, null,path,logger);
+		Drag_and_drop.init_drag_and_drop_sender_side(b, null,path,context);
 
         return b;
 	}
@@ -213,7 +208,7 @@ public class Results_frame implements Results
 	private void open(Path path, Window owner)
 	//**********************************************************
 	{
-		Actor_engine.execute(()-> Platform.runLater(()->open_internal(path,owner)),"opening search result",logger);
+		Actor_engine.execute(()-> Platform.runLater(()->open_internal(path,owner)),"opening search result", context.logger());
 	}
 
 	//**********************************************************
@@ -222,39 +217,38 @@ public class Results_frame implements Results
 	{
 		if (Files.isDirectory(path))
 		{
-			Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner,logger), owner,logger);
+			Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, context), context);
 		}
-		else if (Guess_file_type.is_this_file_extension_an_image(path.toFile(), owner, logger))
+		else if (Guess_file_type.is_this_file_extension_an_image(path.toFile(), context))
 		{
-			Path_list_provider new_path_list_provider = new Path_list_provider_for_file_system(path.getParent(), owner,logger);
+			Path_list_provider new_path_list_provider = new Path_list_provider_for_file_system(path.getParent(), context);
 			Item_file_with_icon.open_an_image(
 					new_path_list_provider,
 					path_comparator_source,
 					path,
-					owner,
-					logger);
+					context);
 			//Image_window is = Image_window.get_Image_window(the_browser, path, logger);
 		}
-		else if (Guess_file_type.is_this_path_extension_a_music(path, logger))
+		else if (Guess_file_type.is_this_path_extension_a_music(path, context.logger()))
 		{
-			logger.log("opening audio file: " + path.toAbsolutePath());
-			The_audio_player.play_song_in_folder(application,path,owner,logger);
+			context.log("opening audio file: " + path.toAbsolutePath());
+			The_audio_player.play_song_in_folder(application,path,context);
 		}
-		else if (Guess_file_type.is_this_path_extension_a_text(path, owner, logger))
+		else if (Guess_file_type.is_this_path_extension_a_text(path, context))
 		{
-			logger.log("opening text file: " + path.toAbsolutePath());
+			context.log("opening text file: " + path.toAbsolutePath());
 			if ( Feature_cache.get(Feature.Use_web_browser_for_text_reading))
 			{
-				System_open_actor.open_with_web_browser(application,path,owner,aborter,logger);
+				System_open_actor.open_with_web_browser(application,path,context);
 			}
 			else
 			{
-				Text_frame.show(path, logger);
+				Text_frame.show(path, context.logger());
 			}
 		}
 		else
 		{
-			System_open_actor.open_with_system(application,path, stage, aborter, logger);
+			System_open_actor.open_with_system(application,path,context);
 		}
 	}
 
@@ -280,7 +274,7 @@ public class Results_frame implements Results
                 {
                     Button b = make_one_button(keys, is_max, sr.path(),window);
                     search_results_buttons.put(b,sr);
-                },logger);
+                },context);
 
 	}
 
@@ -290,7 +284,7 @@ public class Results_frame implements Results
 	{
 
 		Jfx_batch_injector.inject(() -> {
-			stage.setTitle(My_I18n.get_I18n_string("Search_Results_Ended", stage,logger));
+			stage.setTitle(My_I18n.get_I18n_string("Search_Results_Ended", context));
 			//stage.getScene().getRoot().setCursor(Cursor.DEFAULT);
 
             progress.stop();
@@ -307,7 +301,7 @@ public class Results_frame implements Results
 
             progress.remove();
 
-		},logger);
+		},context);
 
 
 	}
@@ -331,14 +325,14 @@ public class Results_frame implements Results
                     Search_result  sr =  search_results_buttons.get(button);
                     if ( sr == null)
                     {
-                        logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                        context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
                     }
                     else
                     {
                         Boolean bool = search_results_is_max.get(sr);
                         if ( bool == null)
                         {
-                            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
                         }
                         else
                         {
@@ -348,7 +342,7 @@ public class Results_frame implements Results
                 }
             }
             the_result_vbox.getChildren().removeAll(to_be_deleted);
-        },logger);
+        },context);
 
 
     }

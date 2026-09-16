@@ -20,6 +20,7 @@ import javafx.stage.Window;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_manager;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
 
@@ -33,36 +34,36 @@ public class Folder_chooser
 {
 
     //**********************************************************
-    public static Path show_dialog_for_folder_selection(String title, Path initial_directory, Window owner, Logger logger)
+    public static Path show_dialog_for_folder_selection(String title, Path initial_directory, Kontext context)
     //**********************************************************
     {
         Stage dialog = new Stage(StageStyle.UTILITY);
         dialog.initModality(Modality.WINDOW_MODAL);
-        if (owner != null) dialog.initOwner(owner);
+        if (context.owner() != null) dialog.initOwner(context.owner());
         dialog.setTitle(title);
 
         BorderPane pane = new BorderPane();
         pane.setPadding(new Insets(8));
-        Look_and_feel_manager.set_region_look(pane,owner,logger);
+        Look_and_feel_manager.set_region_look(pane,context.logger());
 
 
         Button up_button = new Button("Up");
-        double font_size = Non_booleans_properties.get_font_size(owner,logger);
+        double font_size = Non_booleans_properties.get_font_size();
         double height = Look_and_feel.MAGIC_HEIGHT_FACTOR * font_size;
-        Image icon = Look_and_feel_manager.get_up_icon(height,owner,logger);
+        Image icon = Look_and_feel_manager.get_up_icon(height, context.logger());
         if (icon == null)
         {
-            logger.log("WARNING: could not load " + Look_and_feel_manager.get_instance(owner,logger).get_up_icon_path());
-            Look_and_feel_manager.set_region_look(up_button, true,owner, logger);
+            context.log("WARNING: could not load " + Look_and_feel_manager.get_instance(context.logger()).get_up_icon_path());
+            Look_and_feel_manager.set_region_look(up_button, true,context.logger());
         }
         else
         {
-            Look_and_feel_manager.set_button_and_image_look(up_button, icon, height, null, true, owner, logger);
+            Look_and_feel_manager.set_button_and_image_look(up_button, icon, height, null, true, context.logger());
         }
         CheckBox show_hidden_checkbox = new CheckBox("Show hidden folders");
-        Look_and_feel_manager.set_CheckBox_look(show_hidden_checkbox,dialog,logger);
+        Look_and_feel_manager.set_CheckBox_look(show_hidden_checkbox,context.logger());
         {
-            Look_and_feel look_and_feel = Look_and_feel_manager.get_instance(dialog, logger);
+            Look_and_feel look_and_feel = Look_and_feel_manager.get_instance(context.logger());
             double w = look_and_feel.estimate_text_width("Show hidden folders");
             show_hidden_checkbox.setMinWidth(2*w);
             show_hidden_checkbox.setPrefWidth(2*w);
@@ -76,7 +77,7 @@ public class Folder_chooser
         top.getChildren().add(top1);
 
         TextField path_textfield = new TextField();
-        Look_and_feel_manager.set_TextField_look(path_textfield,false,dialog,logger);
+        Look_and_feel_manager.set_TextField_look(path_textfield,false,context.logger());
         path_textfield.setPromptText("Path");
         path_textfield.setMinWidth(1000);
         top.getChildren().add(path_textfield);
@@ -99,11 +100,11 @@ public class Folder_chooser
         pane.setCenter(list);
 
         Button choose_that = new Button("Choose folder");
-        Look_and_feel_manager.set_region_look(choose_that, true,owner, logger);
+        Look_and_feel_manager.set_region_look(choose_that, true,context.logger());
         //choose_that.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
 
         Button cancel_button = new Button("Cancel");
-        Look_and_feel_manager.set_region_look(cancel_button, true,owner, logger);
+        Look_and_feel_manager.set_region_look(cancel_button, true,context.logger());
         choose_that.setDefaultButton(true);
         cancel_button.setCancelButton(true);
         HBox bottom = new HBox(8, choose_that, cancel_button);
@@ -121,7 +122,7 @@ public class Folder_chooser
         path_textfield.setText(answer[0].toString());
 
         Runnable refresher = () -> {
-            list.getItems().setAll(list_paths(answer[0], show_hidden_checkbox.isSelected(),owner,logger));
+            list.getItems().setAll(list_paths(answer[0], show_hidden_checkbox.isSelected(),context.logger()));
             list.getSelectionModel().clearSelection();
             up_button.setDisable(answer[0].getParent() == null);
             path_textfield.setText(answer[0].toString());
@@ -213,7 +214,7 @@ public class Folder_chooser
     }
 
     //**********************************************************
-    private static List<Path> list_paths(Path folder, boolean also_hidden,Window owner,Logger logger)
+    private static List<Path> list_paths(Path folder, boolean also_hidden,Logger logger)
     //**********************************************************
     {
         List<Path> out = new ArrayList<>();

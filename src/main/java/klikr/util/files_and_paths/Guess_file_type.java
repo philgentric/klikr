@@ -3,12 +3,11 @@
 
 package klikr.util.files_and_paths;
 
-import javafx.stage.Window;
 import klikr.util.External_application;
+import klikr.util.Kontext;
 import klikr.util.execute.Guess_OS;
 import klikr.util.execute.Operating_system;
-import klikr.util.execute.actor.Aborter;
-import klikr.experimental.fusk.Fusk_static_core;
+import klikr.fusk.Fusk_static_core;
 //import klik.path_lists.Path_list_provider_for_playlist;
 import klikr.util.image.decoding.Exif_metadata_extractor;
 import klikr.settings.boolean_features.Booleans;
@@ -121,10 +120,10 @@ public class Guess_file_type
 
      */
     //**********************************************************
-    public static boolean is_this_file_extension_an_image(File f, Window owner, Logger logger)
+    public static boolean is_this_file_extension_an_image(File f, Kontext context)
     //**********************************************************
     {
-        return is_this_path_extension_an_image(f.toPath(), owner, logger);
+        return is_this_path_extension_an_image(f.toPath(), context);
     }
 /*
     //**********************************************************
@@ -147,19 +146,19 @@ public class Guess_file_type
 
 
     //**********************************************************
-    public static boolean is_this_path_extension_a_text(Path path, Window owner, Logger logger)
+    public static boolean is_this_path_extension_a_text(Path path, Kontext context)
     //**********************************************************
     {
-        if (should_ignore(path, logger)) return false;
+        if (should_ignore(path, context.logger())) return false;
         String extension = Extensions.get_extension(path.getFileName().toString());
         return is_this_extension_a_text(extension);
     }
 
     //**********************************************************
-    public static boolean is_this_path_extension_an_image(Path path, Window owner, Logger logger)
+    public static boolean is_this_path_extension_an_image(Path path, Kontext context)
     //**********************************************************
     {
-        if (should_ignore(path, logger)) return false;
+        if (should_ignore(path, context.logger())) return false;
         String extension = Extensions.get_extension(path.getFileName().toString());
         return is_this_extension_an_image(extension);
     }
@@ -245,18 +244,17 @@ public class Guess_file_type
     //**********************************************************
     public static boolean does_this_file_contain_a_video_track(
             Path path,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        List<String> list = get_ffprobe_cmd(path, owner, logger);
+        List<String> list = get_ffprobe_cmd(path, context);
         StringBuilder sb = new StringBuilder();
         File wd = path.getParent().toFile();
-        if (Execute_command.execute_command_list(list, wd, 2000, sb, logger) == null)
+        if (Execute_command.execute_command_list(list, wd, 2000, sb, context) == null)
         {
-            Booleans.manage_show_ffmpeg_install_warning(owner, logger);
+            Booleans.manage_show_ffmpeg_install_warning(context);
         }
-        logger.log("ffprobe result:->" + sb + "<-");
+        context.log("ffprobe result:->" + sb + "<-");
 
         String[] x = sb.toString().split("\\R");
         for (String l : x) {
@@ -268,11 +266,11 @@ public class Guess_file_type
     }
 
     //**********************************************************
-    private static List<String> get_ffprobe_cmd(Path path, Window owner, Logger logger)
+    private static List<String> get_ffprobe_cmd(Path path, Kontext context)
     //**********************************************************
     {
         List<String> list = new ArrayList<>();
-        list.add(External_application.Ffprobe.get_command(owner, logger));
+        list.add(External_application.Ffprobe.get_command(context));
         list.add("-v");
         list.add("error");
         list.add("-show_entries");
@@ -286,23 +284,22 @@ public class Guess_file_type
     //**********************************************************
     public static boolean does_this_file_contain_an_audio_track(
             Path path,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        List<String> list = get_ffprobe_cmd(path, owner, logger);
+        List<String> list = get_ffprobe_cmd(path, context);
         StringBuilder sb = new StringBuilder();
         Path parent = path.getParent();
         if ( parent == null)
         {
-            logger.log("ffprobe fails, cannot figure working dir for:->" + path + "<-");
+            context.log("ffprobe fails, cannot figure working dir for:->" + path + "<-");
             return false;
         }
         File wd = path.getParent().toFile();
-        if (Execute_command.execute_command_list(list, wd, 2000, sb, logger) == null) {
-            Booleans.manage_show_ffmpeg_install_warning(owner, logger);
+        if (Execute_command.execute_command_list(list, wd, 2000, sb, context) == null) {
+            Booleans.manage_show_ffmpeg_install_warning(context);
         }
-        logger.log("ffprobe result:->" + sb + "<-");
+        context.log("ffprobe result:->" + sb + "<-");
 
         String[] x = sb.toString().split("\\R");
         for (String l : x) {
@@ -314,13 +311,13 @@ public class Guess_file_type
     }
 
     //**********************************************************
-    public static boolean is_this_path_a_animated_gif(Path path, Window owner, Aborter aborter, Logger logger)
+    public static boolean is_this_path_a_animated_gif(Path path, Kontext context)
     //**********************************************************
     {
-        if (!Guess_file_type.is_this_path_extension_a_gif(path, logger)) return false;
+        if (!Guess_file_type.is_this_path_extension_a_gif(path, context.logger())) return false;
 
-        Exif_metadata_extractor e = new Exif_metadata_extractor(path, owner, logger);
-        List<String> l = e.get_exif_metadata(42, true, aborter, false);
+        Exif_metadata_extractor e = new Exif_metadata_extractor(path, context);
+        List<String> l = e.get_exif_metadata(42, true, context.aborter(), false);
 
         if (l == null) return false;
         if (l.isEmpty()) return false;
@@ -342,10 +339,10 @@ public class Guess_file_type
 
 
     //**********************************************************
-    public static boolean is_this_path_invisible_when_browsing(Path path, Window owner, Logger logger)
+    public static boolean is_this_path_invisible_when_browsing(Path path, Kontext context)
     //**********************************************************
     {
-        return (should_ignore(path, logger));
+        return (should_ignore(path, context.logger()));
     }
 
     //**********************************************************

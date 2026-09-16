@@ -8,10 +8,9 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import javafx.stage.Window;
-import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.util.Kontext;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
@@ -22,7 +21,6 @@ import klikr.util.log.Stack_trace_getter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Optional;
 
 //**********************************************************
 public class Fast_image_property_from_exif_metadata_extractor
@@ -32,22 +30,22 @@ public class Fast_image_property_from_exif_metadata_extractor
     private record Directory_result(Double w, Double h, Rotation rotation, boolean w_done, boolean h_done, boolean rot_done){}
 
     //**********************************************************
-    public static Image_properties get_image_properties(Path path, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
+    public static Image_properties get_image_properties(Path path, boolean report_if_not_found, Kontext context)
     //**********************************************************
     {
-        if (Check_remaining_RAM.RAM_running_low("Image properties extraction", owner, logger)) {
-            logger.log("get_image_properties NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("Image properties extraction", context)) {
+            context.log("get_image_properties NOT DONE because running low on memory ! ");
             return null;
         }
 
-        //logger.log("\n\n\nget_image_properties "+path);
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
+        //context.log("\n\n\nget_image_properties "+path);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if (is == null) {
-            logger.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
+            context.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
             return null;
         }
 
-        return get_image_properties_from_InputStream(is, path, logger);
+        return get_image_properties_from_InputStream(is, path, context.logger());
     }
 
     //**********************************************************

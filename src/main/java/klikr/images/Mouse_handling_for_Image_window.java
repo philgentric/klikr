@@ -15,10 +15,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import klikr.browser_core.Drag_and_drop;
-import klikr.browser_core.Image_and_properties;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.Drag_and_drop;
+import klikr.browsers.browser_core.Image_and_properties;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.cache.Cache_folder;
@@ -129,8 +127,7 @@ public class Mouse_handling_for_Image_window
     private static Point2D translate_mouse_event_to_in_pane(MouseEvent mouse_event, Pane pane)
     //**********************************************************
     {
-        Point2D in_parent = pane.sceneToLocal(mouse_event.getSceneX(), mouse_event.getSceneY());
-        return in_parent;
+        return pane.sceneToLocal(mouse_event.getSceneX(), mouse_event.getSceneY());
     }
 
     //**********************************************************
@@ -205,7 +202,7 @@ public class Mouse_handling_for_Image_window
                 (int)view_port.getMinY(),
                 (int)view_port.getWidth(),
                 (int)view_port.getHeight());
-        Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache, image_window.stage, logger);
+        Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache, image_window.context);
 
         cropped_image_path = icon_cache_dir.resolve("cropped_image.png");
         Image_and_properties iap = Image_and_properties.build(cropped_image,false);
@@ -421,7 +418,7 @@ public class Mouse_handling_for_Image_window
                 logger.log("bad image length");
             }
             logger.log("setting image view as broken icon");
-            local.the_image_view.setImage(Jar_utils.get_broken_icon(300, image_window.stage, logger));
+            local.the_image_view.setImage(Jar_utils.get_broken_icon(300, image_window.context.logger()));
             return true;
         }
         return false;
@@ -498,7 +495,7 @@ public class Mouse_handling_for_Image_window
                 if (Drag_and_drop.drag_and_drop_dbg) logger.log("  drag2 ACCEPTED for: " + file.getAbsolutePath());
 
                 image_window.show_wait_cursor();
-                Optional<Image_context> option = Image_context.build_Image_context(file.toPath(), image_window, image_window.aborter, logger);
+                Optional<Image_context> option = Image_context.build_Image_context(file.toPath(), image_window);
                 if ( option.isPresent())
                 {
                     image_window.image_display_handler.set_image_context(option.get());
@@ -524,7 +521,7 @@ public class Mouse_handling_for_Image_window
         });
         image_window.the_image_Pane.setOnDragEntered(drag_event -> {
             if (Drag_and_drop.drag_and_drop_dbg) logger.log("Image_stage/ic.imageView drag_and_drop DragEntered");
-            Look_and_feel_manager.set_drag_look_for_pane(image_window.the_image_Pane, image_window.stage, logger);
+            Look_and_feel_manager.set_drag_look_for_pane(image_window.the_image_Pane, image_window.context);
             drag_event.consume();
         });
         image_window.the_image_Pane.setOnDragExited(drag_event -> {

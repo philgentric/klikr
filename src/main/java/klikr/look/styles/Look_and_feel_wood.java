@@ -4,7 +4,6 @@
 package klikr.look.styles;
 
 import javafx.scene.paint.Color;
-import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
@@ -18,8 +17,8 @@ public class Look_and_feel_wood extends Look_and_feel
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.wood;}
 
-    public Look_and_feel_wood(Window owner, Logger logger) {
-        super("Wood",owner,logger);
+    public Look_and_feel_wood(Logger logger) {
+        super("Wood",logger);
     }
 
     @Override
@@ -28,7 +27,7 @@ public class Look_and_feel_wood extends Look_and_feel
     }
 
     @Override
-    public URL get_CSS_URL(Window owner) {
+    public URL get_CSS_URL() {
         return Jar_utils.get_URL_by_name("css/wood.css");
     }
 

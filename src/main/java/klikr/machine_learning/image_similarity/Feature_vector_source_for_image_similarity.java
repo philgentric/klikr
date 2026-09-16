@@ -10,6 +10,7 @@ import klikr.machine_learning.monitoring.UDP_traffic_monitor;
 import klikr.machine_learning.ML_server_type;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_source_server;
@@ -24,13 +25,13 @@ public class Feature_vector_source_for_image_similarity extends Feature_vector_s
 {
 
     //**********************************************************
-    public Feature_vector_source_for_image_similarity(Window owner,Logger logger)
+    public Feature_vector_source_for_image_similarity(Kontext context)
     //**********************************************************
     {
-        super(owner, logger);
+        super(context);
         if (Feature_cache.get(Feature.Enable_ML_server_debug))
         {
-            UDP_traffic_monitor.start_servers_monitoring(owner, logger);
+            UDP_traffic_monitor.start_servers_monitoring(context);
         }
         //logger.log(Stack_trace_getter.get_stack_trace("Feature_vector_source_for_image_similarity"));
     }
@@ -43,17 +44,17 @@ public class Feature_vector_source_for_image_similarity extends Feature_vector_s
     }
 
     //**********************************************************
-    public int get_random_port(Window owner, Logger logger)
+    public int get_random_port(Kontext context)
     //**********************************************************
     {
-        return Load_balancer.get_random_active_port(ML_server_type.MobileNet, owner,logger);
+        return Load_balancer.get_random_active_port(ML_server_type.MobileNet, context);
     }
 
     //**********************************************************
-    public Optional<Feature_vector_double> get_feature_vector(Path path, Window owner, Aborter aborter, Logger logger)
+    public Optional<Feature_vector_double> get_feature_vector(Path path, Kontext context)
     //**********************************************************
     {
-        return get_feature_vector_from_server(path, owner, aborter, logger);
+        return get_feature_vector_from_server(path, context);
     }
 
 }

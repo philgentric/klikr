@@ -3,8 +3,10 @@
 
 package klikr.util.execute.actor;
 
+import klikr.util.Kontext;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
 
 import java.util.Random;
 
@@ -16,12 +18,13 @@ public class Test
     public static void main(String args[])
     //**********************************************************
     {
-        Logger logger = new File_logger("actor_test");
+        Aborter aborter = new Aborter("test",new Simple_logger());
+        Kontext context = new Kontext(null,aborter,new Simple_logger());
+        Logger logger = new File_logger("actor_test", context);
 
         class Message1 implements Message
         {
             final String s;
-            Aborter aborter = new Aborter("test",logger);
             public Message1(String s_) {
                 s = s_;
             }

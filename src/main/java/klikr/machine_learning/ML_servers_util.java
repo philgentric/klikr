@@ -9,6 +9,7 @@ import klikr.machine_learning.monitoring.UDP_traffic_monitor;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.*;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -37,20 +38,20 @@ public class ML_servers_util
     static final String macOS_commands_to_install_requirements = "pip install -r requirements.txt";
 
     //**********************************************************
-    public static void install_python_libs_for_ML(Window owner, Logger logger)
+    public static void install_python_libs_for_ML(Kontext context)
     //**********************************************************
     {
         boolean dbg = Feature_cache.get(Feature.Enable_ML_server_debug);
-        Tmp_file_in_trash.create_copy_in_trash("requirements.txt",owner,logger);
+        Tmp_file_in_trash.create_copy_in_trash("requirements.txt",context);
 
-        Operating_system os = Guess_OS.guess(logger);
+        Operating_system os = Guess_OS.guess(context.logger());
         switch ( os)
         {
             case Windows ->
             {
-                Tmp_file_in_trash.create_copy_in_trash("create_venv_for_windows.ps1",owner,logger);
+                Tmp_file_in_trash.create_copy_in_trash("create_venv_for_windows.ps1",context);
                 List<String> cmds = List.of(".\\"+"create_venv_for_windows.ps1");
-                Script_executor.execute(cmds,dbg,owner, logger);
+                Script_executor.execute(cmds,dbg,context);
             }
             case MacOS, Linux ->
             {
@@ -62,7 +63,7 @@ public class ML_servers_util
                         macOS_commands_to_install_tensorflow,
                         macOS_commands_to_install_requirements
                 );
-                Script_executor.execute(cmds,dbg,owner, logger);
+                Script_executor.execute(cmds,dbg, context);
             }
         }
     }
@@ -70,18 +71,18 @@ public class ML_servers_util
 
 
     //**********************************************************
-    public static void start_N_ML_servers(int actual, ML_server_type type, Window owner, Logger logger)
+    public static void start_N_ML_servers(int actual, ML_server_type type, Kontext context)
     //**********************************************************
     {
-        Tmp_file_in_trash.create_copy_in_trash(type.python_file_name(),owner,logger);
+        Tmp_file_in_trash.create_copy_in_trash(type.python_file_name(),context);
         if ( type.get_xml_file_name() != null)
         {
-            Tmp_file_in_trash.create_copy_in_trash(type.get_xml_file_name(), owner,logger);
+            Tmp_file_in_trash.create_copy_in_trash(type.get_xml_file_name(), context);
         }
-        int udp_monitoring_port = UDP_traffic_monitor.get_servers_monitor_udp_port(owner, logger);
+        int udp_monitoring_port = UDP_traffic_monitor.get_servers_monitor_udp_port(context);
 
-        Operating_system os = Guess_OS.guess(logger);
-        logger.log(os+" starting "+actual+" "+type.name()+"servers");
+        Operating_system os = Guess_OS.guess(context.logger());
+        context.log(os+" starting "+actual+" "+type.name()+"servers");
 
         String[] args = switch (type) {
             case MobileNet, MTCNN, FaceNet -> new String[]{type.name(),String.valueOf(udp_monitoring_port)};
@@ -92,7 +93,7 @@ public class ML_servers_util
         {
             launcher(type.python_file_name(),
                     args,
-                    owner, logger);
+                    context);
         }
     }
 
@@ -101,12 +102,11 @@ public class ML_servers_util
     private static void launcher(
             String scriptName,
             String[] args,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         boolean dbg = Feature_cache.get(Feature.Enable_ML_server_debug);
-        Operating_system os = Guess_OS.guess(logger);
+        Operating_system os = Guess_OS.guess(context.logger());
         Actor_engine.execute(() -> {
             List<String> cmds = new ArrayList<>();
             String argsStr = String.join(" ", args);
@@ -116,7 +116,7 @@ public class ML_servers_util
                     cmds.add(macOS_commands_to_activate_venv);
                     // execute the script directly using python3
                     cmds.add("nohup python3 " + scriptName + " " + argsStr+" &");
-                    Script_executor.execute(cmds,  dbg, owner, logger);
+                    Script_executor.execute(cmds,  dbg, context);
                 }
                 case Windows -> {
                     // Activate venv
@@ -127,28 +127,28 @@ public class ML_servers_util
                     // `/K` keeps the command prompt open,
                     // preventing the JVM from sending a termination signal to the child.
                     cmds.add("cmd /k python " + scriptName + " " + argsStr);
-                    Script_executor.execute(cmds,  dbg, owner, logger);
+                    Script_executor.execute(cmds,  dbg, context);
                 }
             }
-        }, "launching " + scriptName, logger);
+        }, "launching " + scriptName, context.logger());
     };
 
 
 
     //**********************************************************
-    public static void stop_image_similarity_servers(Window owner, Logger logger)
+    public static void stop_image_similarity_servers(Kontext context)
     //**********************************************************
     {
         // kill every “MobileNet_embeddings_server” process
         boolean dbg = Feature_cache.get(Feature.Enable_ML_server_debug);
-        Operating_system os = Guess_OS.guess(logger);
+        Operating_system os = Guess_OS.guess(context.logger());
         switch ( os)
         {
             case MacOS, Linux ->
             {
                 String cmd1 = "pids=$(pgrep -f MobileNet_embeddings_server  || true)";
                 String cmd2 = "if [[ -n $pids ]]; then kill -9 $pids; fi";
-                Script_executor.execute(List.of(cmd1, cmd2),dbg,owner, logger);
+                Script_executor.execute(List.of(cmd1, cmd2),dbg, context);
             }
 
             case Windows ->
@@ -156,7 +156,7 @@ public class ML_servers_util
                 List<String> cmds = new ArrayList<>();
                 cmds.add("$procList = Get-CimInstance -ClassName Win32_Process | Where-Object { $_.CommandLine -match 'MobileNet_embeddings_server' }");
                 cmds.add("if ($procList) { Stop-Process -Id $procList.ProcessId -Force -ErrorAction SilentlyContinue }");
-                Script_executor.execute(cmds,dbg,owner, logger);
+                Script_executor.execute(cmds,dbg, context);
             }
         }
 
@@ -164,11 +164,11 @@ public class ML_servers_util
     }
 
     //**********************************************************
-    public static void stop_face_recognition_servers(Window owner, Logger logger)
+    public static void stop_face_recognition_servers(Kontext context)
     //**********************************************************
     {
         boolean dbg = Feature_cache.get(Feature.Enable_ML_server_debug);
-        Operating_system os = Guess_OS.guess(logger);
+        Operating_system os = Guess_OS.guess(context.logger());
         switch ( os)
         {
             case MacOS, Linux ->
@@ -178,7 +178,7 @@ public class ML_servers_util
                      cmds.add("pids=$(pgrep -f " + name + " || true)");
                      cmds.add("if [[ -n $pids ]]; then kill -9 $pids; fi");
                  }
-                 Script_executor.execute(cmds,  dbg, owner, logger);
+                 Script_executor.execute(cmds,  dbg, context);
            }
 
             case Windows ->
@@ -188,7 +188,7 @@ public class ML_servers_util
                     cmds.add("$procList = Get-CimInstance -ClassName Win32_Process | Where-Object { $_.CommandLine -match '" + name + "' }");
                     cmds.add("if ($procList) { Stop-Process -Id $procList.ProcessId -Force -ErrorAction SilentlyContinue }");
                 }
-                Script_executor.execute(cmds, dbg, owner, logger);
+                Script_executor.execute(cmds, dbg, context);
             }
         }
         ML_registry.all_servers_killed(ML_server_type.MTCNN);
@@ -212,15 +212,15 @@ public class ML_servers_util
 
 
     //**********************************************************
-    public static void start_face_recognition_servers(Window owner, Logger logger)
+    public static void start_face_recognition_servers(Kontext context)
     //**********************************************************
     {
-        start_N_ML_servers(3,ML_server_type.FaceNet,owner, logger);
-        start_N_ML_servers(3,ML_server_type.MTCNN,owner, logger);
-        start_N_ML_servers(1,ML_server_type.Haar_tree,owner, logger);
-        start_N_ML_servers(1,ML_server_type.Haar_default,owner, logger);
-        start_N_ML_servers(1,ML_server_type.Haar_alt1,owner, logger);
-        start_N_ML_servers(1,ML_server_type.Haar_alt2,owner, logger);
+        start_N_ML_servers(3,ML_server_type.FaceNet,context);
+        start_N_ML_servers(3,ML_server_type.MTCNN,context);
+        start_N_ML_servers(1,ML_server_type.Haar_tree,context);
+        start_N_ML_servers(1,ML_server_type.Haar_default,context);
+        start_N_ML_servers(1,ML_server_type.Haar_alt1,context);
+        start_N_ML_servers(1,ML_server_type.Haar_alt2,context);
 
     }
 }

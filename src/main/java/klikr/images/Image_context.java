@@ -11,16 +11,16 @@ import javafx.scene.CacheHint;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.Klikr_application;
-import klikr.browser_core.Image_and_properties;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.settings.String_constants;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser_core.items.Item_file_with_icon;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.items.Item_file_with_icon;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.change.Change_gang;
 import klikr.change.file_system_monitoring.File_status;
@@ -43,8 +43,6 @@ import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.log.Logger;
 import klikr.util.execute.System_open_actor;
 
-//import java.awt.Desktop;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,19 +60,19 @@ public class Image_context
     public static final boolean dbg = false;
     public static final String DELAY = "Delay: ";
 
+    public final Kontext context;
     public final Path previous_path;
     public final Path path;
     public final Image image;
     public final ImageView the_image_view;
     private Rotation rotation = null;
-    Logger logger;
     double zoom_factor = 1.0;
     public boolean image_is_damaged;
     public String title="";
     public final FileTime creation_time;
 
     //**********************************************************
-    public static Optional<Image_context> build_Image_context(Path path, Image_window image_window, Aborter aborter, Logger logger_)
+    public static Optional<Image_context> build_Image_context(Path path, Image_window image_window)
     //**********************************************************
     {
        if ( image_window.rescaler == Image_rescaling_filter.Native)
@@ -82,12 +80,12 @@ public class Image_context
            //logger_.log("default (javafx ImageView) rescaler used for :"+path);
            // the image returned is full scale, it will be automagically
            // scaled (down typically) by javafx ImageView
-           return get_Image_context(path, image_window.stage, aborter, logger_);
+           return get_Image_context(path, image_window.context);
 
        }
        else
        {
-           logger_.log("VIPS "+image_window.rescaler+" rescaler used for :"+path);
+           image_window.context.log("VIPS "+image_window.rescaler+" rescaler used for :"+path);
            // the image returned is rescaled using VIPS-lib,
            // to the target scene dimensions
            // with the specified filter aka 'rescaler'
@@ -96,7 +94,7 @@ public class Image_context
                    image_window.stage.getScene().getWidth(),
                    image_window.stage.getScene().getHeight(),
                    image_window.rescaler,
-                   image_window.stage, aborter, logger_);
+                   image_window.context);
        }
     }
 
@@ -104,58 +102,58 @@ public class Image_context
 
 
     //**********************************************************
-    public static Optional<Image_context> get_Image_context(Path path, Window owner, Aborter aborter, Logger logger_)
+    public static Optional<Image_context> get_Image_context(Path path, Kontext context)
     //**********************************************************
     {
         if ( !Files.exists(path)) return Optional.empty();
-        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, owner, aborter,logger_);
+        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path, true, context);
         if (iap == null) return Optional.empty();
         Image local_image = iap.image();
         if ( local_image.isError())
         {
-            Image broken = Jar_utils.get_broken_icon(300,owner,logger_);
+            Image broken = Jar_utils.get_broken_icon(300,context.logger());
             if ( broken == null) return Optional.empty();
-            return Optional.of(new Image_context(path,path,broken,logger_));
+            return Optional.of(new Image_context(path,path,broken,context));
         }
 
-        Optional<Image_context> returned = Optional.of(new Image_context(path, path, local_image,logger_));
+        Optional<Image_context> returned = Optional.of(new Image_context(path, path, local_image,context));
         return returned;
     }
 
 
     //**********************************************************
-    public Image_context(Path current_path,Path previous_path_, Image image_, Logger logger_)
+    public Image_context(Path current_path,Path previous_path_, Image image_, Kontext context)
     //**********************************************************
     {
+        this.context = context;
         path = current_path;
         previous_path = previous_path_;
-        logger = logger_;
         image = image_;
         the_image_view = new ImageView(image);
         the_image_view.setPickOnBounds(true); // allow click on transparent areas
         the_image_view.setCacheHint(CacheHint.QUALITY);
 
 
-        creation_time = Fast_date_from_filesystem.get_date(current_path,logger);
+        creation_time = Fast_date_from_filesystem.get_date(current_path,context);
         //if ( get_rotation) get_rotation();
         if ( dbg)
         {
             if ( path ==null)
             {
-                logger.log("NULL file, image loaded:"+image.getWidth()+"x"+image.getHeight());
+                context.log("NULL file, image loaded:"+image.getWidth()+"x"+image.getHeight());
             }
             else
             {
-                logger.log("image loaded:"+ path.getFileName()+" "+image.getWidth()+"x"+image.getHeight());
+                context.log("image loaded:"+ path.getFileName()+" "+image.getWidth()+"x"+image.getHeight());
             }
 
         }
     }
     //**********************************************************
-    public Image_context(Image im_,  Logger logger_)
+    public Image_context(Image im_,  Kontext context)
     //**********************************************************
     {
-        logger = logger_;
+        this.context = context;
         image = im_;
         path = null;
         previous_path = null;
@@ -181,12 +179,12 @@ public class Image_context
 
 
     //**********************************************************
-    public Rotation get_rotation(Window owner, Aborter aborter)
+    public Rotation get_rotation()
     //**********************************************************
     {
         if ( rotation != null) return rotation;
-        rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(path, true, owner, aborter, logger);
-        logger.log("ROTATION "+rotation);
+        rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(path, true, context);
+        context.log("ROTATION "+rotation);
         return rotation;
     }
 
@@ -202,39 +200,39 @@ public class Image_context
 
 
     //**********************************************************
-    double get_animated_gif_delay(Window owner)
+    double get_animated_gif_delay()
     //**********************************************************
     {
-        StringBuilder sb = Exif_stage.get_graphicsmagick_info(path,owner,logger);
+        StringBuilder sb = Exif_stage.get_graphicsmagick_info(path,context);
         String s = sb.toString();
 
         String[] lines = s.split("\\R");
         for (String line : lines) {
             line = line.trim();
-            logger.log("line ->"+line+"<-");
+            context.log("line ->"+line+"<-");
             if (line.startsWith(DELAY)) {
                 String delayValue = line.substring(DELAY.length()).trim(); // extract the value after "Delay: "
-                logger.log(DELAY + delayValue);
+                context.log(DELAY + delayValue);
                 double delay = Double.parseDouble(delayValue);
-                logger.log(DELAY + delay);
+                context.log(DELAY + delay);
                 return delay;
             }
         }
-        logger.log("no delay found, assuming 10");
+        context.log("no delay found, assuming 10");
         return 10;
     }
 
 
 
     //**********************************************************
-    void open(Window owner, Aborter aborter)
+    void open()
     //**********************************************************
     {
-        //logger.log("asking desktop to EDIT: " + path.getFileName());
-        logger.log("asking desktop to open: " + path.getFileName());
+        //context.log("asking desktop to EDIT: " + path.getFileName());
+        context.log("asking desktop to open: " + path.getFileName());
         //try
         {
-            System_open_actor.open_with_registered_application(path, owner,aborter, logger);
+            System_open_actor.open_with_registered_application(path,  context);
 
             // dont use this, it is AWT
             //Desktop desktop = Desktop.getDesktop();
@@ -249,26 +247,26 @@ public class Image_context
                 Command cmd = Command.command_edit;
                 Old_and_new_Path oan = new Old_and_new_Path(path, path, cmd, Status.edition_requested, false);
                 oanps.add(oan);
-                Change_gang.report_changes(oanps, owner);
+                Change_gang.report_changes(oanps, context.owner());
             };
             Filesystem_item_modification_watcher ephemeral_filesystem_item_modification_watcher = new Filesystem_item_modification_watcher();
             // will die after 10 minutes
-            if ( ephemeral_filesystem_item_modification_watcher.init(path,reporter,false,10,new Aborter("edit",logger), logger) != File_status.OK)
+            if ( ephemeral_filesystem_item_modification_watcher.init(path,reporter,false,10, context) != File_status.OK)
             {
-                logger.log("Warning: cannot start monitoring: "+path);
+                context.log("Warning: cannot start monitoring: "+path);
             }
         }
         /*catch (IOException e)
         {
-            logger.log_stack_trace(e.toString());
+            context.log_stack_trace(e.toString());
         }*/
     }
 
     //**********************************************************
-    void open_with_registered_application(Stage the_stage, Window owner, Aborter aborter)
+    void open_with_registered_application(Kontext context)
     //**********************************************************
     {
-        System_open_actor.open_with_registered_application(path,the_stage,aborter,logger);
+        System_open_actor.open_with_registered_application(path,context);
 
             // we want the UI to refresh if the file is modified
             // we do not know when the edition will end so we need to start a watcher
@@ -279,13 +277,13 @@ public class Image_context
                 Command cmd = Command.command_edit;
                 Old_and_new_Path oan = new Old_and_new_Path(path, path, cmd, Status.edition_requested, false);
                 oanps.add(oan);
-                Change_gang.report_changes(oanps,owner);
+                Change_gang.report_changes(oanps,context.owner());
             };
             Filesystem_item_modification_watcher ephemeral_filesystem_item_modification_watcher = new Filesystem_item_modification_watcher();
             // will die after 10 minutes
-            if ( ephemeral_filesystem_item_modification_watcher.init(path,reporter,false,10,aborter,logger) != File_status.OK)
+            if ( ephemeral_filesystem_item_modification_watcher.init(path,reporter,false,10,context) != File_status.OK)
             {
-                logger.log("Warning: cannot start monitoring: "+path);
+                context.log("Warning: cannot start monitoring: "+path);
             }
 
     }
@@ -303,19 +301,19 @@ public class Image_context
 
 
         zoom_factor /= mul;
-        logger.log("mul="+mul+" => new zoom_factor="+zoom_factor);
+        context.log("mul="+mul+" => new zoom_factor="+zoom_factor);
 
         double image_width2 = image_width*zoom_factor;
         double window_width = image_window.the_Scene.getWidth();
         if ( image_width2 < window_width)
         {
-            logger.log("image_width2 too small");
+            context.log("image_width2 too small");
             image_width2 = window_width;
         }
         double min_x = (image_width-image_width2);
         if ( min_x < 0)
         {
-            logger.log("min_x too small");
+            context.log("min_x too small");
             min_x = 0;
         }
 
@@ -324,18 +322,18 @@ public class Image_context
         double window_height = image_window.the_Scene.getHeight();
         if ( image_height2 < window_height)
         {
-            logger.log("image_height2 too small");
+            context.log("image_height2 too small");
             image_height2 = window_height;
         }
         double min_y = (image_height-image_height2);
         if ( min_y < 0)
         {
-            logger.log("min_y too small");
+            context.log("min_y too small");
             min_y = 0;
         }
 
 
-        logger.log("rectangle = "+min_x+", "+min_y+", "+image_width2+", "+image_height2);
+        context.log("rectangle = "+min_x+", "+min_y+", "+image_width2+", "+image_height2);
         Rectangle2D r = new Rectangle2D(min_x, min_y,image_width2 , image_height2);
         the_image_view.setViewport(r);
     }
@@ -367,14 +365,14 @@ public class Image_context
     }
 
     //**********************************************************
-    void search_using_keywords_from_the_name(Path_list_provider path_list_provider, Path_comparator_source path_comparator_source, Aborter aborter, Window owner)
+    void search_using_keywords_from_the_name(Path_list_provider path_list_provider, Path_comparator_source path_comparator_source)
     //**********************************************************
     {
-        if(dbg) logger.log("Image_context search_using_keywords_from_the_name");
-        Keyword_extractor ke = new Keyword_extractor(logger, List.of());
+        if(dbg) context.log("Image_context search_using_keywords_from_the_name");
+        Keyword_extractor ke = new Keyword_extractor(context.logger(), List.of());
         Set<String> keywords_set = ke.extract_keywords_from_file_and_dir_names(path);
         if (keywords_set == null) {
-            logger.log(Logger.error+"FATAL null keywords ??? ");
+            context.log(Logger.error+"FATAL null keywords ??? ");
             return;
         }
         //String extension = Extensions.get_extension(path.getFileName().toString());
@@ -382,7 +380,7 @@ public class Image_context
         {
             // this happens when the image name does not contain text at all
             keywords_set.add(path.getFileName().toString());
-            //logger.log(Logger.error+"FATAL no keywords ??? ");
+            //context.log(Logger.error+"FATAL no keywords ??? ");
             return;
         }
         List<String> keywords = new ArrayList<>();
@@ -390,17 +388,17 @@ public class Image_context
             keywords.add(k.toLowerCase());
         }
 
-        logger.log("---- Going to search for keywords: -------");
+        context.log("---- Going to search for keywords: -------");
         for (String s : keywords) {
-            logger.log("->" + s + "<-");
+            context.log("->" + s + "<-");
         }
-        logger.log("------------------------------------------");
+        context.log("------------------------------------------");
 
         Finder.find(
                 Klikr_application.application,
                 path_list_provider,
                 path_comparator_source,
-                keywords,null,true,aborter,owner,logger);
+                keywords,null,true,context);
     }
 
 
@@ -410,13 +408,11 @@ public class Image_context
     void search_using_keywords_given_by_the_user(
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
-            boolean search_only_for_images,
-            Aborter aborter,
-            Window owner)
+            boolean search_only_for_images)
     //**********************************************************
     {
-        logger.log("find()");
-        ask_user_and_find( path_list_provider, path_comparator_source,given_keywords, search_only_for_images,aborter,owner,logger);
+        context.log("find()");
+        ask_user_and_find( path_list_provider, path_comparator_source,given_keywords, search_only_for_images,context);
     }
 
 
@@ -426,25 +422,23 @@ public class Image_context
             Path_comparator_source path_comparator_source,
             List<String> keywords,
             boolean search_only_for_images,
-            Aborter aborter,
-            Window owner,
-            Logger logger
+            Kontext context
     )
     //**********************************************************
     {
-        logger.log("ask_user_and_find()");
+        context.log("ask_user_and_find()");
 
         Jfx_batch_injector.inject( () -> {
             StringBuilder ttt = new StringBuilder();
             for (String ss : keywords) ttt.append(ss).append(" ");
             TextInputDialog dialog = new TextInputDialog(ttt.toString());
-            Look_and_feel_manager.set_dialog_look(dialog,owner,logger);
-            dialog.initOwner(owner);
+            Look_and_feel_manager.set_dialog_look(dialog,context.logger());
+            dialog.initOwner(context.owner());
             dialog.setTitle("Keywords");
             dialog.setHeaderText("Enter your keywords, separated by space");
             dialog.setContentText("Keywords:");
 
-            //logger.log("dialog !");
+            //context.log("dialog !");
             String extension = "";
             Optional<String> op = dialog.showAndWait();
             if (op.isPresent())
@@ -472,11 +466,11 @@ public class Image_context
                             path_comparator_source,
                             keywords,
                             extension,
-                            search_only_for_images,aborter,owner,logger);
+                            search_only_for_images,context);
                 }
             }
 
-        },logger);
+        },context);
     }
 
     /*
@@ -511,39 +505,39 @@ public class Image_context
             }
         }
         if (path.getFileName().toString().startsWith(prefix)) prefix = ""; // no "recursive" prefix_prefix_prefix ... !!!
-        logger.log("Image_context COPY prefix ="+prefix);
+        context.log("Image_context COPY prefix ="+prefix);
 
         Path new_path = null;
         for (int i = 0; i < 40000; i++)
         {
 
-            new_path = Moving_files.generate_new_candidate_name_special(path,prefix,i, logger);
+            new_path = Moving_files.generate_new_candidate_name_special(path,prefix,i, context.logger());
             if (!Files.exists(new_path))
             {
-                logger.log("new_path ->" + new_path+"<- does not exist");
+                context.log("new_path ->" + new_path+"<- does not exist");
                 break;
             }
             else
             {
-                logger.log("new_path" + new_path+" exists, retrying");
+                context.log("new_path" + new_path+" exists, retrying");
             }
         }
         if (new_path == null)
         {
-            logger.log("copy failed: could not create new unused name for" + path.getFileName());
+            context.log("copy failed: could not create new unused name for" + path.getFileName());
             return false;
         }
-        logger.log("copy:" + path.getFileName()+ " copy name= "+new_path);
+        context.log("copy:" + path.getFileName()+ " copy name= "+new_path);
 
         try
         {
             Files.copy(path, new_path);
         } catch (IOException e)
         {
-            logger.log("copy failed: could not create new file for: " + path.getFileName() + ", Exception:" + e);
+            context.log("copy failed: could not create new file for: " + path.getFileName() + ", Exception:" + e);
             return false;
         }
-        Actor_engine.execute(after,"Copy image",logger);
+        Actor_engine.execute(after,"Copy image", context.logger());
         //Popups.popup_text(My_I18n.get_I18n_string("Copy_done",logger),My_I18n.get_I18n_string("New_name",logger)+new_path.getFileName().toString(),false);
         List<Old_and_new_Path> l = new ArrayList<>();
         l.add(new Old_and_new_Path(
@@ -557,8 +551,7 @@ public class Image_context
                 path_list_provider,
                 path_comparator_source,
                 new_path,
-                owner,
-                logger);
+                context);
         //Image_window orphan = Image_window.get_Image_window(b,new_path, logger);
         return true;
     }
@@ -570,7 +563,7 @@ public class Image_context
     public Optional<Image_context> rename_file_for_an_image_window(Image_window image_window)
     //**********************************************************
     {
-        Path new_path =  Static_files_and_paths_utilities.ask_user_for_new_file_name(image_window.stage, path,logger);
+        Path new_path =  Static_files_and_paths_utilities.ask_user_for_new_file_name(path,context);
         if ( new_path == null) return Optional.empty();
         return image_window.change_name_of_file(new_path);
     }
@@ -582,11 +575,11 @@ public class Image_context
         String old_file_name = path.getFileName().toString().toLowerCase();
         if (old_file_name.contains(String_constants.ULTIM))
         {
-            logger.log("no vote, name already contains " + String_constants.ULTIM);
+            context.log("no vote, name already contains " + String_constants.ULTIM);
             return Optional.empty();
         }
 
-        Path new_path = Moving_files.generate_new_candidate_name(path,"", String_constants.ULTIM, logger);
+        Path new_path = Moving_files.generate_new_candidate_name(path,"", String_constants.ULTIM, context.logger());
         return image_stage.change_name_of_file(new_path);
     }
 

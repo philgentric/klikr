@@ -1,0 +1,44 @@
+// Copyright (c) 2025 Philippe Gentric
+// SPDX-License-Identifier: MIT
+
+package klikr.browsers.browser_core.in3D;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import klikr.Window_type;
+import klikr.Window_builder;
+import klikr.util.Kontext;
+import klikr.util.Shared_services;
+import klikr.path_lists.Path_list_provider_for_file_system;
+import klikr.util.log.Exceptions_in_threads_catcher;
+import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
+import klikr.util.perf.Perf;
+
+import java.nio.file.Path;
+
+//*******************************************************
+public class The_main_circular_3D extends Application
+//*******************************************************
+{
+
+    //*******************************************************
+    static void main(String[] args) {
+        Application.launch(args);
+    }
+    //*******************************************************
+
+    //*******************************************************
+    @Override
+    public void start(Stage primaryStage)
+    //*******************************************************
+    {
+        Shared_services.init("main circular 3D", primaryStage);
+        Kontext context = new Kontext(primaryStage,null,new Simple_logger());
+        Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(context.logger());
+        Perf.start_monitoring(context.logger());
+
+        Path p = Path.of(System.getProperty("user.home"));
+        Window_builder.additional_no_past(this,Window_type.File_system_3D,new Path_list_provider_for_file_system(p,context),context);
+    }
+}

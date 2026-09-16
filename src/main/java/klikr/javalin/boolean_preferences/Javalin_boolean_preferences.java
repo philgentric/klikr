@@ -7,6 +7,7 @@ import klikr.javalin.Javalin_common;
 import klikr.look.my_i18n.My_I18n;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
@@ -18,7 +19,7 @@ public class Javalin_boolean_preferences {
     private static final boolean dbg = true;
     private static Javalin_boolean_preferences instance = null;
     private final Application application;
-    private final Logger logger;
+    private final Kontext context;
     private Javalin javalin;
     private final int port_number;
     private final Set<WsContext> connected_clients = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -48,56 +49,57 @@ public class Javalin_boolean_preferences {
         }
     }
 
-    public static void show(Application application, Logger logger) {
-        init(application, logger);
-        Javalin_common.open_browser(application, false, "Boolean Preferences", instance.port_number, logger);
+    public static void show(Application application, Kontext context)
+    {
+        init(application, context);
+        Javalin_common.open_browser(application, false, "Boolean Preferences", instance.port_number, context.logger());
     }
 
-    private static void init(Application application, Logger logger) {
+    private static void init(Application application, Kontext context) {
         synchronized (Javalin_boolean_preferences.class) {
             if (instance == null) {
-                instance = new Javalin_boolean_preferences(application, logger);
+                instance = new Javalin_boolean_preferences(application, context);
                 instance.start_javalin_server();
             }
         }
     }
 
-    private Javalin_boolean_preferences(Application application, Logger logger) {
+    private Javalin_boolean_preferences(Application application, Kontext context) {
         this.application = application;
-        this.logger = logger;
-        this.port_number = Javalin_common.find_free_port(logger);
+        this.context = context;
+        this.port_number = Javalin_common.find_free_port(context.logger());
     }
 
     private void start_javalin_server() {
         CountDownLatch started = new CountDownLatch(1);
         Runnable r = () -> {
-            logger.log("Creating Javalin server on port " + port_number);
+            context.log("Creating Javalin server on port " + port_number);
             javalin = Javalin.create(config -> {
                 config.staticFiles.add("/javalin_boolean_preferences",
                         io.javalin.http.staticfiles.Location.CLASSPATH);
             }).start(port_number);
-            logger.log("Javalin server created and started");
+            context.log("Javalin server created and started");
 
-            logger.log("Registering WebSocket handler at /preferences-ws");
+            context.log("Registering WebSocket handler at /preferences-ws");
             javalin.ws("/preferences-ws", ws -> {
                 ws.onConnect(ctx -> {
                     connected_clients.add(ctx);
                     ctx.session.setIdleTimeout(java.time.Duration.ofMillis(3600000L));
-                    logger.log("Boolean preferences WebSocket connected, clients: " + connected_clients.size());
+                    context.log("Boolean preferences WebSocket connected, clients: " + connected_clients.size());
                 });
 
                 ws.onMessage(ctx -> {
                     String msg = ctx.message();
-                    logger.log("Received WebSocket message: " + msg);
+                    context.log("Received WebSocket message: " + msg);
 
                     if ("REQUEST_INIT".equals(msg)) {
                         try {
-                            logger.log("Starting get_all_preferences()");
+                            context.log("Starting get_all_preferences()");
                             List<PreferenceItem> items = get_all_preferences();
-                            logger.log("Got " + items.size() + " items from get_all_preferences()");
+                            context.log("Got " + items.size() + " items from get_all_preferences()");
 
                             if (items.isEmpty()) {
-                                logger.log("WARNING: items list is EMPTY!");
+                                context.log("WARNING: items list is EMPTY!");
                                 ctx.send("[]");
                                 return;
                             }
@@ -108,11 +110,11 @@ public class Javalin_boolean_preferences {
                                 jsonItems.add(json);
                             }
                             String response = String.format("[%s]", String.join(",", jsonItems));
-                            logger.log("Sending " + jsonItems.size() + " preference items, response length: " + response.length());
-                            logger.log("First 200 chars: " + response.substring(0, Math.min(200, response.length())));
+                            context.log("Sending " + jsonItems.size() + " preference items, response length: " + response.length());
+                            context.log("First 200 chars: " + response.substring(0, Math.min(200, response.length())));
                             ctx.send(response);
                         } catch (Exception e) {
-                            logger.log("ERROR in REQUEST_INIT: " + e.getMessage());
+                            context.log("ERROR in REQUEST_INIT: " + e.getMessage());
                             e.printStackTrace();
                             ctx.send("[]");
                         }
@@ -126,62 +128,62 @@ public class Javalin_boolean_preferences {
                             boolean currentValue = Feature_cache.get(feature);
                             boolean newValue = !currentValue;
                             Feature_cache.update_cached_boolean(feature, newValue, null);
-                            logger.log("Toggled " + featureName + " from " + currentValue + " to " + newValue);
+                            context.log("Toggled " + featureName + " from " + currentValue + " to " + newValue);
 
                             // Broadcast update to all connected clients
                             broadcast_update(featureName, newValue);
                         } catch (IllegalArgumentException e) {
-                            logger.log("Invalid feature name: " + featureName);
+                            context.log("Invalid feature name: " + featureName);
                         }
                     }
                 });
 
                 ws.onClose(ctx -> {
                     connected_clients.remove(ctx);
-                    if (dbg) logger.log("Boolean preferences WebSocket disconnected");
+                    if (dbg) context.log("Boolean preferences WebSocket disconnected");
                 });
             });
 
             started.countDown();
         };
 
-        Actor_engine.execute(r, "Javalin_boolean_preferences server", logger);
+        Actor_engine.execute(r, "Javalin_boolean_preferences server", context.logger());
         try {
             started.await();
         } catch (InterruptedException e) {
-            logger.log("Boolean preferences server interrupted: " + e.getMessage());
+            context.log("Boolean preferences server interrupted: " + e.getMessage());
             return;
         }
-        logger.log("Boolean preferences server started on port " + port_number);
+        context.log("Boolean preferences server started on port " + port_number);
     }
 
     private List<PreferenceItem> get_all_preferences() {
         List<PreferenceItem> items = new ArrayList<>();
 
         try {
-            logger.log("get_all_preferences: starting, Feature.values() has " + Feature.values().length + " items");
+            context.log("get_all_preferences: starting, Feature.values() has " + Feature.values().length + " items");
             for (Feature feature : Feature.values()) {
                 try {
                     String key = feature.name();
-                    logger.log("Processing feature: " + key);
-                    String label = My_I18n.get_I18n_string(key, null, logger);
-                    String explanation = My_I18n.get_I18n_string(key + "_Explanation", null, logger);
+                    context.log("Processing feature: " + key);
+                    String label = My_I18n.get_I18n_string(key, context);
+                    String explanation = My_I18n.get_I18n_string(key + "_Explanation", context);
                     boolean value = Feature_cache.get(feature);
                     String category = categorize_feature(feature);
 
                     items.add(new PreferenceItem(key, label, explanation, value, category));
-                    logger.log("Loaded preference: " + key + " (category: " + category + ", value: " + value + ")");
+                    context.log("Loaded preference: " + key + " (category: " + category + ", value: " + value + ")");
                 } catch (Exception e) {
-                    logger.log("ERROR processing feature " + feature.name() + ": " + e.getMessage());
+                    context.log("ERROR processing feature " + feature.name() + ": " + e.getMessage());
                     e.printStackTrace();
                 }
             }
         } catch (Exception e) {
-            logger.log("ERROR in get_all_preferences: " + e.getMessage());
+            context.log("ERROR in get_all_preferences: " + e.getMessage());
             e.printStackTrace();
         }
 
-        logger.log("get_all_preferences: returning " + items.size() + " items");
+        context.log("get_all_preferences: returning " + items.size() + " items");
         return items;
     }
 
@@ -249,7 +251,7 @@ public class Javalin_boolean_preferences {
                 try {
                     ctx.send(update);
                 } catch (Exception e) {
-                    logger.log("Failed to send update to client: " + e.getMessage());
+                    context.log("Failed to send update to client: " + e.getMessage());
                     connected_clients.remove(ctx);
                 }
             }

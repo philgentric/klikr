@@ -3,9 +3,7 @@
 
 package klikr.settings;
 
-import javafx.stage.Window;
-import klikr.util.execute.actor.Aborter;
-import klikr.util.log.Logger;
+import klikr.util.Kontext;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.FileInputStream;
@@ -26,35 +24,35 @@ public class File_storage_using_Properties implements File_storage
     private final static boolean dbg_set= false;
     private final static boolean dbg_get= false;
     public static final String AGE = "_age";
-    private final Logger logger;
+    private final Kontext context;
     private final String tag;
     private final Path path;
     private volatile ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
     private final boolean with_age;
     //**********************************************************
-    public File_storage_using_Properties(String purpose, String filename, boolean with_age, Window owner, Aborter aborter, Logger logger)
+    public File_storage_using_Properties(String purpose, String filename, boolean with_age, Kontext context)
     //**********************************************************
     {
         this.with_age = with_age;
         this.tag = purpose;
-        this.logger = logger;
+        this.context = context;
         String home = System.getProperty(String_constants.USER_HOME);
         path = Paths.get(home, String_constants.CONF_DIR, filename+".properties");
 
         //if ( dbg)
-            logger.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
+            context.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
         reload_from_disk();
     }
     //**********************************************************
-    public File_storage_using_Properties(Path path, String purpose, boolean with_age, Window owner, Aborter aborter, Logger logger)
+    public File_storage_using_Properties(Path path, String purpose, boolean with_age, Kontext context)
     //**********************************************************
     {
         this.with_age = with_age;
         this.tag = purpose;
-        this.logger = logger;
+        this.context = context;
         this.path = path;
 
-        if ( dbg) logger.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
+        if ( dbg) context.log("File_storage_using_Properties "+path.toAbsolutePath().toString());
         reload_from_disk();
     }
     //**********************************************************
@@ -110,7 +108,7 @@ public class File_storage_using_Properties implements File_storage
     public boolean set(String key, String value)
     //**********************************************************
     {
-        if( dbg_set) logger.log(("File_storage_using_Properties "+ tag +" set() ->"+key+"<- => ->"+value+"<-"));
+        if( dbg_set) context.log(("File_storage_using_Properties "+ tag +" set() ->"+key+"<- => ->"+value+"<-"));
         map.put(key, value);
         if ( with_age)
         {
@@ -125,7 +123,7 @@ public class File_storage_using_Properties implements File_storage
     //**********************************************************
     {
         String returned =  map.get(key);
-        if( dbg_get) logger.log("File_storage_using_Properties "+ tag +" get() ->"+key+"<- => ->"+returned+"<-");
+        if( dbg_get) context.log("File_storage_using_Properties "+ tag +" get() ->"+key+"<- => ->"+returned+"<-");
         return returned;
     }
     //**********************************************************
@@ -134,7 +132,7 @@ public class File_storage_using_Properties implements File_storage
     //**********************************************************
     {
         String age_s =  map.get(key+AGE);
-        if( dbg_get) logger.log("File_storage_using_Properties "+ tag +" get_age() ->"+key+"<- => ->"+age_s+"<-");
+        if( dbg_get) context.log("File_storage_using_Properties "+ tag +" get_age() ->"+key+"<- => ->"+age_s+"<-");
         return LocalDateTime.parse(age_s);
     }
     //**********************************************************
@@ -142,7 +140,7 @@ public class File_storage_using_Properties implements File_storage
     public void remove(String key)
     //*********************************************************
     {
-        if( dbg_set) logger.log("File_storage_using_Properties "+ tag +" remove() ->"+key+"<-");
+        if( dbg_set) context.log("File_storage_using_Properties "+ tag +" remove() ->"+key+"<-");
         map.remove(key);
         if ( with_age)
         {
@@ -156,7 +154,7 @@ public class File_storage_using_Properties implements File_storage
     public void clear()
     //**********************************************************
     {
-        if( dbg_set) logger.log("File_storage_using_Properties "+ tag +" clear() ");
+        if( dbg_set) context.log("File_storage_using_Properties "+ tag +" clear() ");
         map.clear();
         save_to_disk();
     }
@@ -166,7 +164,7 @@ public class File_storage_using_Properties implements File_storage
     //**********************************************************
     {
         Properties returned = new Properties();
-        if (dbg) logger.log("load_properties()");
+        if (dbg) context.log("load_properties()");
         FileInputStream fis;
         try
         {
@@ -174,7 +172,7 @@ public class File_storage_using_Properties implements File_storage
             {
                 if (!Files.isReadable(path))
                 {
-                    logger.log("cannot read properties from:" + path.toAbsolutePath());
+                    context.log("cannot read properties from:" + path.toAbsolutePath());
                     return null;
                 }
                 fis = new FileInputStream(path.toFile());
@@ -184,17 +182,17 @@ public class File_storage_using_Properties implements File_storage
                 }
                 catch (IllegalArgumentException ee)
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + ee+ " for path: "+path.toAbsolutePath()));
+                    context.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + ee+ " for path: "+path.toAbsolutePath()));
                     fis.close();
                     return null;
                 }
-                if (dbg) logger.log("properties loaded from:" + path.toAbsolutePath());
+                if (dbg) context.log("properties loaded from:" + path.toAbsolutePath());
                 fis.close();
             }
         }
         catch (Exception e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + e+ " for path: "+path.toAbsolutePath()));
+            context.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + e+ " for path: "+path.toAbsolutePath()));
         }
         return returned;
     }
@@ -223,7 +221,7 @@ public class File_storage_using_Properties implements File_storage
         {
             local.put(e.getKey(), e.getValue());
         }
-        if (dbg) logger.log("File_storage_using_Properties: save_to_disk() "+path+ " size:"+local.size());
+        if (dbg) context.log("File_storage_using_Properties: save_to_disk() "+path+ " size:"+local.size());
         try
         {
             FileOutputStream fos = new FileOutputStream(path.toFile());
@@ -232,9 +230,9 @@ public class File_storage_using_Properties implements File_storage
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("save_to_disk Exception: " + e+ " for path: "+path.toAbsolutePath()));
+            context.log(Stack_trace_getter.get_stack_trace("save_to_disk Exception: " + e+ " for path: "+path.toAbsolutePath()));
         }
-        if (dbg) logger.log("save_to_disk() DONE for: " + path.toAbsolutePath());
+        if (dbg) context.log("save_to_disk() DONE for: " + path.toAbsolutePath());
 
     }
 
@@ -244,7 +242,7 @@ public class File_storage_using_Properties implements File_storage
     public List<String> get_all_keys()
     //**********************************************************
     {
-        if( dbg_get) logger.log("File_storage_using_Properties "+ tag +" get_all_keys()");
+        if( dbg_get) context.log("File_storage_using_Properties "+ tag +" get_all_keys()");
         Set<String> x = map.keySet();
         List<String> result = new ArrayList<>();
         result.addAll(x);

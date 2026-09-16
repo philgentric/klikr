@@ -6,6 +6,7 @@
 package klikr.change;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -37,17 +38,17 @@ public class Change_gang
     private final ConcurrentLinkedQueue<Change_receiver> change_gang_receivers;
     public static volatile Change_gang instance = null; // the first guy registering will cause the instance to be created
     //**********************************************************
-    private static void create_instance()
+    private static void create_instance(Kontext context)
     //**********************************************************
     {
-        instance = new Change_gang();
+        instance = new Change_gang(context);
     }
 
     //**********************************************************
-    private Change_gang()
+    private Change_gang(Kontext context)
     //**********************************************************
     {
-        dedicated_logger = Shared_services.get_logger("change gang");
+        dedicated_logger = Shared_services.get_logger("change gang",context);
         change_gang_receivers = new ConcurrentLinkedQueue<>();
         change_tracking_actor = new Change_tracking_actor(change_gang_receivers);
     }
@@ -65,7 +66,7 @@ public class Change_gang
 
     // when you receive a change event, utility to help understand how it is impacting you
     //**********************************************************
-    public static Possible_outcome is_my_directory_impacted(Path dir, List<Old_and_new_Path> l, Logger logger)
+    public static Possible_outcome is_my_directory_impacted(Path dir, List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
         for (Old_and_new_Path oan : l)
@@ -74,11 +75,11 @@ public class Change_gang
             {
                 if ( oan.cmd == Command.command_copy)
                 {
-                    if ( dbg) logger.log( oan.to_string());
+                    if ( dbg) context.log( oan.to_string());
                 }
                 else
                 {
-                    logger.log_stack_trace( "should not happen: old path is null and command is not a copy ???"+ oan.to_string());
+                    context.log_stack_trace( "should not happen: old path is null and command is not a copy ???"+ oan.to_string());
                 }
             }
             else
@@ -91,9 +92,9 @@ public class Change_gang
                 else
                 {
                     //if (oan.old_Path.getParent().toAbsolutePath().toString().equals(ref))
-                    if (Static_files_and_paths_utilities.is_same_path(oan.old_Path.getParent(),dir,logger))
+                    if (Static_files_and_paths_utilities.is_same_path(oan.old_Path.getParent(),dir,context))
                     {
-                        if (dbg) logger.log("is_my_directory_impacted? YES! "+oan.old_Path.getParent().toAbsolutePath() +" OLD path matches "+ dir.toAbsolutePath());
+                        if (dbg) context.log("is_my_directory_impacted? YES! "+oan.old_Path.getParent().toAbsolutePath() +" OLD path matches "+ dir.toAbsolutePath());
 
                         if ( oan.cmd == Command.command_move)
                         {
@@ -103,15 +104,15 @@ public class Change_gang
                     }
                     else
                     {
-                        if (dbg) logger.log("is_my_directory_impacted? No! old_path="+oan.old_Path.getParent().toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
+                        if (dbg) context.log("is_my_directory_impacted? No! old_path="+oan.old_Path.getParent().toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
                     }
                 }
             }
             if (oan.new_Path != null)
             {
-                if (Static_files_and_paths_utilities.is_same_path(oan.new_Path, dir, logger))
+                if (Static_files_and_paths_utilities.is_same_path(oan.new_Path, dir, context))
                 {
-                    if (dbg) logger.log("is_my_directory_impacted? YES! " + oan.new_Path.toAbsolutePath() + " NEW path matches " + dir.toAbsolutePath());
+                    if (dbg) context.log("is_my_directory_impacted? YES! " + oan.new_Path.toAbsolutePath() + " NEW path matches " + dir.toAbsolutePath());
                     if ( oan.cmd == Command.command_move)
                     {
                         return Possible_outcome.one_new_file;
@@ -120,13 +121,13 @@ public class Change_gang
                 }
                 else
                 {
-                    if (dbg) logger.log("is_my_directory_impacted? No! new_path="+oan.new_Path.toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
+                    if (dbg) context.log("is_my_directory_impacted? No! new_path="+oan.new_Path.toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
                 }
                 if (oan.new_Path.getParent() != null)
                 {
-                    if (Static_files_and_paths_utilities.is_same_path(oan.new_Path.getParent(), dir, logger))
+                    if (Static_files_and_paths_utilities.is_same_path(oan.new_Path.getParent(), dir, context))
                     {
-                        if (dbg) logger.log("is_my_directory_impacted? YES! " + oan.new_Path.getParent().toAbsolutePath() + " NEW path matches " + dir.toAbsolutePath());
+                        if (dbg) context.log("is_my_directory_impacted? YES! " + oan.new_Path.getParent().toAbsolutePath() + " NEW path matches " + dir.toAbsolutePath());
                         if ( oan.cmd == Command.command_move)
                         {
                             return Possible_outcome.one_new_file;
@@ -135,7 +136,7 @@ public class Change_gang
                     }
                     else
                     {
-                        if (dbg) logger.log("is_my_directory_impacted? No! new_path="+oan.new_Path.getParent().toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
+                        if (dbg) context.log("is_my_directory_impacted? No! new_path="+oan.new_Path.getParent().toAbsolutePath() +" does not matches "+ dir.toAbsolutePath());
                     }
                 }
             }
@@ -161,7 +162,7 @@ public class Change_gang
         for (Change_receiver w : change_gang_receivers)
         {
             if ( dbg) dedicated_logger.log("Change_gang.event_internal(), SENDING to gang member:" + w.get_Change_receiver_string());
-            w.you_receive_this_because_a_file_event_occurred_somewhere(l, owner, dedicated_logger);
+            w.you_receive_this_because_a_file_event_occurred_somewhere(l, new Kontext(owner,Shared_services.aborter(),dedicated_logger));
         }
     }
     // ... not really used
@@ -182,7 +183,7 @@ public class Change_gang
      */
 
     //**********************************************************
-    public static void register(Change_receiver change_receiver, Aborter aborter, Logger logger)
+    public static void register(Change_receiver change_receiver, Kontext context)
     //**********************************************************
     {
 
@@ -192,11 +193,11 @@ public class Change_gang
             {
                 if (instance == null)
                 {
-                    create_instance();
+                    create_instance(context);
                 }
             }
         }
-        instance.register_internal(change_receiver, aborter);
+        instance.register_internal(change_receiver, context.aborter());
     }
     //**********************************************************
     private void register_internal(Change_receiver change_receiver, Aborter aborter)

@@ -9,36 +9,37 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Window;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.Look_and_feel_style;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.util.Optional;
 
 
 //**********************************************************
-public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Window owner, Logger logger)
+public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Kontext context)
 //**********************************************************
 {
     private final static boolean dbg = false;
     //**********************************************************
-    public static Progress start(Pane pane, Window owner, Logger logger)
+    public static Progress start(Pane pane, Kontext context)
     //**********************************************************
     {
-        if ( Look_and_feel_manager.get_instance(owner,logger).get_look_and_feel_style() != Look_and_feel_style.materiol) {
-            if ( dbg) logger.log("Progress: starting an animation");
-            Image film = Look_and_feel_manager.get_running_film_icon(owner, logger);
+        if ( Look_and_feel_manager.get_instance(context.logger()).get_look_and_feel_style() != Look_and_feel_style.materiol) {
+            if ( dbg) context.log("Progress: starting an animation");
+            Image film = Look_and_feel_manager.get_running_film_icon(context.logger());
             if (film != null) {
                 ImageView iv = new ImageView(film);
                 iv.setFitHeight(100);
                 iv.setPreserveRatio(true);
                 pane.getChildren().add(iv);
-                return new Progress(pane, iv, null, owner, logger);
+                return new Progress(pane, iv, null, context);
             }
         }
-        logger.log("Progress: starting a spinner");
+        context.log("Progress: starting a spinner");
         Progress_spinner spinner = new Progress_spinner();
         Pane pane2 = spinner.start();
         pane.getChildren().add(pane2);
-        return new Progress(pane,null,spinner,owner,logger);
+        return new Progress(pane,null,spinner,context);
 
     }
 
@@ -48,7 +49,7 @@ public record Progress(Pane pane, ImageView iv, Progress_spinner spinner, Window
     {
         if ( iv() != null)
         {
-            Image end = Look_and_feel_manager.get_the_end_icon(owner(), logger());
+            Image end = Look_and_feel_manager.get_the_end_icon(context.logger());
             if ( end !=null) iv().setImage(end);
         }
         if ( spinner() != null) spinner().stop();

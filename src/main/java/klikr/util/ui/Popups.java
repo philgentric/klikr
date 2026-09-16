@@ -10,11 +10,10 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
-import javafx.stage.Window;
 import javafx.util.Duration;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
-import klikr.util.log.Logger;
+import klikr.util.Kontext;
 import klikr.util.log.Stack_trace_getter;
 
 import java.util.ArrayList;
@@ -27,14 +26,14 @@ public class Popups
 {
 
     //**********************************************************
-    public static void popup_Exception(Exception e, double icon_size, String title, Window owner, Logger logger)
+    public static void popup_Exception(Exception e, double icon_size, String title, Kontext context)
     //**********************************************************
     {
-        logger.log(Stack_trace_getter.get_stack_trace("Going to popup exception(1): " + e));
+        context.log(Stack_trace_getter.get_stack_trace("Going to popup exception(1): " + e));
         Jfx_batch_injector.inject(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.initOwner(owner);
-            Look_and_feel_manager.set_dialog_look(alert, owner,logger);
+            alert.initOwner(context.owner());
+            Look_and_feel_manager.set_dialog_look(alert, context.logger());
             alert.getDialogPane().setMinWidth(1000);
             alert.setTitle(title);
             alert.setHeaderText("Operation was denied");
@@ -47,44 +46,46 @@ public class Popups
                 alert.setContentText("The error was: \n" + e);
             }
 
-            logger.log("Going to popup exception(2): " + e);
-            alert.setGraphic(new ImageView(Look_and_feel_manager.get_denied_icon(icon_size,owner,logger)));
+            context.log("Going to popup exception(2): " + e);
+            alert.setGraphic(new ImageView(Look_and_feel_manager.get_denied_icon(icon_size,context.logger())));
             alert.showAndWait();
 
-        },logger);
+        }, context);
     }
 
     private static final List<String> done = new ArrayList<>();
 
     //**********************************************************
-    synchronized public static void popup_warning(String header, String content, boolean for_3_seconds_only, Window owner, Logger logger)
+    synchronized public static void popup_warning(
+            String header, String content,
+            boolean for_3_seconds_only, Kontext context)
     //**********************************************************
     {
-        String signature = header+content+for_3_seconds_only+owner.toString();
+        String signature = header+content+for_3_seconds_only+context.owner().toString();
         if ( done.contains(signature) )
         {
-            logger.log("suppressed repeated warning "+signature);
+            context.log("suppressed repeated warning "+signature);
             return;
         }
         done.add(signature);
         Jfx_batch_injector.inject(() ->
         {
-            logger.log("Warning Popup: "+header+" "+content);
+            context.log("Warning Popup: "+header+" "+content);
             Alert alert = new Alert(Alert.AlertType.WARNING);
-            if ( owner != null)
+            if ( context.owner() != null)
             {
                 try
                 {
-                    alert.initOwner(owner);
+                    alert.initOwner(context.owner());
                 }
                 catch(NullPointerException e)
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("Typically this error occurs because you are calling popup_warning(), passing a Window owner that has no scene yet "+e));
+                    context.log(Stack_trace_getter.get_stack_trace("Typically this error occurs because you are calling popup_warning(), passing a Window owner that has no scene yet "+e));
                 }
             }
 
-            Look_and_feel_manager.set_dialog_look(alert, owner,logger);
-            alert.setTitle(My_I18n.get_I18n_string("Warning", owner,logger));
+            Look_and_feel_manager.set_dialog_look(alert, context.logger());
+            alert.setTitle(My_I18n.get_I18n_string("Warning", context));
             alert.setHeaderText(header);
             alert.setContentText(content);
             alert.initModality(Modality.WINDOW_MODAL);
@@ -98,17 +99,18 @@ public class Popups
             } else {
                 alert.showAndWait();
             }
-        },logger);
+        },context);
     }
 
     //**********************************************************
-    public static boolean popup_ask_for_confirmation(String header, String content, Window owner, Logger logger)
+    public static boolean popup_ask_for_confirmation(String header, String content, Kontext context)
     //**********************************************************
     {
+        context.log("confirm: "+header+" "+content);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        Look_and_feel_manager.set_dialog_look(alert, owner,logger);
-        if ( owner != null) alert.initOwner(owner);
-        alert.setTitle(My_I18n.get_I18n_string("Please_confirm", owner,logger));
+        Look_and_feel_manager.set_dialog_look(alert, context.logger());
+        if ( context.owner() != null) alert.initOwner(context.owner());
+        alert.setTitle(My_I18n.get_I18n_string("Please_confirm", context));
         alert.setHeaderText(header);
         alert.setContentText(content);
 
@@ -127,24 +129,24 @@ public class Popups
 
 
     //**********************************************************
-    public static void simple_alert(String s, Window owner, Logger logger)
+    public static void simple_alert(String s, Kontext context)
     //**********************************************************
     {
         // this is a BLOCKING window
         Alert alert = new Alert(Alert.AlertType.INFORMATION,s, ButtonType.CLOSE);
-        Look_and_feel_manager.set_dialog_look(alert, owner,logger);
-        alert.initOwner(owner);
+        Look_and_feel_manager.set_dialog_look(alert, context.logger());
+        alert.initOwner(context.owner());
         alert.show();
     }
 
     // if returns true, means "dont show me this again"
     //**********************************************************
-    public static boolean info_popup(String s, String OK_button_alternate_text, Window owner, Logger logger)
+    public static boolean info_popup(String s, String OK_button_alternate_text, Kontext context)
     //**********************************************************
     {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        Look_and_feel_manager.set_dialog_look(alert, owner,logger);
-        alert.initOwner(owner);
+        Look_and_feel_manager.set_dialog_look(alert, context.logger());
+        alert.initOwner(context.owner());
         alert.setTitle("Information");
         alert.setHeaderText("");
         Text text = new Text(s);

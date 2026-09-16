@@ -3,7 +3,7 @@
 
 package klikr.images;
 
-import klikr.browser_core.icons.image_properties_cache.Rotation;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 
 import java.util.List;
 

@@ -10,6 +10,7 @@ import klikr.machine_learning.ML_server_type;
 import klikr.machine_learning.monitoring.UDP_traffic_monitor;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 import klikr.util.log.Stack_trace_getter;
@@ -44,21 +45,21 @@ public class Face_detector
     static long count =0;
 
     //**********************************************************
-    public static Face_detection_result detect_face(Path path, ML_server_type face_detection_type, Window owner, Logger logger)
+    public static Face_detection_result detect_face(Path path, ML_server_type face_detection_type, Kontext context)
     //**********************************************************
     {
 
         if ( Feature_cache.get(Feature.Enable_ML_server_debug))
         {
-            UDP_traffic_monitor.start_servers_monitoring(owner, logger);
+            UDP_traffic_monitor.start_servers_monitoring(context);
         }
 
         start = System.nanoTime();
-        int port =  Load_balancer.get_random_active_port(face_detection_type,owner,logger);
+        int port =  Load_balancer.get_random_active_port(face_detection_type, context);
         if ( port == -1 )
         {
-            logger.log("Warning: could not find 1 active server for "+face_detection_type);
-            logger.log("PLEASE WAIT ! A Request has been made for "+face_detection_type+" servers to be started");
+             context.log("Warning: could not find 1 active server for "+face_detection_type);
+             context.log("PLEASE WAIT ! A Request has been made for "+face_detection_type+" servers to be started");
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         String url_string = null;
@@ -66,30 +67,30 @@ public class Face_detector
             String encodedPath = URLEncoder.encode(path.toAbsolutePath().toString(), "UTF-8");
             url_string = "http://127.0.0.1:"+port+"/" + encodedPath;
         } catch (UnsupportedEncodingException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         URL url = null;
         try {
             url = new URL(url_string);
         } catch (MalformedURLException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
-        if ( dbg) logger.log("Face detection client: connection ready: "+connection.toString());
+        if ( dbg)  context.log("Face detection client: connection ready: "+connection.toString());
         // Send a GET request to the server
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(0);// infinite
         } catch (ProtocolException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.server_not_reacheable);
         }
 
@@ -101,7 +102,7 @@ public class Face_detector
             done = true;
             //break;
         } catch (IOException e) {
-            if ( dbg) logger.log(("                         Face detector: " + e));
+            if ( dbg)  context.log(("                         Face detector: " + e));
         }
 
 
@@ -109,7 +110,7 @@ public class Face_detector
 
         if ( !done)
         {
-            logger.log("Face detection: connection to server failed for "+face_detection_type.name());
+             context.log("Face detection: connection to server failed for "+face_detection_type.name());
 
             return new Face_detection_result(null, Face_recognition_in_image_status.server_not_reacheable);
         }
@@ -117,16 +118,16 @@ public class Face_detector
         try {
             int response_code = connection.getResponseCode();
         } catch (IOException e) {
-            //logger.log(Stack_trace_getter.get_stack_trace(""+e));
-            //logger.log("face detection failed");
+            // context.log(Stack_trace_getter.get_stack_trace(""+e));
+            // context.log("face detection failed");
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
 
         try {
             String response_message = connection.getResponseMessage();
-            //logger.log("Response Message: " + responseMessage);
+            // context.log("Response Message: " + responseMessage);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
 
@@ -137,7 +138,7 @@ public class Face_detector
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log(Stack_trace_getter.get_stack_trace(""+e));
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
         finally
@@ -149,10 +150,10 @@ public class Face_detector
         {
             if ((face_image.getHeight() < MINIMUM_ACCEPTABLE_FACE_SIZE) || (face_image.getWidth() < MINIMUM_ACCEPTABLE_FACE_SIZE) )
             {
-                logger.log("things smaller than "+ MINIMUM_ACCEPTABLE_FACE_SIZE +" pixels are discarded i.e. we assume face detection failed with "+face_detection_type.name());
+                 context.log("things smaller than "+ MINIMUM_ACCEPTABLE_FACE_SIZE +" pixels are discarded i.e. we assume face detection failed with "+face_detection_type.name());
                 //Image big = Utils.get_image(path);
                 //Utils.display(200,img,big,null,"face discarded as too small","",logger);
-                report_time(logger,effectively_slept);
+                report_time(context.logger(), effectively_slept);
                 return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
             }
         }
@@ -161,16 +162,16 @@ public class Face_detector
             // Haars
             if (Math.abs(face_image.getHeight() - face_image.getWidth()) > 2)
             {
-                logger.log("non square face discarded i.e. we assume face detection failed for "+face_detection_type.name());
+                 context.log("non square face discarded i.e. we assume face detection failed for "+face_detection_type.name());
                 //Image big = Utils.get_image(path);
                 //Utils.display(200,img,big,null,"non square face discarded","",logger);
-                report_time(logger,effectively_slept);
+                report_time(context.logger(), effectively_slept);
                 return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
             }
         }
 
-        report_time(logger, effectively_slept);
-        logger.log("Face detector: face detected by "+face_detection_type.name());
+        report_time(context.logger(), effectively_slept);
+         context.log("Face detector: face detected by "+face_detection_type.name());
 
         return new Face_detection_result(face_image, Face_recognition_in_image_status.face_detected);
     }
@@ -182,22 +183,22 @@ public class Face_detector
         long end =  System.nanoTime();
         total_server_ns += (end-start);
         count++;
-        logger.log("\n==>face detection took "+String.format("%.2f",(end-start)/1_000_000.0)
+         logger.log("\n==>face detection took "+String.format("%.2f",(end-start)/1_000_000.0)
                 +"milliseconds, including sleep="+tot_sleep+", average = "+String.format("%.2f",total_server_ns/count/1_000_000.0));
     }
 
     //**********************************************************
-    public static void warn_about_face_detector_server(Window owner, Logger logger)
+    public static void warn_about_face_detector_server(Kontext context)
     //**********************************************************
     {
-        Popups.popup_warning(Logger.warning+" Face detector server not found","Need to start the servers",true,owner,logger);
+        Popups.popup_warning(Logger.warning+" Face detector server not found","Need to start the servers",true, context);
     }
 
     //**********************************************************
-    public static void warn_about_no_face_detected(Window owner,Logger logger)
+    public static void warn_about_no_face_detected(Kontext  context)
     //**********************************************************
     {
-        Popups.popup_warning(Logger.warning+" No face detected","Could not find a face?",true,owner,logger);
+        Popups.popup_warning(Logger.warning+" No face detected","Could not find a face?",true, context);
     }
 
 

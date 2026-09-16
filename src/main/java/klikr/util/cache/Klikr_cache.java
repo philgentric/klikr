@@ -5,6 +5,7 @@ package klikr.util.cache;
 
 import javafx.stage.Window;
 import klikr.path_lists.Path_list_provider;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job_termination_reporter;
@@ -42,7 +43,7 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
 {
 
     public final static boolean dbg = false;
-    protected final Logger logger;
+    protected final Kontext context;
     protected final String name;
     private final RAM_cache_actor<K,V> actor;
     // API level, the key is "K" but internally we rely only on Strings
@@ -63,16 +64,15 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
             Function<K,String> internal_string_key_maker,
             Function<String,K> K_maker,
             Function<V,Long> size_of_V,
-            Aborter aborter,
-            Window owner, Logger logger_)
+            Kontext context)
     //**********************************************************
     {
         this.size_of_V = size_of_V;
         this.internal_string_key_maker = internal_string_key_maker;
-        logger = logger_;
+        this.context = context;
         name = cache_name_;
         String local = name + path_list_provider.get_key();
-        if ( dbg) logger.log(name +" local ="+local);
+        if ( dbg) context.log(name +" local ="+local);
         Optional<Path> folder_path = path_list_provider.get_folder_path();
 
         String cache_file_name = "default_cache_file_name";
@@ -80,9 +80,9 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
         {
             cache_file_name = folder_path.get().getFileName().toString()+"_"+UUID.nameUUIDFromBytes(local.getBytes());
         }
-        if ( dbg) logger.log(name +" cache_file_name ="+cache_file_name);
-        Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(name, false,owner, logger);
-        if ( dbg) logger.log(name +" dir ="+dir.toAbsolutePath().toString());
+        if ( dbg) context.log(name +" cache_file_name ="+cache_file_name);
+        Path dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(name, false,context);
+        if ( dbg) context.log(name +" dir ="+dir.toAbsolutePath().toString());
         Path cache_file_path = dir.resolve(cache_file_name);
 
         disk_engine = new Binary_file_engine(
@@ -90,22 +90,20 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
                 cache_file_path,
                 value_serializer,
                 value_deserializer,
-                owner,
-                aborter,
-                logger
+                context
         );
 
-        actor = new RAM_cache_actor(value_extractor,logger);
+        actor = new RAM_cache_actor(value_extractor,context.logger());
     }
 
 
     //**********************************************************
-    public static Path get_cache_dir(String cache_name, Window owner, Logger logger)
+    public static Path get_cache_dir(String cache_name, Kontext context)
     //**********************************************************
     {
-        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(cache_name, false,owner, logger);
+        Path tmp_dir = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(cache_name, false,context);
         if (dbg) if (tmp_dir != null) {
-            logger.log(cache_name+", cache folder=" + tmp_dir.toAbsolutePath());
+            context.log(cache_name+", cache folder=" + tmp_dir.toAbsolutePath());
         }
         return tmp_dir;
     }
@@ -120,12 +118,12 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
     // if tr is not null then this routine will return null
     // and start the cache filling in a thread,
     // which will call tr.has_ended when finished e.g. <T> available
-    public V get(K object_key, Aborter aborter, Job_termination_reporter tr, Window owner)
+    public V get(K object_key, Job_termination_reporter tr, Kontext context)
     //**********************************************************
     {
         if ( object_key == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("FATAL "));
+            context.log(Stack_trace_getter.get_stack_trace("FATAL "));
             return null;
         }
         String real_key= internal_string_key_maker.apply(object_key);
@@ -135,13 +133,13 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
             if ( tr != null) tr.has_ended("found in cache",null);
             return value;
         }
-        if ( aborter.should_abort())
+        if ( context.should_abort())
         {
-            //logger.log(("yop! aborting works on cache , aborter "+aborter.name+" reason="+aborter.reason+ " target path="+p));
+            //context.log(("yop! aborting works on cache , aborter "+aborter.name+" reason="+aborter.reason+ " target path="+p));
             return null;
         }
 
-        RAM_cache_message<K,V> msg = new RAM_cache_message<K,V>(object_key, false, this,aborter,owner);
+        RAM_cache_message<K,V> msg = new RAM_cache_message<K,V>(object_key, false, this,context);
         if ( tr == null)
         {
             // blocking call
@@ -149,17 +147,17 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
             return cache.get(real_key);
         }
         // call in a thread
-        //logger.log("call in a thread "+key);
-        Actor_engine.run(actor,msg,tr,logger);
+        //context.log("call in a thread "+key);
+        Actor_engine.run(actor,msg,tr, context.logger());
         return null;
     }
 
     //**********************************************************
-    public void prefill_cache(K key, boolean check_if_present, Aborter aborter, Window owner)
+    public void prefill_cache(K key, boolean check_if_present, Kontext context)
     //**********************************************************
     {
-        RAM_cache_message<K,V> imp = new RAM_cache_message<K,V>(key,check_if_present,this,aborter,owner);
-        Actor_engine.run(actor,imp,null,logger);
+        RAM_cache_message<K,V> imp = new RAM_cache_message<K,V>(key,check_if_present,this,context);
+        Actor_engine.run(actor,imp,null, context.logger());
     }
 
     //**********************************************************
@@ -176,16 +174,16 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
     {
         if ( external_key == null)
         {
-            logger.log(("WARNING (ignored) "));
+            context.log(("WARNING (ignored) "));
             return;
         }
         if ( value == null)
         {
-            logger.log(("WARNING (ignored) corrupted image ? "+external_key));
+            context.log(("WARNING (ignored) corrupted image ? "+external_key));
             return;
         }
         String internal_String_key = internal_string_key_maker.apply(external_key);
-        if(dbg) logger.log("RAM cache: "+ name +" injecting: internal_String_key="+internal_String_key+" value="+value );
+        if(dbg) context.log("RAM cache: "+ name +" injecting: internal_String_key="+internal_String_key+" value="+value );
         cache.put(internal_String_key,value);
         if ( and_save_to_disk) save_one_item_to_disk(external_key,value);
     }
@@ -217,7 +215,7 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
     public void save_one_item_to_disk(K key, V value)
     //**********************************************************
     {
-        logger.log("WARNING: save_one_item_to_disk not implemente yet");
+        context.log("WARNING: save_one_item_to_disk not implemente yet");
         //disk_engine.save_one_to_disk(key,value);
     }
 

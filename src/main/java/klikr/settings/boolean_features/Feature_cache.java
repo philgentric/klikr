@@ -3,8 +3,8 @@
 
 package klikr.settings.boolean_features;
 //SOURCES ../../Launcher.java
-import javafx.stage.Window;
-import klikr.experimental.Launcher;
+import klikr.zexperimental.Launcher;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
@@ -123,25 +123,25 @@ public class Feature_cache
 
 
     //**********************************************************
-    public static void update_cached_boolean(Feature feature, boolean new_val, Window owner)
+    public static void update_cached_boolean(Feature feature, boolean new_val, Kontext context)
     //**********************************************************
     {
         if (Arrays.stream(Settings_not_saved_to_disk.never_saved_to_disk_as_true).toList().contains(feature))
         {
-            update_cached_boolean_internal(feature, new_val, false, owner);
+            update_cached_boolean_internal(feature, new_val, false, context);
         }
         else
         {
-            update_cached_boolean_internal(feature, new_val, true, owner);
+            update_cached_boolean_internal(feature, new_val, true, context);
         }
     }
 
 
     //**********************************************************
-    private static void update_cached_boolean_internal(Feature feature, boolean new_val, boolean and_save, Window owner)
+    private static void update_cached_boolean_internal(Feature feature, boolean new_val, boolean and_save, Kontext context)
     //**********************************************************
     {
-        if ( and_save) Booleans.save_boolean(feature.name(),new_val,owner);
+        if ( and_save) Booleans.save_boolean(feature.name(),new_val,context);
         boolean_feature_cache.put(feature,new_val);
         for( Feature_change_target fct : registered_for_any_boolean_change)
         {
@@ -157,12 +157,12 @@ public class Feature_cache
     }
 
     //**********************************************************
-    public static void update_string(String key, String new_value, Window owner,Logger logger)
+    public static void update_string(String key, String new_value, Kontext context)
     //**********************************************************
     {
         System.out.println("Feature_cache: "+key+"=>"+new_value);
         Shared_services.main_properties().set_and_save(key, new_value);
-        send_UI_changed(Launcher.UI_CHANGED,new_value, logger);
+        send_UI_changed(Launcher.UI_CHANGED,new_value, context.logger());
         List<String_setting_change_target> l = string_registered_for.get(key);
         if ( l == null) return;
         List<String_setting_change_target> tmp_copy = new ArrayList<>(l); // avoid problems when update_config_string triggers the creation of new Virtaul_landscape, which registers...

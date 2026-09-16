@@ -4,6 +4,7 @@
 package klikr.change.undo;
 
 import klikr.change.old_and_new.Old_and_new_Path;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
@@ -27,16 +28,16 @@ public class Undo_item
     public final List<Old_and_new_Path> oans;
     public final LocalDateTime time_stamp;
     public final UUID index;
-    public final Logger logger;
+    public final Kontext context;
 
     //**********************************************************
-    public Undo_item(List<Old_and_new_Path> oans_, LocalDateTime time_stamp_, UUID index_, Logger logger_)
+    public Undo_item(List<Old_and_new_Path> oans_, LocalDateTime time_stamp_, UUID index_, Kontext context)
     //**********************************************************
     {
         oans = oans_;
         time_stamp = time_stamp_;
         index = index_;
-        logger = logger_;
+        this.context = context;
     }
 
     //**********************************************************
@@ -92,15 +93,15 @@ public class Undo_item
         {
             if (oan.old_Path == null)
             {
-                logger.log("WARNING:  oan.old_Path == null "+oan.to_string());
+                context.log("WARNING:  oan.old_Path == null "+oan.to_string());
                 return null;
             }
             if (oan.new_Path == null)
             {
-                logger.log("WARNING:  oan.new_Path == null "+oan.to_string());
+                context.log("WARNING:  oan.new_Path == null "+oan.to_string());
                 return null;
             }
-            //logger.log("ideal oan = "+oan.get_string());
+            //context.log("ideal oan = "+oan.get_string());
 
             if ( !oan.new_Path.getFileName().toString().equals(oan.old_Path.getFileName().toString()))
             {
@@ -110,7 +111,7 @@ public class Undo_item
             if (old_folder == null)
             {
                 old_folder = oan.old_Path.getParent();
-                //logger.log("old_folder = "+old_folder);
+                //context.log("old_folder = "+old_folder);
             }
             else
             {
@@ -135,13 +136,13 @@ public class Undo_item
         }
         if ( old_folder == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN1"));
+            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN1"));
 
             return null;
         }
         if ( new_folder == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN2"));
+            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN2"));
             return null;
         }
         StringBuilder sb = new StringBuilder();

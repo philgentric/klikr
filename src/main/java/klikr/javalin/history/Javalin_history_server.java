@@ -6,17 +6,17 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Window;
 import klikr.Window_type;
-import klikr.browser_core.virtual_landscape.Shutdown_target;
-import klikr.browser_core.virtual_landscape.Virtual_landscape_menus;
+import klikr.browsers.browser_core.virtual_landscape.Shutdown_target;
+import klikr.browsers.browser_core.virtual_landscape.Virtual_landscape_menus;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.javalin.Javalin_common;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * Unit-test application for Javalin_history_and_undo
@@ -38,10 +37,8 @@ public class Javalin_history_server
     private static final boolean ultra_dbg = true;
     private Javalin javalin;
     private final int port_number;
-    private final Logger logger;
-    private final Window owner;
+    private final Kontext context;
     private final Window_type window_type;
-    private final Aborter aborter;
     private final Application application;
     private final Shutdown_target shutdown_target;
     private final AtomicReference<List<History_item>> history_items = new AtomicReference<>(new ArrayList<>());
@@ -49,37 +46,33 @@ public class Javalin_history_server
             new ConcurrentHashMap<>()
     );
 
-    public Javalin_history_server(Application application, Shutdown_target shutdown_target, Window_type window_type, Window owner, Aborter aborter, Logger logger) {
-        this.aborter = aborter;
+    public Javalin_history_server(Application application, Shutdown_target shutdown_target, Window_type window_type, Kontext context) {
+        this.context = context;
         this.window_type = window_type;
-        this.owner = owner;
-        this.logger = logger;
         this.application = application;
         this.shutdown_target = shutdown_target;
-        port_number = Javalin_common.find_free_port(logger);
+        port_number = Javalin_common.find_free_port(context.logger());
         start_javalin_server();
         show_history(
                 application,
                 shutdown_target,
                 window_type,
-                owner,
-                aborter,
-                logger
+                context
         );
     }
 
     //**********************************************************
-    public void show_history(Application application, Shutdown_target shutdown_target, Window_type window_type, Window owner, Aborter aborter, Logger logger)
+    public void show_history(Application application, Shutdown_target shutdown_target, Window_type window_type, Kontext context)
     //**********************************************************
     {
-        History_engine engine = History_engine.get(owner);
+        History_engine engine = History_engine.get(context);
         List<History_item> all = engine.get_all_history_items();
 
 
         history_items.set(all);
 
 
-        Javalin_common.open_browser(application, true, "History", port_number, logger);
+        Javalin_common.open_browser(application, true, "History", port_number, context.logger());
     }
 
     //**********************************************************
@@ -102,7 +95,7 @@ public class Javalin_history_server
                 ws.onConnect(ctx ->
                 {
                     ctx.session.setIdleTimeout(Duration.ofMillis(3600000L)); // 1 hour timeout
-                    logger.log("Javalin_history WebSocket connected");
+                    context.log("Javalin_history WebSocket connected");
                     connected_clients.add(ctx);
 
                     // Send current history items to newly connected client
@@ -122,16 +115,16 @@ public class Javalin_history_server
                     if (msg.startsWith("SELECT:")) {
                         // Browser selected a path - trigger the click callback
                         String selectedPath = msg.substring("SELECT:".length());
-                        logger.log("Selected path from browser: " + selectedPath);
+                        context.log("Selected path from browser: " + selectedPath);
                         handle_click(selectedPath);
                         return;
                     }
 
-                    if ( ultra_dbg) logger.log("Received from browser: " + msg);
+                    if ( ultra_dbg) context.log("Received from browser: " + msg);
 
                 });
                 ws.onClose(ctx -> {
-                    logger.log("Javalin_history server disconnected");
+                    context.log("Javalin_history server disconnected");
                     connected_clients.remove(ctx);
                 });
             });
@@ -139,14 +132,14 @@ public class Javalin_history_server
             started.countDown();
         };
 
-        Actor_engine.execute(r,"Javalin_history server",logger);
+        Actor_engine.execute(r,"Javalin_history server", context.logger());
         try {
             started.await();
         } catch (InterruptedException e) {
-            logger.log("Javalin_history server interrupted"+e);
+            context.log("Javalin_history server interrupted"+e);
             return;
         }
-        logger.log("Javalin_history server started on port " + port_number);
+        context.log("Javalin_history server started on port " + port_number);
     }
 
     //**********************************************************
@@ -185,15 +178,13 @@ public class Javalin_history_server
     {
 
         Platform.runLater(() -> {
-            logger.log("CLICK !!! History Item: " + selected_path);
+            context.log("CLICK !!! History Item: " + selected_path);
             Virtual_landscape_menus.on_history_item_clicked(
                     Path.of(selected_path),
                     application,
                     shutdown_target,
                     window_type,
-                    owner,
-                    aborter,
-                    logger);
+                    context);
         });
 
     }

@@ -4,6 +4,7 @@
 package klikr.search;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Message;
 
@@ -12,16 +13,15 @@ public class Finder_message implements Message
 //**********************************************************
 {
     public final Callback_for_file_found_publish callback;
-    public final Aborter aborter;
-    public final Window owner;
+    public final Kontext context;
     public final String extension;
     Search_config search_config;
 
     //**********************************************************
-    public Finder_message(Search_config search_config, Callback_for_file_found_publish callback, Aborter aborter, Window owner)
+    public Finder_message(Search_config search_config, Callback_for_file_found_publish callback, Kontext context)
     //**********************************************************
     {
-        this.owner = owner;
+        this.context = context;
         this.search_config = search_config;
         if ( search_config.extension() == null)
         {
@@ -39,8 +39,6 @@ public class Finder_message implements Message
             }
         }
         this.callback = callback;
-       // the_browser = the_browser_;
-        this.aborter = aborter;
     }
 
     //**********************************************************
@@ -56,6 +54,6 @@ public class Finder_message implements Message
     public Aborter get_aborter()
     //**********************************************************
     {
-        return aborter;
+        return context.aborter();
     }
 }

@@ -8,13 +8,11 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import javafx.stage.Window;
-import klikr.util.execute.actor.Aborter;
+import klikr.util.Kontext;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
@@ -33,15 +31,15 @@ public class Fast_date_from_exif_metadata_extractor
     public static final boolean dbg = false;
 
     //**********************************************************
-    public static LocalDateTime get_date(Path path, Window owner, Aborter aborter, Logger logger)
+    public static LocalDateTime get_date(Path path, Kontext context)
     //**********************************************************
     {
-        if (Check_remaining_RAM.RAM_running_low("Date extraction",owner, logger)) {
-            logger.log("get_date NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("Date extraction",context)) {
+            context.log("get_date NOT DONE because running low on memory ! ");
             return LocalDateTime.now();
         }
 
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), true, aborter, logger);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), true, context);
         if ( is == null)
         {
             return LocalDateTime.now();
@@ -60,12 +58,12 @@ public class Fast_date_from_exif_metadata_extractor
                         s = s.trim();
                         try {
                             LocalDateTime x = LocalDateTime.parse(s);
-                            logger.log(path+" date is :"+x.toString());
+                            context.log(path+" date is :"+x.toString());
                             return x;
                         }
                         catch (DateTimeParseException e)
                         {
-                            logger.log("WARNING cannot parse this date string? ->"+s+"<-");
+                            context.log("WARNING cannot parse this date string? ->"+s+"<-");
 
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd hh:mm:ss");
                             LocalDateTime dateTime = LocalDateTime.parse(s, formatter);
@@ -78,7 +76,7 @@ public class Fast_date_from_exif_metadata_extractor
         }
         catch (ImageProcessingException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
             if ( e.toString().contains("File format could not be determined"))
             {
                 return LocalDateTime.now();
@@ -86,12 +84,12 @@ public class Fast_date_from_exif_metadata_extractor
         }
         catch (IOException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
             return LocalDateTime.now();
         }
         catch (Exception e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
             return LocalDateTime.now();
         }
 
@@ -105,14 +103,14 @@ public class Fast_date_from_exif_metadata_extractor
             }
             catch(DateTimeParseException e)
             {
-                logger.log("WARNING cannot parse this date string? ->"+s+"<-");
+                context.log("WARNING cannot parse this date string? ->"+s+"<-");
             }
         }
         catch (IOException e)
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
         }
         return LocalDateTime.now();

@@ -8,13 +8,11 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import javafx.stage.Window;
-import klikr.util.execute.actor.Aborter;
+import klikr.util.Kontext;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
@@ -31,24 +29,24 @@ public class Fast_width_from_exif_metadata_extractor
 
     //**********************************************************
     @Deprecated
-    public static Optional<Double> get_width(Path path, boolean report_if_not_found, List<String> sb, Window owner, Aborter aborter, Logger logger)
+    public static Optional<Double> get_width(Path path, boolean report_if_not_found, List<String> sb, Kontext context)
     //**********************************************************
     {
-        if (Check_remaining_RAM.RAM_running_low("Image width extraction",owner,logger)) {
-            logger.log("get_width NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("Image width extraction",context)) {
+            context.log("get_width NOT DONE because running low on memory ! ");
             return Optional.empty();
         }
         if( sb != null)
         {
             sb.add(path.toString());
         }
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if ( is == null)
         {
             if ( sb != null)
             {
                 sb.add(" get_aspect_ratio failed cannot open input stream");
-                logger.log(sb.toString());
+                context.log(sb.toString());
             }
             return Optional.empty();
         }
@@ -63,9 +61,9 @@ public class Fast_width_from_exif_metadata_extractor
             }
             for (Directory directory : metadata.getDirectories())
             {
-                if ( aborter.should_abort())
+                if ( context.should_abort())
                 {
-                    //logger.log("Fast_aspect_ratio_from_exif_metadata_extractor aborting ");
+                    //context.log("Fast_aspect_ratio_from_exif_metadata_extractor aborting ");
                     return Optional.empty();
                 }
 

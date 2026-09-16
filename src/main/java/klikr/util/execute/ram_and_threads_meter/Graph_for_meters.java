@@ -9,7 +9,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import klikr.look.Look_and_feel_manager;
+import klikr.util.Kontext;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.log.Logger;
 
@@ -28,7 +30,6 @@ public class Graph_for_meters
     Real_to_pixel real_to_pixel;
     Runnable runnable;
     Color color;
-    Logger logger;
     int x_offset;
     static int how_many_rectangles = 100;
     private static double w = 0.8;
@@ -37,7 +38,7 @@ public class Graph_for_meters
     private static final double LEFT = 20;
     private static final double ADJUST = 20;
     private final static double WIDTH = how_many_rectangles *(w+gap)+LEFT;
-    public final Stage stage;
+    public final Kontext context;
 
     int the_max=0;
     int[] values = new int[how_many_rectangles];
@@ -54,17 +55,15 @@ public class Graph_for_meters
             Real_to_pixel real_to_pixel,
             int x_offset,
             Color color,
-            Stage stage,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        this.stage = stage;
+        this.context = context;
         this.name = name;
         this.the_scale_max = the_scale_max;
         this.value_getter = value_getter;
         this.real_to_pixel = real_to_pixel;
         this.color = color;
-        this.logger = logger;
         this.x_offset = x_offset;
 
 
@@ -80,7 +79,7 @@ public class Graph_for_meters
                 rectangles_of_the_curve.put(i, r);
                 the_hbox.getChildren().add(r);
             }
-            create_scale(stage);
+            create_scale(context.owner());
 
             vbox.getChildren().add(the_hbox);
         }
@@ -132,7 +131,7 @@ public class Graph_for_meters
 
 
     //**********************************************************
-    private void create_scale(Stage stage)
+    private void create_scale(Window stage)
     //**********************************************************
     {
         double inc = the_scale_max/10.0;
@@ -165,7 +164,7 @@ public class Graph_for_meters
             Rectangle horizontal_line = new Rectangle(x_offset +LEFT, RAM_and_threads_meters_stage.DISPLAY_PIXEL_HEIGHT-ii, WIDTH, 1);
             scale_bars.add(horizontal_line);
             horizontal_line.setManaged(false);
-            horizontal_line.setFill(Look_and_feel_manager.get_instance(stage,logger).get_foreground_color());
+            horizontal_line.setFill(Look_and_feel_manager.get_instance(context.logger()).get_foreground_color());
             the_hbox.getChildren().add(horizontal_line);
             Text text = new Text(""+(int)val);
             scale_texts.add(text);
@@ -196,7 +195,7 @@ public class Graph_for_meters
                     if (the_max>the_scale_max)
                     {
                         the_scale_max = the_max;
-                        create_scale(stage);
+                        create_scale(context.owner());
                     }
                 }
                 last_text.setText(""+value);
@@ -209,7 +208,7 @@ public class Graph_for_meters
                 }
             }
         };
-        Jfx_batch_injector.inject(rr,logger);
+        Jfx_batch_injector.inject(rr,context);
     }
 
     public double get_width() {

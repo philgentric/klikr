@@ -13,6 +13,7 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
 
@@ -92,7 +93,7 @@ public class Vips_utils
     }
 
     //**********************************************************
-    public static VImage FX_Image_to_VImage(Image in, Arena arena, Logger logger)
+    public static VImage FX_Image_to_VImage(Image in, Arena arena, Kontext context)
     //**********************************************************
     {
         int w = (int) in.getWidth();
@@ -100,7 +101,7 @@ public class Vips_utils
         PixelReader pixel_reader = in.getPixelReader();
         if ( pixel_reader == null)
         {
-            logger.log("FX_Image_to_VImage: pixel_reader is null ");
+            context.log("FX_Image_to_VImage: pixel_reader is null ");
             return null;
         }
         int bands = 3;
@@ -128,18 +129,18 @@ public class Vips_utils
         }
         catch (UnsatisfiedLinkError e)
         {
-            Popups.popup_warning(Logger.warning+" VIPS not installed","Rescaling with non-default filter(s) requires VIPS",true,null,logger);
+            Popups.popup_warning(Logger.warning+" VIPS not installed","Rescaling with non-default filter(s) requires VIPS",true,context);
             return null;
         }
     }
 
 
     //**********************************************************
-    public static Image resize(Image in, double scale, Image_rescaling_filter filter, Logger logger)
+    public static Image resize(Image in, double scale, Image_rescaling_filter filter, Kontext context)
     //**********************************************************
     {
         Arena arena = Arena.ofConfined();
-        VImage before = FX_Image_to_VImage(in,arena,logger);
+        VImage before = FX_Image_to_VImage(in,arena,context);
         if ( before == null)
         {
             System.out.println("failed to translate FX Image to VImage");
@@ -155,7 +156,7 @@ public class Vips_utils
             System.out.println("failed to resize VImage");
             return null;
         }
-        return VImage_to_FX_Image(after,logger);
+        return VImage_to_FX_Image(after, context.logger());
     }
 
 

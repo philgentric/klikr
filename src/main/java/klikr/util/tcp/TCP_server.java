@@ -6,10 +6,12 @@ package klikr.util.tcp;
 //SOURCES ./Session_factory.java
 
 
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.DataInputStream;
@@ -244,7 +246,8 @@ public class TCP_server
     public static void main( String []args)
     //**********************************************************
     {
-        Logger logger = new File_logger("TCP server test");
+        Kontext context = new Kontext(null,null,new Simple_logger());
+        Logger logger = new File_logger("TCP server test", context);
 
         CountDownLatch cdl = new CountDownLatch(1);
         Session_factory the_session_factory = () -> new Session()

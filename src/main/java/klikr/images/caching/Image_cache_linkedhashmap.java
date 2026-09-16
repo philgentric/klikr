@@ -4,6 +4,7 @@
 package klikr.images.caching;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -19,19 +20,17 @@ public class Image_cache_linkedhashmap implements Image_cache_interface
 //**********************************************************
 {
     private final Image_decoding_actor_for_cache image_decoding_actor;
-    Logger logger;
     private final int forward_size;
-    private final Aborter aborter;
+    private final Kontext context;
     private final LinkedHashMap<String, Image_context> cache;
 
     //**********************************************************
-    public Image_cache_linkedhashmap(int forward_size, Aborter aborter, Logger logger)
+    public Image_cache_linkedhashmap(int forward_size, Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
+        this.context = context;
         this.forward_size = forward_size;
-        this.aborter = aborter;
-        image_decoding_actor = new Image_decoding_actor_for_cache(logger);// need a single instance
+        image_decoding_actor = new Image_decoding_actor_for_cache(context);// need a single instance
 
 
         cache = new LinkedHashMap<>(2*forward_size+1, 0.75f, true)
@@ -40,7 +39,7 @@ public class Image_cache_linkedhashmap implements Image_cache_interface
             protected boolean removeEldestEntry(Map.Entry<String, Image_context> eldest) {
                 if (size() > 2 * forward_size + 1)
                 {
-                    logger.log("Image_cache_linkedhashmap removing eldest entry: " + eldest.getKey());
+                    context.log("Image_cache_linkedhashmap removing eldest entry: " + eldest.getKey());
                     return true;
                 }
                 return false;
@@ -81,8 +80,8 @@ public class Image_cache_linkedhashmap implements Image_cache_interface
 
         for (Path path: kk)
         {
-            Image_decode_request_for_cache idr = new Image_decode_request_for_cache(path, this, image_display_handler.image_window,aborter);
-            Actor_engine.run(image_decoding_actor,idr,null,logger);
+            Image_decode_request_for_cache idr = new Image_decode_request_for_cache(path, this, image_display_handler.image_window);
+            Actor_engine.run(image_decoding_actor,idr,null, context.logger());
         }
 
     }
@@ -95,7 +94,7 @@ public class Image_cache_linkedhashmap implements Image_cache_interface
 
     //**********************************************************
     @Override // Image_cache_interface
-    public void evict(Path path, Window owner)
+    public void evict(Path path)
     //**********************************************************
     {
 

@@ -6,6 +6,7 @@ package klikr.look.my_i18n;
 import javafx.scene.image.Image;
 import javafx.stage.Window;
 import klikr.look.Jar_utils;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.util.Locale;
@@ -26,10 +27,10 @@ public enum Language
     Spanish;
 
     //**********************************************************
-    public Image get_icon(Window owner, Logger logger)
+    public Image get_icon(Kontext context)
     //**********************************************************
     {
-        return Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, owner,logger);
+        return Jar_utils.load_jfx_image_from_jar("icons/"+this.name()+".png", 64, context.logger());
     }
 
     //**********************************************************

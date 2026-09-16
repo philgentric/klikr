@@ -11,11 +11,11 @@
 package klikr.util.deduplicate;
 
 import javafx.application.Application;
-import javafx.stage.Window;
 import klikr.System_info;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
@@ -47,8 +47,7 @@ public class Deduplication_engine implements Againor, Abortable
 //**********************************************************
 {
     private static final boolean dbg = false;
-    private final Window owner;
-    Logger logger;
+    private final Kontext context;
     BlockingQueue<File_pair_deduplication> file_pairs_queue = new LinkedBlockingQueue<>();
     LongAdder threads_in_flight = new LongAdder();
     LongAdder duplicates_found = new LongAdder();
@@ -58,7 +57,6 @@ public class Deduplication_engine implements Againor, Abortable
     // We need a private aborter so that the user can
     // browse another folder than the visited folder
     // where deduplication was started
-    private Aborter private_aborter;
     Stage_with_2_images stage_with_2_images;
     Path_list_provider path_list_provider;
     Path_comparator_source path_comparator_source;
@@ -66,17 +64,16 @@ public class Deduplication_engine implements Againor, Abortable
     //**********************************************************
     public Deduplication_engine(
             Application application,
-            Window owner,
-            File target_dir_, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source,Logger logger_)
+            File target_dir_, Path_list_provider path_list_provider,
+            Path_comparator_source path_comparator_source,
+            Kontext k)
     //*************************************w********************
     {
         this.application = application;
-        this.owner = owner;
         this.path_list_provider = path_list_provider;
         this.path_comparator_source = path_comparator_source;
         target_dir = target_dir_;
-        logger = logger_;
-        private_aborter = new Aborter("Deduplication_engine in "+target_dir,logger);
+        this.context = new Kontext(k.owner(),new Aborter("Deduplication_engine in "+target_dir,k.logger()),k.logger());
     }
 
 
@@ -84,15 +81,15 @@ public class Deduplication_engine implements Againor, Abortable
     public void do_your_job(boolean auto)
     //**********************************************************
     {
-        logger.log("Deduplication::look_for_all_files()");
+        context.log("Deduplication::look_for_all_files()");
         Deduplication_engine local_engine = this;
 
 
-        console_window = new Deduplication_console_window(this,"Looking for duplicated files in:" + target_dir.getAbsolutePath(),  800, 800, false, owner, private_aborter, logger);
+        console_window = new Deduplication_console_window(this,"Looking for duplicated files in:" + target_dir.getAbsolutePath(),  800, 800, false, context);
 
         Runnable r = () -> runnable_deduplication(local_engine, auto);
-        Actor_engine.execute(r,"Deduplicate",logger);
-        if ( dbg) logger.log("Deduplication::look_for_all_files() runnable_deduplication thread launched");
+        Actor_engine.execute(r,"Deduplicate", context.logger());
+        if ( dbg) context.log("Deduplication::look_for_all_files() runnable_deduplication thread launched");
     }
 
 
@@ -101,9 +98,9 @@ public class Deduplication_engine implements Againor, Abortable
     public void abort(String reason)
     //**********************************************************
     {
-        logger.log("Deduplication::abort() Reason : "+reason);
+        context.log("Deduplication::abort() Reason : "+reason);
         console_window.set_end_deleted();
-        private_aborter.abort("Deduplication::abort() + Reason : "+reason);
+        context.abort("Deduplication::abort() + Reason : "+reason);
         if ( stage_with_2_images!=null) stage_with_2_images.close();
     }
 
@@ -115,18 +112,18 @@ public class Deduplication_engine implements Againor, Abortable
 
         if (!wait_for_finder_to_find_something())
         {
-            logger.log("wait_for_finder_to_find_something returns false");
+            context.log("wait_for_finder_to_find_something returns false");
             return;
         }
 
         if (auto)
         {
-            logger.log("\n\n\nAUTO MODE!\n\n\n");
+            context.log("\n\n\nAUTO MODE!\n\n\n");
             deduplicate_auto();
         }
         else
         {
-            logger.log("\n\n\nMANUAL MODE: ask_user_about_each_pair\n\n\n");
+            context.log("\n\n\nMANUAL MODE: ask_user_about_each_pair\n\n\n");
             again();
         }
 
@@ -137,8 +134,8 @@ public class Deduplication_engine implements Againor, Abortable
     //**********************************************************
     {
         List<File_with_a_few_bytes> files = scan();
-        //for(File_with_a_few_bytes mf : files) logger.log(mf.file.getAbsolutePath());
-        logger.log("Deduplication::runnable_deduplication found a total of "+files.size()+ " files");
+        //for(File_with_a_few_bytes mf : files) context.log(mf.file.getAbsolutePath());
+        context.log("Deduplication::runnable_deduplication found a total of "+files.size()+ " files");
 
         console_window.set_status_text("Found " + files.size() + " files ... comparison for bit-length identity started...");
         console_window.total_files_to_be_examined.add(files.size());
@@ -165,10 +162,10 @@ public class Deduplication_engine implements Againor, Abortable
             }
 
             // launch actor (feeder) in another tread
-            Runnable_for_finding_duplicate_file_pairs duplicate_finder = new Runnable_for_finding_duplicate_file_pairs(local_deduplication, files, i_min, i_max, file_pairs_queue, private_aborter,owner, logger);
-            Actor_engine.execute(duplicate_finder,"Deduplicate (2)",logger);
+            Runnable_for_finding_duplicate_file_pairs duplicate_finder = new Runnable_for_finding_duplicate_file_pairs(local_deduplication, files, i_min, i_max, file_pairs_queue, context);
+            Actor_engine.execute(duplicate_finder,"Deduplicate (2)", context.logger());
 
-            logger.log("Deduplication::runnable_deduplication thread launched on i_min="+i_min+ " i_max="+i_max);
+            context.log("Deduplication::runnable_deduplication thread launched on i_min="+i_min+ " i_max="+i_max);
             if ( end) break;
             i_min = i_max;
 
@@ -179,14 +176,14 @@ public class Deduplication_engine implements Againor, Abortable
     private void deduplicate_auto()
     //**********************************************************
     {
-        logger.log("deduplicate ALL: starting, in its own thread");
+        context.log("deduplicate ALL: starting, in its own thread");
 
         int erased = 0;
         List<Old_and_new_Path> ll = new ArrayList<>();
         for (;;)
         {
-            if (private_aborter.should_abort()) {
-                logger.log("Deduplicator::deduplicate_all abort");
+            if (context.should_abort()) {
+                context.log("Deduplicator::deduplicate_all abort");
                 return;
             }
             File_pair_deduplication p = null;
@@ -194,7 +191,7 @@ public class Deduplication_engine implements Againor, Abortable
                 p = file_pairs_queue.poll(300, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e) {
-                logger.log(Stack_trace_getter.get_stack_trace("" + e));
+                context.log(Stack_trace_getter.get_stack_trace("" + e));
                 return;
             }
             if (p == null)
@@ -203,10 +200,10 @@ public class Deduplication_engine implements Againor, Abortable
                 {
                     console_window.set_end_examined();
                     console_window.set_end_deleted();
-                    logger.log("going to actually delete!");
+                    context.log("going to actually delete!");
                     break;
                 }
-                logger.log(threads_in_flight.doubleValue() + " alive threads + empty queue, retrying");
+                context.log(threads_in_flight.doubleValue() + " alive threads + empty queue, retrying");
                 continue;
             }
 
@@ -214,26 +211,26 @@ public class Deduplication_engine implements Againor, Abortable
             // if there are more than 2 copies, strange things happen??
             if (to_be_deleted == null)
             {
-                logger.log("deduplicating:\n\t"
+                context.log("deduplicating:\n\t"
                         + p.f1.my_file.file.getAbsolutePath() + "\n\t"
                         + p.f2.my_file.file.getAbsolutePath() + "\n\t"
                         + "not done (1)!");
                 continue;
             }
             if (!to_be_deleted.exists()) {
-                logger.log("deduplicating:\n\t"
+                context.log("deduplicating:\n\t"
                         + p.f1.my_file.file.getAbsolutePath() + "\n\t"
                         + p.f2.my_file.file.getAbsolutePath() + "\n\t"
                         + "not done (2)!");
                 continue;
             }
-            logger.log("deduplicating:\n\t"
+            context.log("deduplicating:\n\t"
                     + p.f1.my_file.file.getAbsolutePath() + "\n\t"
                     + p.f2.my_file.file.getAbsolutePath() + "\n\t"
                     + "going to delete:\n\t" + to_be_deleted.getAbsolutePath());
 
 
-            Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(to_be_deleted.toPath(),owner,logger);
+            Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(to_be_deleted.toPath(),context);
             Path new_Path = (Paths.get(trash_dir.toString(), to_be_deleted.getName()));
             Old_and_new_Path oanp = new Old_and_new_Path(to_be_deleted.toPath(), new_Path, Command.command_move_to_trash, Status.before_command,false);
             ll.add(oanp);
@@ -243,7 +240,7 @@ public class Deduplication_engine implements Againor, Abortable
             if (erased % 10 == 0) console_window.set_status_text("Erased files =" + erased);
 
         }
-        Moving_files.safe_delete_files(ll, owner, private_aborter,logger);
+        Moving_files.safe_delete_files(ll, context);
 
         //Popups.popup_warning("End of automatic de-duplication for :" + target_dir.getAbsolutePath(), erased + " pairs de-duplicated", false, logger);
 
@@ -265,7 +262,7 @@ public class Deduplication_engine implements Againor, Abortable
         {
             if ( p.f2.to_be_deleted)
             {
-                logger.log(Logger.error+"FATAL: both files in pair should be deleted ?");
+                context.log(Logger.error+"FATAL: both files in pair should be deleted ?");
                 return null;
             }
             else
@@ -281,7 +278,7 @@ public class Deduplication_engine implements Againor, Abortable
             }
             else
             {
-                logger.log(Logger.error+"FATAL: No file in pair should be deleted ?");
+                context.log(Logger.error+"FATAL: No file in pair should be deleted ?");
                 return null;
             }
         }
@@ -294,15 +291,15 @@ public class Deduplication_engine implements Againor, Abortable
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            logger.log("deduplicate ALL: sleep interrupted");
+            context.log("deduplicate ALL: sleep interrupted");
         }
         // wait for feeder to find something, initially
         // so that the pump does not early stop
         // max 200 seconds
         for (int i = 0; i < 2000; i++)
         {
-            if (private_aborter.should_abort()) {
-                logger.log("Deduplicator::deduplicate_all abort");
+            if (context.should_abort()) {
+                context.log("Deduplicator::deduplicate_all abort");
                 return false;
             }
             File_pair_deduplication p = file_pairs_queue.peek();
@@ -310,7 +307,7 @@ public class Deduplication_engine implements Againor, Abortable
 
             if ( are_threaded_finders_finished())
             {
-                logger.log("wait_for_finder_to_find_something: FINISHED ????? ");
+                context.log("wait_for_finder_to_find_something: FINISHED ????? ");
 
                 abort("search ended");
                 return false;
@@ -319,11 +316,11 @@ public class Deduplication_engine implements Againor, Abortable
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                logger.log("deduplicate ALL: sleep interrupted");
+                context.log("deduplicate ALL: sleep interrupted");
             }
 
         }
-        logger.log("wait_for_finder_to_find_something: done ");
+        context.log("wait_for_finder_to_find_something: done ");
         return true;
     }
 
@@ -336,15 +333,15 @@ public class Deduplication_engine implements Againor, Abortable
         //files[0] = file_pair.f1;
         //files[1] = file_pair.f2;
 
-        logger.log("deduplicate:" + file_pair.f1.my_file.file.getAbsolutePath() + "-" + file_pair.f2.my_file.file.getAbsolutePath() + " is_image=" + file_pair.is_image);
+        context.log("deduplicate:" + file_pair.f1.my_file.file.getAbsolutePath() + "-" + file_pair.f2.my_file.file.getAbsolutePath() + " is_image=" + file_pair.is_image);
 
         String title = "Deduplication";
         Againor local_againor = this;
         Jfx_batch_injector.inject(() -> {
             File_pair local = new File_pair(file_pair.f1.my_file.file, file_pair.f2.my_file.file);
-            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(application,title, local, local_againor, console_window.count_deleted,path_list_provider,path_comparator_source,private_aborter, owner, logger);
-            else stage_with_2_images.set_pair(title,local,path_list_provider,path_comparator_source,private_aborter);
-        },logger);
+            if ( stage_with_2_images == null) stage_with_2_images = new Stage_with_2_images(application,title, local, local_againor, console_window.count_deleted,path_list_provider,path_comparator_source,context);
+            else stage_with_2_images.set_pair(title,local,path_list_provider,path_comparator_source,context.aborter());
+        },context);
     }
 
 
@@ -359,55 +356,55 @@ public class Deduplication_engine implements Againor, Abortable
         // so the forever loop in the thread is just here
         // to manage (1) the end and (2) aborting
         // leveraging the 3s timeout on the queue
-        if ( private_aborter.should_abort()) return;
+        if ( context.should_abort()) return;
 
-        logger.log("manual deduplicator: again called !");
+        context.log("manual deduplicator: again called !");
         Runnable r = () -> {
 
             for(;;) // just retry relative to the 3 second timeout
             {
-                if (private_aborter.should_abort()) return;
+                if (context.should_abort()) return;
 
                 File_pair_deduplication p;
                 try {
                     p = file_pairs_queue.poll(3, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
-                    logger.log("" + e);
+                    context.log("" + e);
                     return;
                 }
                 if (p != null)
                 {
                     if (!p.f1.my_file.file.exists()) {
-                        logger.log("skipping result because " + p.f1.my_file.file.getAbsolutePath() + " does not exist anymore");
+                        context.log("skipping result because " + p.f1.my_file.file.getAbsolutePath() + " does not exist anymore");
                         again();
                         return;
                     }
                     if (!p.f2.my_file.file.exists()) {
-                        logger.log("skipping result because " + p.f2.my_file.file.getAbsolutePath() + " does not exist anymore");
+                        context.log("skipping result because " + p.f2.my_file.file.getAbsolutePath() + " does not exist anymore");
                         again();
                         return;
                     }
 
-                    logger.log("manual deduplicator: ask_user_about_a_duplicate_pair called !");
+                    context.log("manual deduplicator: ask_user_about_a_duplicate_pair called !");
                     ask_user_about_a_duplicate_pair(p, path_list_provider,path_comparator_source);
                     return;
                 }
                 // p == null means timeout
                 if (are_threaded_finders_finished())
                 {
-                    logger.log("\nduplicate finder is finished !!");
+                    context.log("\nduplicate finder is finished !!");
                     if (!end_reported)
                     {
-                        Popups.popup_warning( Logger.warning+" Search for duplicates ENDED", "(no duplicates found)", true, owner,logger);
+                        Popups.popup_warning( Logger.warning+" Search for duplicates ENDED", "(no duplicates found)", true, context);
                         end_reported = true;
                         return;
                     }
                     console_window.set_end_examined();
                 }
-                logger.log("manual deduplicator: nothing to do at this time but finder threads are still running");
+                context.log("manual deduplicator: nothing to do at this time but finder threads are still running");
             }
         };
-        Actor_engine.execute(r,"Deduplicate (3)",logger);
+        Actor_engine.execute(r,"Deduplicate (3)", context.logger());
 
     }
 
@@ -416,12 +413,12 @@ public class Deduplication_engine implements Againor, Abortable
     public void count(boolean b)
     //**********************************************************
     {
-        logger.log("Deduplication::count()");
-        console_window = new Deduplication_console_window(this,"Looking for duplicated files in:" + target_dir.getAbsolutePath(),  800, 800, true, owner, private_aborter, logger);
+        context.log("Deduplication::count()");
+        console_window = new Deduplication_console_window(this,"Looking for duplicated files in:" + target_dir.getAbsolutePath(),  800, 800, true, context);
 
         Runnable r = () -> just_count();
-        Actor_engine.execute(r,"Show count",logger);
-        logger.log("Deduplication::count() runnable_deduplication thread launched");
+        Actor_engine.execute(r,"Show count", context.logger());
+        context.log("Deduplication::count() runnable_deduplication thread launched");
     }
 
     //**********************************************************
@@ -435,7 +432,7 @@ public class Deduplication_engine implements Againor, Abortable
         // launch actor (feeder) in another tread
         finder2 = new Runnable_for_finding_duplicate_file_pairs2(local_deduplication, files, same_file_pairs_input_queue, browser_aborter, logger);
         Actor_engine.execute(finder2,browser_aborter,logger);
-        logger.log("Deduplication::look_for_all_files() Duplicate_file_pairs_finder thread launched");
+        context.log("Deduplication::look_for_all_files() Duplicate_file_pairs_finder thread launched");
         */
         find_duplicate_pairs(local_deduplication);
         int count = 0;
@@ -456,7 +453,7 @@ public class Deduplication_engine implements Againor, Abortable
             }
             count++;
         }
-        logger.log("found "+count+" identical file pairs");
+        context.log("found "+count+" identical file pairs");
         // console will auto refresh
         //Popups.popup_warning("Duplicate file count",""+count,false,logger);
     }
@@ -467,9 +464,9 @@ public class Deduplication_engine implements Againor, Abortable
     {
         console_window.set_status_text("Scanning directories");
 
-        List<File_with_a_few_bytes> files = Deduplication_console_window.get_all_files_down(target_dir, console_window, Feature_cache.get(Feature.Show_hidden_files), logger);
+        List<File_with_a_few_bytes> files = Deduplication_console_window.get_all_files_down(target_dir, console_window, Feature_cache.get(Feature.Show_hidden_files), context.logger());
         //Collections.sort(files, by_path_length);
-        logger.log("deduplication scan done "+files.size()+" files found");
+        context.log("deduplication scan done "+files.size()+" files found");
 
         Collections.shuffle(files);
         return files;

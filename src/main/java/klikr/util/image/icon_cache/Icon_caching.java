@@ -4,6 +4,7 @@
 package klikr.util.image.icon_cache;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -28,17 +29,16 @@ public class Icon_caching
             Path original_image_file,
             String tag,
             String extension,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         if ( original_image_file == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+""));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+""));
             return null;
         }
 
-        if (icon_cache_dir == null) icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,owner,logger);
+        if (icon_cache_dir == null) icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,context);
         //int icon_size = Non_booleans_properties.get_icon_size(owner);
         //String tag = String.valueOf(icon_size);
         return icon_cache_dir.resolve(make_cache_name(original_image_file.toAbsolutePath().toString(), tag, extension));
@@ -49,13 +49,12 @@ public class Icon_caching
             Path original_image_file,
             String tag,
             String extension,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         if ( original_image_file == null) return null;
 
-        if (icon_cache_dir == null) icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,owner,logger);
+        if (icon_cache_dir == null) icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache,context);
         //int icon_size = Non_booleans_properties.get_icon_size(owner);
         //String tag = String.valueOf(icon_size);
         return new File(icon_cache_dir.toFile(), make_cache_name(original_image_file.toAbsolutePath().toString(), tag, extension));

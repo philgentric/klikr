@@ -12,6 +12,7 @@ package klikr.util.animated_gifs;
 import javafx.stage.Window;
 import klikr.settings.String_constants;
 import klikr.util.External_application;
+import klikr.util.Kontext;
 import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
@@ -40,28 +41,27 @@ public class Ffmpeg_utils
     //**********************************************************
     public static Double get_media_duration(
             Path path,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         List<String> list = new ArrayList<>();
-        list.add(External_application.Ffprobe.get_command(owner,logger));
+        list.add(External_application.Ffprobe.get_command(context));
         list.add("-i");
         list.add(path.getFileName().toString());
         list.add("-show_format");
         StringBuilder sb = new StringBuilder();
         File wd = path.getParent().toFile();
-        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, logger);
+        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, context);
         if ( !res.status())
         {
             List<String> verify = new ArrayList<>();
-            verify.add(External_application.Ffmpeg.get_command(owner,logger));
+            verify.add(External_application.Ffmpeg.get_command(context));
             verify.add("-version");
             String home = System.getProperty(String_constants.USER_HOME);
-            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
+            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, context);
             if ( !res2.status())
             {
-                Booleans.manage_show_ffmpeg_install_warning(owner,logger);
+                Booleans.manage_show_ffmpeg_install_warning(context);
             }
         }
         //logger.log("->"+sb.toString()+"<-");
@@ -75,7 +75,7 @@ public class Ffmpeg_utils
 
                 try {
                     double duration = Double.parseDouble(sub);
-                    if (dbg) logger.log("Found media DURATION: " + duration + " seconds");
+                    if (dbg) context.log("Found media DURATION: " + duration + " seconds");
                     return (Double) duration;
                 }
                 catch(NumberFormatException e)
@@ -92,28 +92,27 @@ public class Ffmpeg_utils
     //**********************************************************
     public static double get_audio_bitrate(
             Path audio_path,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         List<String> list = new ArrayList<>();
-        list.add(External_application.Ffprobe.get_command(owner,logger));
+        list.add(External_application.Ffprobe.get_command(context));
         list.add("-i");
         list.add(audio_path.toAbsolutePath().toString());
 
         StringBuilder sb = new StringBuilder();
         File wd = audio_path.getParent().toFile();
-        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, logger);
+        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, context);
         if ( !res.status())
         {
             List<String> verify = new ArrayList<>();
-            verify.add(External_application.Ffmpeg.get_command(owner,logger));
+            verify.add(External_application.Ffmpeg.get_command(context));
             verify.add("-version");
             String home = System.getProperty(String_constants.USER_HOME);
-            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
+            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, context);
             if ( !res2.status())
             {
-                Booleans.manage_show_ffmpeg_install_warning(owner,logger);
+                Booleans.manage_show_ffmpeg_install_warning(context);
             }
         }
         //logger.log("->"+sb.toString()+"<-");
@@ -133,7 +132,7 @@ public class Ffmpeg_utils
                 {
                     break;
                 }
-                if (dbg) logger.log("FOUND bitrate: " + bitrate + "kb/s");
+                if (dbg) context.log("FOUND bitrate: " + bitrate + "kb/s");
                 break;
             }
             if (l.equals("bitrate:"))
@@ -147,27 +146,23 @@ public class Ffmpeg_utils
     //**********************************************************
     public static void video_to_mp4_in_a_thread(
             Path video_path,
-            Aborter aborter,
             AtomicBoolean aborted_reported,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        Runnable r = () -> video_to_mp4(video_path, aborter, aborted_reported,owner, logger);
-        Actor_engine.execute(r,"make mp4 from video",logger);
+        Runnable r = () -> video_to_mp4(video_path, aborted_reported,context);
+        Actor_engine.execute(r,"make mp4 from video",context.logger());
     }
 
     //**********************************************************
     public static void video_to_mp4(
             Path video_path,
-            Aborter aborter,
             AtomicBoolean aborted_reported,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         List<String> list = new ArrayList<>();
-        list.add(External_application.Ffmpeg.get_command(owner,logger));
+        list.add(External_application.Ffmpeg.get_command(context));
         list.add("-i");
         list.add(video_path.getFileName().toString());
         list.add("-codec");
@@ -176,34 +171,34 @@ public class Ffmpeg_utils
         list.add(new_name);
 
         File wd = video_path.getParent().toFile();
-        if (aborter.should_abort())
+        if (context.should_abort())
         {
-            logger.log("video_to_gif aborted");
+            context.log("video_to_gif aborted");
             if ( !aborted_reported.get())
             {
                 aborted_reported.set(true);
-                logger.log(Logger.warning+" video_to_gif abort reported");
-                Jfx_batch_injector.inject(() -> Popups.popup_warning(Logger.warning+" ABORTING MASSIVE GIF GENERATION for " + video_path, "Did you change dir ?", false,owner, logger), logger);
+                context.log(Logger.warning+" video_to_gif abort reported");
+                Jfx_batch_injector.inject(() -> Popups.popup_warning(Logger.warning+" ABORTING MASSIVE GIF GENERATION for " + video_path, "Did you change dir ?", false,context), context);
             }
             return;
         }
         // Output file is empty
         StringBuilder sb = new StringBuilder();
-        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, logger);
+        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, context);
         if ( !res.status())
         {
             List<String> verify = new ArrayList<>();
-            verify.add(External_application.Ffmpeg.get_command(owner,logger));
+            verify.add(External_application.Ffmpeg.get_command(context));
             verify.add("-version");
             String home = System.getProperty(String_constants.USER_HOME);
-            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
+            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, context);
             if ( !res2.status())
             {
-                Booleans.manage_show_ffmpeg_install_warning(owner,logger);
+                Booleans.manage_show_ffmpeg_install_warning(context);
             }
             return;
         }
-        logger.log("\n\n\n ffmpeg output :\n"+ sb +"\n\n\n");
+        context.log("\n\n\n ffmpeg output :\n"+ sb +"\n\n\n");
 
     }
 
@@ -216,14 +211,12 @@ public class Ffmpeg_utils
             double clip_duration_in_seconds,
             double start_time_in_seconds,
             int retry_safety_count,
-            Aborter aborter,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         if (retry_safety_count > 5) return false;
         List<String> list = new ArrayList<>();
-        list.add(External_application.Ffmpeg.get_command(owner,logger));
+        list.add(External_application.Ffmpeg.get_command(context));
         list.add("-y"); // force overwrite of output without asking
         // skip some time at the beginning
         if (start_time_in_seconds >= 0)
@@ -246,28 +239,28 @@ public class Ffmpeg_utils
         list.add(convert_to_video_time_string(clip_duration_in_seconds));
         list.add(destination_gif_full_path.toAbsolutePath().toString());
         File wd = video_path.getParent().toFile();
-        if (aborter.should_abort())
+        if (context.should_abort())
         {
-            logger.log("video_to_gif aborted");
+            context.log("video_to_gif aborted");
             return false;
         }
         // Output file is empty
         StringBuilder sb = new StringBuilder();
-        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, logger);
+        Execute_result res = Execute_command.execute_command_list(list, wd, 2000, sb, context);
         if ( !res.status())
         {
-            logger.log("ffmpeg command failed! let us retry using a working folder that the user owns");
+            context.log("ffmpeg command failed! let us retry using a working folder that the user owns");
             List<String> verify = new ArrayList<>();
-            verify.add(External_application.Ffmpeg.get_command(owner,logger));
+            verify.add(External_application.Ffmpeg.get_command(context));
             verify.add("-version");
             String home = System.getProperty(String_constants.USER_HOME);
-            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, logger);
+            Execute_result res2 = Execute_command.execute_command_list(verify, new File(home), 20 * 1000, null, context);
             if ( !res2.status())
             {
-                Booleans.manage_show_ffmpeg_install_warning(owner,logger);
+                Booleans.manage_show_ffmpeg_install_warning(context);
             }
         }
-        logger.log("\n\n\n ffmpeg output :\n"+ sb +"\n\n\n");
+        context.log("\n\n\n ffmpeg output :\n"+ sb +"\n\n\n");
 
 
 
@@ -275,7 +268,7 @@ public class Ffmpeg_utils
         {
             retry_safety_count++;
             //retry without delay
-            return video_to_gif(video_path, height,fps,destination_gif_full_path, clip_duration_in_seconds, 0, retry_safety_count, aborter,owner, logger);
+            return video_to_gif(video_path, height,fps,destination_gif_full_path, clip_duration_in_seconds, 0, retry_safety_count, context);
         }
         return true;
     }

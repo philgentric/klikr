@@ -9,6 +9,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.Window;
 import klikr.Window_builder;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.Window_type;
 import klikr.look.Look_and_feel_manager;
@@ -39,9 +40,8 @@ public class Scrollable_text_field extends Region
     private Timeline scroll_timeline; // keeps the animation running
     private double delta_width; // most‑left translateX
     private boolean scroll_direction_to_left = true; // Direction flag for the running timeline
-    private final Logger logger;
     private final Path path;
-    private final Aborter aborter;
+    private final Kontext context;
     private final Application application;
     //**********************************************************
     public Scrollable_text_field(
@@ -49,15 +49,12 @@ public class Scrollable_text_field extends Region
             String text,
             Path path, // maybe null
             Button button,
-            Window owner,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         this.application = application;
-        this.logger = logger;
+        this.context = context;
         this.path = path;
-        this.aborter = aborter;
         text_field.setText(text);
         text_field.setStyle("-fx-caret-width: 8px;-fx-caret-color: blue;");
         getChildren().add(text_field);
@@ -82,9 +79,9 @@ public class Scrollable_text_field extends Region
             }
             e.consume();
         });
-        text_field.setOnContextMenuRequested(e->context_menu(e, owner));
+        text_field.setOnContextMenuRequested(e->context_menu(e, context.owner()));
 
-        Look_and_feel_manager.set_TextField_look(text_field,false,owner,logger);
+        Look_and_feel_manager.set_TextField_look(text_field,false,context.logger());
     }
 
     //**********************************************************
@@ -92,41 +89,41 @@ public class Scrollable_text_field extends Region
     //**********************************************************
     {
         ContextMenu context_menu = new ContextMenu();
-        //logger.log("Look_and_feel_manager name ==="+Look_and_feel_manager.get_instance(owner,logger).name);
-        //Look_and_feel_manager.set_context_menu_look(context_menu,owner,logger);
+        //logger.log("Look_and_feel_manager name ==="+Look_and_feel_manager.get_instance(context).name);
+        //Look_and_feel_manager.set_context_menu_look(context_menu,context);
         if ( path == null) return;
         Menu_items.add_menu_item_for_context_menu("Open_With_System",true,null,
                 actionEvent -> {
-                    System_open_actor.open_with_system(application, path, owner,Shared_services.aborter(),logger);
-                },context_menu,owner,logger);
+                    System_open_actor.open_with_system(application, path, context);
+                },context_menu,context);
         Menu_items.add_menu_item_for_context_menu("Open_With_Registered_Application",true,null,
                 actionEvent -> {
-                    System_open_actor.open_with_registered_application(path, owner,Shared_services.aborter(),logger);
-                },context_menu,owner,logger);
-        Menu_items.create_delete_menu_item(context_menu,path,owner,aborter,logger);
+                    System_open_actor.open_with_registered_application(path, context);
+                },context_menu,context);
+        Menu_items.create_delete_menu_item(context_menu,path,context);
         if (Files.isDirectory(path))
         {
             Menu_items.add_menu_item_for_context_menu(
                     "Get_folder_size",true, null,
-                    event2 -> Folder_size_stage.get_folder_size(path, owner, logger),
-                    context_menu, owner, logger);
+                    event2 -> Folder_size_stage.get_folder_size(path, context),
+                    context_menu, context);
 
             Menu_items.add_menu_item_for_context_menu(
                     "Browse_in_new_window",true,
                     (new KeyCodeCombination(KeyCode.N, KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
-                        if (dbg) logger.log("Browse in new window!");
-                        Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
-                    }, context_menu, owner, logger);
+                        if (dbg) context.log("Browse in new window!");
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D, new Path_list_provider_for_file_system(path, context), context);
+                    }, context_menu, context);
 
             if (Feature_cache.get(Feature.Enable_3D))
             {
                 Menu_items.add_menu_item_for_context_menu(
                         "Browse_in_new_3D_window",true, null,
                         event4 -> {
-                            if (dbg) logger.log("Browse in new window!");
-                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path, owner, logger), owner, logger);
-                        }, context_menu, owner, logger);
+                            if (dbg) context.log("Browse in new window!");
+                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path, context), context);
+                        }, context_menu, context);
             }
         }
         else
@@ -135,17 +132,17 @@ public class Scrollable_text_field extends Region
                     "Browse_in_new_window",true,
                     (new KeyCodeCombination(KeyCode.N,KeyCodeCombination.SHORTCUT_DOWN)).getDisplayText(),
                     event3 -> {
-                        if (dbg) logger.log("Browse in new window!");
-                        Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),owner,logger), owner, logger);
-                    }, context_menu, owner, logger);
+                        if (dbg) context.log("Browse in new window!");
+                        Window_builder.additional_no_past(application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path.getParent(),context), context);
+                    }, context_menu, context);
 
             if (Feature_cache.get(Feature.Enable_3D)) {
                 Menu_items.add_menu_item_for_context_menu(
                         "Browse_in_new_3D_window",true,null,
                         event4 -> {
-                            if (dbg) logger.log("Browse in new window!");
-                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), owner, logger), owner, logger);
-                        }, context_menu, owner, logger);
+                            if (dbg) context.log("Browse in new window!");
+                            Window_builder.additional_no_past(application,Window_type.File_system_3D, new Path_list_provider_for_file_system(path.getParent(), context), context);
+                        }, context_menu, context);
             }
         }
         context_menu.show(owner, event.getScreenX(), event.getScreenY());
@@ -168,7 +165,7 @@ public class Scrollable_text_field extends Region
 
         double text_width = computeTextWidth(text_field.getText());
         delta_width = text_width - w;
-        //logger.log("delta_width="+ delta_width);
+        //context.log("delta_width="+ delta_width);
     }
 
     //**********************************************************
@@ -212,7 +209,7 @@ public class Scrollable_text_field extends Region
     private void onHover(double mouseX)
     //**********************************************************
     {
-        //logger.log("onHover mouseX: " + mouseX);
+        //context.log("onHover mouseX: " + mouseX);
         boolean newDirectionIsLeft = mouseX < getWidth() / 2;
 
         if (scroll_timeline == null || scroll_timeline.getStatus() != Animation.Status.RUNNING)
@@ -224,7 +221,7 @@ public class Scrollable_text_field extends Region
         else
         {
             if (scroll_direction_to_left != newDirectionIsLeft) {
-                if ( dbg) logger.log("Hover direction changed to " + (newDirectionIsLeft ? "LEFT" : "RIGHT"));
+                if ( dbg) context.log("Hover direction changed to " + (newDirectionIsLeft ? "LEFT" : "RIGHT"));
                 scroll_direction_to_left = newDirectionIsLeft;
             }
         }
@@ -236,18 +233,18 @@ public class Scrollable_text_field extends Region
     {
         if (delta_width <= 0)
         {
-            if ( dbg) logger.log("NOP startScroll: maxScrollX=" + delta_width);
+            if ( dbg) context.log("NOP startScroll: maxScrollX=" + delta_width);
             return; // No need to scroll if text fits
         }
-        if ( dbg) logger.log("startScroll: maxScrollX=" + delta_width);
+        if ( dbg) context.log("startScroll: maxScrollX=" + delta_width);
 
         if (scroll_timeline != null && scroll_timeline.getStatus() == Animation.Status.RUNNING)
         {
-            if ( dbg) logger.log("already scrolling ");
+            if ( dbg) context.log("already scrolling ");
             return; // already scrolling
         }
 
-        if ( dbg) logger.log("Starting scroll. Direction: " + (scroll_direction_to_left ? "LEFT" : "RIGHT"));
+        if ( dbg) context.log("Starting scroll. Direction: " + (scroll_direction_to_left ? "LEFT" : "RIGHT"));
 
         scroll_timeline = new Timeline(
                 new KeyFrame(Duration.millis(20), e -> {
@@ -256,12 +253,12 @@ public class Scrollable_text_field extends Region
                     //int target;
                     if (scroll_direction_to_left)
                     {
-                        //logger.log("Animation to left");
+                        //context.log("Animation to left");
                         text_field.selectBackward();
                     }
                     else
                     {
-                        //logger.log("Animation to right");
+                        //context.log("Animation to right");
                         text_field.selectForward();
                     }
 
@@ -277,7 +274,7 @@ public class Scrollable_text_field extends Region
     //**********************************************************
     {
         if (scroll_timeline != null) {
-            if ( dbg) logger.log("Stopping scroll");
+            if ( dbg) context.log("Stopping scroll");
             scroll_timeline.stop();
         }
     }

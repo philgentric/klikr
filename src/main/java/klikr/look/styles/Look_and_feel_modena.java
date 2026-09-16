@@ -9,6 +9,7 @@ import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.net.URL;
@@ -19,9 +20,9 @@ public class Look_and_feel_modena extends Look_and_feel
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.modena;}
 
-    public Look_and_feel_modena(Window owner, Logger logger)
+    public Look_and_feel_modena(Logger logger)
     {
-        super("Modena (default JavaFX look and feel)",owner,logger);
+        super("Modena (default JavaFX look and feel)",logger);
     }
 
     @Override
@@ -31,7 +32,7 @@ public class Look_and_feel_modena extends Look_and_feel
 
     //**********************************************************
     @Override
-    public URL get_CSS_URL(Window owner)
+    public URL get_CSS_URL()
     //**********************************************************
     {
         Application.setUserAgentStylesheet(Application.STYLESHEET_MODENA);

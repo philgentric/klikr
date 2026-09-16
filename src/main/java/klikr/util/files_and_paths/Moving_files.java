@@ -6,10 +6,9 @@
 
 package klikr.util.files_and_paths;
 
-import javafx.stage.Window;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.change.Change_gang;
 import klikr.change.undo.Undo_for_moves;
@@ -42,9 +41,7 @@ public class Moving_files
     public static void safe_move_files_or_dirs(Path destination_dir,
                                                boolean destination_is_trash,
                                                List<File> the_files_being_moved,
-                                               Window owner, double x, double y,
-                                               Aborter aborter,
-                                               Logger logger)
+                                               Kontext context)
     //**********************************************************
     {
         List<Old_and_new_Path> oan_list = new ArrayList<>();
@@ -55,7 +52,7 @@ public class Moving_files
             Path new_Path_ = Paths.get(destination_dir.toAbsolutePath().toString(), the_file_being_moved.getName());
 
             if (old_Path_.compareTo(new_Path_) == 0) {
-                logger.log(Logger.warning+" WARNING illegal move ignored" + old_Path_.toAbsolutePath() + " == " + new_Path_.toAbsolutePath());
+                context.log(Logger.warning+" WARNING illegal move ignored" + old_Path_.toAbsolutePath() + " == " + new_Path_.toAbsolutePath());
                 popup = true;
                 continue;
             }
@@ -66,15 +63,15 @@ public class Moving_files
         }
 
         if (popup) {
-            Popups.popup_warning( Logger.warning+" Stupid move ignored", "Check the folders in the window title, it seems you are trying to move files from one folder to the SAME folder!?", false, owner,logger);
+            Popups.popup_warning( Logger.warning+" Stupid move ignored", "Check the folders in the window title, it seems you are trying to move files from one folder to the SAME folder!?", false, context);
         }
-        perform_safe_moves_in_a_thread(oan_list,  true, owner, aborter,logger);
+        perform_safe_moves_in_a_thread(oan_list,  true, context);
     }
 
 
 
     //**********************************************************
-    public static void safe_move_a_file_or_dir_NOT_in_a_thread(Path new_Path_, File the_file_being_moved, double x, double y, Window owner, Aborter aborter, Logger logger)
+    public static void safe_move_a_file_or_dir_NOT_in_a_thread(Path new_Path_, File the_file_being_moved, Kontext context)
     //**********************************************************
     {
         Path old_Path_ = the_file_being_moved.toPath();
@@ -83,7 +80,7 @@ public class Moving_files
 
         List<Old_and_new_Path> oanl = new ArrayList<>();
         oanl.add(oan);
-        actual_safe_moves(oanl, true,owner, aborter,logger);
+        actual_safe_moves(oanl, true,context);
     }
 
 
@@ -92,27 +89,26 @@ public class Moving_files
     public static void perform_safe_moves_in_a_thread(
             List<Old_and_new_Path> the_list,
             boolean and_list_for_undo,
-            Window owner,
-            Aborter aborter, Logger logger)
+            Kontext context)
     //**********************************************************
     {
         if (the_list == null) {
-            logger.log(Logger.error+"FATAL perform_safe_moves_in_a_thread() list is null");
+            context.log(Logger.error+"FATAL perform_safe_moves_in_a_thread() list is null");
             return;
 
         }
         if (the_list.isEmpty()) {
-            logger.log("warning:  perform_safe_moves_in_a_thread() list is empty");
+            context.log("warning:  perform_safe_moves_in_a_thread() list is empty");
             return;
 
         }
-        if (moving_files_dbg) logger.log("perform_safe_moves_in_a_thread()");
-        Runnable r = () -> actual_safe_moves(the_list, and_list_for_undo, owner, aborter, logger);
+        if (moving_files_dbg) context.log("perform_safe_moves_in_a_thread()");
+        Runnable r = () -> actual_safe_moves(the_list, and_list_for_undo, context);
         try {
-            Actor_engine.execute(r, "Move files", logger);
-            if (moving_files_dbg) logger.log("perform_safe_moves_in_a_thread LAUNCHED, thread COUNT=" + Thread.activeCount());
+            Actor_engine.execute(r, "Move files", context.logger());
+            if (moving_files_dbg) context.log("perform_safe_moves_in_a_thread LAUNCHED, thread COUNT=" + Thread.activeCount());
         } catch (RejectedExecutionException ree) {
-            logger.log("perform_safe_moves_in_a_thread()" + ree);
+            context.log("perform_safe_moves_in_a_thread()" + ree);
 
         }
 
@@ -120,21 +116,21 @@ public class Moving_files
     }
 
     //**********************************************************
-    public static void safe_delete_files(List<Old_and_new_Path> l, Window owner, Aborter aborter, Logger logger)
+    public static void safe_delete_files(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
         // WHY create a copy of the list ?
         List<Old_and_new_Path> l2 = new ArrayList<>();
         for (Old_and_new_Path oanf : l) {
-            Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(oanf.old_Path,owner,logger);
+            Path trash_dir = Static_files_and_paths_utilities.get_trash_dir_of(oanf.old_Path,context);
             Path new_Path = (Paths.get(trash_dir.toString(), oanf.old_Path.getFileName().toString()));
             Old_and_new_Path oanf2 = new Old_and_new_Path(oanf.old_Path, new_Path, oanf.cmd, oanf.status,false);
             l2.add(oanf2);
         }
 
-        //logger.log("safe_delete_all: perform_safe_moves_in_a_thread");
+        //context.log("safe_delete_all: perform_safe_moves_in_a_thread");
 
-        Moving_files.perform_safe_moves_in_a_thread(l2,  true, owner, aborter, logger);
+        Moving_files.perform_safe_moves_in_a_thread(l2,  true, context);
 
     }
 
@@ -142,38 +138,36 @@ public class Moving_files
     public static List<Old_and_new_Path> actual_safe_moves(
             List<Old_and_new_Path> the_list,
             boolean and_list_for_undo,
-            Window owner,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        Optional<Hourglass> hourglass = check(aborter,the_list, owner, logger);
+        Optional<Hourglass> hourglass = check(the_list, context);
         List<Old_and_new_Path> done = new ArrayList<>();
         List<Old_and_new_Path> not_done = new ArrayList<>();
         for (Old_and_new_Path oandn : the_list)
         {
-            if ( aborter.should_abort())
+            if ( context.should_abort())
             {
-                logger.log("file move aborted by user");
+                context.log("file move aborted by user");
                 break;
             }
             // record (last) move destination folder
             Redo_same_move_engine.last_destination_folder = oandn.new_Path.getParent();
 
-            Old_and_new_Path actual = process_one_move(oandn, owner, aborter, logger);
+            Old_and_new_Path actual = process_one_move(oandn, context);
             if ( actual==null)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("move has failed for "+oandn.old_Path));
+                context.log(Stack_trace_getter.get_stack_trace("move has failed for "+oandn.old_Path));
                 continue;
             }
-            if (moving_files_dbg) logger.log("A move has been completed and the status is: " + actual.status);
+            if (moving_files_dbg) context.log("A move has been completed and the status is: " + actual.status);
 
             switch (actual.status) {
                 case move_done, rename_done, move_to_trash_done, identical_file_moved_to_klik_trash, identical_file_deleted, delete_forever_done, copy_done ->
                         done.add(actual);
                 default -> {
                     not_done.add(actual);
-                    logger.log("WARNING status is weird:" + actual.status);
+                    context.log("WARNING status is weird:" + actual.status);
                 }
             }
 
@@ -182,15 +176,15 @@ public class Moving_files
 
         if ( !done.isEmpty())
         {
-            Change_gang.report_changes(done,owner);
+            Change_gang.report_changes(done, context.owner());
             if ( and_list_for_undo)
             {
-                Undo_for_moves.add(done, owner, logger);
+                Undo_for_moves.add(done, context);
             }
         }
 
         if (!not_done.isEmpty()) {
-            Change_gang.report_changes(not_done,owner);
+            Change_gang.report_changes(not_done, context.owner());
             StringBuilder sb = new StringBuilder();
             for (Old_and_new_Path i : not_done) {
                 sb.append(i.old_Path.toAbsolutePath());
@@ -201,8 +195,8 @@ public class Moving_files
             }
             boolean for_3seconds = true;
             if (not_done.size() >= 2) for_3seconds = false;
-            Popups.popup_warning( Logger.warning+" Moves not done?", sb.toString(), for_3seconds, owner,logger);
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Moves not done? " + sb));
+            Popups.popup_warning( Logger.warning+" Moves not done?", sb.toString(), for_3seconds, context);
+            context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Moves not done? " + sb));
         }
 
         hourglass.ifPresent(Hourglass::close);
@@ -213,10 +207,8 @@ public class Moving_files
     // if yes, return a progress window
     //**********************************************************
     private static Optional<Hourglass> check(
-            Aborter aborter,
             List<Old_and_new_Path> the_list,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         if ( the_list.isEmpty()) return Optional.empty();
@@ -231,7 +223,7 @@ public class Moving_files
             Old_and_new_Path oand = the_list.get(0);
             if ( oand.old_Path.toFile().isDirectory())
             {
-                Sizes sizes =   Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(oand.old_Path, new Aborter("dummy",logger), owner, logger);
+                Sizes sizes =   Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(oand.old_Path, context);
                 if ( sizes.bytes() > 10_000_000) show_progress_window = true;
             }
             else
@@ -241,12 +233,10 @@ public class Moving_files
         }
         if ( show_progress_window)
         {
-            return Progress_window.show_with_abort_button(
-                    aborter,
+            return Progress_window.show(
                     "File(s) are being moved",
                     20000,
-                    owner,
-                    logger);
+                    context);
         }
         return Optional.empty();
     }
@@ -255,12 +245,12 @@ public class Moving_files
     // it does not check for overwrite etc
     // prefer Moving_files.actual_safe_moves
     //**********************************************************
-    public static boolean move_file(Path old_path, Path new_path, Window owner, Logger logger)
+    public static boolean move_file(Path old_path, Path new_path, Kontext context)
     //**********************************************************
     {
         if (! old_path.toFile().exists())
         {
-            logger.log("cannot move, file does not exists: "+old_path);
+            context.log("cannot move, file does not exists: "+old_path);
             return false;
         }
         // move a file, if the destination path contains folders that do not exist yet, create them
@@ -270,7 +260,7 @@ public class Moving_files
         {
             if ( !parent.toFile().mkdirs())
             {
-                logger.log("cannot create folders for new path "+new_path.toAbsolutePath());
+                context.log("cannot create folders for new path "+new_path.toAbsolutePath());
                 return  false;
             }
         }
@@ -282,21 +272,21 @@ public class Moving_files
         catch (FileAlreadyExistsException e)
         {
             String text = Logger.warning+"  Warning! \"FileAlreadyExistsException Files.move() cannot move \"+old_path+\" => \"+ new_path";
-            logger.log(text+" "+e);
-            Popups.popup_warning("Move/Rename failed",text,false,owner,logger);
+            context.log(text+" "+e);
+            Popups.popup_warning("Move/Rename failed",text,false,context);
             return false;
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("IOException Files.move() cannot move "+old_path+" => "+ new_path));
+            context.log(Stack_trace_getter.get_stack_trace("IOException Files.move() cannot move "+old_path+" => "+ new_path));
             try
             {
                 Files.copy(old_path,new_path);
-                logger.log("file/folder was copied instead "+old_path+" => "+ new_path);
+                context.log("file/folder was copied instead "+old_path+" => "+ new_path);
             }
             catch (IOException ee)
             {
-                logger.log("cannot copy "+old_path+" => "+ new_path+ " "+ee);
+                context.log("cannot copy "+old_path+" => "+ new_path+ " "+ee);
                 return false;
 
             }
@@ -306,7 +296,7 @@ public class Moving_files
             }
             catch (IOException eee)
             {
-                logger.log("cannot delete "+old_path+ " "+eee);
+                context.log("cannot delete "+old_path+ " "+eee);
                 return false;
             }
         }
@@ -314,17 +304,17 @@ public class Moving_files
     }
 
     //**********************************************************
-    private static Old_and_new_Path process_one_move(Old_and_new_Path oandn, Window owner, Aborter aborter, Logger logger)
+    private static Old_and_new_Path process_one_move(Old_and_new_Path oandn, Kontext context)
     //**********************************************************
     {
-        boolean is_same_path = Static_files_and_paths_utilities.is_same_path(oandn.old_Path,oandn.new_Path,logger);
+        boolean is_same_path = Static_files_and_paths_utilities.is_same_path(oandn.old_Path,oandn.new_Path,context);
         if ( is_same_path)
         {
-            logger.log("Move not done : identical paths " + oandn.old_Path + "=>" + oandn.new_Path);
+            context.log("Move not done : identical paths " + oandn.old_Path + "=>" + oandn.new_Path);
             return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, oandn.cmd, Status.same_path,false);
         }
-        boolean destination_exists = destination_exists(oandn.new_Path, logger);
-        boolean content_is_same = file_contents_are_identical(oandn, aborter, logger);
+        boolean destination_exists = destination_exists(oandn.new_Path, context.logger());
+        boolean content_is_same = file_contents_are_identical(oandn, context);
         if ( destination_exists)
         {
             if ( oandn.cmd == Command.command_move)
@@ -333,28 +323,28 @@ public class Moving_files
 
                     // the contents are the same
                     // then the "old" file goes to trash
-                    Path new_path = generate_safe_name(Static_files_and_paths_utilities.get_trash_dir_of(oandn.old_Path, owner, logger), oandn.old_Path.getFileName().toString(), logger);
+                    Path new_path = generate_safe_name(Static_files_and_paths_utilities.get_trash_dir_of(oandn.old_Path, context), oandn.old_Path.getFileName().toString(), context);
                     Old_and_new_Path oandn2 = new Old_and_new_Path(
                             oandn.old_Path,
                             new_path,
                             Command.command_move_to_trash,
                             Status.before_command,
                             false);
-                    logger.log("--Move to trash as destination folder contains a copy--\nRequested:" + oandn.old_Path + "=>" + oandn.new_Path+"\nPerformed:" + oandn2.old_Path + "=>" + oandn2.new_Path);
-                    return do_the_move_or_delete(oandn2, owner, aborter, logger);
+                    context.log("--Move to trash as destination folder contains a copy--\nRequested:" + oandn.old_Path + "=>" + oandn.new_Path+"\nPerformed:" + oandn2.old_Path + "=>" + oandn2.new_Path);
+                    return do_the_move_or_delete(oandn2, context);
                 }
             }
             // we don't trust the developper to correctly set the command to Command.command_rename
-            if ( is_a_rename(oandn,logger))
+            if ( is_a_rename(oandn, context))
             {
                 // "destination exists" on macos maybe the case that we want to rename
                 // my_file.txt into My_File.txt and macos says My_File.txt exists because it
                 // "sees" it as my_file.txt, which does exist, of course
-                if ( names_differ_only_by_case(oandn, aborter, logger))
+                if ( names_differ_only_by_case(oandn))
                 {
                     if (content_is_same)
                     {
-                        logger.log("Rename in 2 steps" + oandn.old_Path + "=>" + oandn.new_Path);
+                        context.log("Rename in 2 steps" + oandn.old_Path + "=>" + oandn.new_Path);
 
                         // the trick is to move in 2 steps with a temporary name
                         try {
@@ -362,12 +352,12 @@ public class Moving_files
                             File tmp = oandn.old_Path.getParent().resolve(tmp_name).toFile();
                             FileUtils.moveFile(oandn.old_Path.toFile(), tmp);
                             FileUtils.moveFile(tmp, oandn.new_Path.toFile());
-                            return move_success(oandn, logger);
+                            return move_success(oandn, context.logger());
                         }
                         catch( IOException e)
                         {
-                            logger.log(Stack_trace_getter.get_stack_trace(""+e));
-                            return move_failed(oandn,e,owner,aborter,logger);
+                            context.log(Stack_trace_getter.get_stack_trace(""+e));
+                            return move_failed(oandn,e,context);
                         }
                     }
                 }
@@ -375,37 +365,37 @@ public class Moving_files
             }
 
             // in any case we MUST NOT overwrite the destination
-            Path new_path = generate_safe_name(oandn.new_Path.getParent(), oandn.new_Path.getFileName().toString(),logger);
+            Path new_path = generate_safe_name(oandn.new_Path.getParent(), oandn.new_Path.getFileName().toString(),context);
             Old_and_new_Path oandn2 = new Old_and_new_Path(
                     oandn.old_Path,
                     new_path,
                     Command.command_move,
                     Status.before_command,
                     false);
-            logger.log("--Move--\nRequested:" + oandn.old_Path + "=>" + oandn.new_Path+"\nPerformed:" + oandn2.old_Path + "=>" + oandn2.new_Path);
+            context.log("--Move--\nRequested:" + oandn.old_Path + "=>" + oandn.new_Path+"\nPerformed:" + oandn2.old_Path + "=>" + oandn2.new_Path);
 
-            return do_the_move_or_delete(oandn2,owner,aborter,logger);
+            return do_the_move_or_delete(oandn2,context);
         }
         else
         {
             // no problemo
-            logger.log("no problemo move:" + oandn.old_Path + "=>" + oandn.new_Path);
-            logger.log("--Move (no problemo)--\nPerformed:" + oandn.old_Path + "=>" + oandn.new_Path);
+            context.log("no problemo move:" + oandn.old_Path + "=>" + oandn.new_Path);
+            context.log("--Move (no problemo)--\nPerformed:" + oandn.old_Path + "=>" + oandn.new_Path);
 
-            return do_the_move_or_delete(oandn,owner,aborter,logger);
+            return do_the_move_or_delete(oandn,context);
         }
 
     }
 
     //**********************************************************
-    private static boolean is_a_rename(Old_and_new_Path oandn, Logger logger)
+    private static boolean is_a_rename(Old_and_new_Path oandn, Kontext context)
     //**********************************************************
     {
-        return Static_files_and_paths_utilities.is_same_path(oandn.old_Path.getParent(),oandn.new_Path.getParent(),logger);
+        return Static_files_and_paths_utilities.is_same_path(oandn.old_Path.getParent(),oandn.new_Path.getParent(),context);
     }
 
     //**********************************************************
-    private static Path generate_safe_name(Path folder, String original_name, Logger logger)
+    private static Path generate_safe_name(Path folder, String original_name, Kontext context)
     //**********************************************************
     {
         String base_name = Extensions.get_base_name(original_name);
@@ -415,11 +405,11 @@ public class Moving_files
         for (int index = 1; index < 100000; index++)
         {
             Path candidate_path = Path.of(folder.toAbsolutePath().toString(),candidate_name);
-            if (!destination_exists(candidate_path,logger))
+            if (!destination_exists(candidate_path, context.logger()))
             {
                 return candidate_path;
             }
-            candidate_name = increment_if_name_is_already_a_count(base_name,index,logger);
+            candidate_name = increment_if_name_is_already_a_count(base_name,index,context);
             if ( candidate_name == null) break;
             if ( ! extension.isEmpty()) candidate_name = Extensions.add(candidate_name,extension);
         }
@@ -429,7 +419,7 @@ public class Moving_files
     }
 
     //**********************************************************
-    private static String increment_if_name_is_already_a_count(String base_name, int index, Logger logger)
+    private static String increment_if_name_is_already_a_count(String base_name, int index, Kontext context)
     //**********************************************************
     {
         int lenght_of_trailing_numbers = 0;
@@ -445,9 +435,9 @@ public class Moving_files
             }
         }
         if (lenght_of_trailing_numbers == 0) return null; // nope
-        if (moving_files_dbg) logger.log(base_name+" ends with a number of length "+lenght_of_trailing_numbers);
+        if (moving_files_dbg) context.log(base_name+" ends with a number of length "+lenght_of_trailing_numbers);
         String number =  base_name.substring(base_name.length()-lenght_of_trailing_numbers);
-        if (moving_files_dbg) logger.log(base_name+" ends with a number = "+number);
+        if (moving_files_dbg) context.log(base_name+" ends with a number = "+number);
         long k = 0;
         try
         {
@@ -460,7 +450,7 @@ public class Moving_files
 
         String new_integer_with_leading_zeroes = String.format("%0"+lenght_of_trailing_numbers+"d",(k+index));
         String new_name = base_name.substring(0, base_name.length() - lenght_of_trailing_numbers) + new_integer_with_leading_zeroes;
-        logger.log("candidate new_name? ->" + new_name+"<-");
+        context.log("candidate new_name? ->" + new_name+"<-");
         return new_name;
     }
 
@@ -478,7 +468,7 @@ public class Moving_files
     }
 
     //**********************************************************
-    private static boolean names_differ_only_by_case(Old_and_new_Path oandn, Aborter aborter, Logger logger)
+    private static boolean names_differ_only_by_case(Old_and_new_Path oandn)
     //**********************************************************
     {
         String proposed_new_name_string = oandn.new_Path.getFileName().toString();
@@ -534,50 +524,50 @@ public class Moving_files
 
 
     //**********************************************************
-    private static boolean file_contents_are_identical(Old_and_new_Path oandn, Aborter aborter, Logger logger)
+    private static boolean file_contents_are_identical(Old_and_new_Path oandn, Kontext context)
     //**********************************************************
     {
         if (Files.exists(oandn.new_Path)) {
-            File_with_a_few_bytes mf1 = new File_with_a_few_bytes(oandn.old_Path.toFile(), logger);
-            File_with_a_few_bytes mf2 = new File_with_a_few_bytes(oandn.new_Path.toFile(), logger);
+            File_with_a_few_bytes mf1 = new File_with_a_few_bytes(oandn.old_Path.toFile(), context.logger());
+            File_with_a_few_bytes mf2 = new File_with_a_few_bytes(oandn.new_Path.toFile(), context.logger());
 
             // identical or not ?
-            return File_with_a_few_bytes.files_have_same_content(mf1, mf2, aborter, logger);
+            return File_with_a_few_bytes.files_have_same_content(mf1, mf2, context);
         }
-        if (moving_files_dbg) logger.log("new path does not exist, so not identical " + oandn.to_string());
+        if (moving_files_dbg) context.log("new path does not exist, so not identical " + oandn.to_string());
         return false;
     }
 
 
     //**********************************************************
-    private static Old_and_new_Path do_the_move_or_delete(Old_and_new_Path oandn, Window owner, Aborter aborter, Logger logger)
+    private static Old_and_new_Path do_the_move_or_delete(Old_and_new_Path oandn, Kontext context)
     //**********************************************************
     {
         try {
             if (oandn.cmd == Command.command_delete_forever)
             {
-                logger.log("delete for ever issued for : " + oandn.old_Path);
+                context.log("delete for ever issued for : " + oandn.old_Path);
                 Files.delete(oandn.old_Path);
-                logger.log("delete for ever DONE for : " + oandn.old_Path);
-                return move_success(oandn, logger);
+                context.log("delete for ever DONE for : " + oandn.old_Path);
+                return move_success(oandn, context.logger());
             }
 
             {
-                if (Static_files_and_paths_utilities.is_same_path(oandn.old_Path, oandn.new_Path, logger))
+                if (Static_files_and_paths_utilities.is_same_path(oandn.old_Path, oandn.new_Path, context))
                 {
-                    logger.log("WARNING !!! do_the_move not performed : identical paths " + oandn.old_Path + "=>" + oandn.new_Path);
+                    context.log("WARNING !!! do_the_move not performed : identical paths " + oandn.old_Path + "=>" + oandn.new_Path);
                     return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, oandn.cmd, Status.same_path,false);
                 }
                 long start = System.currentTimeMillis();
                 if (oandn.old_Path.toFile().isFile())
                 {
-                    logger.log("move FILE command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
+                    context.log("move FILE command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
                     // preserves attributes by default:
                     FileUtils.moveFile(oandn.old_Path.toFile(), oandn.new_Path.toFile());
                 }
                 else
                 {
-                    logger.log("move FOLDER command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
+                    context.log("move FOLDER command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
                     FileUtils.moveDirectory(oandn.old_Path.toFile(), oandn.new_Path.toFile());
                 }
 
@@ -585,22 +575,22 @@ public class Moving_files
                 {
                     if (Feature_cache.get(Feature.Play_ding_after_long_processes))
                     {
-                        Ding.play("file moving takes more than 5s", logger);
+                        Ding.play("file moving takes more than 5s", context.logger());
                     }
                 }
             }
-            return move_success(oandn, logger);
+            return move_success(oandn, context.logger());
 
         }
         catch (AccessDeniedException x)
         {
-            logger.log("Move failed " + oandn.old_Path + " ACCESS DENIED exception ");
-            return move_failed(oandn, x, owner, aborter,logger);
+            context.log("Move failed " + oandn.old_Path + " ACCESS DENIED exception ");
+            return move_failed(oandn, x, context);
         }
 
         catch (FileNotFoundException x) {
-            logger.log("Move failed " + oandn.old_Path + " FILE NOT FOUND exception, the source does not exists?"+oandn.old_Path);
-            return move_failed( oandn, x, owner,aborter,logger);
+            context.log("Move failed " + oandn.old_Path + " FILE NOT FOUND exception, the source does not exists?"+oandn.old_Path);
+            return move_failed( oandn, x, context);
         }
         catch (DirectoryNotEmptyException x)
         {
@@ -612,34 +602,34 @@ public class Moving_files
                 // hypothesis: Files.move(x) is implemented as first a copy (which succeeds!)
                 // and then when a delete of the source folder is attempted... DirectoryNotEmptyException
                 //
-                logger.log(Logger.warning+" Folder move failed " + oandn.old_Path + " DIRECTORY NOT EMPTY exception\nThis may happen when moving a folder across filesystems: the origin is still there!");
-                Popups.popup_warning( Logger.warning+" Directory was COPIED", "..instead of moved because it was across 2 different filesystems", true, owner,logger);
-                return move_failed( oandn, x, owner,aborter,logger);
+                context.log(Logger.warning+" Folder move failed " + oandn.old_Path + " DIRECTORY NOT EMPTY exception\nThis may happen when moving a folder across filesystems: the origin is still there!");
+                Popups.popup_warning( Logger.warning+" Directory was COPIED", "..instead of moved because it was across 2 different filesystems", true, context);
+                return move_failed( oandn, x, context);
             }
 
-            logger.log(oandn.old_Path + " DIRECTORY NOT EMPTY, not allowed!");
-            Popups.popup_Exception(x, 200, "DIRECTORY NOT EMPTY", owner, logger);
-            return move_failed( oandn, x, owner,aborter,logger);
+            context.log(oandn.old_Path + " DIRECTORY NOT EMPTY, not allowed!");
+            Popups.popup_Exception(x, 200, "DIRECTORY NOT EMPTY", context);
+            return move_failed( oandn, x, context);
         }
         catch (IOException e)
         {
-            logger.log("IO EXCEPTION "+oandn.old_Path + " " + e);
+            context.log("IO EXCEPTION "+oandn.old_Path + " " + e);
             if ( !oandn.old_Path.toFile().canWrite())
             {
-                logger.log(Logger.error+"File is not writeable: "+oandn.old_Path + " " + e);
-                Popups.popup_warning(Logger.error+"File is not writeable:"+oandn.old_Path, "This file cannot be moved because its file-system properties do not allow it", false, owner,logger);
+                context.log(Logger.error+"File is not writeable: "+oandn.old_Path + " " + e);
+                Popups.popup_warning(Logger.error+"File is not writeable:"+oandn.old_Path, "This file cannot be moved because its file-system properties do not allow it", false, context);
 
             }
-            return move_failed( oandn, e, owner,aborter,logger);
+            return move_failed( oandn, e, context);
         }
     }
 
 
     //**********************************************************
-    private static Old_and_new_Path move_failed(Old_and_new_Path oandn, IOException e0, Window owner, Aborter aborter, Logger logger)
+    private static Old_and_new_Path move_failed(Old_and_new_Path oandn, IOException e0, Kontext context)
     //**********************************************************
     {
-        logger.log("******* move failed for: *********\n" +
+        context.log("******* move failed for: *********\n" +
                 "->" + oandn.old_Path + "<-\n" +
                 "==>\n" +
                 "->" + oandn.new_Path + "<-\n" +
@@ -651,13 +641,13 @@ public class Moving_files
         }
         if (!Files.exists(oandn.new_Path.getParent()))
         {
-            logger.log("FAILED to move file, target dir does not exists->" + oandn.new_Path.getParent() + "<-" + e0);
+            context.log("FAILED to move file, target dir does not exists->" + oandn.new_Path.getParent() + "<-" + e0);
             Path path = oandn.new_Path.getParent();
             Shared_services.main_properties().remove(path.toAbsolutePath().toString());
 
             return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, oandn.cmd, Status.target_dir_does_not_exist,false);
         } else {
-            logger.log("destination folder exists but ... FAILED to move file for some other reason->" + oandn.old_Path.toAbsolutePath() +
+            context.log("destination folder exists but ... FAILED to move file for some other reason->" + oandn.old_Path.toAbsolutePath() +
                     "<- into ->" + oandn.new_Path.toAbsolutePath() + "<-\n" + e0);
 
             // ok so we try to COPY instead
@@ -675,24 +665,24 @@ public class Moving_files
 
 
                 String local_string =
-                        My_I18n.get_I18n_string("We_tried_moving", owner,logger)
+                        My_I18n.get_I18n_string("We_tried_moving", context)
                                 + oandn.old_Path.toAbsolutePath()
-                                + My_I18n.get_I18n_string("Into", owner,logger)
+                                + My_I18n.get_I18n_string("Into", context)
                                 + oandn.new_Path.toAbsolutePath()
-                                + My_I18n.get_I18n_string("And_it_worked", owner,logger);
-                if (moving_files_dbg) Popups.popup_warning( Logger.ok+" Move success (dbg is on)", local_string, false, owner,logger);
-                logger.log(local_string + "<-\n" + e0);
+                                + My_I18n.get_I18n_string("And_it_worked", context);
+                if (moving_files_dbg) Popups.popup_warning( Logger.ok+" Move success (dbg is on)", local_string, false, context);
+                context.log(local_string + "<-\n" + e0);
                 return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, Command.command_copy, Status.copy_done,false);
             }
             catch (FileAlreadyExistsException ex)
             {
                 String text = Logger.warning+"  Warning! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
                         "<- into ->" + oandn.new_Path.toAbsolutePath();
-                logger.log(text+" "+ex);
-                Popups.popup_warning("Move/Rename failed",text,false,owner,logger);
+                context.log(text+" "+ex);
+                Popups.popup_warning("Move/Rename failed",text,false,context);
             }
             catch (IOException ex) {
-                logger.log(Logger.error+"FATAL! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
+                context.log(Logger.error+"FATAL! we tried moving a file/dir and it failed, so we tried to copy instead and is ALSO failed!" + oandn.old_Path.toAbsolutePath() +
                         "<- into ->" + oandn.new_Path.toAbsolutePath() + "<-\n" + ex);
             }
 
@@ -734,24 +724,24 @@ public class Moving_files
     }
 
     //**********************************************************
-    public static Path change_dir_name(Path old_path, String new_name,Window owner, Aborter aborter , Logger logger)
+    public static Path change_dir_name(Path old_path, String new_name, Kontext context)
     //**********************************************************
     {
-        logger.log("change_dir_name, new name: " + new_name);
+        context.log("change_dir_name, new name: " + new_name);
 
-        logger.log("trying rename: " + old_path.getFileName() + " => " + new_name);
+        context.log("trying rename: " + old_path.getFileName() + " => " + new_name);
         Path new_path = Paths.get(old_path.getParent().toString(), new_name);
         //Files.move(path, new_path);
         //FileUtils.moveDirectory(old_path.toFile(),new_path.toFile());
-        if ( !move_file(old_path,new_path,owner,logger))
+        if ( !move_file(old_path,new_path,context))
         {
             return null;
         }
-        logger.log("....done");
+        context.log("....done");
         Old_and_new_Path oan = new Old_and_new_Path(old_path,new_path, Command.command_rename, Status.rename_done,false);
         List<Old_and_new_Path> l = new ArrayList<>();
         l.add(oan);
-        Undo_for_moves.add(l, owner,logger);
+        Undo_for_moves.add(l, context);
         return new_path;
 
     }

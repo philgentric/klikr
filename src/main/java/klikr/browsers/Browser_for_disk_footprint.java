@@ -14,13 +14,14 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.*;
-import klikr.browser_core.Window_manager;
-import klikr.browser_core.diskview.*;
-import klikr.browser_core.virtual_landscape.Shutdown_target;
+import klikr.browsers.browser_core.Window_manager;
+import klikr.browsers.browser_core.diskview.*;
+import klikr.browsers.browser_core.virtual_landscape.Shutdown_target;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
+import klikr.path_lists.File_comparator_provider;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
@@ -37,44 +38,43 @@ import java.util.concurrent.CountDownLatch;
 public class Browser_for_disk_footprint implements Owner_provider, Selection_manager, File_comparator_provider, Shutdown_target
 //*******************************************************
 {
-    private final Stage stage;
+    private final Kontext context;
     private Pane drawing_pane;
     private File_node current_root;    // currently displayed root (may be a subfolder)
     private File_node scan_root;       // the original scanned tree root
     private Label status_label;
     private Button up_button;
-    public final Logger logger;
     public final int ID;
 
 
 
     //*******************************************************
-    public Browser_for_disk_footprint(Window_builder window_builder, Logger logger)
+    public Browser_for_disk_footprint(Window_builder window_builder, Kontext k)
     //*******************************************************
     {
-        this.logger = logger;
 
-        stage = new Stage();
+        Stage stage = new Stage();
+        this.context = new Kontext(stage,null,k.logger());
         ID = Window_manager.register();
         Optional<Path> p = window_builder.path_list_provider.get_folder_path();
         if (p.isEmpty())
         {
-            logger.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
             return;
         }
 
 
         BorderPane root = new BorderPane();
-        Look_and_feel_manager.set_region_look(root,stage,logger);
+        Look_and_feel_manager.set_region_look(root,context.logger());
 
         ToolBar toolBar = new ToolBar();
-        Look_and_feel_manager.set_region_look(toolBar,stage,logger);
-        Button refresh_button = new Button(My_I18n.get_I18n_string("Refresh",stage,logger));
-        Look_and_feel_manager.set_region_look(refresh_button,true,stage,logger);
-        up_button = new Button(My_I18n.get_I18n_string("Parent_Folder",stage,logger));
-        Look_and_feel_manager.set_region_look(up_button,true,stage,logger);
+        Look_and_feel_manager.set_region_look(toolBar,context.logger());
+        Button refresh_button = new Button(My_I18n.get_I18n_string("Refresh",context));
+        Look_and_feel_manager.set_region_look(refresh_button,true,context.logger());
+        up_button = new Button(My_I18n.get_I18n_string("Parent_Folder",context));
+        Look_and_feel_manager.set_region_look(up_button,true,context.logger());
         status_label = new Label("OK");
-        Look_and_feel_manager.set_region_look(status_label,stage,logger);
+        Look_and_feel_manager.set_region_look(status_label,context.logger());
 
         toolBar.getItems().addAll(refresh_button, up_button, new Separator(), status_label);
         root.setTop(toolBar);
@@ -100,7 +100,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
             // Case 1: navigated into a subfolder of the scan tree → go up within the tree
             if (scan_root != null && current_root != scan_root)
             {
-                Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage,logger);
+                Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,context);
                 File_node parent = find_parent(scan_root, current_root);
                 if (parent != null)
                 {
@@ -127,7 +127,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
         stage.setScene(scene);
 
         stage.show();
-        stage.setTitle("Disk footprint of: "+window_builder.path_list_provider.get_folder_path());
+        context.setTitle("Disk footprint of: "+window_builder.path_list_provider.get_folder_path());
 
         stage.setOnCloseRequest(event->{
             shutdown();
@@ -157,7 +157,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
 
     @Override
     public void shutdown() {
-        Window_manager.unregister(ID,logger);
+        Window_manager.unregister(ID,context);
     }
 
     //*******************************************************
@@ -180,7 +180,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
             update_up_button();
             status_label.setText(node.get_file().getAbsolutePath() + " — " + format_size_internal(node.get_size()));
             refresh();
-            stage.setTitle("Disk footprint of: "+node.get_file().getAbsolutePath());
+            context.setTitle("Disk footprint of: "+node.get_file().getAbsolutePath());
             x.ifPresent(Hourglass::close);
 
 
@@ -199,7 +199,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
     {
         if (current_root == null) return;
 
-        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage,logger);
+        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,context);
         // Is clickedNode itself a direct child of currentRoot?
         File_node topChild = find_top_level_child(current_root, clickedNode);
         if (topChild != null && topChild.is_this_a_directory()) {
@@ -260,23 +260,23 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
     private void start_scan(File folder)
     //*******************************************************
     {
-        stage.setTitle("Disk footprint of: "+folder.getAbsolutePath());
+        context.setTitle("Disk footprint of: "+folder.getAbsolutePath());
         status_label.setText("Scanning " + folder.getAbsolutePath() + "...");
         scan_root = null;  // will be set when scan/cache completes
 
         // Thread 1: load cache, then do progressive depth reveal
         Actor_engine.execute(() -> {
             scan_in_thread(folder);
-        },"diskview scan",logger);
+        },"diskview scan",context.logger());
     }
 
     private void scan_in_thread(File folder)
     {
-        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,stage,logger);
+        Optional<Hourglass> x = Progress_window.show("Scanning disk",20*60,context);
         try {
             File_node cacheHint = current_root;
             if (cacheHint == null || !cacheHint.get_file().equals(folder)) {
-                cacheHint = Scan_cache.load(folder,logger);
+                cacheHint = Scan_cache.load(folder, context.logger());
             }
             final File_node cached = cacheHint;
             final double w = drawing_pane.getWidth();
@@ -316,15 +316,15 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
             }
 
             // After reveal is done, start the scan on THIS same thread
-            // (Disk_scanner internally spawns one virtual thread per folder)
+            // (Scanner internally spawns one virtual thread per folder)
             long start_time = System.currentTimeMillis();
-            Disk_scanner scanner = new Disk_scanner(logger);
+            Scanner scanner = new Scanner(context.logger());
             File_node root = scanner.scan(folder, cached);
             long elapsed = System.currentTimeMillis() - start_time;
             int scanned = scanner.getScanned_folders();
             int cacheHits = scanner.getFoldersSkipped();
 
-            Scan_cache.save_in_a_thread(root,logger);
+            Scan_cache.save_in_a_thread(root, context.logger());
 
             double w2 = drawing_pane.getWidth();
             double h2 = drawing_pane.getHeight();
@@ -345,7 +345,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
                 });
             }
         } catch (Exception e) {
-            logger.log(""+e);
+            context.log(""+e);
         }
         finally {
             x.ifPresent(Hourglass::close);
@@ -369,9 +369,9 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
                 List<Draw_command> commands = build_Draw_commands(root, w, h);
                 Platform.runLater(() -> apply_Draw_commands(commands));
             } catch (Throwable e) {
-                logger.log(""+e);
+                context.log(""+e);
             }
-        },"diskview refresh",logger);
+        },"diskview refresh", context.logger());
     }
 
 
@@ -429,7 +429,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
 
             Actor_engine.execute(()->
             {            explore_item(canvas_items, mx, my);
-            },"explore_item",logger);
+            },"explore_item", context.logger());
         });
 
         drawing_pane.getChildren().add(canvas);
@@ -442,7 +442,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
         for (Draw_command cmd : interactive_items) {
             cmd.rescan_callback = rescan;
             cmd.navigate_callback = navigate;
-            cmd.execute(drawing_pane, Klikr_application.application,stage);
+            cmd.execute(drawing_pane, Klikr_application.application);
         }
     }
 
@@ -485,7 +485,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
         if (layout.children == null || layout.children.isEmpty())
         {
             if (node.get_size() > 0) {
-                commands.add(new Draw_command(node, new Rectangle2D(x, y, w, h), color_family, depth, root_total_size,logger));
+                commands.add(new Draw_command(node, new Rectangle2D(x, y, w, h), color_family, depth, root_total_size,context));
             }
             return;
         }
@@ -503,7 +503,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
             }
 
             if (!child.node.is_this_a_directory()) {
-                commands.add(new Draw_command(child.node, b, family, depth + 1, root_total_size,logger));
+                commands.add(new Draw_command(child.node, b, family, depth + 1, root_total_size,context));
             } else if (depth + 1 < max_depth && depth < 50
                     && !child.node.get_children().isEmpty()
                     && b.getWidth() >= 4 && b.getHeight() >= 4) {
@@ -511,7 +511,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
                         depth + 1, family, root_total_size, max_depth, commands);
             } else {
                 // Directory drawn as solid placeholder — not yet expanded
-                commands.add(new Draw_command(child.node, b, family, depth + 1, root_total_size, child.node.is_this_a_directory(),logger));
+                commands.add(new Draw_command(child.node, b, family, depth + 1, root_total_size, child.node.is_this_a_directory(),context));
             }
         }
     }

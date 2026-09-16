@@ -6,9 +6,11 @@ package klikr.util.tcp;
 //SOURCES ./TCP_server.java
 //SOURCES ../../properties/Properties_server.java
 
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.DataInputStream;
@@ -155,7 +157,8 @@ public class TCP_client
     public static void main( String []args)
     //**********************************************************
     {
-        Logger logger = new File_logger("TCP client test");
+        Kontext context = new Kontext(null,null,new Simple_logger());
+        Logger logger = new File_logger("TCP client test",context);
         TCP_client_out tco = TCP_client.request("127.0.0.1",TCP_server.TEST_PORT, "hello", logger);
 
         logger.log("status: "+tco.status());

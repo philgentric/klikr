@@ -3,6 +3,7 @@
 
 package klikr.util.files_and_paths;
 
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -57,7 +58,7 @@ public class File_with_a_few_bytes
 	}
 
 	//**********************************************************
-	public static boolean files_have_same_content(File_with_a_few_bytes mf1, File_with_a_few_bytes mf2, Aborter aborter, Logger logger)
+	public static boolean files_have_same_content(File_with_a_few_bytes mf1, File_with_a_few_bytes mf2, Kontext context)
 	//**********************************************************
 	{
 
@@ -65,19 +66,19 @@ public class File_with_a_few_bytes
 		if ( mf1.size == 0)
 		{
 			warnings++;
-			if ( warnings< 100) logger.log(Logger.warning+" WARNING: empty file1 NOT COMPARED:"+mf1.file.getAbsolutePath());
+			if ( warnings< 100) context.log(Logger.warning+" WARNING: empty file1 NOT COMPARED:"+mf1.file.getAbsolutePath());
 			return false;
 		}
 		if ( mf2.size == 0)
 		{
 			warnings++;
-			if ( warnings< 100) logger.log(Logger.warning+" WARNING: empty file2 NOT COMPARED:"+mf2.file.getAbsolutePath());
+			if ( warnings< 100) context.log(Logger.warning+" WARNING: empty file2 NOT COMPARED:"+mf2.file.getAbsolutePath());
 			return false;
 		}
 
 		if ( mf1.size != mf2.size )
 		{
-			if ( ultra_dbg ) logger.log("sizes differ "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
+			if ( ultra_dbg ) context.log("sizes differ "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
 			return false;
 		}
 
@@ -86,17 +87,17 @@ public class File_with_a_few_bytes
 		{
 			if ( mf1.first_bytes.length != mf2.first_bytes.length )
 			{
-				if (ultra_dbg) logger.log("first bytes length differ "+ mf1.first_bytes.length+" v.s. "+ mf2.first_bytes.length);
+				if (ultra_dbg) context.log("first bytes length differ "+ mf1.first_bytes.length+" v.s. "+ mf2.first_bytes.length);
 				return false;
 			}
 			if ( Arrays.mismatch(mf1.first_bytes,mf2.first_bytes) != -1)
 			{
-				if (ultra_dbg) logger.log("BYTES differ "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
+				if (ultra_dbg) context.log("BYTES differ "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
 				return false;
 			}
 		}
 
-		if ( ultra_dbg ) logger.log("Starting TOTAL CHECK for: "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
+		if ( ultra_dbg ) context.log("Starting TOTAL CHECK for: "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
 
 		// let us check, block per block
 		// at the first sign of a difference, return false
@@ -112,7 +113,7 @@ public class File_with_a_few_bytes
 			long start =  System.currentTimeMillis();
 			for(;;)
 			{
-				if ( aborter.should_abort()) return false;
+				if ( context.should_abort()) return false;
 				int bytes1 = bis1.read(buffer1, 0, BUFFER_SIZE);
 				int bytes2 = bis2.read(buffer2, 0, BUFFER_SIZE);
 
@@ -152,21 +153,21 @@ public class File_with_a_few_bytes
 				}
 				if ( bytes1 != bytes2 )
 				{
-					logger.log("read sizes differ");
+					context.log("read sizes differ");
 					returned = false;
 					break;
 				}
 
 				if ( Arrays.mismatch(buffer1,buffer2) != -1)
 				{
-					//if ( dbg ) logger.log("content differ");
+					//if ( dbg ) context.log("content differ");
 					returned = false;
 					break;
 				}
 				long now = System.currentTimeMillis();
 				if ( (now-start) > 3000 )
 				{
-					logger.log("... still doing TOTAL CHECK for: "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
+					context.log("... still doing TOTAL CHECK for: "+ mf1.file.getName()+" "+mf1.size+" v.s. "+ mf2.file.getName()+" "+mf2.size);
 					start = now;
 				}
 			}
@@ -176,7 +177,7 @@ public class File_with_a_few_bytes
 		}
 		catch(Exception ioe)
 		{
-			logger.log(ioe.toString());
+			context.log(ioe.toString());
 			return false;
 		}
 

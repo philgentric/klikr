@@ -23,8 +23,9 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
 import klikr.settings.boolean_features.Feature;
 import klikr.util.files_and_paths.Ding;
@@ -48,14 +49,12 @@ public class Finder_frame implements Search_receiver
 	private Button stop;
 	Label visited_folders;
 	Label visited_files;
-	Logger logger;
-	private final Aborter aborter;
+	final Kontext context;
 
 	// we can search folders or playlosts or search results
 	private Path_list_provider path_list_provider;
 
 	final private Map<String, Keyword_slot> keyword_to_slot =  new HashMap<>(); // this is the textfield to report the number of matches
-	final Stage stage;
 	private boolean look_only_for_images = false;
 	private boolean use_extension = false;
     private boolean search_folders_names = true;
@@ -82,23 +81,19 @@ public class Finder_frame implements Search_receiver
 			boolean look_only_for_images,
 			Path_list_provider path_list_provider,
 			Path_comparator_source path_comparator_source,
-			Aborter aborter,
-            Window owner,
-			Logger logger)
+			Kontext k)
 	//**********************************************************
 	{
 		this.application = application;
-		this.aborter = aborter;
 		this.path_list_provider = path_list_provider;
 		this.path_comparator_source = path_comparator_source;
-		this.logger = logger;
 		this.look_only_for_images = look_only_for_images;
-		//target_folder_path = path_list_provider.get_folder_path();
 
-		stage = new Stage();
-        stage.initOwner(owner);
+		Stage stage = new Stage();
+        stage.initOwner(k.owner());
+		this.context = new Kontext(stage,k.aborter(),k.logger());
 
-		logger.log("Finder_frame created");
+		context.log("Finder_frame created");
 
 		stage.setOnCloseRequest((WindowEvent e ) -> {if ( session !=null) session.stop_search();});
 
@@ -115,11 +110,11 @@ public class Finder_frame implements Search_receiver
         ScrollPane sp = new ScrollPane(main_vbox);
         sp.setFitToWidth(true);
 		Scene scene = new Scene(sp);
-		Look_and_feel_manager.set_region_look(main_vbox,stage,logger);
+		Look_and_feel_manager.set_region_look(main_vbox,context.logger());
 
-		stage.setTitle(My_I18n.get_I18n_string("Search_by_keywords", stage,logger));
+		stage.setTitle(My_I18n.get_I18n_string("Search_by_keywords", context));
 		//stage.setMinWidth(MIN_WIDTH);
-		stage.setX(0);
+		stage.setX(k.getX()+100);
 		stage.setScene(scene);
 		stage.show();
 		stage.sizeToScene();
@@ -136,15 +131,15 @@ public class Finder_frame implements Search_receiver
 		{
 			HBox hbox = new HBox();
 
-			Label static_visited_folders = new Label(My_I18n.get_I18n_string("Visited_Folders", stage,logger));
+			Label static_visited_folders = new Label(My_I18n.get_I18n_string("Visited_Folders", context));
 			hbox.getChildren().add(static_visited_folders);
-			Look_and_feel_manager.set_region_look(static_visited_folders,stage,logger);
+			Look_and_feel_manager.set_region_look(static_visited_folders,context.logger());
 
-			hbox.getChildren().add(horizontal_spacer(stage,logger));
+			hbox.getChildren().add(horizontal_spacer(context));
 
 			visited_folders = new Label();
 			hbox.getChildren().add(visited_folders);
-			Look_and_feel_manager.set_region_look(visited_folders,stage,logger);
+			Look_and_feel_manager.set_region_look(visited_folders,context.logger());
 
 			the_main_pane.getChildren().add(hbox);
 
@@ -152,15 +147,15 @@ public class Finder_frame implements Search_receiver
 		{
 			HBox hbox = new HBox();
 
-			Label static_visited_files = new Label(My_I18n.get_I18n_string("Visited_Files", stage,logger));
+			Label static_visited_files = new Label(My_I18n.get_I18n_string("Visited_Files", context));
 			hbox.getChildren().add(static_visited_files);
-			Look_and_feel_manager.set_region_look(static_visited_files,stage,logger);
+			Look_and_feel_manager.set_region_look(static_visited_files,context.logger());
 
-			hbox.getChildren().add(horizontal_spacer(stage,logger));
+			hbox.getChildren().add(horizontal_spacer(context));
 
 			visited_files = new Label();
 			hbox.getChildren().add(visited_files);
-			Look_and_feel_manager.set_region_look(visited_files,stage,logger);
+			Look_and_feel_manager.set_region_look(visited_files,context.logger());
 
 			the_main_pane.getChildren().add(hbox);
 		}
@@ -187,8 +182,8 @@ public class Finder_frame implements Search_receiver
 
 			if ( path_list_provider instanceof Path_list_provider_for_file_system)
 			{
-				Button up = new Button(My_I18n.get_I18n_string("Search_Parent_Folder", stage, logger));
-				Look_and_feel_manager.set_region_look(up, true, stage, logger);
+				Button up = new Button(My_I18n.get_I18n_string("Search_Parent_Folder", context));
+				Look_and_feel_manager.set_region_look(up, true, context.logger());
 
 				settings_vbox.getChildren().add(up);
 
@@ -201,7 +196,7 @@ public class Finder_frame implements Search_receiver
 						Path parent = target_folder_path.get().getParent();
 						if (parent != null)
 						{
-							path_list_provider = new Path_list_provider_for_file_system(parent, stage, logger);
+							path_list_provider = new Path_list_provider_for_file_system(parent, context);
 							target_folder_label.setText(target_folder_path.get().toAbsolutePath().toString());
 							start_search();
 						}
@@ -210,49 +205,49 @@ public class Finder_frame implements Search_receiver
 			}
 		}
 		{
-			CheckBox search_folder_names_cb = new CheckBox(My_I18n.get_I18n_string("Search_Folder_names", stage,logger));
+			CheckBox search_folder_names_cb = new CheckBox(My_I18n.get_I18n_string("Search_Folder_names", context));
 			search_folder_names_cb.setSelected(search_folders_names);
-			Look_and_feel_manager.set_CheckBox_look(search_folder_names_cb,stage,logger);
+			Look_and_feel_manager.set_CheckBox_look(search_folder_names_cb,context.logger());
 			search_folder_names_cb.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> {
                 search_folders_names = new_value;
-                logger.log("search_folders_names = "+ search_folders_names);
+				context.log("search_folders_names = "+ search_folders_names);
             });
 			settings_vbox.getChildren().add(search_folder_names_cb);
 		}
         {
-            CheckBox ignore_hidden_cb = new CheckBox(My_I18n.get_I18n_string("Ignore_hidden_items", stage,logger));
+            CheckBox ignore_hidden_cb = new CheckBox(My_I18n.get_I18n_string("Ignore_hidden_items", context));
             ignore_hidden_cb.setSelected(ignore_hidden);
-            Look_and_feel_manager.set_CheckBox_look(ignore_hidden_cb,stage,logger);
+            Look_and_feel_manager.set_CheckBox_look(ignore_hidden_cb,context.logger());
             ignore_hidden_cb.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> {
                 ignore_hidden = new_value;
-                logger.log("ignore_hidden = "+ ignore_hidden);
+				context.log("ignore_hidden = "+ ignore_hidden);
             });
             settings_vbox.getChildren().add(ignore_hidden_cb);
         }
 		{
-			CheckBox search_file_names_cb = new CheckBox(My_I18n.get_I18n_string("Search_File_names", stage,logger));
+			CheckBox search_file_names_cb = new CheckBox(My_I18n.get_I18n_string("Search_File_names", context));
 			search_file_names_cb.setSelected(search_files_names);
-			Look_and_feel_manager.set_CheckBox_look(search_file_names_cb,stage,logger);
+			Look_and_feel_manager.set_CheckBox_look(search_file_names_cb,context.logger());
 			search_file_names_cb.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> {
                 search_files_names = new_value;
-                logger.log("search_files_names = "+ search_files_names);
+				context.log("search_files_names = "+ search_files_names);
             });
 			settings_vbox.getChildren().add(search_file_names_cb);
 		}
 		settings_vbox.getChildren().add(vertical_spacer());
 		{
-			CheckBox only_images = new CheckBox(My_I18n.get_I18n_string("Search_Only_Images", stage,logger));
+			CheckBox only_images = new CheckBox(My_I18n.get_I18n_string("Search_Only_Images", context));
 			only_images.setSelected(look_only_for_images);
-			Look_and_feel_manager.set_CheckBox_look(only_images,stage,logger);
+			Look_and_feel_manager.set_CheckBox_look(only_images,context.logger());
 			only_images.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> look_only_for_images = new_value);
 			settings_vbox.getChildren().add(only_images);
 		}
 		settings_vbox.getChildren().add(vertical_spacer());
 
 		{
-			CheckBox check_case_cb = new CheckBox(My_I18n.get_I18n_string("Check_Case", stage,logger));
+			CheckBox check_case_cb = new CheckBox(My_I18n.get_I18n_string("Check_Case", context));
 			check_case_cb.setSelected(check_case);
-			Look_and_feel_manager.set_CheckBox_look(check_case_cb,stage,logger);
+			Look_and_feel_manager.set_CheckBox_look(check_case_cb,context.logger());
 			check_case_cb.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> check_case = new_value);
 			settings_vbox.getChildren().add(check_case_cb);
 		}
@@ -260,9 +255,9 @@ public class Finder_frame implements Search_receiver
 
 		{
 			HBox hb = new HBox();
-			CheckBox use_extension_cb = new CheckBox(My_I18n.get_I18n_string("Use_Extension", stage,logger)+ "(e.g. pdf,jpg)");
+			CheckBox use_extension_cb = new CheckBox(My_I18n.get_I18n_string("Use_Extension", context)+ "(e.g. pdf,jpg)");
 			use_extension_cb.setSelected(use_extension);
-			Look_and_feel_manager.set_CheckBox_look(use_extension_cb,stage,logger);
+			Look_and_feel_manager.set_CheckBox_look(use_extension_cb,context.logger());
 			use_extension_cb.selectedProperty().addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean new_value) -> {
                 use_extension = new_value;
                 if (use_extension)
@@ -302,12 +297,12 @@ public class Finder_frame implements Search_receiver
 					extension_tf.setStyle(extension_tf.getStyle()+"-fx-text-inner-color: red;");
 					extension_textfield_is_red = true;
 				}
-				logger.log("extension_tf  old_val:"+old_val+" new_val:"+new_val);
+				context.log("extension_tf  old_val:"+old_val+" new_val:"+new_val);
 			});
 
-			Look_and_feel_manager.set_TextField_look(extension_tf,false,stage,logger);
+			Look_and_feel_manager.set_TextField_look(extension_tf,false,context.logger());
 			hb.getChildren().add(extension_tf);
-			hb.getChildren().add(horizontal_spacer(stage,logger));
+			hb.getChildren().add(horizontal_spacer(context));
 			settings_vbox.getChildren().add(hb);
 		}
 		settings_vbox.getChildren().add(vertical_spacer());
@@ -330,18 +325,18 @@ public class Finder_frame implements Search_receiver
 					new_keyword_textfield.setStyle(new_keyword_textfield.getStyle()+"-fx-text-inner-color: red;");
 					new_keyword_textfield_is_red = true;
 				}
-				logger.log("new_keyword_textfield  old_val:"+old_val+" new_val:"+new_val);
+				context.log("new_keyword_textfield  old_val:"+old_val+" new_val:"+new_val);
 			});
 
 			new_keyword_textfield.setMinWidth(300);
-			Look_and_feel_manager.set_TextField_look(new_keyword_textfield,false,stage,logger);
+			Look_and_feel_manager.set_TextField_look(new_keyword_textfield,false,context.logger());
 			new_keyword_textfield.setStyle(new_keyword_textfield.getStyle()+"-fx-text-inner-color: darkgrey;");
 			new_keyword_textfield.setOnAction((ActionEvent e) ->new_keyword_action(new_keyword_textfield));
 			hbox.getChildren().add(new_keyword_textfield);
-			hbox.getChildren().add(horizontal_spacer(stage,logger));
+			hbox.getChildren().add(horizontal_spacer(context));
 
-			Button add_keyword = new Button(My_I18n.get_I18n_string("Add_Keyword", stage,logger));
-			Look_and_feel_manager.set_region_look(add_keyword,true,stage,logger);
+			Button add_keyword = new Button(My_I18n.get_I18n_string("Add_Keyword", context));
+			Look_and_feel_manager.set_region_look(add_keyword,true,context.logger());
 			add_keyword.setOnAction((ActionEvent e) -> new_keyword_action(new_keyword_textfield));
 			hbox.getChildren().add(add_keyword);
 			top_keyword_vbox.getChildren().add(hbox);
@@ -354,20 +349,20 @@ public class Finder_frame implements Search_receiver
 		}
 		top_keyword_vbox.getChildren().add(vertical_spacer());
 
-		start = new Button(My_I18n.get_I18n_string("Start_Search", stage,logger));
+		start = new Button(My_I18n.get_I18n_string("Start_Search", context));
 		start.setOnAction((ActionEvent e) -> start_search());
 		settings_vbox.getChildren().add(start);
-		Look_and_feel_manager.set_region_look(start,true,stage,logger);
+		Look_and_feel_manager.set_region_look(start,true,context.logger());
 
 		settings_vbox.getChildren().add(vertical_spacer());
-		stop = new Button(My_I18n.get_I18n_string("Stop_Search", stage,logger));
+		stop = new Button(My_I18n.get_I18n_string("Stop_Search", context));
 		stop.setDisable(true);
         start.setDisable(false);
 		stop.setOnAction((ActionEvent e) -> {
 			stop_now();
 		});
 		settings_vbox.getChildren().add(stop);
-		Look_and_feel_manager.set_region_look(stop,true,stage,logger);
+		Look_and_feel_manager.set_region_look(stop,true,context.logger());
 		settings_vbox.getChildren().add(vertical_spacer());
 
 
@@ -403,6 +398,7 @@ public class Finder_frame implements Search_receiver
 		if (keyword_to_slot.containsKey(new_keyword)) return;
 		session.stop_search();
 		add_keyword_slot(new_keyword,false);
+		Stage stage = (Stage)context.owner();
 		stage.sizeToScene();
 		start_search();
 	}
@@ -412,16 +408,16 @@ public class Finder_frame implements Search_receiver
 	private void add_keyword_slot(String local_keyword, boolean is_extension)
 	//**********************************************************
 	{
-		Keyword_slot ks = new Keyword_slot(local_keyword,this,is_extension,logger);
+		Keyword_slot ks = new Keyword_slot(local_keyword,this,is_extension, context);
 		keyword_to_slot.put(local_keyword,ks);
 	}
 
 	//**********************************************************
-	public static Node horizontal_spacer(Window owner, Logger logger)
+	public static Node horizontal_spacer(Kontext context)
 	//**********************************************************
 	{
 		final Region spacer = new Region();
-        Look_and_feel_manager.set_region_look(spacer,owner,logger);
+        Look_and_feel_manager.set_region_look(spacer,context.logger());
         HBox.setHgrow(spacer, Priority.ALWAYS);
 		return spacer;
 	}
@@ -435,7 +431,7 @@ public class Finder_frame implements Search_receiver
 		spacer.setPrefHeight(8);
 		spacer.setMaxHeight(8);
 		VBox.setVgrow(spacer, Priority.ALWAYS);
-        Look_and_feel_manager.set_region_look(spacer,stage,logger);
+        Look_and_feel_manager.set_region_look(spacer,context.logger());
 		return spacer;
 	}
 
@@ -469,7 +465,7 @@ public class Finder_frame implements Search_receiver
             visited_files.setText(""+search_statistics.visited_files());
             visited_folders.setText(""+search_statistics.visited_folders());
 
-        },logger);
+        },context);
 
 
 	}
@@ -485,12 +481,12 @@ public class Finder_frame implements Search_receiver
 			long now = System.currentTimeMillis();
 			if (now - start_time > 3000) {
 				if (Feature_cache.get(Feature.Play_ding_after_long_processes)) {
-					Ding.play("File finder took more than 3 seconds", logger);
+					Ding.play("File finder took more than 3 seconds", context.logger());
 				}
 			}
 		}
 
-		Jfx_batch_injector.inject(this::stop_now,logger);
+		Jfx_batch_injector.inject(this::stop_now,context);
 
 	}
 
@@ -500,9 +496,9 @@ public class Finder_frame implements Search_receiver
 	{
 
 
-        hourglass = Progress_window.show("Searching",10*60*60,stage,logger);
+        hourglass = Progress_window.show("Searching",10*60*60,context);
 		List<String> keywords = new ArrayList<>(keyword_to_slot.keySet());
-        logger.log("Finder_frame::start_search() "+keywords+" in: "+ path_list_provider.get_key());
+        context.log("Finder_frame::start_search() "+keywords+" in: "+ path_list_provider.get_key());
 
 		String local_extension = null;
 		if ( use_extension)
@@ -513,7 +509,7 @@ public class Finder_frame implements Search_receiver
 				if (!extension.isBlank())
 				{
 					local_extension = extension.trim().toLowerCase();
-					logger.log("extension="+local_extension);
+					context.log("extension="+local_extension);
 					keywords.remove(local_extension);
 				}
 			}
@@ -525,7 +521,7 @@ public class Finder_frame implements Search_receiver
 				path_list_provider,
 				path_comparator_source,
 				search_config,
-				this,stage,logger);
+				this,context);
 		session.start_search();
 		stop.setDisable(false);
 		start.setDisable(true);

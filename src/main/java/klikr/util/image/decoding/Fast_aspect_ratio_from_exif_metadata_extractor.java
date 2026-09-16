@@ -9,6 +9,7 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
@@ -32,11 +33,11 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
     private record Directory_result(Double w, Double h, boolean invert_width_and_height, boolean w_done, boolean h_done, boolean rot_done){}
 
     //**********************************************************
-    public static Optional<Double> get_aspect_ratio(Path path, boolean report_if_not_found, Aborter aborter, List<String> sb, Window owner, Logger logger)
+    public static Optional<Double> get_aspect_ratio(Path path, boolean report_if_not_found, List<String> sb, Kontext context)
     //**********************************************************
     {
-        if (Check_remaining_RAM.RAM_running_low("aspect ratio",owner, logger)) {
-            logger.log("get_aspect_ratio NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("aspect ratio",context)) {
+            context.log("get_aspect_ratio NOT DONE because running low on memory ! ");
             return Optional.empty();
         }
         if( sb != null)
@@ -44,13 +45,13 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
             sb.add(path.toString());
         }
 
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if ( is == null)
         {
             if ( sb != null)
             {
                 sb.add(" get_aspect_ratio failed cannot open input stream");
-                logger.log(sb.toString());
+                context.log(sb.toString());
             }
             return Optional.empty();
         }
@@ -66,7 +67,7 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
             }
             for (Directory directory : metadata.getDirectories())
             {
-                if ( aborter.should_abort())
+                if ( context.should_abort())
                 {
                     //logger.log("Fast_aspect_ratio_from_exif_metadata_extractor aborting ");
                     return Optional.empty();
@@ -149,7 +150,7 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
             if ( sb != null)
             {
                 sb.add("NO EXIF data?");
-                logger.log(sb.toString());
+                context.log(sb.toString());
             }
             return Optional.empty();
         }
@@ -160,14 +161,14 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
                 if (sb != null)
                 {
                     sb.add(" INVERTED aspect ratio h/w: "+result.h+"/"+result.w+"="+result.h/result.w);
-                    logger.log(sb.toString());
+                    context.log(sb.toString());
                 }
                 return Optional.of(result.h/result.w);
             }
             if (sb != null)
             {
                 sb.add(" aspect ratio w/h: "+result.w+"/"+result.h+"="+result.w/result.h);
-                logger.log(sb.toString());
+                context.log(sb.toString());
 
             }
             return Optional.of(result.w/result.h);
@@ -175,7 +176,7 @@ public class Fast_aspect_ratio_from_exif_metadata_extractor
         if ( sb != null)
         {
             sb.add("should not happen?");
-            logger.log(sb.toString());
+            context.log(sb.toString());
         }
         return Optional.empty();
     }

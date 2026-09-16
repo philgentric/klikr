@@ -3,18 +3,16 @@
 
 package klikr.browsers;
 
-import javafx.stage.Window;
 import javafx.scene.paint.Color;
 import klikr.Window_builder;
-import klikr.experimental.audio.player.The_audio_player;
-import klikr.browser_core.Abstract_browser;
-import klikr.browser_core.Window_manager;
+import klikr.audio.player.The_audio_player;
+import klikr.browsers.browser_core.Abstract_browser;
+import klikr.browsers.browser_core.Window_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.path_lists.Path_list_provider_for_playlist;
-import klikr.util.execute.actor.Aborter;
+import klikr.util.Kontext;
 import klikr.change.old_and_new.Old_and_new_Path;
-import klikr.util.log.Logger;
 
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -27,28 +25,25 @@ public class Browser_for_song_playlist extends Abstract_browser
     public Path_list_provider_for_playlist path_list_provider;
 
     //**********************************************************
-    public Browser_for_song_playlist(Window_builder window_builder, Logger logger)
+    public Browser_for_song_playlist(Window_builder window_builder, Kontext k)
     //**********************************************************
     {
-        super(Color.PINK, logger);
-        logger.log("Browser_for_song_playlist\n");
+        super(window_builder,"song playlist","song playlist"+window_builder.path_list_provider.get_key(),Color.PINK, k);
+        k.logger().log("Browser_for_song_playlist\n");
+        init_base(this);
         if (window_builder.path_list_provider instanceof Path_list_provider_for_file_system)
         {
-            logger.log("Browser_for_song_playlist FATAL, need a Path_list_provider_for_playlist\n");
+            k.logger().log("Browser_for_song_playlist FATAL, need a Path_list_provider_for_playlist\n");
             return;
         }
-        aborter = new Aborter("Abstract_browser for: " + get_name(), logger);
+         path_list_provider = (Path_list_provider_for_playlist) window_builder.path_list_provider;
 
-        path_list_provider = (Path_list_provider_for_playlist) window_builder.path_list_provider;
-
-        logger.log("Browser_for_song_playlist created with path_list_provider: " + path_list_provider.get_key());
+        context.log("Browser_for_song_playlist created with path_list_provider: " + path_list_provider.get_key());
 
 
-        init_abstract_browser(window_builder, this, "song_playlist",aborter);
-
-        my_Stage.the_Stage.setOnCloseRequest(event ->
+        my_Stage.context.get_Stage().setOnCloseRequest(event ->
             {
-                Window_manager.unregister(ID,logger);
+                Window_manager.unregister(ID,k);
                 The_audio_player.set_browser_is_null();
             });
     }
@@ -98,7 +93,7 @@ public class Browser_for_song_playlist extends Abstract_browser
     protected void monitor_current_path_list_source()
     //**********************************************************
     {
-        logger.log("Browser_for_song_playlist monitor_current_path_list_source NOT IMPLEMENTED");
+        context.log("Browser_for_song_playlist monitor_current_path_list_source NOT IMPLEMENTED");
     }
 
     //**********************************************************
@@ -106,16 +101,16 @@ public class Browser_for_song_playlist extends Abstract_browser
     public void set_title()
     //**********************************************************
     {
-        my_Stage.the_Stage.setTitle("SONG PLAYLIST:" + path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
+        context.setTitle("SONG PLAYLIST:" + path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
 
     }
 
     //**********************************************************
     @Override // Change_receiver
-    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
+    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
-        logger.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere "+ l);
+        context.log("Browser_for_song_playlist you_receive_this_because_a_file_event_occurred_somewhere "+ l);
         virtual_landscape.redraw_fx(true,"change received",false);
     }
 

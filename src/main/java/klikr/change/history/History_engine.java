@@ -9,6 +9,7 @@ package klikr.change.history;
 import javafx.stage.Window;
 import klikr.settings.File_storage;
 import klikr.settings.File_storage_using_Properties;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
@@ -23,7 +24,7 @@ public class History_engine
     private static volatile History_engine instance;
 
     //**********************************************************
-    public static History_engine get(Window owner)
+    public static History_engine get(Kontext context)
     //**********************************************************
     {
         if (instance == null)
@@ -32,7 +33,7 @@ public class History_engine
             {
                 if (instance == null)
                 {
-                    instance = new History_engine(owner, Shared_services.aborter(),Shared_services.logger());
+                    instance = new History_engine(context);
                 }
             }
         }
@@ -40,11 +41,11 @@ public class History_engine
     }
 
     //**********************************************************
-    private History_engine(Window owner, Aborter aborter, Logger logger)
+    private History_engine(Kontext context)
     //**********************************************************
     {
-        File_storage ip = new File_storage_using_Properties("history","history",false, owner,aborter,logger);
-        properties_for_history = new Properties_for_history(ip,  100, logger);
+        File_storage ip = new File_storage_using_Properties("history","history",false, context);
+        properties_for_history = new Properties_for_history(ip,  100, context.logger());
     }
 
     //**********************************************************

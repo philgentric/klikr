@@ -4,6 +4,7 @@
 //SOURCES ./Simple_logger.java
 package klikr.util.log;
 
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 
@@ -22,11 +23,11 @@ public class File_logger implements Logger
 
 	private final LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
 	//*******************************************************
-	public File_logger(String prefix)
+	public File_logger(String prefix, Kontext context)
 	//*******************************************************
 	{
 
-		Path file = get_tmp_file_path_in_logs(prefix);
+		Path file = get_tmp_file_path_in_logs(prefix,context);
 
 		Runnable r = () -> {
 			for(;;)
@@ -64,13 +65,13 @@ public class File_logger implements Logger
 	}
 
 	//**********************************************************
-	public static Path get_tmp_file_path_in_logs(String prefix)
+	public static Path get_tmp_file_path_in_logs(String prefix, Kontext context)
 	//**********************************************************
 	{
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 		String uuid = LocalDateTime.now().format(dtf)+"_"+ UUID.randomUUID();
 		String file_name = prefix+"_"+uuid+".txt";
-		Path logs_folder = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("logs", false, null,new Simple_logger());
+		Path logs_folder = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("logs", false, context);
 		return logs_folder.resolve(file_name);
 	}
 

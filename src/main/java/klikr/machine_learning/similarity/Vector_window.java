@@ -18,6 +18,7 @@ import klikr.machine_learning.feature_vector.Feature_vector_double;
 import klikr.machine_learning.feature_vector.Feature_vector_mask;
 import klikr.look.Look_and_feel_manager;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 
@@ -32,8 +33,7 @@ public class Vector_window
 
     static boolean dbg = false;
     public final Scene scene;
-    public final Stage stage;
-    public final Logger logger;
+    public final Kontext context;
     public String title_optional_addendum;
 
     public final Feature_vector fv1;
@@ -42,25 +42,24 @@ public class Vector_window
 
     //**********************************************************
     public Vector_window(
-            String title, // this is used to display image similarity
-            Window owner,
             double x, double y,
+            String title, // this is used to display image similarity
             Feature_vector_double fv1,
             Feature_vector_double fv2,
             boolean not_same,
             boolean save_window_bounds,
-            Logger logger_)
+            Kontext kk)
     //**********************************************************
     {
         this.fv1 = fv1;
         this.fv2 = fv2;
         this.title_optional_addendum = title;
-        logger = logger_;
-        stage = new Stage();
-        stage.initOwner(owner);
+        Stage stage = new Stage();
+        stage.initOwner(kk.owner());
+        this.context = new Kontext(stage,kk.aborter(),kk.logger());
         VBox vbox = new VBox();
 
-        Feature_vector_mask fvm = new Feature_vector_mask(fv1,fv2,not_same,logger);
+        Feature_vector_mask fvm = new Feature_vector_mask(fv1,fv2,not_same, context.logger());
         int k = 0;
         HBox hbox = null;
         for ( int i  =0 ; i < fv1.features.length; i++)
@@ -94,7 +93,7 @@ public class Vector_window
             hbox.getChildren().add(square);
         }
         scene = new Scene(vbox);
-        Color background = Look_and_feel_manager.get_instance(stage,logger).get_background_color();
+        Color background = Look_and_feel_manager.get_instance(context.logger()).get_background_color();
         scene.setFill(background);
         stage.setScene(scene);
         stage.setX(x);
@@ -106,8 +105,8 @@ public class Vector_window
 
 
         ChangeListener<Number> change_listener = (observableValue, number, t1) -> {
-            if ( dbg) logger.log("ChangeListener: image window position and/or length changed: "+ stage.getWidth()+","+ stage.getHeight());
-            if ( save_window_bounds) Non_booleans_properties.save_window_bounds(stage,VECTOR_WINDOW,logger);
+            if ( dbg) context.log("ChangeListener: image window position and/or length changed: "+ stage.getWidth()+","+ stage.getHeight());
+            if ( save_window_bounds) Non_booleans_properties.save_window_bounds(stage,VECTOR_WINDOW, context.logger());
         };
 
         stage.addEventHandler(KeyEvent.KEY_PRESSED,

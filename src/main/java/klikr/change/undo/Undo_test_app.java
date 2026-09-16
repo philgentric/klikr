@@ -2,10 +2,10 @@ package klikr.change.undo;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.log.Exceptions_in_threads_catcher;
 import klikr.util.log.Logger;
-import klikr.util.log.Simple_logger;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,25 +20,26 @@ public class Undo_test_app extends Application
     {
         Shared_services.init("Undo_test_app",stage);
         Logger logger = Shared_services.logger();
-        Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
+        Kontext context = new Kontext(stage,null,logger);
+        Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(context.logger());
 
-        Undo_core undo_core = new Undo_core("../undo_test",null,logger);
+        Undo_core undo_core = new Undo_core("../undo_test",context);
 
         for ( int i = 0; i < 1200 ; i++)
         {
-            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(378), UUID.randomUUID(),logger);
+            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(378), UUID.randomUUID(),context);
             undo_core.add(ui);
         }
 
         for ( int i = 0; i < 1200 ; i++)
         {
-            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(25), UUID.randomUUID(),logger);
+            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(25), UUID.randomUUID(),context);
             undo_core.add(ui);
         }
 
         for ( int i = 0; i < 103 ; i++)
         {
-            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(1), UUID.randomUUID(),logger);
+            Undo_item ui = new Undo_item(new ArrayList<>(), LocalDateTime.now().minusDays(1), UUID.randomUUID(),context);
             undo_core.add(ui);
         }
 

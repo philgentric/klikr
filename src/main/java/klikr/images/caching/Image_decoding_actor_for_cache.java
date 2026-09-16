@@ -3,6 +3,7 @@
 
 package klikr.images.caching;
 
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor;
 import klikr.util.execute.actor.Message;
 import klikr.util.files_and_paths.Guess_file_type;
@@ -18,14 +19,14 @@ public class Image_decoding_actor_for_cache implements Actor
 {
     private static final boolean dbg = false;
     private static final boolean ultra_dbg = false;
-    Logger logger;
+    final Kontext context;
 
 
     //**********************************************************
-    public Image_decoding_actor_for_cache(Logger logger_)
+    public Image_decoding_actor_for_cache(Kontext context)
     //**********************************************************
     {
-        logger = logger_;
+        this.context = context;
     }
 
 
@@ -43,20 +44,20 @@ public class Image_decoding_actor_for_cache implements Actor
     //**********************************************************
     {
         Image_decode_request_for_cache request = (Image_decode_request_for_cache) m;
-        if (ultra_dbg) logger.log("decode request:"+request.get_string());
+        if (ultra_dbg) context.log("decode request:"+request.get_string());
 
         String key = request.make_key();
         if ( request.cache.get(key) != null)
         {
             if (dbg)
-                logger.log("NOT decoding because image found in cache:"+key);
+                context.log("NOT decoding because image found in cache:"+key);
             return"found in cache";
         }
 
         if ( m.get_aborter().should_abort()) return "aborted";
 
         // this is the expensive operation:
-        Optional<Image_context> option = Image_context.build_Image_context(request.path, request.image_window, request.aborter, logger);
+        Optional<Image_context> option = Image_context.build_Image_context(request.path, request.image_window);
 
         if (option.isPresent())
         {
@@ -66,20 +67,20 @@ public class Image_decoding_actor_for_cache implements Actor
             if ( (image_context.image.getWidth() > 1) && (image_context.image.getHeight() > 1))
             {
                 request.cache.put(request.make_key(), image_context);
-                if (dbg) logger.log(Logger.ok+"  image decoded ok is now in cache: " + image_context.path.getFileName() );
+                if (dbg) context.log(Logger.ok+"  image decoded ok is now in cache: " + image_context.path.getFileName() );
             }
             else
             {
-                if (!Guess_file_type.should_ignore(image_context.path,logger))
+                if (!Guess_file_type.should_ignore(image_context.path, context.logger()))
                 {
-                    logger.log( Stack_trace_getter.get_stack_trace(image_context.path.getFileName().toString()
+                    context.log( Stack_trace_getter.get_stack_trace(image_context.path.getFileName().toString()
                             +" WARNING weird image: "+image_context.path.toAbsolutePath()+"\n we have: w="+image_context.image.getWidth() +" h="+image_context.image.getHeight()));
                 }
             }
         }
         else
         {
-            logger.log( Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING get_Image_and_index failed"));
+            context.log( Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING get_Image_and_index failed"));
         }
         return "OK, image decoded";
     }

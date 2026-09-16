@@ -3,6 +3,7 @@
 
 package klikr.util.image.decoding;
 
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
@@ -20,7 +21,7 @@ public class Fast_date_from_filesystem
     public static final boolean dbg = false;
 
     //**********************************************************
-    public static FileTime get_date(Path path, Logger logger)
+    public static FileTime get_date(Path path, Kontext context)
     //**********************************************************
     {
 
@@ -34,7 +35,7 @@ public class Fast_date_from_filesystem
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
             }
         }
         return FileTime.from(Instant.now());

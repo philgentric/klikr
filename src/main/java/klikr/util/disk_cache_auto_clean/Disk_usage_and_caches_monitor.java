@@ -7,6 +7,7 @@ package klikr.util.disk_cache_auto_clean;
 
 import klikr.Owner_provider;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.Shared_services;
 import klikr.util.log.Logger;
@@ -15,22 +16,22 @@ import klikr.util.log.Logger;
 public class Disk_usage_and_caches_monitor
 //**********************************************************
 {
-    public final Logger logger;
+    public final Kontext context;
     private final Disk_usage_monitor disk_usage_monitor;
     private final Disk_cache_auto_clean cache_auto_clean;
 
     //**********************************************************
-    public Disk_usage_and_caches_monitor(Owner_provider window_provider, Logger logger)
+    public Disk_usage_and_caches_monitor(Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
+        this.context = context;
 
         // monitor cache folder SIZE
-        disk_usage_monitor = new Disk_usage_monitor(window_provider.get_owner(), logger);
+        disk_usage_monitor = new Disk_usage_monitor(context);
 
         // monitor cache files AGE
-        int cache_max_days = Non_booleans_properties.get_animated_gif_duration_for_a_video(window_provider.get_owner());
-        cache_auto_clean = new Disk_cache_auto_clean(cache_max_days,window_provider.get_owner(), logger);
+        int cache_max_days = Non_booleans_properties.get_animated_gif_duration_for_a_video();
+        cache_auto_clean = new Disk_cache_auto_clean(cache_max_days,context);
     }
 
     //**********************************************************
@@ -42,14 +43,14 @@ public class Disk_usage_and_caches_monitor
             {
                 if ( Shared_services.aborter().should_abort())
                 {
-                    logger.log("All 3 Monitors aborted");
+                    context.log("All 3 Monitors aborted");
                     return;
                 }
 
                 try {
                     Thread.sleep(10*60*1000);
                 } catch (InterruptedException e) {
-                    logger.log(""+e);
+                    context.log(""+e);
                 }
 
                 if ( !disk_usage_monitor.monitor()) break;
@@ -62,7 +63,7 @@ public class Disk_usage_and_caches_monitor
 
             }
         };
-        Actor_engine.execute(r,"Cache auto clean",logger);
+        Actor_engine.execute(r,"Cache auto clean",context.logger());
 
     }
 }

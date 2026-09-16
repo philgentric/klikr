@@ -57,7 +57,7 @@ public class RAM_cache_actor<K,V> implements Actor
 
         if ( dm.check_if_present)
         {
-            if (dm.cache.get(dm.key,dm.aborter,null,dm.owner) != null)
+            if (dm.cache.get(dm.key,null,dm.context) != null)
             {
                 if ( dbg) logger.log("RAM_cache_actor skipping prefill as object is in cache");
                 return "OK";

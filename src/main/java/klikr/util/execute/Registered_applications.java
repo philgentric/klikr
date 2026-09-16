@@ -8,6 +8,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import klikr.settings.File_storage_using_Properties;
 import klikr.settings.String_constants;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -33,19 +34,19 @@ public class Registered_applications
     private static File_storage_using_Properties storage;
 
     //**********************************************************
-    public static String get_registered_application(String extension, Window owner, Aborter aborter,Logger logger)
+    public static String get_registered_application(String extension, Kontext context)
     //**********************************************************
     {
         extension = extension.toLowerCase();
-        load_map(owner,aborter,logger);
+        load_map(context);
 
         String returned =  map.get(extension);
         if ( returned != null)
         {
-            logger.log("Registered_applications.get_registered_application: found "+extension+" ==> "+returned);
+            context.log("Registered_applications.get_registered_application: found "+extension+" ==> "+returned);
             return returned;
         }
-        logger.log("NO registered application found for extension ->"+extension+"<-");
+        context.log("NO registered application found for extension ->"+extension+"<-");
 
         // ask the user
         LinkedBlockingQueue<String> queue = new LinkedBlockingQueue<>();
@@ -55,13 +56,13 @@ public class Registered_applications
             file_chooser.setTitle("Please select the application to open files with the extension " + finalExtension);
             Path home = Paths.get(System.getProperty(String_constants.USER_HOME));
             file_chooser.setInitialDirectory(home.toFile());
-            File selected = file_chooser.showOpenDialog(owner);
+            File selected = file_chooser.showOpenDialog(context.owner());
             if (selected == null) {
                 queue.add(USER_CANCELLED);
                 return;
             }
             map.put(finalExtension, selected.getAbsolutePath());
-            save_map(logger);
+            save_map(context.logger());
             queue.add(selected.getAbsolutePath());
 
         });
@@ -72,7 +73,7 @@ public class Registered_applications
             if (res.equals(USER_CANCELLED)) return null;
             return res;
         } catch (InterruptedException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log(Stack_trace_getter.get_stack_trace(""+e));
         }
         //Popups.popup_warning(owner,"Do not know how to open files with the extension "+extension,"To REGISTER what application to use, browse with klikr and use the right-click menu with register_application",false,logger);
         return null;
@@ -98,12 +99,12 @@ public class Registered_applications
     }
 
     //**********************************************************
-    private static void load_map(Window owner, Aborter aborter, Logger logger)
+    private static void load_map(Kontext context)
     //**********************************************************
     {
         if ( storage == null)
         {
-            storage = new File_storage_using_Properties("Registered applications DB",REGISTERED_APPLICATIONS_FILENAME,false,owner,aborter,logger);
+            storage = new File_storage_using_Properties("Registered applications DB",REGISTERED_APPLICATIONS_FILENAME,false,context);
         }
         for (String key : storage.get_all_keys())
         {

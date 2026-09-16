@@ -4,9 +4,9 @@
 package klikr.look;
 
 import javafx.scene.image.*;
-import javafx.stage.Window;
 import klikr.Klikr_application;
-import klikr.browser_core.Image_and_properties;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.util.Kontext;
 import klikr.util.execute.Application_jar;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.image.Static_image_utilities;
@@ -29,7 +29,7 @@ public class Jar_utils
     public static Image broken_icon = null;
 
     //**********************************************************
-    public static Image load_jfx_image_from_jar(String image_file_path, double icon_size, Window owner,Logger logger)
+    public static Image load_jfx_image_from_jar(String image_file_path, double icon_size, Logger logger)
     //**********************************************************
     {
         InputStream input_stream = Application_jar.get_jar_InputStream_by_name(image_file_path);
@@ -43,7 +43,7 @@ public class Jar_utils
         if (image.isError())
         {
             logger.log("WARNING: an error occurred when reading: " + image_file_path);
-            return get_broken_icon(icon_size, owner,logger);
+            return get_broken_icon(icon_size, logger);
         }
         return image;
     }
@@ -53,13 +53,13 @@ public class Jar_utils
     // and returns a square byte array with the image centered
 
     //**********************************************************
-    public static byte[] load_image_bytes_from_jar(String image_file_path,Window owner, Logger logger)
+    public static byte[] load_image_bytes_from_jar(String image_file_path, Kontext context)
     //**********************************************************
     {
         InputStream input_stream = Application_jar.get_jar_InputStream_by_name(image_file_path);
         if ( input_stream == null)
         {
-            logger.log("load_icon_fx_from_jar failed for: " + image_file_path);
+            context.log("load_icon_fx_from_jar failed for: " + image_file_path);
             return null;
         }
 
@@ -67,7 +67,7 @@ public class Jar_utils
         Image image = new Image(input_stream, icon_size, icon_size, true, true);
         if (image.isError())
         {
-            logger.log("WARNING: an error occurred when reading: " + image_file_path);
+            context.log("WARNING: an error occurred when reading: " + image_file_path);
             return null;
         }
 
@@ -75,7 +75,7 @@ public class Jar_utils
         int w = (int)image.getWidth();
         int h = (int)image.getHeight();
 
-        logger.log("icon is "+w+"x"+h+" thus "+(w*h)+" pixels");
+        context.log("icon is "+w+"x"+h+" thus "+(w*h)+" pixels");
 
 
         //read the BGRA bytes
@@ -84,7 +84,7 @@ public class Jar_utils
         PixelReader pr = image.getPixelReader();
         pr.getPixels(0,0,w,h,fmt,in_bytes,0,w*4);
 
-        logger.log("in_bytes length is "+in_bytes.length);
+        context.log("in_bytes length is "+in_bytes.length);
 
         int max = h;
         if ( w>max) max=w;
@@ -106,7 +106,7 @@ public class Jar_utils
             y2++;
         }
 
-        Path klik_trash = Static_files_and_paths_utilities.get_trash_dir_of(Path.of("").toAbsolutePath(),owner,logger);
+        Path klik_trash = Static_files_and_paths_utilities.get_trash_dir_of(Path.of("").toAbsolutePath(),context);
         String tmp_icon_file_name = klik_trash.resolve("tmp_klik_icon.png").toString();
 
         // create a conformant png file from the bytes
@@ -116,7 +116,7 @@ public class Jar_utils
         pw.setPixels(0,0,max,max,fmt,out_bytes,0,max*4);
         File out_file = new File(tmp_icon_file_name);
         Image_and_properties iap = Image_and_properties.build(icon,false);
-        Static_image_utilities.write_png_to_disk(iap, out_file.toPath(), logger);
+        Static_image_utilities.write_png_to_disk(iap, out_file.toPath(), context.logger());
 
         // read it back
         try {
@@ -126,14 +126,14 @@ public class Jar_utils
             return icon_bytes;
         } catch (IOException e)
         {
-            logger.log("Warning: cannot read from toto.png");
+            context.log("Warning: cannot read from toto.png");
         }
         return null;
     }
 
     // this reads the icon ok, but it is rendered as a square even if it is a rectangle
     //**********************************************************
-    public static byte[] load_image_bytes_from_jar_square(String image_file_path, Window owner, Logger logger)
+    public static byte[] load_image_bytes_from_jar_square(String image_file_path, Logger logger)
     //**********************************************************
     {
         InputStream input_stream = Application_jar.get_jar_InputStream_by_name(image_file_path);
@@ -160,14 +160,14 @@ public class Jar_utils
 
 
     //**********************************************************
-    public static Image get_broken_icon(double icon_size, Window owner, Logger logger)
+    public static Image get_broken_icon(double icon_size, Logger logger)
     //**********************************************************
     {
         if (broken_icon != null)
         {
             if ( broken_icon.getHeight() == icon_size) return broken_icon;
         }
-        Look_and_feel local_instance = Look_and_feel_manager.get_instance(owner,logger);
+        Look_and_feel local_instance = Look_and_feel_manager.get_instance(logger);
         if (local_instance == null)
         {
             logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: cannot get look and feel instance"));
@@ -179,7 +179,7 @@ public class Jar_utils
             logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: cannot get broken icon path"));
             return null;
         }
-        broken_icon = load_jfx_image_from_jar(path, icon_size,owner,logger);
+        broken_icon = load_jfx_image_from_jar(path, icon_size,logger);
         return broken_icon;
     }
 

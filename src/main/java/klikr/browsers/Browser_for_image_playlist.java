@@ -4,12 +4,12 @@
 package klikr.browsers;
 
 import javafx.scene.paint.Color;
-import javafx.stage.Window;
 import klikr.Window_builder;
-import klikr.browser_core.Abstract_browser;
-import klikr.browser_core.Window_manager;
+import klikr.browsers.browser_core.Abstract_browser;
+import klikr.browsers.browser_core.Window_manager;
 import klikr.path_lists.Path_list_provider;
 import klikr.path_lists.Path_list_provider_for_playlist;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
@@ -28,19 +28,16 @@ public class Browser_for_image_playlist extends Abstract_browser
     public final Path_list_provider_for_playlist path_list_provider;
 
     //**********************************************************
-    public Browser_for_image_playlist(Window_builder window_builder, Logger logger)
+    public Browser_for_image_playlist(Window_builder window_builder, Kontext k)
     //**********************************************************
     {
-        super(Color.BLUE, logger);
+        super(window_builder,"image playlist","Browser_for_image_playlist",Color.BLUE, k);
+        init_base(this);
         ID = id_generator.getAndIncrement();
 
         path_list_provider = (Path_list_provider_for_playlist) window_builder.path_list_provider;
-        aborter = new Aborter("Abstract_browser for: " + get_name(), logger);
 
-        init_abstract_browser(window_builder,this,"playlist",aborter);
-
-
-        logger.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAYLIST "+path_list_provider.get_key());
+        context.log("\n\n\n\n\n\n\n\n\n\n\nNEW IMAGE PLAYLIST "+path_list_provider.get_key());
 
     }
 
@@ -69,7 +66,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     public Path_list_provider get_Path_list_provider()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.get_Path_list_provider() ID="+ID);
+        context.log("Browser_for_image_playlist.get_Path_list_provider() ID="+ID);
 
         return path_list_provider;
     }
@@ -79,7 +76,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     public String signature()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.signature() ID="+ID);
+        context.log("Browser_for_image_playlist.signature() ID="+ID);
 
         return path_list_provider.get_key();
     }
@@ -89,7 +86,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void monitor_current_path_list_source()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.monitor() ID="+ID);
+        context.log("Browser_for_image_playlist.monitor() ID="+ID);
 
     }
 
@@ -98,9 +95,9 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void set_title()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.set_title() ID="+ID);
+        context.log("Browser_for_image_playlist.set_title() ID="+ID);
 
-        my_Stage.the_Stage.setTitle("Image PLAYLIST "+ path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
+        context.setTitle("Image PLAYLIST "+ path_list_provider.the_playlist_file_path.getFileName().toString()+"(this is NOT a folder!)");
     }
 
     //**********************************************************
@@ -108,7 +105,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void go_full_screen()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.go_full_screen() ID="+ID);
+        context.log("Browser_for_image_playlist.go_full_screen() ID="+ID);
 
     }
 
@@ -117,7 +114,7 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void stop_full_screen()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.stop_full_screen() ID="+ID);
+        context.log("Browser_for_image_playlist.stop_full_screen() ID="+ID);
 
     }
 
@@ -126,17 +123,17 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void shutdown()
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.shutdown() ID="+ID);
-        my_Stage.the_Stage.close();
-        Window_manager.unregister(ID,logger);
+        context.log("Browser_for_image_playlist.shutdown() ID="+ID);
+        context.get_Stage().close();
+        Window_manager.unregister(ID,context);
     }
 
     //**********************************************************
     @Override // Change_receiver
-    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Window owner, Logger logger)
+    public void you_receive_this_because_a_file_event_occurred_somewhere(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.you_receive_this_because_a_file_event_occurred_somewhere() ID=" + ID);
+        context.log("Browser_for_image_playlist.you_receive_this_because_a_file_event_occurred_somewhere() ID=" + ID);
         for (Old_and_new_Path oanp : l)
         {
             if (oanp.new_Path != null)
@@ -144,8 +141,8 @@ public class Browser_for_image_playlist extends Abstract_browser
                 String s = path_list_provider.the_playlist_file_path.toAbsolutePath().toString();
                 if( oanp.new_Path.toAbsolutePath().toString().equals(s))
                 {
-                    logger.log("Change_broadcaster Gang says : playlist changed !!");
-                    path_list_provider.reload("image playlist changed, according to Change_broadcaster Gang",aborter);
+                    context.log("Change_broadcaster Gang says : playlist changed !!");
+                    path_list_provider.reload("image playlist changed, according to Change_broadcaster Gang",context.aborter());
                     virtual_landscape.redraw_fx(true,"change gang for dir: " + path_list_provider.the_playlist_file_path, true);
                 }
             }
@@ -172,6 +169,6 @@ public class Browser_for_image_playlist extends Abstract_browser
     public void set_unique_selected_item(Path path)
     //**********************************************************
     {
-        logger.log("Browser_for_image_playlist.replace_current_item() not implemented");
+        context.log("Browser_for_image_playlist.replace_current_item() not implemented");
     }
 }

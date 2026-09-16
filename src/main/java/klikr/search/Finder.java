@@ -5,11 +5,9 @@
 package klikr.search;
 
 import javafx.application.Application;
-import javafx.stage.Window;
-import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.util.Kontext;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
-import klikr.util.log.Logger;
 
 import java.util.List;
 
@@ -25,9 +23,7 @@ public class Finder
             List<String> keywords,
             String extension,
             boolean search_only_images,
-            Aborter aborter,
-            Window owner,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         Finder_frame popup = new Finder_frame(
@@ -37,9 +33,7 @@ public class Finder
                     search_only_images,
                     path_list_provider,
                     path_comparator_source,
-                    aborter,
-                    owner,
-                    logger);
+                    context);
             popup.start_search();
     }
 }

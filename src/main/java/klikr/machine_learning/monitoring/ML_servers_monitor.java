@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.machine_learning.*;
 import klikr.util.Check_remaining_RAM;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.Simple_json_parser;
@@ -41,10 +42,8 @@ public class ML_servers_monitor //implements AutoCloseable
     private static final double SMALL_HEIGHT = 20;
     private static final double DISPLAY_PIXEL_WIDTH = 800;
 
-    private Stage stage;
     private VBox the_vbox;
-    private Logger logger;
-    private Aborter aborter;
+    private Kontext context;
     private static final int DEFAULT_sleep_between_network_scans_ms = 3_000;
     private static int sleep_between_network_scans_ms = DEFAULT_sleep_between_network_scans_ms;
     private static int limit;
@@ -64,7 +63,7 @@ public class ML_servers_monitor //implements AutoCloseable
 
     // used when we start servers
     //**********************************************************
-    public static void start_ML_servers_monitor(Window owner, Logger logger)
+    public static void start_ML_servers_monitor(Kontext context)
     //**********************************************************
     {
         if (Check_remaining_RAM.low_memory.get()) return;
@@ -75,21 +74,20 @@ public class ML_servers_monitor //implements AutoCloseable
                 if (instance == null)
                 {
                     instance = new ML_servers_monitor();
-                    Platform.runLater(()->instance.init(owner,logger));
+                    Platform.runLater(()->instance.init(context.logger()));
                 }
             }
         }
     }
 
     //**********************************************************
-    private void init(Window owner, Logger logger_)
+    private void init(Logger logger)
     //**********************************************************
     {
         UDP_traffic_monitor.set_monitoring_reception_frame(this);
-        aborter = Shared_services.aborter();
-        logger = logger_;
 
-        stage = new Stage();
+        Stage stage = new Stage();
+        this.context = new Kontext(stage,Shared_services.aborter(),logger);
         stage.setTitle("Live ML servers");
         stage.setMinWidth(800);
         stage.setMinHeight(800);
@@ -101,12 +99,12 @@ public class ML_servers_monitor //implements AutoCloseable
         stage.setScene(scene);
         stage.show();
 
-        Actor_engine.execute(()-> for_ever_ask_servers_using_http_health(owner),"ML servers health check",logger);
+        Actor_engine.execute(()-> for_ever_ask_servers_using_http_health(),"ML servers health check",logger);
     }
 
 
     //**********************************************************
-    public static void refresh_remove(ML_server ml_server, Window owner, Logger logger)
+    public static void refresh_remove(ML_server ml_server)
     //**********************************************************
     {
         if ( instance == null ) return;
@@ -127,7 +125,7 @@ public class ML_servers_monitor //implements AutoCloseable
     }
 
     //**********************************************************
-    public static void refresh_add(ML_server ml_server, Window owner, Logger logger)
+    public static void refresh_add(ML_server ml_server, Kontext context)
     //**********************************************************
     {
         if ( instance == null ) return;
@@ -152,17 +150,17 @@ public class ML_servers_monitor //implements AutoCloseable
         //big_hbox.setSpacing(10);
         {
             Button port_button = new Button(""+ml_server.port());
-            Look_and_feel_manager.set_region_look(port_button, true, stage, logger);
+            Look_and_feel_manager.set_region_look(port_button, true, context.logger());
             big_hbox.getChildren().add(port_button);
             port_button.setOnAction(event -> {
                 Stage stage = new Stage();
                 TextArea ta = new TextArea();
-                Look_and_feel_manager.set_region_look(ta, stage, logger);
+                Look_and_feel_manager.set_region_look(ta, context.logger());
                 Scene scene = new Scene(ta);
                 ta.setEditable(false);
                 ta.setWrapText(true);
                 StringBuilder sb = new StringBuilder();
-                if (is_server_alive_heavy_version(ml_server,sb,logger))
+                if (is_server_alive_heavy_version(ml_server,sb, context))
                 {
                     ta.setText(sb.toString());
                 }
@@ -180,7 +178,7 @@ public class ML_servers_monitor //implements AutoCloseable
 
         {
             Label l = new Label(ml_server.type());
-            Look_and_feel_manager.set_region_look(l, stage, logger);
+            Look_and_feel_manager.set_region_look(l, context.logger());
             big_hbox.getChildren().add(l);
         }
 
@@ -193,7 +191,7 @@ public class ML_servers_monitor //implements AutoCloseable
         {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
-            Look_and_feel_manager.set_region_look(spacer, stage, logger);
+            Look_and_feel_manager.set_region_look(spacer, context.logger());
             big_hbox.getChildren().add(spacer);
         }
 
@@ -203,17 +201,17 @@ public class ML_servers_monitor //implements AutoCloseable
 
 
     //**********************************************************
-    public void for_ever_ask_servers_using_http_health(Window owner)
+    public void for_ever_ask_servers_using_http_health()
     //**********************************************************
     {
         for(;;)
         {
             try {
-                if ( dbg) logger.log("for_ever_ask_servers_using_http_health .. updating");
+                if ( dbg) context.log("for_ever_ask_servers_using_http_health .. updating");
 
-                if( aborter.should_abort() ) return;
+                if( context.should_abort() ) return;
 
-                read_registry_files_and_update_UI(owner);
+                read_registry_files_and_update_UI();
                 Thread.sleep(sleep_between_network_scans_ms);
                 if ( sleep_between_network_scans_ms < DEFAULT_sleep_between_network_scans_ms)
                 {
@@ -227,37 +225,37 @@ public class ML_servers_monitor //implements AutoCloseable
             }
             catch (InterruptedException e)
             {
-                logger.log("for_ever_ask_servers_using_http_health "+e);
+                context.log("for_ever_ask_servers_using_http_health "+e);
             }
         }
     }
 
 
     //**********************************************************
-    private void read_registry_files_and_update_UI(Window owner)
+    private void read_registry_files_and_update_UI()
     //**********************************************************
     {
-        Map<String, List<ML_server>> server_ports = ML_registry.scan_all_registry(owner, logger);
+        Map<String, List<ML_server>> server_ports = ML_registry.scan_all_registry(context);
         if ( server_ports == null )
         {
             // should not happen
-            logger.log("???? Server ports not found");
+            context.log("???? Server ports not found");
             return;
         }
         for ( Map.Entry<String, List<ML_server>> entry : server_ports.entrySet() )
         {
             List<ML_server> list = entry.getValue();
-            if ( dbg) logger.log("server type :->" + entry.getKey()+ "<- "+list.size()+ " instances");
+            if ( dbg) context.log("server type :->" + entry.getKey()+ "<- "+list.size()+ " instances");
             for ( ML_server ml_server : list )
             {
-                if ( dbg) logger.log("query_server_health for:" + ml_server.to_string());
-                if (is_server_alive_heavy_version(ml_server,null,logger))
+                if ( dbg) context.log("query_server_health for:" + ml_server.to_string());
+                if (is_server_alive_heavy_version(ml_server,null,context))
                 {
-                    ML_servers_monitor.refresh_add(ml_server,owner,logger);
+                    ML_servers_monitor.refresh_add(ml_server,context);
                 }
                 else
                 {
-                    ML_servers_monitor.refresh_remove(ml_server,owner,logger);
+                    ML_servers_monitor.refresh_remove(ml_server);
                 }
             }
         }
@@ -266,7 +264,7 @@ public class ML_servers_monitor //implements AutoCloseable
     //**********************************************************
     public boolean is_server_alive_heavy_version(
             ML_server ml_server,
-            StringBuilder sb_out, Logger logger)
+            StringBuilder sb_out, Kontext context)
     //**********************************************************
     {
         String url_string = "http://127.0.0.1:" + ml_server.port()+"/health";
@@ -274,21 +272,21 @@ public class ML_servers_monitor //implements AutoCloseable
         try {
             url = new URL(url_string);
         } catch (MalformedURLException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#1) "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#1) "+e));
             return false;
         }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#2)"+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#2)"+e));
             return false;
         }
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(0); // infinite
         } catch (ProtocolException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#3) "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#3) "+e));
             return false;
         }
 
@@ -297,23 +295,23 @@ public class ML_servers_monitor //implements AutoCloseable
         } catch (IOException e) {
             //logger.log(Stack_trace_getter.get_stack_trace(""+e));
             if ( sb_out != null) sb_out.append("Connection failed !");
-            logger.log((url_string+" ML server alive check, (Error#4) "+e));
+            context.log((url_string+" ML server alive check, (Error#4) "+e));
             return false;
         }
         try {
             int response_code = connection.getResponseCode();
             if ( sb_out != null) sb_out.append("response code=").append(response_code).append("\n");
-            //logger.log("response code="+response_code);
+            //context.log("response code="+response_code);
         } catch (IOException e) {
-            //logger.log(Stack_trace_getter.get_stack_trace(""+e));
-            logger.log((url_string+" ML server alive check, (Error#5):"+e));
+            //context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log((url_string+" ML server alive check, (Error#5):"+e));
             return false;
         }
         try {
             String response_message = connection.getResponseMessage();
-            //logger.log("response message="+response_message);
+            //context.log("response message="+response_message);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(url_string+"ML server alive check, (Error#6) "+e));
+            context.log(Stack_trace_getter.get_stack_trace(url_string+"ML server alive check, (Error#6) "+e));
             return false;
         }
 
@@ -321,18 +319,18 @@ public class ML_servers_monitor //implements AutoCloseable
         StringBuffer sb = new StringBuffer();
         try(BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream()))
         {
-            if ( ultra_dbg) logger.log("ML server monitor ");
+            if ( ultra_dbg) context.log("ML server monitor ");
             for(;;)
             {
                 int c = bufferedInputStream.read();
                 if ( c == -1) break;
-                if ( ultra_dbg) logger.log(""+(char)c);
+                if ( ultra_dbg) context.log(""+(char)c);
                 sb.append((char)c);
             }
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("ML server alive check, (Error#7) "+e));
+            context.log(Stack_trace_getter.get_stack_trace("ML server alive check, (Error#7) "+e));
             return false;
         }
         finally {
@@ -344,10 +342,10 @@ public class ML_servers_monitor //implements AutoCloseable
         // perform some CHECKS
         String json = sb.toString();
         {
-            String port_s = Simple_json_parser.read_key(json,"port",logger);
+            String port_s = Simple_json_parser.read_key(json,"port",context.logger());
             if ( port_s == null)
             {
-                logger.log(Logger.error+" port == null for server: "+ml_server.to_string());
+                context.log(Logger.error+" port == null for server: "+ml_server.to_string());
                 return false;
             }
             else
@@ -356,83 +354,83 @@ public class ML_servers_monitor //implements AutoCloseable
                     int port = Integer.parseInt(port_s);
                     if (port != ml_server.port())
                     {
-                        logger.log(Logger.error+" ports dont match ?? from /health=" + port + " port=" + ml_server.port());
+                        context.log(Logger.error+" ports dont match ?? from /health=" + port + " port=" + ml_server.port());
                         return false;
                     }
                 } catch (NumberFormatException e) {
-                    logger.log(e + " ->" + port_s + "<-");
+                    context.log(e + " ->" + port_s + "<-");
                 }
             }
         }
         {
-            String uuid = Simple_json_parser.read_key(json,"uuid",logger);
+            String uuid = Simple_json_parser.read_key(json,"uuid",context.logger());
 
             if ( uuid == null)
             {
-                logger.log(Logger.error+" uuid from /health == null for server: "+ml_server.to_string());
+                context.log(Logger.error+" uuid from /health == null for server: "+ml_server.to_string());
                 return false;
             }
             if ( !uuid.equals(ml_server.uuid()))
             {
-                logger.log(Logger.error+" uuid from /health dont match "+uuid+" for server: "+ml_server.to_string());
+                context.log(Logger.error+" uuid from /health dont match "+uuid+" for server: "+ml_server.to_string());
                 return false;
             }
         }
         {
-            String type = Simple_json_parser.read_key(json,"type",logger);
+            String type = Simple_json_parser.read_key(json,"type",context.logger());
             if( type == null)
             {
-                logger.log(Logger.error+" type from /health == null for server: "+ml_server.to_string());
+                context.log(Logger.error+" type from /health == null for server: "+ml_server.to_string());
                 return false;
             }
             if ( !type.equals(ml_server.type()))
             {
-                logger.log(Logger.error+" types from /health dont match "+type+" for server: "+ml_server.to_string());
+                context.log(Logger.error+" types from /health dont match "+type+" for server: "+ml_server.to_string());
                 return false;
             }
         }
 
 
 
-        if ( dbg) logger.log("HTTP health scan: Found 1 live server: "+ml_server.to_string());
-        String status = Simple_json_parser.read_key(json,"status",logger);
+        if ( dbg) context.log("HTTP health scan: Found 1 live server: "+ml_server.to_string());
+        String status = Simple_json_parser.read_key(json,"status",context.logger());
         boolean returned = true;
         if ( status == null)
         {
-            logger.log(Logger.error+"No status found from in ML server");
+            context.log(Logger.error+"No status found from in ML server");
             returned = false;
         }
         else
         {
-            if( dbg) logger.log("Status:"+status);
+            if( dbg) context.log("Status:"+status);
             if ( status.equals("critical_failure"))
             {
-                logger.log(Logger.error+"critical_failure in ML server");
+                context.log(Logger.error+"critical_failure in ML server");
                 returned = false;
             }
         }
 
-        String diagnostics = Simple_json_parser.read_key(json,"diagnostics",logger);
+        String diagnostics = Simple_json_parser.read_key(json,"diagnostics",context.logger());
         if ( diagnostics == null)
         {
-            logger.log("No diagnostics found");
+            context.log("No diagnostics found");
         }
         else
         {
             if ( !returned)
             {
-                logger.log("Diagnostics:"+diagnostics);
+                context.log("Diagnostics:"+diagnostics);
             }
         }
 
-        String runtime = Simple_json_parser.read_key(json,"runtime",logger);
+        String runtime = Simple_json_parser.read_key(json,"runtime",context.logger());
         if ( runtime == null)
         {
-            logger.log("No runtime found");
+            context.log("No runtime found");
         }
         else
         {
-            if ( !returned) logger.log("Runtime:"+runtime);
+            if ( !returned) context.log("Runtime:"+runtime);
         }
         return returned;
     }
@@ -485,7 +483,7 @@ public class ML_servers_monitor //implements AutoCloseable
         HBox hb = uuid_to_small_hbox.get(server_uuid);
         if ( hb == null )
         {
-            logger.log(Stack_trace_getter.get_stack_trace("Getting record for UNREGISTERED server UUID: " + server_uuid));
+            context.log(Stack_trace_getter.get_stack_trace("Getting record for UNREGISTERED server UUID: " + server_uuid));
             return;
         }
 
@@ -510,7 +508,7 @@ public class ML_servers_monitor //implements AutoCloseable
                 }
             }
         }
-        stage.show();
+        context.get_Stage().show();
     }
 
     Random r = new Random();

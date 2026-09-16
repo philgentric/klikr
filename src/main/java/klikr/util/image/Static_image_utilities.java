@@ -8,9 +8,8 @@ import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineByte;
 import ar.com.hjg.pngj.PngWriter;
 import javafx.scene.image.*;
-import javafx.stage.Window;
-import klikr.browser_core.Image_and_properties;
-import klikr.util.execute.actor.Aborter;
+import klikr.browsers.browser_core.Image_and_properties;
+import klikr.util.Kontext;
 import klikr.images.Image_context;
 import klikr.look.Jar_utils;
 import klikr.util.image.rescaling.Image_rescaling_filter;
@@ -84,18 +83,18 @@ public class Static_image_utilities
             double window_width,
             double window_height,
             Image_rescaling_filter filter,
-            Window owner, Aborter aborter, Logger logger_)
+            Kontext context)
     //**********************************************************
     {
         if (!Files.exists(path_)) return Optional.empty();
-        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path_, true, owner, aborter, logger_);
+        Image_and_properties iap = Full_image_from_disk.load_native_resolution_image_from_disk(path_, true, context);
         if (iap == null) return Optional.empty();
         Image local_image = iap.image();
         if (local_image.isError()) {
-            Image broken = Jar_utils.get_broken_icon(300, owner, logger_);
-            return Optional.of(new Image_context(path_, path_, broken, logger_));
+            Image broken = Jar_utils.get_broken_icon(300, context.logger());
+            return Optional.of(new Image_context(path_, path_, broken, context));
         }
-        logger_.log("using alternate rescaling : "+filter.name());
+        context.log("using alternate rescaling : "+filter.name());
 
         double width_ratio = window_width/local_image.getWidth();
         double height_ratio = window_height/local_image.getHeight();
@@ -104,7 +103,7 @@ public class Static_image_utilities
         {
             scale = height_ratio;
         }
-        Image resized_image = Vips_utils.resize(local_image, scale,filter,logger_);
+        Image resized_image = Vips_utils.resize(local_image, scale,filter, context);
         if ( resized_image == null) return Optional.empty();
 /*
         int h = 10000;
@@ -137,7 +136,7 @@ public class Static_image_utilities
 
 
 
-        return Optional.of(new Image_context(path_, path_, resized_image, logger_));
+        return Optional.of(new Image_context(path_, path_, resized_image, context));
     }
 /*
     //**********************************************************

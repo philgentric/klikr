@@ -3,6 +3,7 @@
 
 package klikr.util.execute;
 
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.io.*;
@@ -24,7 +25,7 @@ public class Execute_command
             File wd,
             int max_ms_wait_time,
             StringBuilder debug_string_builder, // can be null
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
         StringBuilder received_line = new StringBuilder();
@@ -59,11 +60,11 @@ public class Execute_command
             if ( debug_string_builder != null)
             {
                 debug_string_builder.append("EXEC error: ").append(e1).append("\n");
-                logger.log(debug_string_builder.toString());
+                context.log(debug_string_builder.toString());
             }
             else
             {
-                logger.log("EXEC error: " + e1 + "\n");
+                context.log("EXEC error: " + e1 + "\n");
             }
             return new Execute_result(false,"process_builder.start() failed"+ e1);
         }
@@ -86,11 +87,11 @@ public class Execute_command
             if ( debug_string_builder != null)
             {
                 debug_string_builder.append("could not read from process: ").append(e).append("\n");
-                logger.log(debug_string_builder.toString());
+                context.log(debug_string_builder.toString());
             }
             else
             {
-                logger.log_stack_trace(e.toString());
+                context.log_stack_trace(e.toString());
             }
             return new Execute_result(false,"process output stream filaed: "+ e);
         }
@@ -104,11 +105,11 @@ public class Execute_command
             if ( debug_string_builder != null)
             {
                 debug_string_builder.append("could not wait for  process: ").append(e).append("\n");
-                logger.log_stack_trace(debug_string_builder.toString());
+                context.log_stack_trace(debug_string_builder.toString());
             }
             else
             {
-                logger.log_stack_trace(e.toString());
+                context.log_stack_trace(e.toString());
             }
             return new Execute_result(false,"process interrupted: "+ e);
         }

@@ -1,8 +1,8 @@
 package klikr.util.http;
 
 import com.sun.net.httpserver.HttpServer;
-import javafx.stage.Window;
 import klikr.Start_context;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Executor;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
@@ -28,24 +28,22 @@ public class Klikr_communicator
     private final String my_UUID = UUID.randomUUID().toString();
     private Path registry_file;
 
-    private final Logger logger;
+    private final Kontext context;
     public final String app_name;
 
-    // Callbacks for when we receive messages
-    private Runnable on_ping;
     private Consumer<String> on_appearance_changed;
-    private List<Runnable> on_started_received = new ArrayList<>();
+    private final List<Runnable> on_started_received = new ArrayList<>();
     private Runnable on_play_received;
 
 
     //**********************************************************
-    public static void build(Start_context context, Window owner, Logger logger)
+    public static void build(Start_context start_context, Kontext context)
     //**********************************************************
     {
         if ( instance != null ) return;
-        Klikr_communicator klikr_communicator = new Klikr_communicator("Klikr",owner, logger);
+        Klikr_communicator klikr_communicator = new Klikr_communicator("Klikr",context);
         klikr_communicator.start_as_multi_instance();
-        Integer reply_port = context.extract_reply_port();
+        Integer reply_port = start_context.extract_reply_port();
         if ( reply_port != null)
         {
             klikr_communicator.send_request(reply_port,"/started","POST","started");
@@ -96,15 +94,15 @@ public class Klikr_communicator
 
 
     //**********************************************************
-    public Klikr_communicator(String app_name, Window owner, Logger logger)
+    public Klikr_communicator(String app_name, Kontext context)
     //**********************************************************
     {
         this.app_name = app_name;
-        this.logger = logger;
-        REGISTRY_DIR = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("registry", false,owner, logger);
+        this.context = context;
+        REGISTRY_DIR = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("registry", false,context);
         if ( REGISTRY_DIR == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"Fatal REGISTRY_DIR == null"));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Fatal REGISTRY_DIR == null"));
         }
     }
 
@@ -120,18 +118,18 @@ public class Klikr_communicator
         {
             // Potential conflict. Verify if it's actually alive.
             int existingPort = read_port(singleton_path);
-            logger.log(app_name+" singleton port from file " + existingPort);
+            context.log(app_name+" singleton port from file " + existingPort);
 
             if (is_port_alive(existingPort)) 
             {
-                logger.log(app_name+" singleton is already running on " + existingPort + ". Exiting.");
+                context.log(app_name+" singleton is already running on " + existingPort + ". Exiting.");
                 return false; // Another instance exists and is healthy
             } else {
-                logger.log(app_name+ " found stale singleton lock file. Taking over.");
+                context.log(app_name+ " found stale singleton lock file. Taking over.");
                 try {
                     Files.delete(singleton_path); // It's dead, we can overwrite
                 } catch (IOException e) {
-                    logger.log(""+e);
+                    context.log(""+e);
                     return false;
                 }
             }
@@ -164,18 +162,18 @@ public class Klikr_communicator
         try {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         } catch (IOException e) {
-            logger.log(""+e);
+            context.log(""+e);
         }
 
 
         the_port = server.getAddress().getPort();
 
-        logger.log(app_name+" HTTP server started on port"+the_port);
+        context.log(app_name+" HTTP server started on port"+the_port);
 
 
         // Endpoint for newly started app to confirm they started
         server.createContext("/started", ex -> {
-            logger.log(app_name+" HTTP server 'started' request received");
+            context.log(app_name+" HTTP server 'started' request received");
             for (Runnable r : on_started_received ) r.run();
             String resp = "OK";
             ex.sendResponseHeaders(200, resp.length());
@@ -185,7 +183,7 @@ public class Klikr_communicator
 
 // Endpoint for newly started app to confirm they started
         server.createContext("/play", ex -> {
-            logger.log(app_name+" HTTP server 'play' request received");
+            context.log(app_name+" HTTP server 'play' request received");
             if ( on_play_received != null ) on_play_received.run();
             String resp = "OK";
             ex.sendResponseHeaders(200, resp.length());
@@ -196,7 +194,7 @@ public class Klikr_communicator
 
         // Endpoint for others to check if I'm alive
         server.createContext("/health", ex -> {
-            logger.log(app_name+" HTTP server 'health' request received");
+            context.log(app_name+" HTTP server 'health' request received");
 
             String resp = "OK";
             ex.sendResponseHeaders(200, resp.length());
@@ -206,12 +204,12 @@ public class Klikr_communicator
 
         // Endpoint to receive appearance updates
         server.createContext("/appearance", ex -> {
-            logger.log(app_name+" HTTP server 'appearance' request received");
+            context.log(app_name+" HTTP server 'appearance' request received");
 
             if ("POST".equalsIgnoreCase(ex.getRequestMethod())) {
                 String body = new String(ex.getRequestBody().readAllBytes());
                 // body might be "dark" or {"theme":"dark"}
-                logger.log("Received appearance update: " + body);
+                context.log("Received appearance update: " + body);
                 if (on_appearance_changed != null) {
                     on_appearance_changed.accept(body); // Update UI
                 }
@@ -225,7 +223,7 @@ public class Klikr_communicator
         server.setExecutor(Executor.executor);
         server.start();
 
-        logger.log(app_name+ " OK, started HTTP Server on port: " + the_port);
+        context.log(app_name+ " OK, started HTTP Server on port: " + the_port);
     }
 
     // --- Broadcast Logic ---
@@ -233,7 +231,7 @@ public class Klikr_communicator
     public void broadcast(String msg)
     //**********************************************************
     {
-        logger.log(app_name+" HTTP Server broadcasting " + msg);
+        context.log(app_name+" HTTP Server broadcasting " + msg);
 
         File folder = REGISTRY_DIR.toFile();
         File[] files = folder.listFiles((d, name) -> name.endsWith(".json"));
@@ -250,7 +248,7 @@ public class Klikr_communicator
             boolean success = send_appearance_update(targetPort, msg);
 
             if (!success) {
-                logger.log("Target at port " + targetPort + " is dead. Cleaning registry.");
+                context.log("Target at port " + targetPort + " is dead. Cleaning registry.");
                 try { Files.delete(f.toPath()); } catch (IOException e) {}
             }
         }
@@ -265,7 +263,7 @@ public class Klikr_communicator
         try {
             Files.writeString(path, json);
         } catch (IOException e) {
-            logger.log(""+e);
+            context.log(""+e);
         }
         this.registry_file = path;
     }
@@ -286,7 +284,7 @@ public class Klikr_communicator
         }
         catch (Exception e)
         {
-            //logger.log(""+e);
+            //context.log(""+e);
             return null;
         }
     }
@@ -337,7 +335,7 @@ public class Klikr_communicator
         }
         catch (Exception e)
         {
-            logger.log(""+e);
+            context.log(""+e);
             return -1;
         }
     }

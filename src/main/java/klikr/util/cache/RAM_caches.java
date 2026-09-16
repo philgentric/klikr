@@ -1,12 +1,12 @@
 package klikr.util.cache;
 
-import javafx.stage.Window;
-import klikr.browser_core.comparators.Similarity_comparator;
-import klikr.browser_core.icons.image_properties_cache.Image_properties;
-import klikr.browser_core.virtual_landscape.Scroll_position_cache;
+import klikr.browsers.browser_core.comparators.Similarity_comparator;
+import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
+import klikr.browsers.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.images.caching.Image_cache_interface;
 import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.similarity.Similarity_cache;
+import klikr.util.Kontext;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 
@@ -35,7 +35,7 @@ public class RAM_caches
 
 
     //**********************************************************
-    public static void clear_all_RAM_caches(Window owner,Logger logger)
+    public static void clear_all_RAM_caches(Kontext context)
     //**********************************************************
     {
         double total = 0;
@@ -45,7 +45,7 @@ public class RAM_caches
             total += kc.clear_RAM();
         }
         image_properties_cache_of_caches.clear();
-        if ( dbg) logger.log(Logger.ok+" All image properties RAM caches cleared");
+        if ( dbg) context.log(Logger.ok+" All image properties RAM caches cleared");
 
 
         for ( Image_cache_interface ici : image_caches.values())
@@ -53,7 +53,7 @@ public class RAM_caches
             total += ici.clear_RAM();
         }
         image_caches.clear();
-        if ( dbg) logger.log(Logger.ok+" All image RAM caches cleared");
+        if ( dbg) context.log(Logger.ok+" All image RAM caches cleared");
 
 
         for (Similarity_cache sc : similarity_cache_of_caches.values())
@@ -61,7 +61,7 @@ public class RAM_caches
             total += sc.clear_RAM();
         }
         similarity_cache_of_caches.clear();
-        if ( dbg) logger.log(Logger.ok+" All similarity RAM caches cleared");
+        if ( dbg) context.log(Logger.ok+" All similarity RAM caches cleared");
 
 
         for (Similarity_comparator sc : similarity_comparator_cache.values())
@@ -69,7 +69,7 @@ public class RAM_caches
             total += sc.clear_RAM();
         }
         similarity_comparator_cache.clear();
-        if ( dbg) logger.log(Logger.ok+" All similarity comparator RAM caches cleared");
+        if ( dbg) context.log(Logger.ok+" All similarity comparator RAM caches cleared");
 
 
 
@@ -81,14 +81,14 @@ public class RAM_caches
             total += fvc.clear_RAM();
         }
         fv_cache_of_caches.clear();
-        if ( dbg) logger.log(Logger.ok+" All feature vector RAM caches cleared");
+        if ( dbg) context.log(Logger.ok+" All feature vector RAM caches cleared");
 
 
         if (duration_cache != null) total += duration_cache.clear_RAM();
-        if ( dbg) logger.log(Logger.ok+" song duration cache cleared");
+        if ( dbg) context.log(Logger.ok+" song duration cache cleared");
 
         if (bitrate_cache !=null) total += bitrate_cache.clear_RAM();
-        if ( dbg) logger.log(Logger.ok+" song bitrate cache cleared");
+        if ( dbg) context.log(Logger.ok+" song bitrate cache cleared");
 
 
         total += folder_file_count_cache.size();
@@ -100,10 +100,10 @@ public class RAM_caches
 
 
         total += Scroll_position_cache.scroll_position_cache_clear();
-        if ( dbg) logger.log(Logger.ok+" scroll position cache cleared");
+        if ( dbg) context.log(Logger.ok+" scroll position cache cleared");
 
-        String size_in_bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(total,owner,logger);
-        logger.log("\n\n"+ Logger.ok+" Total cleared RAM bytes: " + size_in_bytes+"\n\n");
+        String size_in_bytes = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(total,context);
+        context.log("\n\n"+ Logger.ok+" Total cleared RAM bytes: " + size_in_bytes+"\n\n");
     }
 
 

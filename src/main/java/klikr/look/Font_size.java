@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
 import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 //**********************************************************
@@ -19,18 +20,18 @@ public class Font_size
 
 
     //**********************************************************
-    public static String get_font_size(Window owner, Logger logger)
+    public static String get_font_size(Kontext context)
     //**********************************************************
     {
-        return FX_FONT_SIZE + Non_booleans_properties.get_font_size(owner,logger) + PT;
+        return FX_FONT_SIZE + Non_booleans_properties.get_font_size() + PT;
     }
 
 
     //**********************************************************
-    public static void apply_global_font_size_to_MenuItem(MenuItem menu_item, Window owner, Logger logger)
+    public static void apply_global_font_size_to_MenuItem(MenuItem menu_item, Logger logger)
     //**********************************************************
     {
-        int size = Non_booleans_properties.get_font_size(owner,logger);
+        int size = Non_booleans_properties.get_font_size();
         init(logger);
         String style = menu_item.getStyle();
         if ( style == null)
@@ -63,10 +64,10 @@ public class Font_size
 
     // edit the style to change the font length, without affecting the rest of the style
     //**********************************************************
-    public static void apply_global_font_size_to_Node(Node node, Window owner, Logger logger)
+    public static void apply_global_font_size_to_Node(Node node, Logger logger)
     //**********************************************************
     {
-        int size = Non_booleans_properties.get_font_size(owner,logger);
+        int size = Non_booleans_properties.get_font_size();
         if (dbg)
             logger.log("applying font size " + size);
         apply_this_font_size_to_Node(node, size, logger);
@@ -118,7 +119,7 @@ public class Font_size
             //font_family = "Roboto";
             //String font_filename = "Roboto-Bold.ttf";
 
-            Look_and_feel_manager.get_instance(null, logger).load_font(font_filename);
+            Look_and_feel_manager.get_instance( logger).load_font(font_filename);
         }
     }
 

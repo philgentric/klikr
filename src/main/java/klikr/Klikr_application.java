@@ -114,6 +114,7 @@ import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.Guess_OS;
 import klikr.util.execute.Operating_system;
@@ -184,10 +185,9 @@ public class Klikr_application extends Application
 
         Github_stars.init(getHostServices());
 
-        //primary_stage = primary_stage_;
-        Start_context context = Start_context.get_context_and_args(this);
+        Start_context start_context = Start_context.get_context_and_args(this);
 
-        logger.log("Klik_application Start_context= " + context.args());
+        logger.log("Klik_application Start_context= " + start_context.args());
 
         primary_stage.setOnCloseRequest(event -> {
             System.out.println("Klik_application primary_stage setOnCloseRequest exit");
@@ -196,8 +196,9 @@ public class Klikr_application extends Application
 
         System_info.print(logger);
 
+        Kontext context = new Kontext(primary_stage,Shared_services.aborter(),logger);
 
-        Path path = context.extract_path();
+        Path path = start_context.extract_path();
         if ( path != null)
         {
             logger.log("Starting browser on path ->" + path+"<-");
@@ -206,10 +207,10 @@ public class Klikr_application extends Application
         {
             if (Feature_cache.get(Feature.Reload_last_folder_on_startup))
             {
-                List<History_item> l = History_engine.get(primary_stage).get_all_history_items();
+                List<History_item> l = History_engine.get(context).get_all_history_items();
                 if (!l.isEmpty())
                 {
-                    for(History_item hi : History_engine.get(primary_stage).get_all_history_items())
+                    for(History_item hi : History_engine.get(context).get_all_history_items())
                     {
                         if (hi != null)
                         {
@@ -227,11 +228,12 @@ public class Klikr_application extends Application
         {
             path = Paths.get(System.getProperty(String_constants.USER_HOME));
         }
-        Klikr_communicator.build(context,primary_stage,logger);
+        logger.log("path is "+path);
+        Klikr_communicator.build(start_context,context);
 
-        Owner_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,primary_stage,logger),primary_stage,logger);
+        Owner_provider window_provider = Window_builder.additional_no_past(Klikr_application.application,Window_type.File_system_2D,new Path_list_provider_for_file_system(path,context),context);
 
-        new Disk_usage_and_caches_monitor(window_provider, logger).start();
+        new Disk_usage_and_caches_monitor(context).start();
 
 
         int count = 0;

@@ -111,6 +111,7 @@ import javafx.stage.Stage;
 import klikr.*;
 import klikr.path_lists.Path_list_provider_for_playlist;
 import klikr.settings.String_constants;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.disk_cache_auto_clean.Disk_usage_and_caches_monitor;
 import klikr.util.execute.actor.Aborter;
@@ -156,9 +157,11 @@ public class Image_playlist_app extends Application
         Aborter aborter = new Aborter("Image_playlist_app",logger);
 
         primary_stage = primary_stage_;
-        Start_context context = Start_context.get_context_and_args(this);
+        Start_context start_context = Start_context.get_context_and_args(this);
 
-        logger.log("Klik_application Start_context= " + context.args());
+        Kontext context = new Kontext(primary_stage,aborter,logger);
+
+        logger.log("Klik_application Start_context= " + start_context.args());
 
         primary_stage.setOnCloseRequest(event -> {
             System.out.println("Klik_application primary_stage setOnCloseRequest exit");
@@ -180,7 +183,7 @@ public class Image_playlist_app extends Application
         {
             logger.log("Klik_application ui_change_report_port_at_launcher= " + ui_change_report_port_at_launcher);
         }*/
-        Path path = context.extract_path();
+        Path path = start_context.extract_path();
         if ( path == null)
         {
             path = Path.of(System.getProperty("user.home"), String_constants.CONF_DIR, "default."+ Path_list_provider_for_playlist.KLIKR_IMAGE_PLAYLIST_EXTENSION);
@@ -193,10 +196,10 @@ public class Image_playlist_app extends Application
         }
         logger.log("Starting playlist browser on path ->" + path+"<-");
 
-        Klikr_communicator.build(context,primary_stage_,logger);
+        Klikr_communicator.build(start_context, context);
 
-        Owner_provider window_provider = Window_builder.additional_no_past(application,Window_type.Image_playlist,new Path_list_provider_for_playlist(path,primary_stage_,aborter, logger),primary_stage_,logger);
-        new Disk_usage_and_caches_monitor(window_provider, logger).start();
+        Owner_provider window_provider = Window_builder.additional_no_past(application,Window_type.Image_playlist,new Path_list_provider_for_playlist(path,context),context);
+        new Disk_usage_and_caches_monitor(context).start();
 
 
     }

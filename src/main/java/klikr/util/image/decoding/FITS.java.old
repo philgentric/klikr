@@ -32,7 +32,7 @@ public class FITS
     */
 
     //**********************************************************
-    public static Optional<Image> load_FITS_image(Path original_image_file, Aborter aborter, Window owner, Logger logger)
+    public static Optional<Image> load_FITS_image(Path original_image_file, Aborter aborter, Kontext context)
     //**********************************************************
     {
         Fits fits = new Fits(original_image_file.toFile());

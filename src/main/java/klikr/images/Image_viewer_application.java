@@ -6,6 +6,7 @@ package klikr.images;
 import javafx.application.Application;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.Shared_services;
 import klikr.path_lists.Path_list_provider_for_file_system;
@@ -29,6 +30,7 @@ public class Image_viewer_application extends Application
 
         Logger logger = Shared_services.logger();
         Aborter aborter = Shared_services.aborter();
+        Kontext context = new Kontext(stage,aborter,logger);
 
 
         Exceptions_in_threads_catcher.set_exceptions_in_threads_catcher(logger);
@@ -50,7 +52,7 @@ public class Image_viewer_application extends Application
 
         //Browser_for_file_system_in_2D browser = New_file_browser_context.first(path.getParent().toString(),logger);
         //browser.my_Stage.the_Stage.hide();
-        Image_window image_stage = Image_window.get_Image_window(path, new Path_list_provider_for_file_system(path.getParent(),stage,logger), null,stage,aborter,logger);
+        Image_window image_stage = Image_window.get_Image_window(path, new Path_list_provider_for_file_system(path.getParent(),context), null,context);
     }
 }
 

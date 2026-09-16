@@ -6,6 +6,7 @@ import javafx.stage.Window;
 import klikr.Klikr_application;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -54,12 +55,11 @@ public class Script_executor
     //**********************************************************
     public static void execute(List<String> lines,
                                boolean debug_mode,
-                               Window owner,
-                               Logger logger)
+                               Kontext context)
     //**********************************************************
     {
-        Path tmp_folder = Static_files_and_paths_utilities.get_trash_dir(owner, logger);
-        execute_in_folder(lines, tmp_folder,debug_mode, logger);
+        Path tmp_folder = Static_files_and_paths_utilities.get_trash_dir(context);
+        execute_in_folder(lines, tmp_folder,debug_mode, context);
     }
 
 
@@ -68,10 +68,10 @@ public class Script_executor
     public static void execute_in_folder(List<String> lines,
                                Path tmp_folder,
                                boolean debug_mode,
-                               Logger logger)
+                               Kontext context)
     //**********************************************************
     {
-        Actor_engine.execute(()->execute_internal(lines,tmp_folder, debug_mode,logger),"Script_executor "+String.join(" ",lines),logger);
+        Actor_engine.execute(()->execute_internal(lines,tmp_folder, debug_mode,context),"Script_executor "+String.join(" ",lines),context.logger());
     }
 
 
@@ -80,7 +80,7 @@ public class Script_executor
     private static void execute_internal(List<String> lines,
                                          Path tmp_folder,
                                          boolean debug_mode,
-                                         Logger logger)
+                                         Kontext context)
     //**********************************************************
     {
 
@@ -95,7 +95,7 @@ public class Script_executor
                     }
                     else*/
                     {
-                        Text_frame.show("Script_executor", queue, 100, 100, logger);
+                        Text_frame.show("Script_executor", queue, context.logger());
                     }
                 } finally {
                     ui_latch.countDown();
@@ -105,7 +105,7 @@ public class Script_executor
             try {
                 ui_latch.await();
             } catch (InterruptedException e) {
-                logger.log("Interrupted while waiting for UI: " + e);
+                context.log("Interrupted while waiting for UI: " + e);
                 return;
             }
         }
@@ -113,7 +113,7 @@ public class Script_executor
 
         Path script_path = null;
         try {
-            Operating_system os = Guess_OS.guess(logger);
+            Operating_system os = Guess_OS.guess(context.logger());
 
             String script_name = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + "_" + UUID.randomUUID();
             if ( os == Operating_system.Windows)
@@ -209,7 +209,7 @@ public class Script_executor
                 }
             };
 
-            Job job = Actor_engine.execute(r, "Script_executor stream capture", logger);
+            Job job = Actor_engine.execute(r, "Script_executor stream capture", context.logger());
 
             int exit_code = process.waitFor();
 
@@ -219,20 +219,20 @@ public class Script_executor
 
             if ( exit_code != 0 )
             {
-                logger.log("\nWARNING: Script_executor: process exited with code " + exit_code);
-                logger.log("Script_executor: log file is at: " + log_path.toAbsolutePath());
+                context.log("\nWARNING: Script_executor: process exited with code " + exit_code);
+                context.log("Script_executor: log file is at: " + log_path.toAbsolutePath());
                 try {
                     List<String> content = Files.readAllLines(log_path);
-                    logger.log("******************** script: ************************");
-                    logger.log(script_content.toString());
-                    logger.log("***************** log file CONTENT: *****************");
+                    context.log("******************** script: ************************");
+                    context.log(script_content.toString());
+                    context.log("***************** log file CONTENT: *****************");
                     for (String s : content)
                     {
-                        logger.log("          "+s);
+                        context.log("          "+s);
                     }
-                    logger.log("*****************************************************");
+                    context.log("*****************************************************");
                 } catch (IOException e) {
-                    logger.log("Script_executor: could not read log file: "+e);
+                    context.log("Script_executor: could not read log file: "+e);
                 }
             }
 
@@ -243,7 +243,7 @@ public class Script_executor
             for (StackTraceElement ste : e.getStackTrace()) {
                 queue.add(ste.toString());
             }
-            logger.log("Script execution failed: "+e);
+            context.log("Script execution failed: "+e);
         }
     }
 

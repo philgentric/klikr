@@ -4,6 +4,7 @@
 package klikr.util.animated_gifs;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Message;
 import klikr.util.log.Logger;
@@ -15,32 +16,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Animated_gif_generation_message implements Message
 //**********************************************************
 {
-    public final Window originator;
     public final Path video_path;
     public final int height;
     public final int fps;
     public final Path destination_gif_full_path;
     public final int dur;
     public final int start;
-    public final Aborter aborter;
     public final AtomicBoolean abort_reported;
 
-    public final Logger logger;
+    public final Kontext context;
 
     //**********************************************************
-    public Animated_gif_generation_message(Window owner, Path video_path, int height, int fps, Path destination_gif_full_path, int dur, int start,
-                                           Aborter aborter, AtomicBoolean abort_reported, Logger logger)
+    public Animated_gif_generation_message(Path video_path, int height, int fps, Path destination_gif_full_path, int dur, int start,
+                                           AtomicBoolean abort_reported, Kontext context)
     //**********************************************************
     {
-        this.originator = owner;
+        this.context = context;
         this.video_path = video_path;
         this.height = height;
         this.fps = fps;
         this.destination_gif_full_path = destination_gif_full_path;
         this.dur = dur;
         this.start = start;
-        this.logger = logger;
-        this.aborter = aborter;
         this.abort_reported = abort_reported;
     }
 
@@ -51,7 +48,7 @@ public class Animated_gif_generation_message implements Message
 
     @Override
     public Aborter get_aborter() {
-        return aborter;
+        return context.aborter();
     }
 
 }

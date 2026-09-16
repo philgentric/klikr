@@ -20,7 +20,7 @@ public interface Image_cache_interface extends Clearable_RAM_cache
             Image_display_handler image_display_handler,
             boolean ultimate,
             boolean forward);
-    void evict(Path path, Window owner);
+    void evict(Path path);
     void print();
 
 }

@@ -54,16 +54,14 @@ public class Animated_gif_generation_actor implements Actor
                 mm.dur,
                 mm.start,
                 0,
-                mm.get_aborter(),
-                mm.originator,
-                mm.logger);
+                mm.context);
         cl.release();
         if ( !ok)
         {
             if (! mm.abort_reported.get())
             {
                 mm.abort_reported.set(true);
-                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Massive animated gif generation for "+mm.video_path+" was ABORTED!", "Did you change dir ?",false,mm.originator,mm.logger), mm.logger);
+                Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.warning+" Massive animated gif generation for "+mm.video_path+" was ABORTED!", "Did you change dir ?",false,mm.context), mm.context);
 
             }
         }

@@ -6,11 +6,10 @@ package klikr.change.bookmarks;
 
 import javafx.stage.Window;
 import klikr.settings.File_storage;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
-import klikr.util.execute.actor.Aborter;
 import klikr.settings.File_storage_using_Properties;
 import klikr.settings.Properties_with_base;
-import klikr.util.log.Logger;
 
 import java.util.List;
 
@@ -19,12 +18,12 @@ public class Bookmarks
 //**********************************************************
 {
     private static volatile Bookmarks instance = null;
-    private final Logger logger;
-    private final File_storage ip;
+    private final Kontext context;
+    private final File_storage file_storage;
     private final Properties_with_base pb;
 
     //**********************************************************
-    public static Bookmarks get(Window owner)
+    public static Bookmarks get(Kontext context)
     //**********************************************************
     {
         if (instance == null)
@@ -33,7 +32,7 @@ public class Bookmarks
             {
                 if (instance == null)
                 {
-                    instance = new Bookmarks(owner, Shared_services.aborter(),Shared_services.logger());
+                    instance = new Bookmarks(context);
                 }
             }
         }
@@ -42,12 +41,12 @@ public class Bookmarks
     }
 
     //**********************************************************
-    private Bookmarks(Window owner, Aborter aborter, Logger logger)
+    private Bookmarks(Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
-        ip = new File_storage_using_Properties("bookmarks","bookmarks",true, owner, aborter,logger);
-        pb = new Properties_with_base(ip,"bookmark_",30,logger);
+        this.context = context;
+        file_storage = new File_storage_using_Properties("bookmarks","bookmarks",true, context);
+        pb = new Properties_with_base(file_storage,"bookmark_",30, context.logger());
     }
 
 
@@ -55,7 +54,7 @@ public class Bookmarks
     public void add(String s)
     //**********************************************************
     {
-        logger.log("adding bookmark:"+s);
+        context.log("adding bookmark:"+s);
         pb.add(s);
     }
     //**********************************************************

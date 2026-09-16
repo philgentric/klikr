@@ -21,21 +21,21 @@ public class Check_remaining_RAM
     public static AtomicBoolean low_memory = new AtomicBoolean(false);
 
     //**********************************************************
-    public static boolean RAM_running_low(String message, Window owner, Logger logger)
+    public static boolean RAM_running_low(String message, Kontext context)
     //**********************************************************
     {
-        long before = get_remaining_memory(logger);
+        long before = get_remaining_memory(context);
         if ( before > MIN_REMAINING_FREE_MEMORY_MB) return false;
-        RAM_caches.clear_all_RAM_caches(owner, logger);
+        RAM_caches.clear_all_RAM_caches(context);
         System.gc();
-        long after = get_remaining_memory(logger);
+        long after = get_remaining_memory(context);
         low_memory.set(true);
 
 
-        logger.log(message+" Garbage Collector was called, AVAILABLE: "+before/1000_000L + " => "+after/1000_000L);
+        context.log(message+" Garbage Collector was called, AVAILABLE: "+before/1000_000L + " => "+after/1000_000L);
         if (after > MIN_REMAINING_FREE_MEMORY_MB) return false;
 
-        logger.log(Logger.warning+"Your java VM machine is running out of RAM!\n"+message+"\nIncrease max in Preferences?");
+        context.log(Logger.warning+"Your java VM machine is running out of RAM!\n"+message+"\nIncrease max in Preferences?");
         boolean show_pop_up = false;
         if  (last_time_oom_was_shown == null)
         {
@@ -48,23 +48,23 @@ public class Check_remaining_RAM
             // show popup again (max every 10 minutes)
             if (last_time_oom_was_shown - now > 600_000) show_pop_up = false;
         }
-        if ( show_pop_up) Popups.popup_warning("Running out of RAM","Your java VM machine is running out of RAM!\nclose some windows and/or increase max in Preferences", false,owner, logger);
+        if ( show_pop_up) Popups.popup_warning("Running out of RAM","Your java VM machine is running out of RAM!\nclose some windows and/or increase max in Preferences", false,context);
 
         return true;
     }
     //**********************************************************
-    public static long get_remaining_memory(Logger logger)
+    public static long get_remaining_memory(Kontext context)
     //**********************************************************
     {
         //https://stackoverflow.com/questions/3571203/what-are-runtime-getruntime-totalmemory-and-freememory
         Runtime runtime = Runtime.getRuntime();
-        if (dbg) logger.log("VM ALLOCATED memory "+(runtime.totalMemory()/1_000_000)+" MB");
+        if (dbg) context.log("VM ALLOCATED memory "+(runtime.totalMemory()/1_000_000)+" MB");
         long used = runtime.totalMemory() - runtime.freeMemory();
-        if (dbg) logger.log("VM USED memory "+(used/1_000_000)+" MB");
+        if (dbg) context.log("VM USED memory "+(used/1_000_000)+" MB");
         long max = runtime.maxMemory(); // configured max memory for the JVM i.e. -Xmx
-        if (dbg) logger.log("VM configured with max memory "+(max/1_000_000)+" MB");
+        if (dbg) context.log("VM configured with max memory "+(max/1_000_000)+" MB");
         long remaining = max - used;
-        if (dbg) logger.log("VM remaining memory "+(remaining/1_000_000)+" MB");
+        if (dbg) context.log("VM remaining memory "+(remaining/1_000_000)+" MB");
         return remaining;
     }
 

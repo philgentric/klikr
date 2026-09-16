@@ -4,6 +4,7 @@
 package klikr.util.disk_cache_auto_clean;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
@@ -25,7 +26,7 @@ public class Disk_cache_auto_clean
 {
     private static final boolean dbg = false;
     private final int age_limit_in_days;
-    public final Logger logger;
+    public final Kontext context;
     private volatile boolean warning_issued = false;
 
     record Monitored_folder(String name, Path path){}
@@ -34,15 +35,15 @@ public class Disk_cache_auto_clean
 
 
     //**********************************************************
-    public Disk_cache_auto_clean(int age_limit_in_days, Window owner, Logger logger_)
+    public Disk_cache_auto_clean(int age_limit_in_days, Kontext context)
     //**********************************************************
     {
-        logger = logger_;
+        this.context = context;
         this.age_limit_in_days = age_limit_in_days;
 
         for(Cache_folder cache_folder : Cache_folder.values())
         {
-            monitored_folders.add(new Monitored_folder(cache_folder.name(), Static_files_and_paths_utilities.get_cache_folder(cache_folder,owner,logger)));
+            monitored_folders.add(new Monitored_folder(cache_folder.name(), Static_files_and_paths_utilities.get_cache_folder(cache_folder,context)));
         }
     }
 
@@ -57,7 +58,7 @@ public class Disk_cache_auto_clean
             {
                 if ( !warning_issued)
                 {
-                    logger.log("WARNING: Disk_cache_auto_clean not able to list files in "+monitored_folder.path);
+                    context.log("WARNING: Disk_cache_auto_clean not able to list files in "+monitored_folder.path);
                     warning_issued = true;
                 }
                 continue;
@@ -66,7 +67,7 @@ public class Disk_cache_auto_clean
             {
                 if ( f.isDirectory())
                 {
-                    logger.log("WARNING: Disk_cache_auto_clean not erasing folders "+f);
+                    context.log("WARNING: Disk_cache_auto_clean not erasing folders "+f);
                     continue;
                 }
                 delete_if_too_old(f);
@@ -79,22 +80,22 @@ public class Disk_cache_auto_clean
     private void delete_if_too_old(File f)
     //**********************************************************
     {
-        long age = Static_files_and_paths_utilities.get_file_age_in_days(f,logger);
-        //logger.log(f.toPath().toAbsolutePath()+ " age = "+age+ " days");
+        long age = Static_files_and_paths_utilities.get_file_age_in_days(f,context);
+        //context.log(f.toPath().toAbsolutePath()+ " age = "+age+ " days");
         if ( age > age_limit_in_days)
         {
-            if ( dbg) logger.log(f.toPath().toAbsolutePath()+ " is too old at "+age+" days, deleting");
+            if ( dbg) context.log(f.toPath().toAbsolutePath()+ " is too old at "+age+" days, deleting");
             try {
                 Files.delete(f.toPath());
             } catch (NoSuchFileException e) {
-                logger.log(("delete_if_too_old: "+e.toString()));
-                //logger.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                context.log(("delete_if_too_old: "+e.toString()));
+                //context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
             }
             catch (DirectoryNotEmptyException e) {
-                logger.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
             }
             catch (IOException e) {
-                logger.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
             }
         }
     }

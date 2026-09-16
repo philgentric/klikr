@@ -4,8 +4,9 @@
 //SOURCES ./State.java
 package klikr.path_lists;
 
-import klikr.browser_core.virtual_landscape.Path_comparator_source;
+import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.settings.String_constants;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
@@ -55,7 +56,7 @@ public class Indexer
 //**********************************************************
 {
     public final static boolean dbg = false;
-    private final Logger logger;
+    private final Kontext context;
 
     private final State state;
 
@@ -64,19 +65,18 @@ public class Indexer
             Type type,
             Path_list_provider path_list_provider,
             Path_comparator_source path_comparator_source,
-            Aborter aborter, Logger logger_)
+            Kontext context)
     //**********************************************************
     {
-        return new Indexer(type, path_list_provider, path_comparator_source, aborter, logger_);
+        return new Indexer(type, path_list_provider, path_comparator_source, context);
     }
 
     //**********************************************************
-    private Indexer(Type type, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source, Aborter aborter, Logger l)
+    private Indexer(Type type, Path_list_provider path_list_provider, Path_comparator_source path_comparator_source, Kontext context)
     //**********************************************************
     {
-        logger = l;
-        //current_dir = dir_;
-        state = new State(type, path_list_provider,path_comparator_source, aborter,logger);
+        this.context = context;
+        state = new State(type, path_list_provider,path_comparator_source, context);
     }
 
     //**********************************************************
@@ -85,29 +85,29 @@ public class Indexer
     {
         int target = 0;
         Integer current_index = state.index_from_path(previous_path);//.toAbsolutePath());
-        if ( dbg) logger.log("path_to_index("+previous_path+")="+current_index);
+        if ( dbg) context.log("path_to_index("+previous_path+")="+current_index);
         if ( current_index == null)
         {
-            if ( dbg) logger.log("unknown path:" + previous_path);
+            if ( dbg) context.log("unknown path:" + previous_path);
             state.rescan("get_new_path_relative failed",aborter);
             current_index = state.index_from_path(previous_path);
             if ( current_index == null)
             {
-                logger.log("OHO: Indexer does not know the path:" + previous_path);
+                context.log("OHO: Indexer does not know the path:" + previous_path);
             }
         }
         else
         {
             target = current_index + delta;
-            if ( dbg) logger.log( "new index :"+target+"="+current_index+"+"+delta);
+            if ( dbg) context.log( "new index :"+target+"="+current_index+"+"+delta);
             if (target < 0) {
-                if ( dbg) logger.log("This is before start: i < 0");
+                if ( dbg) context.log("This is before start: i < 0");
                 target = state.how_many_images() - 1;
             }
             if (target >= state.how_many_images())
             {
                 if (state.how_many_images() == 0) {
-                    logger.log(Logger.error+"FATAL: path_list.length()=" + state.how_many_images());
+                    context.log(Logger.error+"FATAL: path_list.length()=" + state.how_many_images());
                     return null;
                 }
                 target = 0;
@@ -122,7 +122,7 @@ public class Indexer
         for (int max = 0; max < 2*state.how_many_images();max++)
         {
             Path returned = state.path_from_index(target);
-            if ( dbg) logger.log("index_to_path("+target+")="+returned);
+            if ( dbg) context.log("index_to_path("+target+")="+returned);
             if (Files.exists(returned))
             {
                 if (ultimate)
@@ -134,17 +134,17 @@ public class Indexer
                     }
                 }
                 // OK!
-                if ( dbg) logger.log("returning path="+returned);
+                if ( dbg) context.log("returning path="+returned);
                 return returned;
             }
             else
             {
-                if ( dbg) logger.log("file does not exist anymore :"+returned+" ... rescan !");
+                if ( dbg) context.log("file does not exist anymore :"+returned+" ... rescan !");
                 state.rescan("A file does not exists anymore",aborter);
             }
             target = increment(target);
         }
-        logger.log("FAILED for "+previous_path+" delta="+delta);
+        context.log("FAILED for "+previous_path+" delta="+delta);
         // FAILED!
         return null;
     }
@@ -154,10 +154,10 @@ public class Indexer
     //**********************************************************
     {
         index++;
-        if ( dbg) logger.log("checking new index="+index);
+        if ( dbg) context.log("checking new index="+index);
         if (index >= state.how_many_images())
         {
-            if ( dbg) logger.log("This is the beyond the end: i=" + index + " >= path_list.length()=" + state.how_many_images());
+            if ( dbg) context.log("This is the beyond the end: i=" + index + " >= path_list.length()=" + state.how_many_images());
             index = 0;
         }
         return index;

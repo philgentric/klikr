@@ -16,10 +16,12 @@ import klikr.Window_type;
 import klikr.change.history.History_engine;
 import klikr.change.history.History_item;
 import klikr.javalin.Javalin_common;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.http.Klikr_communicator;
 import klikr.util.log.Logger;
+import klikr.util.log.Simple_logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,10 +47,8 @@ public class Javalin_history_app extends Application {
     private Label statusLabel;
     private Javalin javalin;
     private int port_number;
-    Stage stage;
-    Logger logger;
     Javalin_history_server javalin_history_server;
-
+    private Kontext context;
     public static void main(String[] args) {
         launch(args);
     }
@@ -57,14 +57,13 @@ public class Javalin_history_app extends Application {
     public void start(Stage primary_stage) {
 
         Shared_services.init("history test app",primary_stage);
-        logger = Shared_services.logger();
 
-        stage = primary_stage;
-        Start_context context = Start_context.get_context_and_args(this);
-        Klikr_communicator.build(context,primary_stage,logger);
+        Start_context start_context = Start_context.get_context_and_args(this);
+        context = new Kontext(primary_stage,null,new Simple_logger());
+        Klikr_communicator.build(start_context, context);
 
         javalin_history_server = new Javalin_history_server(this,
-                null, Window_type.File_system_2D,primary_stage,Shared_services.aborter(),logger);
+                null, Window_type.File_system_2D,context);
 
 
         // 1. Setup JavaFX UI
@@ -83,7 +82,7 @@ public class Javalin_history_app extends Application {
 
         Button historyButton = new Button("🚀 Show History");
         historyButton.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 10 20;");
-        historyButton.setOnAction(e -> showHistoryTest(logger));
+        historyButton.setOnAction(e -> showHistoryTest(context.logger()));
 
 
         Button clearButton = new Button("Clear Browser");

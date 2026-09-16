@@ -8,6 +8,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.io.File;
@@ -21,22 +22,22 @@ public class Debug_console
 {
 
     //**********************************************************
-    public static Node get_button(Window owner, Logger logger)
+    public static Node get_button(Kontext context)
     //**********************************************************
     {
         Button exe = new Button("Open debug execution window");
         exe.setOnAction(event ->
         {
-            create_debug_console(owner,logger);
+            create_debug_console(context);
         });
         return exe;
     }
     //**********************************************************
-    private static void create_debug_console(Window owner, Logger logger)
+    private static void create_debug_console(Kontext context)
     //**********************************************************
     {
         Stage stage = new Stage();
-        stage.initOwner(owner);
+        stage.initOwner(context.owner());
         VBox vbox = new VBox();
         TextField cmd_tf = new TextField("< enter command here>");
         vbox.getChildren().add(cmd_tf);
@@ -49,7 +50,7 @@ public class Debug_console
             {
                 String folder = folder_tf.getText();
                 String cmd = cmd_tf.getText();
-                Script_executor.execute_in_folder(List.of(cmd),Path.of(folder), true, logger);
+                Script_executor.execute_in_folder(List.of(cmd),Path.of(folder), true, context);
             });
         }
         {
@@ -61,7 +62,7 @@ public class Debug_console
                 String folder = folder_tf.getText();
                 String cmd = cmd_tf.getText();
                 String[] pieces = cmd.split("\\s+");
-                Execute_result es = Execute_command.execute_command_list_no_wait(List.of(pieces), new File(folder), logger);
+                Execute_result es = Execute_command.execute_command_list_no_wait(List.of(pieces), new File(folder), context.logger());
                 if ( es.status())
                 {
                     ta.setText(es.output());

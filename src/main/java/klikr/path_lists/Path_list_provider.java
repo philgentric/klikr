@@ -3,13 +3,13 @@
 
 package klikr.path_lists;
 //SOURCES ../Move_provider_for_playlist.java
-import javafx.stage.Window;
 import klikr.Window_type;
-import klikr.browser_core.virtual_landscape.Image_found;
+import klikr.browsers.browser_core.virtual_landscape.Image_found;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -48,19 +48,19 @@ public interface Path_list_provider
     List<Path> only_folder_paths(boolean force_rescan, boolean consider_also_hidden_folders, Aborter aborter);
 
     Move_provider get_move_in_provider();
-    void delete(Path path, Window owner, Aborter aborter, Logger logger);
-    void delete_multiple(List<Path> paths, Window owner, Aborter aborter, Logger logger);
+    void delete(Path path, Kontext kontext) throws IOException;
+    void delete_multiple(List<Path> paths, Kontext kontext);
 
     int how_many_files_and_folders(boolean force_rescan, boolean consider_also_hidden_files, boolean consider_also_hidden_folders, Aborter aborter);
 
-    static Path_list_provider get_appropriate(Window_type window_type, Path path, Window owner, Aborter aborter, Logger logger)
+    static Path_list_provider get_appropriate(Window_type window_type, Path path, Kontext context)
     {
         switch (window_type)
         {
             case File_system_2D, File_system_3D, File_system_diskview:
-                return new Path_list_provider_for_file_system(path, owner, logger);
+                return new Path_list_provider_for_file_system(path,context);
             case Image_playlist, Song_playlist:
-                return new Path_list_provider_for_playlist(path, owner,aborter, logger);
+                return new Path_list_provider_for_playlist(path, context);
         }
         return null;
     }

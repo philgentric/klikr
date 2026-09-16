@@ -9,10 +9,10 @@ import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import klikr.browsers.browser_core.virtual_landscape.Virtual_landscape;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.System_info;
-import klikr.util.execute.actor.Aborter;
-import klikr.browser_core.virtual_landscape.Virtual_landscape;
 import klikr.util.log.Logger;
 
 
@@ -39,94 +39,93 @@ public class Non_booleans_properties
 
 
     //**********************************************************
-    public static int get_number_of_image_similarity_servers(Window owner)
+    public static int get_number_of_image_similarity_servers()
     //**********************************************************
     {
-        return get_int(String_constants.NUMBER_OF_IMAGE_SIMILARITY_SERVERS,DEFAULT_NUMBER_OF_IMAGE_SIMILARITY_SERVERS,owner);
+        return get_int(String_constants.NUMBER_OF_IMAGE_SIMILARITY_SERVERS,DEFAULT_NUMBER_OF_IMAGE_SIMILARITY_SERVERS);
     }
 
 
 
     //**********************************************************
-    public static int get_icon_size(Window owner)
+    public static int get_icon_size()
     //**********************************************************
     {
         if (icon_size > 0) return icon_size;
-        icon_size = get_int(String_constants.ICON_SIZE,DEFAULT_ICON_SIZE,owner);
+        icon_size = get_int(String_constants.ICON_SIZE,DEFAULT_ICON_SIZE);
         return icon_size;
     }
 
 
     //**********************************************************
-    public static void set_icon_size(int value, Window owner)
+    public static void set_icon_size(int value)
     //**********************************************************
     {
         icon_size = value;
-        set_int(value,String_constants.ICON_SIZE, owner);
+        set_int(value,String_constants.ICON_SIZE);
     }
 
     //**********************************************************
-    public static int get_column_width(Window owner)
+    public static int get_column_width()
     //**********************************************************
     {
         if (column_width > 0) return column_width;
-        column_width = get_int(String_constants.COLUMN_WIDTH, Virtual_landscape.MIN_COLUMN_WIDTH,owner);
+        column_width = get_int(String_constants.COLUMN_WIDTH, Virtual_landscape.MIN_COLUMN_WIDTH);
         return column_width;
     }
 
     //**********************************************************
-    public static void set_column_width(int l, Window owner)
+    public static void set_column_width(int l)
     //**********************************************************
     {
         column_width = l;
-        set_int(l,String_constants.COLUMN_WIDTH, owner);
+        set_int(l,String_constants.COLUMN_WIDTH);
     }
 
     //**********************************************************
-    public static int get_animated_gif_duration_for_a_video(Window owner)
+    public static int get_animated_gif_duration_for_a_video()
     //**********************************************************
     {
         if (video_length > 0) return video_length;
         // first time, we look it up on disk
-        video_length = get_int(String_constants.VIDEO_SAMPLE_LENGTH,DEFAULT_VIDEO_LENGTH,owner);
+        video_length = get_int(String_constants.VIDEO_SAMPLE_LENGTH,DEFAULT_VIDEO_LENGTH);
         return video_length;
     }
 
     //**********************************************************
-    public static void set_animated_gif_duration_for_a_video(int l,Window owner)
+    public static void set_animated_gif_duration_for_a_video(int l)
     //**********************************************************
     {
         video_length = l;
-        set_int(l,String_constants.VIDEO_SAMPLE_LENGTH, owner);
+        set_int(l,String_constants.VIDEO_SAMPLE_LENGTH);
     }
 
 
     private static int cache_files_max_life_in_days;
 
     //**********************************************************
-    public static int get_cache_files_max_life_in_days(Window owner)
+    public static int get_cache_files_max_life_in_days()
     //**********************************************************
     {
         if (cache_files_max_life_in_days > 0) return cache_files_max_life_in_days;
         // first time, we look it up on disk
-        cache_files_max_life_in_days = get_int(String_constants.CACHE_FILE_MAX_LIFE,DEFAULT_CACHE_FILE_MAX_LIFE,owner);
+        cache_files_max_life_in_days = get_int(String_constants.CACHE_FILE_MAX_LIFE,DEFAULT_CACHE_FILE_MAX_LIFE);
         return cache_files_max_life_in_days;
     }
 
     //**********************************************************
-    public static void set_cache_files_max_life_in_days(int l,Window owner)
+    public static void set_cache_files_max_life_in_days(int l)
     //**********************************************************
     {
         cache_files_max_life_in_days = l;
-        set_int(l,String_constants.CACHE_FILE_MAX_LIFE, owner);
+        set_int(l,String_constants.CACHE_FILE_MAX_LIFE);
     }
 
 
     //**********************************************************
     public static Integer get_int(
             String ID,
-            Integer default_value,
-            Window owner)
+            Integer default_value)
     //**********************************************************
     {
         // first time, we look it up on disk
@@ -152,7 +151,7 @@ public class Non_booleans_properties
     }
 
     //**********************************************************
-    public static void set_int(int val, String ID, Window owner)
+    public static void set_int(int val, String ID)
     //**********************************************************
     {
         Shared_services.main_properties().set_and_save(ID, String.valueOf(val));
@@ -161,8 +160,7 @@ public class Non_booleans_properties
     //**********************************************************
     public static Double get_double(
             String ID,
-            Double default_value,
-            Window owner)
+            Double default_value)
     //**********************************************************
     {
         Double returned;
@@ -194,7 +192,7 @@ public class Non_booleans_properties
 
 
     //**********************************************************
-    public static Rectangle2D get_window_bounds(String key, Window owner)
+    public static Rectangle2D get_window_bounds(String key)
     //**********************************************************
     {
         File_storage pm = Shared_services.main_properties();
@@ -358,61 +356,61 @@ public class Non_booleans_properties
 */
 
     //**********************************************************
-    public static int get_folder_icon_size(Window owner)
+    public static int get_folder_icon_size()
     //**********************************************************
     {
         if (folder_icon_size > 0) return folder_icon_size;
-        folder_icon_size = get_int(String_constants.FOLDER_ICON_SIZE,DEFAULT_FOLDER_ICON_SIZE,owner);
+        folder_icon_size = get_int(String_constants.FOLDER_ICON_SIZE,DEFAULT_FOLDER_ICON_SIZE);
         return folder_icon_size;
     }
 
 
 
     //**********************************************************
-    public static void set_cache_size_limit_warning_megabytes_fx(int warning_megabytes, Window owner)
+    public static void set_cache_size_limit_warning_megabytes_fx(int warning_megabytes)
     //**********************************************************
     {
         Shared_services.main_properties().set_and_save(String_constants.DISK_CACHE_SIZE_WARNING_MEGABYTES, String.valueOf(warning_megabytes));
     }
 
     //**********************************************************
-    public static int get_folder_warning_size(Window owner)
+    public static int get_folder_warning_size()
     //**********************************************************
     {
-        return get_int(String_constants.DISK_CACHE_SIZE_WARNING_MEGABYTES,DEFAULT_SIZE_WARNING_MEGABYTES,owner);
+        return get_int(String_constants.DISK_CACHE_SIZE_WARNING_MEGABYTES,DEFAULT_SIZE_WARNING_MEGABYTES);
     }
 
     //**********************************************************
-    public static void set_folder_icon_size(int value, Window owner)
+    public static void set_folder_icon_size(int value)
     //**********************************************************
     {
         folder_icon_size = value;
-        set_int(value,String_constants.FOLDER_ICON_SIZE,owner);
+        set_int(value,String_constants.FOLDER_ICON_SIZE);
     }
 
 
 
     //**********************************************************
-    public static int get_font_size(Window owner,Logger logger)
+    public static int get_font_size()
     //**********************************************************
     {
         if (font_size_cache > 0) return font_size_cache;
-        font_size_cache = get_int(String_constants.FONT_SIZE,16,owner);
+        font_size_cache = get_int(String_constants.FONT_SIZE,16);
         return font_size_cache;
     }
 
 
     //**********************************************************
-    public static void set_font_size(int value, Window owner)
+    public static void set_font_size(int value)
     //**********************************************************
     {
         font_size_cache = value;
-        set_int(value,String_constants.FONT_SIZE,owner);
+        set_int(value,String_constants.FONT_SIZE);
     }
 
 
     //**********************************************************
-    public static String get_language_key(Window owner)
+    public static String get_language_key()
     //**********************************************************
     {
         String s = Shared_services.main_properties().get(String_constants.LANGUAGE_KEY);
@@ -426,7 +424,7 @@ public class Non_booleans_properties
 
 
     //**********************************************************
-    public static void force_reload_from_disk(Window owner)
+    public static void force_reload_from_disk()
     //**********************************************************
     {
         Shared_services.main_properties().reload_from_disk();
@@ -434,21 +432,21 @@ public class Non_booleans_properties
 
 
     //**********************************************************
-    public static void save_java_VM_max_RAM(int value, Window owner, Logger logger)
+    public static void save_java_VM_max_RAM(int value, Kontext context)
     //**********************************************************
     {
-        File_storage_using_Properties f = new File_storage_using_Properties(String_constants.PURPOSE, String_constants.RAM_FILENAME,true,owner,new Aborter("ram", logger), logger);
+        File_storage_using_Properties f = new File_storage_using_Properties(String_constants.PURPOSE, String_constants.RAM_FILENAME,true, context);
         f.set_and_save(String_constants.JAVA_VM_MAX_RAM, "" + value);
     }
     //**********************************************************
-    public static int get_java_VM_max_RAM(Window owner, Logger logger)
+    public static int get_java_VM_max_RAM(Kontext context)
     //**********************************************************
     {
-        File_storage_using_Properties f = new File_storage_using_Properties(String_constants.PURPOSE, String_constants.RAM_FILENAME, true, owner,new Aborter("ram", logger), logger);
+        File_storage_using_Properties f = new File_storage_using_Properties(String_constants.PURPOSE, String_constants.RAM_FILENAME, true, context);
         String s = f.get(String_constants.JAVA_VM_MAX_RAM);
         if (s == null)
         {
-            logger.log("warning, no java VM max RAM found, defaulting to 1 GBytes");
+            context.log("warning, no java VM max RAM found, defaulting to 1 GBytes");
             return 1; // default to 1 GBytes
         }
 
@@ -458,7 +456,7 @@ public class Non_booleans_properties
         }
         catch (NumberFormatException e)
         {
-            logger.log("WARNING: cannot parse volume->" + s + "<-");
+            context.log("WARNING: cannot parse volume->" + s + "<-");
             return 1;
         }
         return value;

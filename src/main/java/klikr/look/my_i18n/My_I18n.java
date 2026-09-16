@@ -7,6 +7,7 @@ import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Feature_cache;
+import klikr.util.Kontext;
 import klikr.util.execute.Application_jar;
 import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
@@ -32,7 +33,7 @@ public class My_I18n
 
     //**********************************************************
     // must return the key if not found in resources
-    public static String get_I18n_string(String key, Window owner, Logger logger)
+    public static String get_I18n_string(String key, Kontext context)
     //**********************************************************
     {
         if (instance == null)
@@ -40,11 +41,11 @@ public class My_I18n
             synchronized (My_I18n.class) {
                 if (instance == null)
                 {
-                    String language_key = Non_booleans_properties.get_language_key(owner);
+                    String language_key = Non_booleans_properties.get_language_key();
                     //logger.log(Stack_trace_getter.get_stack_trace("My_I18n instance is null, rebuilding for "+language_key));
                     Language language = Language.valueOf(language_key);
                     Locale locale = language.get_locale();
-                    instance = new My_I18n(language, locale, logger);
+                    instance = new My_I18n(language, locale, context);
                 }
             }
 
@@ -53,20 +54,20 @@ public class My_I18n
         {
             return key;
         }
-        String returned = instance.get_I18n_string_internal(key,logger);
+        String returned = instance.get_I18n_string_internal(key,context);
         if ( returned == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->"+key+"<- not found"));
+            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->"+key+"<- not found"));
             return key;
         }
-        if ( dbg) logger.log(Logger.ok+" OK My_I18n ->"+key+"<- was found for "+instance.language.name()+" : ->"+returned+"<-");
+        if ( dbg) context.log(Logger.ok+" OK My_I18n ->"+key+"<- was found for "+instance.language.name()+" : ->"+returned+"<-");
         return returned;
     }
 
 
 
     //**********************************************************
-    private String get_I18n_string_internal(String key, Logger logger)
+    private String get_I18n_string_internal(String key, Kontext context)
     //**********************************************************
     {
         try
@@ -86,17 +87,17 @@ public class My_I18n
         {
             if ( key.endsWith("_Explanation"))
             {
-                if (dbg) logger.log(("WARNING My_I18n ->" + key + "<- not found"));
+                if (dbg) context.log(("WARNING My_I18n ->" + key + "<- not found"));
             }
             else
             {
-                logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->" + key + "<- not found"));
+                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->" + key + "<- not found"));
             }
             if ( ultra_dbg) {
-                logger.log("the resource bundle contains these keys:");
+                context.log("the resource bundle contains these keys:");
                 Enumeration<String> es = the_resource_bundle.getKeys();
                 while (es.hasMoreElements()) {
-                    logger.log("->" + es.nextElement() + "<-");
+                    context.log("->" + es.nextElement() + "<-");
                 }
             }
             return key;
@@ -104,7 +105,7 @@ public class My_I18n
     }
 
     //**********************************************************
-    private My_I18n(Language language, Locale locale, Logger logger)
+    private My_I18n(Language language, Locale locale, Kontext context)
     //**********************************************************
     {
         if ( dbg) {
@@ -132,45 +133,45 @@ public class My_I18n
         }
         catch(Exception e)
         {
-            logger.log(Logger.warning+" WARNING: method1 failed to load language resource : "+e+"\n    ...will try another way ");
+            context.log(Logger.warning+" WARNING: method1 failed to load language resource : "+e+"\n    ...will try another way ");
 
             // this method works with jbang
             try {
                 String name = "languages/MessagesBundle" + "_" + locale.getLanguage() + "_" + locale.getCountry()+".properties";
-                if ( dbg) logger.log(Logger.ok+" trying get_jar_InputStream_by_name with name : "+name);
+                if ( dbg) context.log(Logger.ok+" trying get_jar_InputStream_by_name with name : "+name);
 
                 InputStream is = Application_jar.get_jar_InputStream_by_name(name);
                 the_resource_bundle = new PropertyResourceBundle(is);
-                if ( dbg) logger.log(Logger.ok+" method2 succeeded loading language resource  : "+name);
+                if ( dbg) context.log(Logger.ok+" method2 succeeded loading language resource  : "+name);
            }
             catch (Exception e2)
             {
-                logger.log("method2 failed to load language resource  : "+e2);
+                context.log("method2 failed to load language resource  : "+e2);
             }
         }
         if ( the_resource_bundle == null)
         {
-            logger.log(Logger.error+"BAD WARNING failed to load language resource: "+locale);
+            context.log(Logger.error+"BAD WARNING failed to load language resource: "+locale);
             return;
         }
         if ( dbg)
         {
-            logger.log(Logger.ok+" OK, language resource found for "+locale);
+            context.log(Logger.ok+" OK, language resource found for "+locale);
             Enumeration<String> x = the_resource_bundle.getKeys();
             while ( x.hasMoreElements())
             {
                 String k = x.nextElement();
-                logger.log(k + " ==> " + the_resource_bundle.getString(k));
+                context.log(k + " ==> " + the_resource_bundle.getString(k));
             }
         }
    }
 
     //**********************************************************
-    public static void set_new_language(Language language, Window owner,Logger logger)
+    public static void set_new_language(Language language, Kontext context)
     //**********************************************************
     {
         instance = null;
-        Feature_cache.update_string(String_constants.LANGUAGE_KEY,language.name(),owner,logger);
+        Feature_cache.update_string(String_constants.LANGUAGE_KEY,language.name(),context);
     }
 
     //**********************************************************

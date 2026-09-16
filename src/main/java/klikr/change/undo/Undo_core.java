@@ -5,6 +5,7 @@ package klikr.change.undo;
 
 import javafx.stage.Window;
 import klikr.settings.*;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.change.active_list_stage.Datetime_to_signature_source;
 import klikr.look.my_i18n.My_I18n;
@@ -24,22 +25,20 @@ public class Undo_core implements Datetime_to_signature_source
 //**********************************************************
 {
     private final static boolean dbg = false;
-    private final Logger logger;
+    private final Kontext context;
     static final boolean ultra_dbg = false;
     private static final String key_base = "undo_item_"; // name of items about this in properties file
     public static final String HOW_MANY = "_how_many";
     private static File_storage properties;
-    private final Window owner;
-    
+
     //**********************************************************
-    public Undo_core(String undo_filename, Window owner, Logger logger)
+    public Undo_core(String undo_filename, Kontext context)
     //**********************************************************
     {
-        this.owner = owner;
-        this.logger  = logger;
-        properties = new File_storage_using_Properties("Undo DB", undo_filename, true, owner, Shared_services.aborter(), logger);
+        this.context = context;
+        properties = new File_storage_using_Properties("Undo DB", undo_filename, true, context);
         List<Undo_item> l = read_all_undo_items_from_disk();
-        if (dbg) logger.log("undo store "+l.size()+" items loaded from "+undo_filename);
+        if (dbg) context.log("undo store "+l.size()+" items loaded from "+undo_filename);
     }
 
 
@@ -53,7 +52,7 @@ public class Undo_core implements Datetime_to_signature_source
             Old_and_new_Path r = e.reverse_for_restore();
             if ( r.old_Path == null)
             {
-                logger.log("nope, cannot undo this : "+r.to_string());
+                context.log("nope, cannot undo this : "+r.to_string());
                 continue;
             }
             if ( Files.exists(r.old_Path))
@@ -62,7 +61,7 @@ public class Undo_core implements Datetime_to_signature_source
             }
             else
             {
-                logger.log("\n\n\nIGNORED: this undo item is now invalid, as the source file is not where mentioned in the record... it was probably moved since?\n\n\n");
+                context.log("\n\n\nIGNORED: this undo item is now invalid, as the source file is not where mentioned in the record... it was probably moved since?\n\n\n");
             }
         }
         if ( valid == 0) return false;
@@ -90,7 +89,7 @@ public class Undo_core implements Datetime_to_signature_source
     public Map<String, Undo_item> get_signature_to_undo_item_map()
     //**********************************************************
     {
-        if ( dbg) logger.log("reading undo items from disk");
+        if ( dbg) context.log("reading undo items from disk");
         Map<String, Undo_item> returned = new HashMap<>();
         List<Undo_item> ll = read_all_undo_items_from_disk();
         for ( Undo_item ui: ll)
@@ -107,7 +106,7 @@ public class Undo_core implements Datetime_to_signature_source
     public void add(Undo_item ui)
     //**********************************************************
     {
-        if ( dbg) logger.log("Undo_core add:"+ui.to_string());
+        if ( dbg) context.log("Undo_core add:"+ui.to_string());
         write_one_undo_item_to_disk(ui);
     }
 
@@ -137,26 +136,26 @@ public class Undo_core implements Datetime_to_signature_source
         return key_base+index+ HOW_MANY;
     }
     //**********************************************************
-    private static UUID extract_index(String s, Logger logger)
+    private static UUID extract_index(String s, Kontext context)
     //**********************************************************
     {
         UUID returned;
-        if ( ultra_dbg) logger.log("extract_index from:->"+s+"<-");
+        if ( ultra_dbg) context.log("extract_index from:->"+s+"<-");
         String ii = s.substring(s.indexOf(key_base)+key_base.length());
-        if ( ultra_dbg) logger.log("extract_index from:"+ii);
+        if ( ultra_dbg) context.log("extract_index from:"+ii);
         ii = ii.substring(0,ii.indexOf(HOW_MANY));
-        if ( ultra_dbg) logger.log("extract_index from:"+ii);
+        if ( ultra_dbg) context.log("extract_index from:"+ii);
         returned = UUID.fromString(ii);
-        if ( ultra_dbg) logger.log("extract_index :"+returned);
+        if ( ultra_dbg) context.log("extract_index :"+returned);
         return returned;
     }
 
     //**********************************************************
-    public void remove_all_undo_items_from_property_file(Window owner)
+    public void remove_all_undo_items_from_property_file()
     //**********************************************************
     {
-        String s1 = My_I18n.get_I18n_string("Warning_delete_undo", owner,logger);
-        if (!Popups.popup_ask_for_confirmation(Logger.warning+" "+ s1, "", owner,logger)) return;
+        String s1 = My_I18n.get_I18n_string("Warning_delete_undo", context);
+        if (!Popups.popup_ask_for_confirmation(Logger.warning+" "+ s1, "", context)) return;
 
         List<String> set = properties.get_all_keys();
 
@@ -166,15 +165,15 @@ public class Undo_core implements Datetime_to_signature_source
             if ( !k.startsWith(key_base)) continue;
             if (!k.endsWith(HOW_MANY)) continue;
 
-            UUID index = extract_index(k,logger);
+            UUID index = extract_index(k,context);
             int number_of_oan = Integer.parseInt(properties.get(k));
-            if ( dbg) logger.log("\nremove_all_undo_items_from_property_file index = "+index+" has "+number_of_oan+ " oans");
+            if ( dbg) context.log("\nremove_all_undo_items_from_property_file index = "+index+" has "+number_of_oan+ " oans");
             {
                 String key = generate_key_for_datetime(index);
                 String new_path_string = properties.get(key);
                 if ( new_path_string != null)
                 {
-                    if ( dbg) logger.log("removed: "+key);
+                    if ( dbg) context.log("removed: "+key);
                     properties.remove(key);
                 }
             }
@@ -183,7 +182,7 @@ public class Undo_core implements Datetime_to_signature_source
                 String new_path_string = properties.get(key);
                 if ( new_path_string != null)
                 {
-                    if ( dbg) logger.log("removed: "+key);
+                    if ( dbg) context.log("removed: "+key);
                     properties.remove(key);
                 }
             }
@@ -194,7 +193,7 @@ public class Undo_core implements Datetime_to_signature_source
                     String old_path_string = properties.get(key);
                     if (old_path_string != null)
                     {
-                        if ( dbg) logger.log("removed: "+key);
+                        if ( dbg) context.log("removed: "+key);
                         properties.remove(key);
                     }
                 }
@@ -203,7 +202,7 @@ public class Undo_core implements Datetime_to_signature_source
                     String new_path_string = properties.get(key);
                     if ( new_path_string != null)
                     {
-                        if ( dbg) logger.log("removed: "+key);
+                        if ( dbg) context.log("removed: "+key);
                         properties.remove(key);
                     }
                 }
@@ -217,7 +216,7 @@ public class Undo_core implements Datetime_to_signature_source
     public List<Undo_item> read_all_undo_items_from_disk()
     //**********************************************************
     {
-        if ( dbg) logger.log(("Undo_core READ"));
+        if ( dbg) context.log(("Undo_core READ"));
         Command cmd = Command.command_move;
         Status stt = Status.move_done;
 
@@ -228,13 +227,13 @@ public class Undo_core implements Datetime_to_signature_source
             if ( !k.startsWith(key_base)) continue;
             if (k.endsWith(HOW_MANY))
             {
-                UUID index = extract_index(k,logger);
+                UUID index = extract_index(k,context);
                 int number_of_oan = Integer.parseInt(properties.get(k));
-                if ( dbg) logger.log("      undo item, index = "+index+" has "+number_of_oan+ " oans");
+                if ( dbg) context.log("      undo item, index = "+index+" has "+number_of_oan+ " oans");
                 String datetime_string = properties.get(generate_key_for_datetime(index));
                 if ( datetime_string == null)
                 {
-                    logger.log("WEIRD: datetime_string=null for: "+k);
+                    context.log("WEIRD: datetime_string=null for: "+k);
                     continue;
                 }
 
@@ -244,7 +243,7 @@ public class Undo_core implements Datetime_to_signature_source
                     String old_path_string = properties.get(generate_key_for_old_path(index,j));
                     if ( old_path_string == null)
                     {
-                        logger.log("WEIRD: old_path_string=null with "+j);
+                        context.log("WEIRD: old_path_string=null with "+j);
                         continue;
                     }
                     String new_path_string = properties.get(generate_key_for_new_path(index,j));
@@ -257,8 +256,8 @@ public class Undo_core implements Datetime_to_signature_source
                         l.add(new Old_and_new_Path(Path.of(old_path_string), Path.of(new_path_string), cmd, stt,false));
                     }
                 }
-                Undo_item undo_item = new Undo_item(l,LocalDateTime.parse(datetime_string),index,logger);
-                if ( dbg) logger.log("undo item:"+undo_item.to_string());
+                Undo_item undo_item = new Undo_item(l,LocalDateTime.parse(datetime_string),index,context);
+                if ( dbg) context.log("undo item:"+undo_item.to_string());
                 returned.add(undo_item);
             }
         }
@@ -273,7 +272,7 @@ public class Undo_core implements Datetime_to_signature_source
             boolean erase = Popups.popup_ask_for_confirmation(
                     "Undo list has "+returned.size()+" items!!!",
                     "Do you want to erase all items but the most recent "+target_remaining+"?",
-                    owner,logger);
+                    context);
             if ( erase)
             {
                 List<Undo_item> to_be_removed = new  ArrayList<>();
@@ -322,7 +321,7 @@ public class Undo_core implements Datetime_to_signature_source
             if ( LocalDateTime.now().isAfter(undo_item.time_stamp.plusDays(days)))
             {
                 to_be_removed.add(undo_item);
-                if ( dbg) logger.log("removing old UNDO item "+undo_item.to_string());
+                if ( dbg) context.log("removing old UNDO item "+undo_item.to_string());
                 if( returned.size()-to_be_removed.size() == remaining) return true;
             }
         }
@@ -337,30 +336,30 @@ public class Undo_core implements Datetime_to_signature_source
             String k = generate_key_for_how_many_oans(undo_item.index);
             String v = String.valueOf(undo_item.oans.size());
             properties.set(k, v);
-            if ( dbg) logger.log("       "+k+"="+v);
+            if ( dbg) context.log("       "+k+"="+v);
         }
         {
             String k = generate_key_for_datetime(undo_item.index);
             String v = undo_item.time_stamp.toString();
             properties.set(k, v);
-            if ( dbg)  logger.log("       "+k+"="+v);
+            if ( dbg)  context.log("       "+k+"="+v);
         }
         int j = 0;
-        if ( dbg) logger.log("Undo_core WRITE "+undo_item.time_stamp.toString()+" number of oans: "+undo_item.oans.size());
+        if ( dbg) context.log("Undo_core WRITE "+undo_item.time_stamp.toString()+" number of oans: "+undo_item.oans.size());
         for (Old_and_new_Path oan : undo_item.oans)
         {
             {
                 String key_for_old_path = generate_key_for_old_path(undo_item.index, j);
                 String string_for_old_path = oan.old_Path.toAbsolutePath().toString();
                 properties.set(key_for_old_path, string_for_old_path);
-                if ( dbg) logger.log("       "+key_for_old_path+"="+string_for_old_path);
+                if ( dbg) context.log("       "+key_for_old_path+"="+string_for_old_path);
             }
             if ( oan.new_Path != null)
             {
                 String key_for_new_path = generate_key_for_new_path(undo_item.index, j);
                 String string_for_new_path = oan.new_Path.toAbsolutePath().toString();
                 properties.set(key_for_new_path, string_for_new_path);
-                if ( dbg) logger.log("       "+key_for_new_path+"="+string_for_new_path);
+                if ( dbg) context.log("       "+key_for_new_path+"="+string_for_new_path);
             }
             j++;
         }
@@ -372,17 +371,17 @@ public class Undo_core implements Datetime_to_signature_source
     public void remove_undo_item(Undo_item undo_item, boolean and_save)
     //**********************************************************
     {
-        if ( dbg) logger.log("Undo_core REMOVE:"+undo_item.to_string());
+        if ( dbg) context.log("Undo_core REMOVE:"+undo_item.to_string());
         UUID index = undo_item.index;
         {
             String key = generate_key_for_how_many_oans(index);
             properties.remove(key);
-             if ( dbg) logger.log("removed "+key+" from properties");
+             if ( dbg) context.log("removed "+key+" from properties");
         }
         {
             String key = generate_key_for_datetime(index);
             properties.remove(key);
-            if ( dbg) logger.log("removed "+key+" from properties");
+            if ( dbg) context.log("removed "+key+" from properties");
         }
         int j = 0;
         for (Old_and_new_Path oan : undo_item.oans)
@@ -390,12 +389,12 @@ public class Undo_core implements Datetime_to_signature_source
             {
                 String key_for_old_path = generate_key_for_old_path(index, j);
                 properties.remove(key_for_old_path);
-                if ( dbg) logger.log("removed "+key_for_old_path+" from properties");
+                if ( dbg) context.log("removed "+key_for_old_path+" from properties");
             }
             {
                 String key_for_new_path = generate_key_for_new_path(index, j);
                 properties.remove(key_for_new_path);
-                if ( dbg) logger.log("removed "+key_for_new_path+" from properties");
+                if ( dbg) context.log("removed "+key_for_new_path+" from properties");
             }
             j++;
         }

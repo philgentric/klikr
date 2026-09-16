@@ -2,6 +2,7 @@ package klikr.javalin.boolean_preferences;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.util.log.Logger;
 
@@ -16,11 +17,12 @@ public class Test_boolean_preferences extends Application {
         // Initialize Shared_services - required for Feature_cache and My_I18n to work
         Shared_services.init("Boolean Preferences Test", primaryStage);
         Logger logger = Shared_services.logger();
+        Kontext context = new Kontext(primaryStage,null,logger);
 
         logger.log("Starting Boolean Preferences Test Application");
 
         // Show the boolean preferences UI
-        Javalin_boolean_preferences.show(this, logger);
+        Javalin_boolean_preferences.show(this, context);
 
         // Keep the JavaFX application running
         primaryStage.setTitle("Boolean Preferences Test");

@@ -8,20 +8,17 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import javafx.stage.Window;
-import klikr.browser_core.icons.image_properties_cache.Rotation;
-import klikr.util.execute.actor.Aborter;
+import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
+import klikr.util.Kontext;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Optional;
 
 //**********************************************************
 public class Fast_rotation_from_exif_metadata_extractor
@@ -30,26 +27,26 @@ public class Fast_rotation_from_exif_metadata_extractor
     public static final boolean dbg = false;
 
     //**********************************************************
-    public static Rotation get_rotation(Path path, boolean report_if_not_found, Window owner, Aborter aborter, Logger logger)
+    public static Rotation get_rotation(Path path, boolean report_if_not_found, Kontext context)
     //**********************************************************
     {
 
-        if (Check_remaining_RAM.RAM_running_low("Image rotation extraction", owner, logger)) {
-            logger.log("get_rotation NOT DONE because running low on memory ! ");
+        if (Check_remaining_RAM.RAM_running_low("Image rotation extraction", context)) {
+            context.log("get_rotation NOT DONE because running low on memory ! ");
             return null;
         }
 
-        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, aborter, logger);
+        InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if (is == null) {
-            logger.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
+            context.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
             return null;
         }
 
-        return get_rotation_from_InputStream(is,path,logger);
+        return get_rotation_from_InputStream(is,path,context);
     }
 
     //**********************************************************
-    public static Rotation get_rotation_from_InputStream(InputStream is, Path path, Logger logger)
+    public static Rotation get_rotation_from_InputStream(InputStream is, Path path, Kontext context)
     //**********************************************************
     {
         try
@@ -93,12 +90,12 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e));
+                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e));
             }
             if ( e.toString().contains("File format could not be determined"))
             {
-                logger.log("Warning:"+e);
+                context.log("Warning:"+e);
                 return null;
             }
         }
@@ -106,16 +103,16 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e));
+                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath()));
+                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e));
             }
         }
         catch (Exception e)
         {
             if ( dbg)
             {
-                if ( path != null) logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else logger.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e));
+                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e));
             }
         }
 

@@ -8,6 +8,7 @@ import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
+import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.net.URL;
@@ -18,9 +19,9 @@ public class Look_and_feel_light extends Look_and_feel
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.light;}
 
-    public Look_and_feel_light(Window owner, Logger logger_)
+    public Look_and_feel_light(Logger logger)
     {
-        super("Light",owner,logger_);
+        super("Light",logger);
     }
 
     @Override
@@ -29,7 +30,7 @@ public class Look_and_feel_light extends Look_and_feel
     }
 
     @Override
-    public URL get_CSS_URL(Window owner) {
+    public URL get_CSS_URL() {
         return Jar_utils.get_URL_by_name("css/light.css");
     }
 

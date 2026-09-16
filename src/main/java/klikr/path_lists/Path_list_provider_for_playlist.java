@@ -3,11 +3,11 @@
 
 package klikr.path_lists;
 
-import javafx.stage.Window;
-import klikr.browser_core.virtual_landscape.Image_found;
+import klikr.browsers.browser_core.virtual_landscape.Image_found;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Booleans;
 import klikr.util.External_application;
+import klikr.util.Kontext;
 import klikr.util.execute.Execute_command;
 import klikr.util.execute.Execute_result;
 import klikr.util.execute.actor.Aborter;
@@ -40,8 +40,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
 
     public final Path the_playlist_file_path;
 
-    public final Logger logger;
-    private final Window owner;
+    public final Kontext context;
     private final Change_broadcaster change_broadcaster;
 
     // cached:
@@ -52,17 +51,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     //**********************************************************
     public Path_list_provider_for_playlist(
             Path the_playlist_file_path,
-            Window owner,
-            Aborter aborter,
-            Logger logger)
+            Kontext context)
     //**********************************************************
     {
-        this.logger = logger;
-        change_broadcaster = new Change_broadcaster(logger);
-        this.owner = owner;
+        this.context = context;
+        change_broadcaster = new Change_broadcaster(context.logger());
         this.the_playlist_file_path = the_playlist_file_path;
         this.key = the_playlist_file_path.toAbsolutePath().normalize().toString();
-        reload("constructor",aborter);
+        reload("constructor", context.aborter());
     }
 
 
@@ -120,14 +116,14 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_folders)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
                     returned++;
                     continue;
                 }
             }
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned++;
         }
@@ -147,7 +143,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if ( (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -163,10 +159,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         for ( String s : paths)
         {
             if ( (new File(s)).isDirectory()) continue;
-            if( !Guess_file_type.is_this_path_extension_a_music(Path.of(s),logger)) continue;
+            if( !Guess_file_type.is_this_path_extension_a_music(Path.of(s), context.logger())) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -182,10 +178,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         for ( String s : paths)
         {
             if ( (new File(s)).isDirectory()) continue;
-            if( !Guess_file_type.is_this_path_extension_an_image(Path.of(s),owner,logger)) continue;
+            if( !Guess_file_type.is_this_path_extension_an_image(Path.of(s),context)) continue;
             if (! consider_also_hidden_files)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -205,7 +201,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             if ( ! (new File(s)).isDirectory()) continue;
             if (! consider_also_hidden_folders)
             {
-                if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
             }
             returned.add(Path.of(s));
         }
@@ -227,19 +223,19 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         try {
             Files.delete(the_playlist_file_path);
             Files.write(the_playlist_file_path,paths,java.nio.charset.StandardCharsets.UTF_8, StandardOpenOption.CREATE);
-            logger.log("Playlist saved :"+the_playlist_file_path);
+            context.log("Playlist saved :"+the_playlist_file_path);
             if ( dbg)
             {
-                logger.log("####### Playlist AFTER SAVE:");
+                context.log("####### Playlist AFTER SAVE:");
                 List<String> lines = Files.readAllLines(the_playlist_file_path, StandardCharsets.UTF_8);
                 for (String s : lines) {
-                    logger.log(s);
+                    context.log(s);
                 }
-                logger.log("##########################");
+                context.log("##########################");
             }
         }
         catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
 
     }
@@ -258,17 +254,17 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     {
         Move_provider move_provider = new Move_provider() {
             @Override
-            public void move(Path destination, boolean destination_is_trash, List<File> the_list, Window owner, double x, double y, Aborter aborter, Logger logger) {
+            public void move(Path destination, boolean destination_is_trash, List<File> the_list, Kontext context) {
 
-                logger.log("Entering move() for Path_list_provider_for_playlist "+the_list.size());
+                context.log("Entering move() for Path_list_provider_for_playlist "+the_list.size());
                 List<String> the_list2 = new ArrayList<>();
                 for (File f : the_list) {
                     the_list2.add(f.getAbsolutePath());
                 }
-                user_wants_to_add_items(the_list2, aborter);
+                user_wants_to_add_items(the_list2, context.aborter());
 
                 save();
-                report_change(owner);
+                report_change();
 
             }
         };
@@ -289,25 +285,25 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             List<String> oks = new ArrayList<>();
             for (String path_s : the_list_of_new_items)
             {
-                logger.log(" looking at "+path_s);
+                context.log(" looking at "+path_s);
                 if ( aborter.should_abort())
                 {
-                    logger.log(" ABORTING "+aborter.reason());
+                    context.log(" ABORTING "+aborter.reason());
                     return;
                 }
                 File f = new File(path_s);
                 if (f.isDirectory())
                 {
-                    logger.log(f+" is a directory");
+                    context.log(f+" is a directory");
                     load_folder(f, oks,to_be_renamed_first, aborter);
                 }
                 else
                 {
-                    sanitize(path_s,  oks,to_be_renamed_first,logger);
+                    sanitize(path_s,  oks,to_be_renamed_first, context);
                 }
             }
-            Moving_files.actual_safe_moves(to_be_renamed_first, true, owner, new Aborter("dummy",logger), logger);
-            logger.log(to_be_renamed_first.size()+ " files RENAMED to be accepted as possible songs");
+            Moving_files.actual_safe_moves(to_be_renamed_first, true, context);
+            context.log(to_be_renamed_first.size()+ " files RENAMED to be accepted as possible songs");
 
             String last = null;
             List<String> final_dest = new ArrayList<>();
@@ -319,7 +315,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
                 }
                 else
                 {
-                    logger.log(o.new_Path.toAbsolutePath().toString()+" not added = already there!");
+                    context.log(o.new_Path.toAbsolutePath().toString()+" not added = already there!");
                 }
                 last = o.new_Path.toAbsolutePath().toString();
             }
@@ -331,7 +327,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
                     last = f;
                 }
             }
-            logger.log(final_dest.size()+ " files accepted as possible songs");
+            context.log(final_dest.size()+ " files accepted as possible songs");
             paths.addAll(final_dest);
             if ( last != null)
             {
@@ -340,7 +336,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             }
             //update_playlist_size_info();
         };
-        Actor_engine.execute(r, "Adding multiple songs to playlist",logger);
+        Actor_engine.execute(r, "Adding multiple songs to playlist", context.logger());
 
     }
 
@@ -348,7 +344,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     private void load_folder(File folder, List<String> oks, List<Old_and_new_Path> out, Aborter aborter)
     //**********************************************************
     {
-        logger.log("Entering load_folder() for Path_list_provider_for_playlist");
+        context.log("Entering load_folder() for Path_list_provider_for_playlist");
         File[] files = folder.listFiles();
         if (files == null) return;
         for (File ff : files)
@@ -361,25 +357,25 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             }
             else
             {
-                sanitize(ff.getAbsolutePath(), oks, out,logger);
+                sanitize(ff.getAbsolutePath(), oks, out,context);
             }
         }
     }
 
     //**********************************************************
-    static void sanitize(String song, List<String> oks, List<Old_and_new_Path> out, Logger logger)
+    static void sanitize(String song, List<String> oks, List<Old_and_new_Path> out, Kontext context)
     //**********************************************************
     {
         if (!Guess_file_type.is_this_extension_an_audio(Extensions.get_extension((new File(song)).getName())))
         {
-            if ( dbg) logger.log(Logger.warning+" Rejected as a possible song due to extension: "+(new File(song)).getName());
+            if ( dbg) context.log(Logger.warning+" Rejected as a possible song due to extension: "+(new File(song)).getName());
             return;
         }
         String parent = (new File(song)).getParent();
         String file_name = (new File(song)).getName();
         String new_name = Extensions.get_base_name(file_name);
 
-        new_name = Filename_sanitizer.sanitize(new_name,logger);
+        new_name = Filename_sanitizer.sanitize(new_name,context);
 
         new_name = Extensions.add(new_name,Extensions.get_extension(file_name));
 
@@ -394,7 +390,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     }
 
     //**********************************************************
-    private void report_change(Window owner)
+    private void report_change()
     //**********************************************************
     {
         List<Old_and_new_Path> l = new ArrayList<>();
@@ -405,45 +401,45 @@ public class Path_list_provider_for_playlist implements Path_list_provider
                 Status.edition_done,
                 false);
         l.add(oanp);
-        Change_gang.report_changes(l,owner);
+        Change_gang.report_changes(l, context.owner());
     }
 
     //**********************************************************
     @Override
-    public void delete(Path path, Window owner, Aborter aborter, Logger logger)
+    public void delete(Path path, Kontext context)
     //**********************************************************
     {
-        logger.log("Path_list_provider_for_playlist.delete(): "+path.toAbsolutePath().toString());
+        context.log("Path_list_provider_for_playlist.delete(): "+path.toAbsolutePath().toString());
         //dump("paths before delete");
         if(paths.remove(path.toAbsolutePath().toString()))
         {
-            logger.log("Path_list_provider_for_playlist.delete() SUCCESS : "+path.toAbsolutePath().toString());
+            context.log("Path_list_provider_for_playlist.delete() SUCCESS : "+path.toAbsolutePath().toString());
         }
         else
         {
-            logger.log("Path_list_provider_for_playlist.delete() FAILED, no such path : "+path.toAbsolutePath().toString());
+            context.log("Path_list_provider_for_playlist.delete() FAILED, no such path : "+path.toAbsolutePath().toString());
         }
         //dump("paths after delete");
         save();
         //dump("paths after save");
-        report_change(owner);
+        report_change();
     }
 
     //**********************************************************
     private void dump(String msg)
     //**********************************************************
     {
-        logger.log("===== Path_list_provider_for_playlist.paths: "+msg+" =====");
+        context.log("===== Path_list_provider_for_playlist.paths: "+msg+" =====");
         for ( String s : paths)
         {
-            logger.log("   "+s);
+            context.log("   "+s);
         }
-        logger.log("=========================================");
+        context.log("=========================================");
     }
 
     //**********************************************************
     @Override
-    public void delete_multiple(List<Path> paths, Window owner, Aborter aborter, Logger logger)
+    public void delete_multiple(List<Path> paths, Kontext context)
     //**********************************************************
     {
         for ( Path p : paths)
@@ -451,31 +447,31 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             paths.remove(p.toAbsolutePath().toString());
         }
         save();
-        report_change(owner);
+        report_change();
     }
 
     //**********************************************************
     @Override
-    public void reload(String origin, Aborter aborter)
+    public void reload(String origin,  Aborter aborter)
     //**********************************************************
     {
-        logger.log("Path_list_provider_for_playlist.reload(), reason ="+origin);
+        context.log("Path_list_provider_for_playlist.reload(), reason ="+origin);
         if ( the_playlist_file_path == null)
         {
-            logger.log(Logger.error+"FATAL ERROR: the_playlist_file_path is null!");
+            context.log(Logger.error+"FATAL ERROR: the_playlist_file_path is null!");
             return;
         }
         try {
             List<String> ss = Files.readAllLines(the_playlist_file_path,StandardCharsets.UTF_8);
             for ( String s : ss)
             {
-                if ( aborter.should_abort()) return;
+                if ( context.should_abort()) return;
                 if ( !paths.contains(s))
                 {
                     // check if this a valid path
                     if ( !is_a_valid_path(s))
                     {
-                        logger.log("Path_list_provider_for_playlist.reload(): NOT adding "+s+ "(this is not a path)");
+                        context.log("Path_list_provider_for_playlist.reload(): NOT adding "+s+ "(this is not a path)");
                     }
                     else
                     {
@@ -486,10 +482,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         }
         catch (NoSuchFileException e)
         {
-            logger.log("No such file: "+ the_playlist_file_path);
+            context.log("No such file: "+ the_playlist_file_path);
         }
         catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
         }
         change_broadcaster.call_all_change_subscribers();
     }
@@ -526,7 +522,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_folders)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s), context.logger())) continue;
                 }
                 folders.add(Path.of(s));
             }
@@ -534,7 +530,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             {
                 if (! consider_also_hidden_files)
                 {
-                    if ( Guess_file_type.should_ignore(Path.of(s),logger)) continue;
+                    if ( Guess_file_type.should_ignore(Path.of(s),context.logger())) continue;
                 }
                 files.add(Path.of(s));
             }
@@ -548,10 +544,10 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     {
         // yt-dlp -x --audio-format aac --audio-quality 0 https://youtu.be/3DB-uJ0TxKQ
 
-        logger.log("going to extract audio tracks from URl:" + youtube_url);
+        context.log("going to extract audio tracks from URl:" + youtube_url);
 
         List<String> command_line_for_ytdlp = new ArrayList<>();
-        command_line_for_ytdlp.add(External_application.Ytdlp.get_command(owner,logger));
+        command_line_for_ytdlp.add(External_application.Ytdlp.get_command( context));
         command_line_for_ytdlp.add("-4");
         command_line_for_ytdlp.add("-x");
         command_line_for_ytdlp.add("--audio-format");
@@ -566,18 +562,18 @@ public class Path_list_provider_for_playlist implements Path_list_provider
         Path download_path = Paths.get(home,"Downloads");
         File folder = download_path.toFile();
         Execute_result res = Execute_command.execute_command_list(command_line_for_ytdlp, folder, 20 * 1000, sb,
-                logger);
+                context);
         if (!res.status()) {
             List<String> verif = new ArrayList<>();
-            verif.add(External_application.Ytdlp.get_command(owner,logger));
+            verif.add(External_application.Ytdlp.get_command( context));
             verif.add("--version");
-            Execute_result res2 = Execute_command.execute_command_list(verif, new File(home), 20 * 1000, null, logger);
+            Execute_result res2 = Execute_command.execute_command_list(verif, new File(home), 20 * 1000, null, context);
             if (!res2.status()) {
-                Booleans.manage_show_ytdlp_install_warning(owner, logger);
+                Booleans.manage_show_ytdlp_install_warning(context);
             }
             return;
         }
-        logger.log(sb.toString());
+        context.log(sb.toString());
 
         List<String> returned = new ArrayList<>();
         String detector = "[ExtractAudio] Destination:";
@@ -595,7 +591,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
     public void swap(String old_path, String new_path)
     // **********************************************************
     {
-        logger.log("Path_list_provider_for_playlist swapping old path: " + old_path + " new path: " + new_path);
+        context.log("Path_list_provider_for_playlist swapping old path: " + old_path + " new path: " + new_path);
         int i = paths.indexOf(old_path);
         if ( i == -1 )
         {

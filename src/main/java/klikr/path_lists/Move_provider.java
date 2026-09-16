@@ -4,6 +4,7 @@
 package klikr.path_lists;
 
 import javafx.stage.Window;
+import klikr.util.Kontext;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
 
@@ -16,5 +17,5 @@ public interface Move_provider {
             Path destination, // a folder or a playlist-file
             boolean destination_is_trash,
             List<File> the_list,
-            Window owner, double x, double y, Aborter aborter, Logger logger);
+            Kontext context);
 }
