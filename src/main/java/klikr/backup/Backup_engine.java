@@ -101,6 +101,9 @@ public class Backup_engine
         stats.source_byte_count = sizes.bytes();
         context_with_dedicated_aborter.log("monitoring starts");
         Runnable monitoring = () -> {
+
+            context_with_dedicated_aborter.log("monitoring thread CALLED");
+
             if (context_with_dedicated_aborter.should_abort())
             {
                 context_with_dedicated_aborter.log("backup engine = ABORT");
@@ -114,7 +117,6 @@ public class Backup_engine
             if ( done_dirs == 0)
             {
                 context_with_dedicated_aborter.log("backup engine = nothing done");
-                return;
             }
             double target_dirs = stats.target_dir_count.doubleValue();
              context_with_dedicated_aborter.log("backup engine, target_dirs ="+target_dirs);

@@ -132,6 +132,7 @@ public abstract class Abstract_browser implements
         if (window_builder.rectangle != null)
         {
             x = window_builder.rectangle.getMinX();
+            context.log("Klikr Rectangle MinX=" + x);
             y = window_builder.rectangle.getMinY();
             width = window_builder.rectangle.getWidth();
             height = window_builder.rectangle.getHeight();

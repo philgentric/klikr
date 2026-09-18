@@ -33,13 +33,13 @@ public record Kontext(Window owner, Aborter aborter, Logger logger)
     public double getX()
     {
         if ( owner == null ) return 0;
-        return owner.getX()+100;
+        return owner.getX();
     }
 
     public double getY()
     {
         if ( owner == null ) return 0;
-        return owner.getY()+100;
+        return owner.getY();
     }
 
     public void abort(String s)
