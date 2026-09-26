@@ -274,7 +274,7 @@ public class The_audio_player implements Media_callbacks
     {
         if ( song == null )
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+" FATAL: song == null"));
+            context.log_with_stack_trace(Logger.error+" FATAL: song == null");
             return;
         }
 

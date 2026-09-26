@@ -23,7 +23,6 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Popups;
 
 import java.io.*;
@@ -88,13 +87,13 @@ public class Full_image_from_disk
             /* when the file system is under strain, this can fail, reporting "file not found", but the file is there */
             if (Files.isDirectory(original_image_file))
             {
-                context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN (try to file-open a directory!) get_image_InputStream:"+e));
+                context.log_with_stack_trace_from_throwable("SHOULD NOT HAPPEN (try to file-open a directory!) get_image_InputStream:",e);
                 return null;
             }
-            //context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            //context.log_with_stack_trace(e.toString()));
             if ( report_if_not_found)
             {
-                context.log(Stack_trace_getter.get_stack_trace("get_image_InputStream:"+e));
+                context.log_with_stack_trace_from_throwable("get_image_InputStream:",e);
             }
             return null;
         }
@@ -206,20 +205,19 @@ public class Full_image_from_disk
         catch (OutOfMemoryError e)
         {
             Check_remaining_RAM.RAM_running_low(""+e,context);
-            context.log("OutOfMemoryError when loading image from disk: "+original_image_file.toAbsolutePath()+" : "+e);
+            context.log_with_stack_trace_from_throwable("OutOfMemoryError when loading image from disk: "+original_image_file.toAbsolutePath()+" : ",e);
             return Image_and_properties.broken(context.logger());
         }
         catch (Exception e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);;
             Popups.popup_Exception(e,100,"An error occurred while loading an image from disk",context);
             return Image_and_properties.broken(context.logger());
         }
         try {
             input_stream.close();
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
-            e.printStackTrace();
+            context.log_with_stack_trace_from_throwable("",e);
         }
         if ( image.isError())
         {
@@ -229,7 +227,7 @@ public class Full_image_from_disk
             }
             else if( image.getException().toString().contains("No loader for image data"))
             {
-                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"IMAGE decode failed :"+image.getException()+" "+original_image_file.toAbsolutePath()));
+                context.log_with_stack_trace(Logger.error+"IMAGE decode failed :"+image.getException()+" "+original_image_file.toAbsolutePath());
                 // this occurs on damaged images like download not finished, or fusk wrong pin code
                 // Popups.popup_Exception(image.getException(),100,"If this image was fusked, maybe the pin code is wrong?",logger);
             }
@@ -275,7 +273,7 @@ public class Full_image_from_disk
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
             // GraphicsMagick failed, let us try the same with imageMagick
             return  use_ImageMagick_for_full_image(original_image_file, context);
         }
@@ -312,7 +310,7 @@ public class Full_image_from_disk
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         return Image_and_properties.broken(context.logger());
     }

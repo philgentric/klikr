@@ -12,7 +12,6 @@ import klikr.util.Kontext;
 import klikr.util.P2S;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.cache.Size_;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.cache.Clearable_RAM_cache;
 import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
@@ -23,7 +22,6 @@ import klikr.machine_learning.feature_vector.Feature_vector_double;
 import klikr.images.Image_window;
 import klikr.settings.boolean_features.Feature;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
@@ -95,7 +93,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector_cache fv_cache = fv_cache_supplier.get();
         if ( fv_cache == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
+            context.log_with_stack_trace(Logger.error+"FATAL: fv_cache is null");
             return new ArrayList<>();
         }
 
@@ -108,7 +106,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         if ( fv0 ==null)
         {
             hourglass.ifPresent(Hourglass::close);
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv0 not acquired"));
+            context.log_with_stack_trace(Logger.error+"FATAL: fv0 not acquired");
             return new ArrayList<>();
         }
 
@@ -164,7 +162,7 @@ public class Similarity_engine implements Clearable_RAM_cache
         Feature_vector_cache fv_cache = fv_cache_supplier.get();
         if ( fv_cache == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv_cache is null"));
+            context.log_with_stack_trace(Logger.error+"FATAL: fv_cache is null");
             hourglass.ifPresent(Hourglass::close);
             return new ArrayList<>();
         }
@@ -334,17 +332,17 @@ public class Similarity_engine implements Clearable_RAM_cache
                 Image_properties image_properties_1 = image_properties_cache.get(path1,null,context);
                 if ( image_properties_1 == null)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("image_properties_1 == null"));
+                    context.log_with_stack_trace("image_properties_1 == null");
                     continue;
                 }
                 if ( image_properties_0.w() != image_properties_1.w())
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("different image width"));
+                    context.log_with_stack_trace("different image width");
                     continue;
                 }
                 if ( image_properties_0.h() != image_properties_1.h())
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("different image height"));
+                    context.log_with_stack_trace("different image height");
                     continue;
                 }
             }
@@ -352,7 +350,7 @@ public class Similarity_engine implements Clearable_RAM_cache
             Feature_vector fv1 = fv_cache_supplier.get().get_from_cache_or_make(path1, null,true, context);
             if (fv1 == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: fv1 not acquired"));
+                context.log_with_stack_trace(Logger.error+"FATAL: fv1 not acquired");
                 continue; // server failure
             }
 

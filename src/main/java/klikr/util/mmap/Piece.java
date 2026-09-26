@@ -7,7 +7,6 @@ import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.util.Kontext;
 import klikr.util.image.decoding.Fast_rotation_from_exif_metadata_extractor;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import org.jspecify.annotations.Nullable;
 
 import java.io.*;
@@ -96,7 +95,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("Failed to memory-map the file: " + e));
+            context.log_with_stack_trace_from_throwable("Failed to memory-map the file: " ,e);
             return false;
         }
 
@@ -185,7 +184,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL write_file_internal Could not write file: " + e));
+            context.log_with_stack_trace_from_throwable(Logger.error+"FATAL write_file_internal Could not write file: " , e);
         }
     }
 
@@ -303,7 +302,7 @@ public class Piece
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }

@@ -81,7 +81,6 @@ import klikr.change.old_and_new.Status;
 import klikr.util.info_stage.Info_stage;
 import klikr.util.info_stage.Line_for_info_stage;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.*;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
@@ -148,7 +147,7 @@ public class Virtual_landscape_menus
             }
             /*if (Feature_cache.get(Feature.Enable_image_playlists))
             {
-                context.log(Stack_trace_getter.get_stack_trace("not implemented"));
+                context.log_with_stack_trace(("not implemented"));
                 //Menu_items.add_menu_item2("Create_new_empty_image_playlist",event -> Window_builder.create_new_image_playlist(context)));
             }*/
             Menu_items.add_menu_item_for_menu("Create_PDF_contact_sheet",true, null,event -> create_PDF_contact_sheet(),create,context);
@@ -789,7 +788,7 @@ public class Virtual_landscape_menus
     {
         if ( path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("❌❌❌ FATAL: cannot make button for null path"));
+            context.log_with_stack_trace(("❌❌❌ FATAL: cannot make button for null path"));
             return null;
         }
         Path_list_provider path_list_provider =  new Path_list_provider_for_file_system(path,context);
@@ -1420,7 +1419,7 @@ public class Virtual_landscape_menus
             Undo_item item = signature_to_undo_item.get(signature);
             if ( item == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"item == null for signature="+signature));
+                context.log_with_stack_trace((Logger.error+"item == null for signature="+signature));
                 return;
             }
             if ( !Undo_for_moves.check_validity(item, context))
@@ -1884,7 +1883,7 @@ public class Virtual_landscape_menus
         Optional<Path> dir = virtual_landscape.path_list_provider.get_folder_path();
         if ( dir.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         File[] files = dir.get().toFile().listFiles();
@@ -1921,7 +1920,7 @@ public class Virtual_landscape_menus
         Optional<Path> dir = virtual_landscape.path_list_provider.get_folder_path();
         if ( dir.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         Files_and_folders faf = virtual_landscape.path_list_provider.files_and_folders(true, null, true, true, context.aborter());

@@ -29,7 +29,6 @@ import klikr.look.styles.Look_and_feel_light;
 import klikr.look.styles.Look_and_feel_modena;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 
 //**********************************************************
@@ -167,13 +166,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_folder_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path");
             return null;
         }
         folder_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -191,13 +190,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_sky_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path");
             return null;
         }
         sky_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -216,13 +215,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_floor_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path");
             return null;
         }
         floor_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -239,13 +238,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_speaker_on_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path");
             return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 256, logger);
@@ -257,13 +256,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_speaker_off_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get folder icon path");
             return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 256, logger);
@@ -281,13 +280,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_default_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get default icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get default icon path");
             return null;
         }
         default_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -306,13 +305,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_denied_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get denied icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get denied icon path");
             return null;
         }
         denied_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -331,13 +330,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_trash_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get trash icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get trash icon path");
             return null;
         }
         trash_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -356,13 +355,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_up_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get up icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get up icon path");
             return null;
         }
         up_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -380,13 +379,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_back_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get back icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get back icon path");
             return null;
         }
         back_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -406,13 +405,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_bookmarks_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get up bookmarks path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get up bookmarks path");
             return null;
         }
         bookmarks_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size,logger);
@@ -430,13 +429,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_view_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get up view icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get up view icon path");
             return null;
         }
         view_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -454,13 +453,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_preferences_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get up preferences icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get up preferences icon path");
             return null;
         }
         preferences_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -481,13 +480,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_not_found_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get not_found icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get not_found icon path");
             return null;
         }
         not_found_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -506,13 +505,13 @@ public class Look_and_feel_manager
         Look_and_feel local_instance = get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_unknown_error_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get unknown_error icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get unknown_error icon path");
             return null;
         }
         unknown_error_icon = Jar_utils.load_jfx_image_from_jar(path, icon_size, logger);
@@ -599,7 +598,7 @@ public class Look_and_feel_manager
     {
         if ( node == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("node is null"));
+            logger.log_with_stack_trace("node is null");
             return;
         }
         if (node instanceof Button button)
@@ -771,7 +770,7 @@ public class Look_and_feel_manager
             }
         }
 
-        if (look_dbg) logger.log(Stack_trace_getter.get_stack_trace("set_button_look"));
+        if (look_dbg) logger.log_with_stack_trace("set_button_look");
         if (is_dir)
         {
             give_button_a_directory_style(button,logger);
@@ -823,7 +822,7 @@ public class Look_and_feel_manager
             }
         }
 
-        if (look_dbg) logger.log(Stack_trace_getter.get_stack_trace("set_button_look"));
+        if (look_dbg) logger.log_with_stack_trace("set_button_look");
         if (is_dir)
         {
             give_button_a_directory_style(button,logger);
@@ -931,13 +930,13 @@ public class Look_and_feel_manager
         Look_and_feel i = get_instance(logger);
         if (i == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = i.get_running_film_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get running man icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get running man icon path");
             return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 600, logger);
@@ -951,13 +950,13 @@ public class Look_and_feel_manager
         Look_and_feel i = get_instance(logger);
         if (i == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get look and feel instance");
             return null;
         }
         String path = i.get_sleeping_man_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING: cannot get slipping_man icon path"));
+            logger.log_with_stack_trace(Logger.error+"BAD WARNING: cannot get slipping_man icon path");
             return null;
         }
         return Jar_utils.load_jfx_image_from_jar(path, 600, logger);

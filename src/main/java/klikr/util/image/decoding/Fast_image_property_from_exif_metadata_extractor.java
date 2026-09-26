@@ -16,7 +16,6 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +40,7 @@ public class Fast_image_property_from_exif_metadata_extractor
         //context.log("\n\n\nget_image_properties "+path);
         InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if (is == null) {
-            context.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
+            context.log_with_stack_trace("Warning: cannot open file " + path);
             return null;
         }
 
@@ -143,7 +142,7 @@ public class Fast_image_property_from_exif_metadata_extractor
         }
         catch (ImageProcessingException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("get_aspect_ratio() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             if ( e.toString().contains("File format could not be determined"))  
             {
                 return null;
@@ -153,7 +152,7 @@ public class Fast_image_property_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
+                logger.log_with_stack_trace_from_throwable("get_aspect_ratio() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
             return null;
         }
@@ -161,7 +160,7 @@ public class Fast_image_property_from_exif_metadata_extractor
         {
             if (dbg)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("get_aspect_ratio() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
+                logger.log_with_stack_trace_from_throwable("get_aspect_ratio() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
             return null;
         }

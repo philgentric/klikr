@@ -12,7 +12,6 @@ import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -72,7 +71,7 @@ public class TCP_server
             }
             catch (BindException e)
             {
-                if ( log_stack_trace_on_bind_exception)logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                if ( log_stack_trace_on_bind_exception)logger.log_with_stack_trace_from_throwable("server error ",e);
                 cdl.countDown();
                 is_started_ok.set(false);
             }
@@ -80,7 +79,7 @@ public class TCP_server
             {
                 if ( !stopped_clean.get())
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                    logger.log_with_stack_trace_from_throwable("server error ",e);
                     cdl.countDown();
                     is_started_ok.set(false);
                 }
@@ -88,7 +87,7 @@ public class TCP_server
 
             catch (IOException e)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                logger.log_with_stack_trace_from_throwable("server error ",e);
                 cdl.countDown();
                 is_started_ok.set(false);
             }
@@ -101,16 +100,16 @@ public class TCP_server
         }
         catch (InterruptedException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+            logger.log_with_stack_trace_from_throwable("server error ",e);
         }
         if ( is_started_ok.get())
         {
-            if (dbg) logger.log(Stack_trace_getter.get_stack_trace("server started OK "));
+            if (dbg) logger.log_with_stack_trace("server started OK ");
             else logger.log((Logger.ok+" server started OK "));
         }
         else
         {
-            if ( log_stack_trace_on_bind_exception) logger.log(Stack_trace_getter.get_stack_trace("server error "));
+            if ( log_stack_trace_on_bind_exception) logger.log_with_stack_trace("server error ");
         }
         return is_started_ok.get();
     }
@@ -144,12 +143,12 @@ public class TCP_server
             }
             catch (BindException e)
             {
-                if ( log_stack_trace_on_bind_exception)logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                if ( log_stack_trace_on_bind_exception)logger.log_with_stack_trace_from_throwable("server error ",e);
                 cdl.countDown();
             }
             catch (IOException e)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                logger.log_with_stack_trace_from_throwable("server error ",e);
                 cdl.countDown();
             }
         };
@@ -161,16 +160,16 @@ public class TCP_server
         }
         catch (InterruptedException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+            logger.log_with_stack_trace_from_throwable("server error ",e);
         }
         if ( is_started_on.get() >0)
         {
-            if (dbg) logger.log(Stack_trace_getter.get_stack_trace("server started OK "));
+            if (dbg) logger.log_with_stack_trace("server started OK ");
             else logger.log((Logger.ok+" server started OK "));
         }
         else
         {
-            if ( log_stack_trace_on_bind_exception) logger.log(Stack_trace_getter.get_stack_trace("server error "));
+            if ( log_stack_trace_on_bind_exception) logger.log_with_stack_trace("server error ");
         }
         return is_started_on.get();
     }
@@ -214,7 +213,7 @@ public class TCP_server
                     try {
                         welcome_socket.close();
                     } catch (IOException e) {
-                        logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+                        logger.log_with_stack_trace_from_throwable("server error ",e);
                     }
                 }
             };
@@ -236,7 +235,7 @@ public class TCP_server
         }
         catch (IOException e)
         {
-            if (! stopped_clean.get()) logger.log(Stack_trace_getter.get_stack_trace("server error "+e));
+            if (! stopped_clean.get()) logger.log_with_stack_trace_from_throwable("server error ",e);
             return false;
         }
         return true;
@@ -264,7 +263,7 @@ public class TCP_server
                 }
                 catch (IOException e)
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace(""+e));
+                    logger.log_with_stack_trace_from_throwable("",e);
                 }
                 try
                 {
@@ -279,7 +278,7 @@ public class TCP_server
                 }
                 catch (IOException e)
                 {
-                    logger.log(Stack_trace_getter.get_stack_trace(""+e));
+                    logger.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }

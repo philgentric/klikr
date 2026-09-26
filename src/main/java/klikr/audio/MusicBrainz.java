@@ -205,8 +205,7 @@ public class MusicBrainz
         }
         catch (IOException e)
         {
-            context.log(Logger.warning+"Warning icon acquired from:"+image_URL+" NOT saved as: "+icon_file+" "+e);
-
+            context.log_with_stack_trace_from_throwable(Logger.warning+"Warning icon acquired from:"+image_URL+" NOT saved as: "+icon_file+" ",e);
         }
         return null;
     }
@@ -244,9 +243,9 @@ public class MusicBrainz
         {
             // this always happens, the first time
             if (ultra_dbg)
-                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log_with_stack_trace(e.toString());
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace(e.toString());
         }
 
         Image icon = download_icon(artist,release,icon_folder,context);
@@ -304,7 +303,7 @@ public class MusicBrainz
                 }
                 catch( InvalidPathException e)
                 {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 if (new_path != null)
                 {

@@ -5,8 +5,6 @@ package klikr.change.undo;
 
 import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.util.Kontext;
-import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -136,13 +134,13 @@ public class Undo_item
         }
         if ( old_folder == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN1"));
+            context.log_with_stack_trace(("SHOULD NOT HAPPEN1"));
 
             return null;
         }
         if ( new_folder == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN2"));
+            context.log_with_stack_trace(("SHOULD NOT HAPPEN2"));
             return null;
         }
         StringBuilder sb = new StringBuilder();

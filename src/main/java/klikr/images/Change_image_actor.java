@@ -107,7 +107,7 @@ public class Change_image_actor implements Actor
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        change_image_message.image_window.context.log(""+e);
+                        change_image_message.image_window.context.log_with_stack_trace_from_throwable("",e);
                         return "interrupted";
                     }
                 }

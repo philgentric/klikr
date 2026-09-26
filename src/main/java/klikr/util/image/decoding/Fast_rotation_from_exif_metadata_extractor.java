@@ -14,7 +14,6 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,7 @@ public class Fast_rotation_from_exif_metadata_extractor
 
         InputStream is = Full_image_from_disk.get_image_InputStream(path, Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context);
         if (is == null) {
-            context.log(Stack_trace_getter.get_stack_trace("Warning: cannot open file " + path));
+            context.log_with_stack_trace("Warning: cannot open file " + path);
             return null;
         }
 
@@ -90,12 +89,12 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e));
+                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1) for:"+ path.toAbsolutePath(),e);
+                else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1)->",e);
             }
             if ( e.toString().contains("File format could not be determined"))
             {
-                context.log("Warning:"+e);
+                context.log_with_stack_trace_from_throwable("Warning:",e);
                 return null;
             }
         }
@@ -103,16 +102,16 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (2)->"+e));
+                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath(),e);
+                else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (2)->",e);
             }
         }
         catch (Exception e)
         {
             if ( dbg)
             {
-                if ( path != null) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
-                else context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e));
+                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath(),e);
+                else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->",e);
             }
         }
 

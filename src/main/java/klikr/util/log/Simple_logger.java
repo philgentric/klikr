@@ -22,13 +22,9 @@ public class Simple_logger implements Logger
 	}
 
 	@Override
-	public void log_stack_trace(String s) {
-		Logger.super.log_stack_trace(s);
+	public void log_with_stack_trace(String s) {
+		Logger.super.log_with_stack_trace(s);
 	}
 
-	@Override
-	public void log_exception(String header, Exception e) {
-		Logger.super.log_exception(header, e);
-	}
 
 }

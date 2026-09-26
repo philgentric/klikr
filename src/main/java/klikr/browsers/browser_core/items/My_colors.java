@@ -9,7 +9,6 @@ import javafx.scene.shape.Circle;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.Kontext;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -139,12 +138,12 @@ public class My_colors
                 return c;
             } catch ( Exception e) {
                 context.log(Logger.error+"WARNING: color not identified  =>"+lines.get(0)+"<= for path: "+folderPath);
-                context.log(Stack_trace_getter.get_stack_trace(""+e));
+                context.log_with_stack_trace_from_throwable("",e);
                 return null;
             }
         } catch (IOException e) {
             // this is OK, no file = no color
-            //context.log(Stack_trace_getter.get_stack_trace(""+e));
+            //context.log_with_stack_trace(""+e));
         }
         return null;
     }
@@ -159,7 +158,7 @@ public class My_colors
             try {
                 Files.delete(color_file);
             } catch (IOException e) {
-                logger.log(Stack_trace_getter.get_stack_trace(""+e));
+                logger.log_with_stack_trace_from_throwable("",e);
             }
             //logger.log("removed "+color_file);
             return;
@@ -172,7 +171,7 @@ public class My_colors
             //logger.log("saved "+color_file+" "+color_java_name);
 
         } catch(IOException e){
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            logger.log_with_stack_trace_from_throwable("",e);
         }
     }
 

@@ -832,8 +832,7 @@ public class Image_window
     {
         if (ic == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(
-                    Logger.error+"PANIC ic==null"));
+            context.log_with_stack_trace(Logger.error+"PANIC ic==null");
             return;
         }
 

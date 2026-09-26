@@ -2,16 +2,12 @@ package klikr.util.execute;
 
 
 import javafx.application.Platform;
-import javafx.stage.Window;
 import klikr.Klikr_application;
-import klikr.settings.boolean_features.Feature;
-import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Text_frame;
 
 import java.io.BufferedReader;
@@ -262,7 +258,7 @@ public class Script_executor
 
         if ( url == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            logger.log_with_stack_trace("PANIC ");
             return null;
         }
         logger.log("Execute_common, url is:"+url);

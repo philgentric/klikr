@@ -130,7 +130,7 @@ public class System_open_actor implements Actor
         }
         catch (Exception e)
         {
-            som.context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" open failed :" + e));
+            som.context.log_with_stack_trace_from_throwable(Logger.warning+" open failed :" ,e);
 
             if (e.toString().contains("doesn't exist."))
             {

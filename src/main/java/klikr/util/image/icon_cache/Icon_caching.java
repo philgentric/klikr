@@ -3,11 +3,9 @@
 
 package klikr.util.image.icon_cache;
 
-import javafx.stage.Window;
 import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -34,7 +32,7 @@ public class Icon_caching
     {
         if ( original_image_file == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+""));
+            context.log_with_stack_trace(Logger.error+"");
             return null;
         }
 

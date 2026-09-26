@@ -30,7 +30,6 @@ import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Sizes;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
 
 import java.io.File;
@@ -187,7 +186,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         if ( image_and_properties.image() == null)
         {
             the_image_view = null;
-            item_context.log(Stack_trace_getter.get_stack_trace("image==null for "+get_item_path()));
+            item_context.context.log_with_stack_trace("image==null for "+get_item_path());
             return;
         }
         if ( the_image_view == null)
@@ -205,18 +204,18 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
         Image_properties properties = image_and_properties.properties();
         if (properties == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            item_context.context.log_with_stack_trace("SHOULD NOT HAPPEN");
         }
         else
         {
             Rotation rotation = properties.rotation();
             if (rotation == null)
             {
-                item_context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                item_context.context.log_with_stack_trace("SHOULD NOT HAPPEN");
                 Path pfd = get_path_for_display(false);
                 if ( pfd == null)
                 {
-                    item_context.log(Stack_trace_getter.get_stack_trace(""));
+                    item_context.context.log_with_stack_trace("");
                     return;
                 }
                 rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(pfd, dbg, item_context.context);
@@ -247,14 +246,14 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     {
         if ( !try_deep)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"SHOULD NOT HAPPEN"));
+            item_context.context.log_with_stack_trace(Logger.error+"SHOULD NOT HAPPEN");
             return null;
         }
 
         // try to find an icon for the folder
         if ( item_context.item_path == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return null;
         }
         Files_and_folders faf = item_context.path_list_provider.files_and_folders(
@@ -387,7 +386,7 @@ public class Item_folder_with_icon extends Item_folder implements Icon_destinati
     {
         if (label_for_sizes == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            item_context.context.log_with_stack_trace("SHOULD NOT HAPPEN");
             return;
         }
         boolean on_one_line;

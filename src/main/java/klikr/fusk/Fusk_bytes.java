@@ -75,7 +75,7 @@ public class Fusk_bytes implements Pin_code_client
         }
         if ( instance == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("creating instance"));
+            context.log_with_stack_trace(("creating instance"));
             instance = new Fusk_bytes(context);
         }
         return instance.init(context);
@@ -147,7 +147,7 @@ public class Fusk_bytes implements Pin_code_client
                 }
             } catch (IOException e)
             {
-                context.log("Fusk: could not read passphrase file"+e);
+                context.log_with_stack_trace_from_throwable("Fusk: could not read passphrase file",e);
                 return false;
             }
         }

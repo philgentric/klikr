@@ -17,7 +17,6 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.cache.RAM_caches;
 import klikr.util.cache.Klikr_cache;
-import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -159,7 +158,7 @@ public enum Sort_files_by {
         Optional<Path> folder_path = path_list_provider.get_folder_path();
         if ( folder_path.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace("folder_path == null"));
+            context.log_with_stack_trace("folder_path == null");
             return null;
         }
         Similarity_cache similarity_cache = RAM_caches.similarity_cache_of_caches.get(folder_path.get().toAbsolutePath().toString());
@@ -218,12 +217,12 @@ public enum Sort_files_by {
             {
                 Sort_files_by returned = Sort_files_by.valueOf(s);
                 cached = returned;
-                if (dbg) context.log(Stack_trace_getter.get_stack_trace("sort files by (4): "+returned));
+                if (dbg) context.log_with_stack_trace("sort files by (4): "+returned);
                 return returned;
             }
             catch (IllegalArgumentException e)
             {
-                context.log("sort files by (4): "+e);
+                context.log_with_stack_trace_from_throwable("sort files by (4): ",e);
             }
 
             cached = Sort_files_by.FILE_NAME;
@@ -235,7 +234,7 @@ public enum Sort_files_by {
         Sort_files_by from_cache = cacheds.get(key);
         if (from_cache != null) {
             if (dbg)
-                context.log(Stack_trace_getter.get_stack_trace("CACHED sort files by (1): " + from_cache.name() + " for:" + key));
+                context.log_with_stack_trace("CACHED sort files by (1): " + from_cache.name() + " for:" + key);
             return from_cache;
         }
 
@@ -256,7 +255,7 @@ public enum Sort_files_by {
         try
         {
             Sort_files_by returned = Sort_files_by.valueOf(s);
-            if (dbg) context.log(Stack_trace_getter.get_stack_trace("sort files by (4): "+returned));
+            if (dbg) context.log_with_stack_trace("sort files by (4): "+returned);
             cacheds.put(key, returned);
             return returned;
         }

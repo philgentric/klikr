@@ -42,7 +42,7 @@ public class Media_instance_statics
     {
         if ( new_song == null )
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+" FATAL: new_song == null"));
+            context.log_with_stack_trace((Logger.error+" FATAL: new_song == null"));
             return;
         }
         for(;;)

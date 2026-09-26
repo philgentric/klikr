@@ -86,7 +86,7 @@ public class Scan_show
                     Thread.sleep(inter_frame_ms);
                 }
                 catch (InterruptedException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                     private_aborter = null;
                     return;
                 }

@@ -22,7 +22,6 @@ import klikr.settings.Non_booleans_properties;
 import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.change.file_system_monitoring.Filesystem_modification_reporter;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.nio.charset.MalformedInputException;
@@ -440,12 +439,12 @@ public class Text_frame
             }
             catch (IOException ee)
             {
-                context.log(Stack_trace_getter.get_stack_trace("" + ee));
+                context.log_with_stack_trace_from_throwable("" , ee);
                 web_view.getEngine().loadContent(" ======= CANNOT READ THIS FILE AT ALL ????  =========" + "\n");
             }
         }
         catch (IOException eee) {
-            context.log(Stack_trace_getter.get_stack_trace("" + eee));
+            context.log_with_stack_trace_from_throwable("" , eee);
         }
 
     }
@@ -517,7 +516,7 @@ public class Text_frame
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
             returned.add(" ======= CANNOT READ THIS FILE AT ALL ????  ========="+"\n");
         }
         return returned;

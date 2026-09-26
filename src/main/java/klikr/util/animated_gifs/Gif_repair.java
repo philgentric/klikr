@@ -46,7 +46,7 @@ public class Gif_repair
         Path tmp_dir = Static_files_and_paths_utilities.get_trash_dir_of(this_dir,context);
         if ( tmp_dir == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("Weird! could not use tmp directory:"));
+            context.log_with_stack_trace("Weird! could not use tmp directory:");
             return null;
         }
 

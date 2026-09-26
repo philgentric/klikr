@@ -44,7 +44,7 @@ public class Executor
         }
         catch (RejectedExecutionException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("WARNING: execute failed "+e));
+            logger.log_with_stack_trace_from_throwable("WARNING: execute failed ",e);
         }
     }
 

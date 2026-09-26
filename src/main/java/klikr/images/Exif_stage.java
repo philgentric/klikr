@@ -66,7 +66,7 @@ public class Exif_stage
     //**********************************************************
     {
         if (image == null) {
-            k.log(Stack_trace_getter.get_stack_trace("FATL: image is null"));
+            k.log_with_stack_trace("FATL: image is null");
             return;
         }
         Stage local_stage = new Stage();
@@ -217,11 +217,7 @@ public class Exif_stage
             image_is_damaged = extractor.is_image_damaged();
             title = extractor.title;
         }
-        catch (OutOfMemoryError e)
-        {
-            context.log(Stack_trace_getter.get_stack_trace_for_throwable(e));
-        }
-        catch (Exception e)
+        catch (OutOfMemoryError | Exception e)
         {
             context.log(Stack_trace_getter.get_stack_trace_for_throwable(e));
         }

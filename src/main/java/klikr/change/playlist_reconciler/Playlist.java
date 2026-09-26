@@ -26,7 +26,7 @@ public class Playlist
             List<String> local_paths = Files.readAllLines(playlist_file);
             paths = new HashSet<>(local_paths);
         } catch (IOException e) {
-            logger.log(""+e);
+            logger.log_with_stack_trace_from_throwable("",e);
             paths = new HashSet<>();
         }
     }

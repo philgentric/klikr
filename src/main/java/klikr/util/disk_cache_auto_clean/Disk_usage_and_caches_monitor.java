@@ -50,7 +50,7 @@ public class Disk_usage_and_caches_monitor
                 try {
                     Thread.sleep(10*60*1000);
                 } catch (InterruptedException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
 
                 if ( !disk_usage_monitor.monitor()) break;

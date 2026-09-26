@@ -48,17 +48,17 @@ public class Fusk_static_core
             if ( Arrays.mismatch(buf,Fusk_bytes.signature_fusk) == -1 ) return true;
             else return false;
         } catch (FileNotFoundException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace((e.toString()));
             return false;
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace((e.toString()));
             return false;
         }
         finally {
             try {
                 fis.close();
             } catch (IOException e) {
-                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log_with_stack_trace((e.toString()));
                 return false;            }
         }
 
@@ -84,7 +84,7 @@ public class Fusk_static_core
             }
             return Fusk_bytes.defusk_bytes_and_remove_signature(obfuscated, context);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace("For Path: "+in+"\n"+e));
+            context.log_with_stack_trace_from_throwable("For Path: "+in+"\n",e);
         }
         return null;
     }
@@ -109,7 +109,7 @@ public class Fusk_static_core
             Files.write(out,obfuskated);
 
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace((e.toString()));
             return false;
         }
         return true;
@@ -145,7 +145,7 @@ public class Fusk_static_core
             Files.write(out,clear);
 
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace_for_throwable(e));
+            context.log_with_stack_trace(e.toString());
             return false;
         }
         return true;

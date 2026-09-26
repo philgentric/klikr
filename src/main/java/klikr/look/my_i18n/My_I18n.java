@@ -3,14 +3,12 @@
 
 package klikr.look.my_i18n;
 
-import javafx.stage.Window;
 import klikr.settings.Non_booleans_properties;
 import klikr.settings.String_constants;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Kontext;
 import klikr.util.execute.Application_jar;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +40,7 @@ public class My_I18n
                 if (instance == null)
                 {
                     String language_key = Non_booleans_properties.get_language_key();
-                    //logger.log(Stack_trace_getter.get_stack_trace("My_I18n instance is null, rebuilding for "+language_key));
+                    //logger.log_with_stack_trace("My_I18n instance is null, rebuilding for "+language_key));
                     Language language = Language.valueOf(language_key);
                     Locale locale = language.get_locale();
                     instance = new My_I18n(language, locale, context);
@@ -57,7 +55,7 @@ public class My_I18n
         String returned = instance.get_I18n_string_internal(key,context);
         if ( returned == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->"+key+"<- not found"));
+            context.log_with_stack_trace(Logger.error+"BAD WARNING My_I18n ->"+key+"<- not found");
             return key;
         }
         if ( dbg) context.log(Logger.ok+" OK My_I18n ->"+key+"<- was found for "+instance.language.name()+" : ->"+returned+"<-");
@@ -91,7 +89,7 @@ public class My_I18n
             }
             else
             {
-                context.log(Stack_trace_getter.get_stack_trace(Logger.error+"BAD WARNING My_I18n ->" + key + "<- not found"));
+                context.log_with_stack_trace(Logger.error+"BAD WARNING My_I18n ->" + key + "<- not found");
             }
             if ( ultra_dbg) {
                 context.log("the resource bundle contains these keys:");

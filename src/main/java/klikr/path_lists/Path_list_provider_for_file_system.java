@@ -10,7 +10,6 @@ import klikr.util.execute.actor.Aborter;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.perf.Perf;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
@@ -46,7 +45,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         change_broadcaster = new Change_broadcaster(context.logger());
         if( folder_path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(context.logger().error+" Panic : null folder_path"));
+            context.log_with_stack_trace(context.logger().error+" Panic : null folder_path");
             this.key = null;
             return;
         }
@@ -123,7 +122,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             timestamp = as_of_now;
             return  returned;
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
             return  true;
         }
     }
@@ -246,7 +245,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
                     faf = null;
                 }
             } catch (IOException e) {
-                context.log(Stack_trace_getter.get_stack_trace("" + e));
+                context.log_with_stack_trace("" + e);
                 return new Files_and_folders(new ArrayList<>(), new ArrayList<>());
             }
 
@@ -454,7 +453,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         Optional<Path> op = get_folder_path();
         if (  op.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            context.log_with_stack_trace("PANIC ");
             return null;
         }
         byte[] bytes = null;
@@ -464,7 +463,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         catch (IOException e)
         {
             // happens the first time
-            // context.log(Stack_trace_getter.get_stack_trace(""+e));
+            // context.log_with_stack_trace(""+e));
             return  null;
         }
         try {
@@ -472,7 +471,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
             String folder_path2 = unpacker.unpackString();
             if ( !folder_path.toAbsolutePath().toString().equals(folder_path2))
             {
-                context.log(Stack_trace_getter.get_stack_trace("PANIC different folder paths ?"));
+                context.log_with_stack_trace("PANIC different folder paths ?");
                 unpacker.close();
                 return null;
             }
@@ -521,7 +520,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
             return  null;
         }
     }
@@ -533,7 +532,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         Optional<Path> folder_path = get_folder_path();
         if (  folder_path.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace("PANIC "));
+            context.log_with_stack_trace("PANIC ");
             return false;
         }
         try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
@@ -574,7 +573,7 @@ public class Path_list_provider_for_file_system implements Path_list_provider
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
             return false;
         }
         return true;

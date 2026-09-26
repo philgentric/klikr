@@ -3,13 +3,10 @@
 
 package klikr.machine_learning.feature_vector;
 
-import javafx.stage.Window;
 import klikr.util.Kontext;
 import klikr.util.Shared_services;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -79,7 +76,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         long local_start = System.nanoTime();
         if ( path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("BAD!"));
+            context.log_with_stack_trace("BAD!");
             return Optional.empty();
         }
         int random_port = get_random_port(context);
@@ -174,7 +171,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
             }
             catch ( NumberFormatException e)
             {
-                context.log(Stack_trace_getter.get_stack_trace("parse_json: NumberFormatException for part="+parts[i]+" "+e));
+                context.log_with_stack_trace_from_throwable("parse_json: NumberFormatException for part="+parts[i]+" ",e);
                 return null;
             }
         }
@@ -197,7 +194,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
 
         if ( path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("BAD!"));
+            context.log_with_stack_trace("BAD!");
             return Optional.empty();
         }
 
@@ -208,11 +205,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (UnsupportedEncodingException e) {
-            context.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (Error#1): "+e));
+            context.log_with_stack_trace_from_throwable("get_feature_vector_from_server_generic (Error#1): ",e);
             return Optional.empty();
         }
         URL url = null;
@@ -221,11 +218,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (MalformedURLException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#2): "+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic (Error#2): ",e);
             return Optional.empty();
         }
         HttpURLConnection connection = null;
@@ -234,11 +231,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#3)"+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic (Error#3)",e);
             return Optional.empty();
         }
         try {
@@ -247,11 +244,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace_from_throwable("OOM",oome);
             return Optional.empty();
         }
         catch (ProtocolException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#4): "+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic (Error#4): ",e);
             return Optional.empty();
         }
 
@@ -266,12 +263,12 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (IOException e) {
-            //context.log(Stack_trace_getter.get_stack_trace(""+e));
-            context.log((url_string+": get_feature_vector_from_server_generic (Error#5): "+e));
+            //context.log_with_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic (Error#5): ",e);
             return Optional.empty();
         }
 
@@ -286,12 +283,12 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace_from_throwable("OOM",oome);
             return Optional.empty();
         }
         catch (IOException e) {
-            //context.log(Stack_trace_getter.get_stack_trace(""+e));
-            context.log((url_string+": get_feature_vector_from_server_generic cannot get response code (Error#6):"+e));
+            //context.log_with_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic cannot get response code (Error#6):",e);
             return Optional.empty();
         }
 
@@ -306,11 +303,11 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+": get_feature_vector_from_server_generic (Error#7): "+e));
+            context.log_with_stack_trace_from_throwable(url_string+": get_feature_vector_from_server_generic (Error#7): ",e);
             return Optional.empty();
         }
 
@@ -337,12 +334,12 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
         }
         catch( OutOfMemoryError oome)
         {
-            context.log(Stack_trace_getter.get_stack_trace("OOM"));
+            context.log_with_stack_trace("OOM");
             return Optional.empty();
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("get_feature_vector_from_server_generic (8): "+e));
+            context.log_with_stack_trace_from_throwable("get_feature_vector_from_server_generic (8): ",e);
             return Optional.empty();
         }
         finally

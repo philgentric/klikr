@@ -5,9 +5,6 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
-
-import java.io.IOException;
 
 public record Kontext(Window owner, Aborter aborter, Logger logger)
 {
@@ -23,11 +20,11 @@ public record Kontext(Window owner, Aborter aborter, Logger logger)
     }
 
     public void log_stack_trace(String string) {
-        logger.log_stack_trace(string);
+        logger.log_with_stack_trace(string);
     }
 
-    public void log_exception(String s, Exception e) {
-        logger.log_exception(s, e);
+    public void log_with_stack_trace_from_throwable(String s, Exception e) {
+        logger.log_with_stack_trace_from_throwable(s, e);
     }
 
     public double getX()
@@ -105,12 +102,12 @@ public record Kontext(Window owner, Aborter aborter, Logger logger)
     {
         if ( owner == null )
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"owner is null"));
+            logger.log_with_stack_trace(Logger.error+"owner is null");
             return null;
         }
         if ( !(owner instanceof Stage) )
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"owner is not a Stage"));
+            logger.log_with_stack_trace(Logger.error+"owner is not a Stage");
             return null;
         }
         return (Stage)owner();
@@ -122,8 +119,14 @@ public record Kontext(Window owner, Aborter aborter, Logger logger)
         if ( stage != null ) stage.setTitle(s);
     }
 
-    public void log_with_stack(String s)
+
+    public void log_with_stack_trace(String string)
     {
-        log(Stack_trace_getter.get_stack_trace(s));
+        logger().log_with_stack_trace(string);
+    }
+
+    public void log_with_stack_trace_from_throwable(String header, Throwable e)
+    {
+        logger().log_with_stack_trace_from_throwable(header,e);
     }
 }

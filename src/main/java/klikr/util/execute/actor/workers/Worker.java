@@ -63,7 +63,8 @@ public class Worker
                     if ( job.termination_reporter != null) job.termination_reporter.has_ended(msg, job);
                 }
                 catch (InterruptedException e) {
-                    context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                    context.log_with_stack_trace_from_throwable(e.toString(),e);
+                    ;
                 }
             }
 

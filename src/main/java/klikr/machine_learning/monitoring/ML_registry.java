@@ -235,7 +235,7 @@ public class ML_registry
     {
         if (port == -1)
         {
-            logger.log(Stack_trace_getter.get_stack_trace("Invalid port -1"));
+            logger.log_with_stack_trace("Invalid port -1");
             return false;
         }
         HttpURLConnection connection = null;

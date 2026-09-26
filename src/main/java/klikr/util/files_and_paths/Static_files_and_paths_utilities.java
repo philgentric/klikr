@@ -109,7 +109,7 @@ public class Static_files_and_paths_utilities
             }
             catch (IOException e)
             {
-                 context.log("copy_folder_content failed : "+f.getAbsolutePath()+ " "+e);
+                 context.log_with_stack_trace_from_throwable("copy_folder_content failed : "+f.getAbsolutePath()+ " ",e);
                 returned = false;
             }
         }
@@ -824,17 +824,17 @@ public class Static_files_and_paths_utilities
 
 
     //**********************************************************
-    public static Path change_file_name(Path old_path, String new_name, Kontext context)
+    public static Path change_file_name(Path old_path, String new_name, Kontext move_context)
     //**********************************************************
     {
-        if (dbg)  context.log("change_file_name, new name: " + new_name);
+        if (dbg)  move_context.log("change_file_name, new name: " + new_name);
        //  context.log("trying rename: " + old_path.getFileName() + " => " + new_name);
         Path new_path = Paths.get(old_path.getParent().toString(), new_name);
 
         Old_and_new_Path oan = new Old_and_new_Path(old_path, new_path, Command.command_rename, Status.before_command, false);
         List<Old_and_new_Path> l = new ArrayList<>();
         l.add(oan);
-        List<Old_and_new_Path> done = Moving_files.actual_safe_moves(l, true, context);
+        List<Old_and_new_Path> done = Moving_files.actual_safe_moves(l, true, move_context);
         if ( done.isEmpty()) return null;
 
         return new_path;
@@ -958,7 +958,7 @@ public class Static_files_and_paths_utilities
             return Files.isSameFile(p1, p2);
         } catch (IOException e) {
             // happens if for one of the path, no file exists
-            if (dbg)  context.log_exception("WARNING: Exception in Files.isSameFile() :", e);
+            if (dbg)  context.log_with_stack_trace_from_throwable("WARNING: Exception in Files.isSameFile() :", e);
         }
         return false;
 
@@ -1003,7 +1003,7 @@ public class Static_files_and_paths_utilities
         }
         catch (IOException e)
         {
-             context.log(Logger.error+"Folder copy failed "+e);
+             context.log_with_stack_trace_from_throwable(Logger.error+"Folder copy failed ",e);
             Popups.popup_warning( My_I18n.get_I18n_string(Logger.error+"Folder copy failed",  context), "Folder copy failed: "+e, false,  context);
         }
 
@@ -1093,7 +1093,7 @@ public class Static_files_and_paths_utilities
         try {
             x = Files.readAttributes(f.toPath(), BasicFileAttributes.class);
         } catch (IOException e) {
-             context.log_exception("get_file_age",e);
+             context.log_with_stack_trace_from_throwable("get_file_age",e);
             return null;
         }
         FileTime creation= x.creationTime();

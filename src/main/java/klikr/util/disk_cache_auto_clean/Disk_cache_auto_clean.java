@@ -3,12 +3,9 @@
 
 package klikr.util.disk_cache_auto_clean;
 
-import javafx.stage.Window;
 import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
-import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,13 +86,13 @@ public class Disk_cache_auto_clean
                 Files.delete(f.toPath());
             } catch (NoSuchFileException e) {
                 context.log(("delete_if_too_old: "+e.toString()));
-                //context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                //context.log_with_stack_trace("delete_if_too_old: "+e.toString()));
             }
             catch (DirectoryNotEmptyException e) {
-                context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                context.log_with_stack_trace("delete_if_too_old: "+e.toString());
             }
             catch (IOException e) {
-                context.log(Stack_trace_getter.get_stack_trace("delete_if_too_old: "+e.toString()));
+                context.log_with_stack_trace("delete_if_too_old: "+e.toString());
             }
         }
     }

@@ -111,7 +111,7 @@ public class Javalin_monaco
             }
             catch (IOException e)
             {
-                logger.log(""+e);
+                logger.log_with_stack_trace_from_throwable("",e);
             }
             return "Javalin_Monaco error cannot read: "+path;
         };
@@ -148,7 +148,7 @@ public class Javalin_monaco
             }
             catch (IOException e)
             {
-                logger.log(""+e);
+                logger.log_with_stack_trace_from_throwable("",e);
             }
             return "Javalin_Monaco error cannot read: "+path;
         };
@@ -242,7 +242,7 @@ public class Javalin_monaco
         try {
             started.await();
         } catch (InterruptedException e) {
-            logger.log("Javalin_Monaco server interrupted"+e);
+            logger.log_with_stack_trace_from_throwable("Javalin_Monaco server interrupted",e);
             return;
         }
         logger.log("Javalin_Monaco server started on port " + port_number);

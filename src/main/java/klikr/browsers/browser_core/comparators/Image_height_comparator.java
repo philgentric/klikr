@@ -7,7 +7,6 @@ import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties
 import klikr.util.Kontext;
 import klikr.util.cache.Klikr_cache;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -30,22 +29,22 @@ public record Image_height_comparator(
 
         Image_properties ip1 = image_properties_cache.get(p1,null,context);
         if (ip1 == null) {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+" PANIC image_property not found"));
+            context.log_with_stack_trace(Logger.error+" PANIC image_property not found");
             return 0;
         }
         Double d1 = ip1.get_image_height();
         if (d1 == null) {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+" PANIC image height not found"));
+            context.log_with_stack_trace(Logger.error+" PANIC image height not found");
             return 0;
         }
         Image_properties ip2 = image_properties_cache.get(p2,null,context);
         if (ip2 == null) {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"PANIC image_property not found"));
+            context.log_with_stack_trace(Logger.error+"PANIC image_property not found");
             return 0;
         }
         Double d2 = ip2.get_image_height();
         if (d2 == null) {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"PANIC image height not found"));
+            context.log_with_stack_trace(Logger.error+"PANIC image height not found");
             return 0;
         }
 

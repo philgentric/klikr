@@ -10,7 +10,6 @@ import klikr.util.execute.actor.Aborter;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.perf.Perf;
 
 import java.nio.file.Path;
@@ -68,20 +67,20 @@ class State
                         path_list = path_list_provider.only_file_paths(true, Feature_cache.get(Feature.Show_hidden_files),aborter);
             }
             if (path_list == null) {
-                context.log(Stack_trace_getter.get_stack_trace("rescan failed"));
+                context.log_with_stack_trace("rescan failed");
                 return;
             }
 
             if ( path_comparator_source == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace("path_comparator_source == null, icons are NOT going to be sorted"));
+                context.log_with_stack_trace("path_comparator_source == null, icons are NOT going to be sorted");
             }
             else
             {
                 Comparator<Path> comp = path_comparator_source.get_path_comparator();
                 if ( comp ==null)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("comp == null"));
+                    context.log_with_stack_trace("comp == null");
                 }
                 else
                 {

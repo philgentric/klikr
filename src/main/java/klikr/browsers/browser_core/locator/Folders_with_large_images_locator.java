@@ -100,7 +100,7 @@ public class Folders_with_large_images_locator
                     try {
                         Thread.sleep(300);
                     } catch (InterruptedException e) {
-                        context.log(""+e);
+                        context.log_with_stack_trace_from_throwable("",e);
                     }
 
                     long now = System.currentTimeMillis();

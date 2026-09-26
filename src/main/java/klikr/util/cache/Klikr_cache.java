@@ -123,7 +123,7 @@ public class Klikr_cache<K,V> implements Clearable_RAM_cache
     {
         if ( object_key == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("FATAL "));
+            context.log_with_stack_trace("FATAL ");
             return null;
         }
         String real_key= internal_string_key_maker.apply(object_key);

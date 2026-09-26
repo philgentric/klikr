@@ -74,7 +74,7 @@ public class Tmp_file_in_trash
         Path klik_trash = Static_files_and_paths_utilities.get_trash_dir_of(Path.of("").toAbsolutePath(),context);
         if ( klik_trash == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Fatal "));
+            context.log_with_stack_trace(Logger.error+"Fatal ");
             return null;
         }
         return klik_trash.resolve(file_name);

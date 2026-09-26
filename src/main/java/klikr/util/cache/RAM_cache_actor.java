@@ -49,7 +49,7 @@ public class RAM_cache_actor<K,V> implements Actor
             }
             catch (InterruptedException e)
             {
-                logger.log(""+e);
+                logger.log_with_stack_trace_from_throwable("",e);
                 return "failed";
             }
         }

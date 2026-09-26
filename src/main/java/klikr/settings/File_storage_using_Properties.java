@@ -4,7 +4,6 @@
 package klikr.settings;
 
 import klikr.util.Kontext;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -182,7 +181,7 @@ public class File_storage_using_Properties implements File_storage
                 }
                 catch (IllegalArgumentException ee)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + ee+ " for path: "+path.toAbsolutePath()));
+                    context.log_with_stack_trace("load_properties Exception: " + ee+ " for path: "+path.toAbsolutePath());
                     fis.close();
                     return null;
                 }
@@ -192,7 +191,7 @@ public class File_storage_using_Properties implements File_storage
         }
         catch (Exception e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("load_properties Exception: " + e+ " for path: "+path.toAbsolutePath()));
+            context.log_with_stack_trace("load_properties Exception: " + e+ " for path: "+path.toAbsolutePath());
         }
         return returned;
     }
@@ -230,7 +229,7 @@ public class File_storage_using_Properties implements File_storage
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("save_to_disk Exception: " + e+ " for path: "+path.toAbsolutePath()));
+            context.log_with_stack_trace("save_to_disk Exception: " + e+ " for path: "+path.toAbsolutePath());
         }
         if (dbg) context.log("save_to_disk() DONE for: " + path.toAbsolutePath());
 

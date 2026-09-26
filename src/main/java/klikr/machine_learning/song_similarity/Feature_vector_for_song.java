@@ -45,7 +45,7 @@ public class Feature_vector_for_song //implements Feature_vector
             }
             catch ( NumberFormatException e)
             {
-                logger.log(Stack_trace_getter.get_stack_trace(path+ " parse_json: NumberFormatException for part="+parts[i]+" "+e));
+                logger.log_with_stack_trace_from_throwable(path+ " parse_json: NumberFormatException for part="+parts[i]+" ",e);
                 return null;
             }
         }

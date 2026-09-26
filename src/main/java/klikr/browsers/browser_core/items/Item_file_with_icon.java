@@ -126,7 +126,7 @@ public class Item_file_with_icon extends Item_file
             Path p = get_item_path();
             if ( p == null)
             {
-                item_context.log(Stack_trace_getter.get_stack_trace(""));
+                item_context.context.log_with_stack_trace("");
                 return;
             }
             if ( dbg) item_context.log("show context menu of image_view:"+ p.toAbsolutePath());
@@ -156,7 +156,7 @@ public class Item_file_with_icon extends Item_file
         selection_handler.reset_selection(); // will clear all selections
         if ( item_context.item_path == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return;
         }
         if ( Guess_file_type.is_this_path_extension_an_image(item_context.item_path,item_context.context))
@@ -216,14 +216,14 @@ public class Item_file_with_icon extends Item_file
     public ContextMenu make_context_menu()
     //**********************************************************
     {
-        //context.log(Stack_trace_getter.get_stack_trace("Item_file_with_icon make_context_menu"));
+        //context.log_with_stack_trace("Item_file_with_icon make_context_menu"));
 
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu,item_context.context.logger());
 
         if ( item_context.item_path == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return context_menu;
         }
 
@@ -430,7 +430,7 @@ public class Item_file_with_icon extends Item_file
         // this is NOT on the FX thread
         if ( image_view == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" image_view == null"));
+            item_context.context.log_with_stack_trace(Logger.warning+" image_view == null");
             return;
         }
 
@@ -468,7 +468,7 @@ public class Item_file_with_icon extends Item_file
 
         if ( (iap.image().getHeight()  < 1) || (iap.image().getWidth() < 1))
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" WARNING: empty image, not set "+item_context.item_path.toAbsolutePath()));
+            item_context.context.log_with_stack_trace(Logger.warning+" WARNING: empty image, not set "+item_context.item_path.toAbsolutePath());
             Jfx_batch_injector.inject(this::you_are_invisible,item_context.context);
             return;
         }
@@ -491,12 +491,12 @@ public class Item_file_with_icon extends Item_file
         {
             if ( image_and_properties.image() ==null)
             {
-                item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL receive_icon_in_fx_thread image_and_properties.image() ==null, for: "+get_item_path()));
+                item_context.context.log_with_stack_trace(Logger.error+"FATAL receive_icon_in_fx_thread image_and_properties.image() ==null, for: "+get_item_path());
                 return;
             }
             if ( image_and_properties.properties() ==null)
             {
-                item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL receive_icon_in_fx_thread image_and_properties.properties() ==null, for: "+get_item_path()));
+                item_context.context.log_with_stack_trace(Logger.error+"FATAL receive_icon_in_fx_thread image_and_properties.properties() ==null, for: "+get_item_path());
                 return;
             }
             item_context.log(Logger.ok+" receive_icon_in_fx_thread," +
@@ -532,7 +532,7 @@ public class Item_file_with_icon extends Item_file
                             if( rotation == null) rotation = Rotation.normal;
                         }
                     } else {
-                        item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Bad"));
+                        item_context.context.log_with_stack_trace(Logger.error+"Bad");
                         you_are_invisible();
                         return;
                     }
@@ -546,7 +546,7 @@ public class Item_file_with_icon extends Item_file
             {
                 item_context.log(Logger.error+"SHOULD NOT HAPPEN");
                 double local = image_and_properties.image().getWidth()/image_and_properties.image().getHeight();
-                if( dbg) item_context.log(Stack_trace_getter.get_stack_trace("setting aspect ratio for PDF from icon: "+ local));
+                if( dbg) item_context.context.log_with_stack_trace("setting aspect ratio for PDF from icon: "+ local);
                 aspect_ratio = (Double) local;
             }
         }

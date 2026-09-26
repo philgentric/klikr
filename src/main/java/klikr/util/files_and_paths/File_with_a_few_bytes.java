@@ -44,7 +44,7 @@ public class File_with_a_few_bytes
 				BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 				tmp_size = attr.size();
 			} catch (IOException e) {
-				logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+				logger.log_with_stack_trace_from_throwable("",e);
 			}
 		}
 		size = tmp_size;

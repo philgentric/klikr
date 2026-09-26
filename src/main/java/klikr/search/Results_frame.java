@@ -325,14 +325,14 @@ public class Results_frame implements Results
                     Search_result  sr =  search_results_buttons.get(button);
                     if ( sr == null)
                     {
-                        context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                        context.log_with_stack_trace("SHOULD NOT HAPPEN");
                     }
                     else
                     {
                         Boolean bool = search_results_is_max.get(sr);
                         if ( bool == null)
                         {
-                            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                            context.log_with_stack_trace("SHOULD NOT HAPPEN");
                         }
                         else
                         {

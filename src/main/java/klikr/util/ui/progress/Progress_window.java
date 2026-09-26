@@ -44,13 +44,16 @@ public class Progress_window implements Hourglass
 	public static Optional<Hourglass> show(
             String wait_message,
             int timeout_s,
-            Kontext context) // if the context.aborter() is not null there will be an abort button in the popup/spinner
+            Kontext move_context) // if the context.aborter() is not null there will be an abort button in the popup/spinner
 	//**********************************************************
 	{
 		if (Check_remaining_RAM.low_memory.get())
+		{
+			move_context.log("move rejected, not enough memory");
 			return Optional.empty();
-		Progress_window local = new Progress_window(timeout_s, context);
-		launch(local, wait_message,context);
+		}
+		Progress_window local = new Progress_window(timeout_s, move_context);
+		launch(local, wait_message,move_context);
 		return Optional.of(local);
 	}
 
@@ -69,25 +72,9 @@ public class Progress_window implements Hourglass
 		local.report_progress_and_close_when_finished(in_flight);
 		return Optional.of(local);
 	}
-/*
-	//**********************************************************
-	public static Optional<Hourglass> show_with_in_flight_and_aborter(
-			AtomicInteger in_flight,
-			String wait_message,
-			int timeout_s,
-			Kontext context)
-	//**********************************************************
-	{
-		if (Check_remaining_RAM.low_memory.get()) return Optional.empty();
-		Progress_window local = new Progress_window( timeout_s, context);
-		launch(local, wait_message,context);
-		local.report_progress_and_close_when_finished(in_flight);
-		return Optional.of(local);
-	}
-*/
 
 	//**********************************************************
-	private static Hourglass launch(
+	private static void launch(
             Progress_window local,
             String wait_message,
             Kontext context)
@@ -101,7 +88,6 @@ public class Progress_window implements Hourglass
 		{
 			Jfx_batch_injector.inject(()->local.define_fx(wait_message,context),context);
 		}
-		return local;
 	}
 
 	//**********************************************************

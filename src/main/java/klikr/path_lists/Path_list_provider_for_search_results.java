@@ -378,7 +378,7 @@ public class Path_list_provider_for_search_results implements Path_list_provider
             Boolean bool = search_results_is_max.get(keys);
             if (bool == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+                context.log_with_stack_trace("SHOULD NOT HAPPEN");
             }
             else
             {

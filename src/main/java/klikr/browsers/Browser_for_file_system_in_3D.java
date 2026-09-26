@@ -114,7 +114,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
         String title = "Circle 3D";
         if( window_builder.path_list_provider.get_folder_path().isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace("");
             this.the_path = null;
             this.item_source = null;
         }
@@ -958,7 +958,7 @@ public class Browser_for_file_system_in_3D implements Owner_provider, Selection_
                 try {
                     Thread.sleep(20/(i+1));
                 } catch (InterruptedException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
             }
         },"smoother", context.logger());

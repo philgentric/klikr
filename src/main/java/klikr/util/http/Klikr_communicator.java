@@ -102,7 +102,7 @@ public class Klikr_communicator
         REGISTRY_DIR = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home("registry", false,context);
         if ( REGISTRY_DIR == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Fatal REGISTRY_DIR == null"));
+            context.log_with_stack_trace(Logger.error+"Fatal REGISTRY_DIR == null");
         }
     }
 
@@ -129,7 +129,7 @@ public class Klikr_communicator
                 try {
                     Files.delete(singleton_path); // It's dead, we can overwrite
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                     return false;
                 }
             }
@@ -162,7 +162,7 @@ public class Klikr_communicator
         try {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         } catch (IOException e) {
-            context.log(""+e);
+            context.log_with_stack_trace_from_throwable("",e);
         }
 
 
@@ -263,7 +263,7 @@ public class Klikr_communicator
         try {
             Files.writeString(path, json);
         } catch (IOException e) {
-            context.log(""+e);
+            context.log_with_stack_trace_from_throwable("",e);
         }
         this.registry_file = path;
     }
@@ -284,7 +284,7 @@ public class Klikr_communicator
         }
         catch (Exception e)
         {
-            //context.log(""+e);
+            //context.log_with_stack_trace_from_throwable("",e);
             return null;
         }
     }
@@ -335,7 +335,7 @@ public class Klikr_communicator
         }
         catch (Exception e)
         {
-            context.log(""+e);
+            context.log_with_stack_trace_from_throwable("",e);
             return -1;
         }
     }

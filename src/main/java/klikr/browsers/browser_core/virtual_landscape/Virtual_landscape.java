@@ -312,7 +312,7 @@ public class Virtual_landscape
     //**********************************************************
     {
         Comparator<Path> local_file_comparator = image_file_comparator;
-        //context.log(Stack_trace_getter.get_stack_trace("get_path_comparator"));
+        //context.log_with_stack_trace(("get_path_comparator"));
         Sort_files_by sort_file_by =  Sort_files_by.get_sort_files_by(path_list_provider.get_key(),context);
 
         if (local_file_comparator == null) {
@@ -375,7 +375,7 @@ public class Virtual_landscape
             else
             {
                 selected_item = null;
-                context.log(Stack_trace_getter.get_stack_trace("set_selected_look failed, path not found: "+new_selected_path));
+                context.log_with_stack_trace(("set_selected_look failed, path not found: "+new_selected_path));
             }
         },"waiting for items to be ready", context.logger());
 
@@ -416,7 +416,7 @@ public class Virtual_landscape
     {
         if ( s == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("Should not happen"));
+            context.log_with_stack_trace(("Should not happen"));
             return;
         }
         scrollable_text_field.setText(s);
@@ -708,7 +708,7 @@ public class Virtual_landscape
                 } 
                 catch (ClassCastException e) 
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("ERROR: " + e));
+                    context.log_with_stack_trace(("ERROR: " + e));
                     drag_event.consume();
                     return;
                 }
@@ -730,7 +730,7 @@ public class Virtual_landscape
                 Optional<Path> p = plpffs.get_folder_path();
                 if (p.isEmpty())
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: no folder path provided"));
+                    context.log_with_stack_trace(("SHOULD NOT HAPPEN: no folder path provided"));
                     return;
                 }
                 destination = p.get();
@@ -975,7 +975,7 @@ public class Virtual_landscape
     {
         current_vertical_offset = get_y_offset_of(scroll_to);
         if (scroll_to_listener == null) {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            context.log_with_stack_trace(("SHOULD NOT HAPPEN"));
             return;
         }
         scroll_to_listener.perform_scroll_to(current_vertical_offset, this);
@@ -1215,7 +1215,7 @@ public class Virtual_landscape
                     dos.writeUTF(full_path);
                     return true;
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }
@@ -1229,7 +1229,7 @@ public class Virtual_landscape
                     String full_path = dis.readUTF();
                     return Path.of(full_path);
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
 
                 return null;
@@ -1245,7 +1245,7 @@ public class Virtual_landscape
                     dos.writeUTF(ip.rotation().name());
                     return true;
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }
@@ -1259,7 +1259,7 @@ public class Virtual_landscape
                     String r = dis.readUTF();
                     return new Image_properties(w,h,Rotation.valueOf(r),false);
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return null;
             }
@@ -1353,7 +1353,7 @@ public class Virtual_landscape
             {
                 if ( item_path_ == null)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("non_iconized item_path_ null "));
+                    context.log_with_stack_trace(("non_iconized item_path_ null "));
                     continue;
                 }
                 if (ultra_dbg) context.log(Logger.ok+" Virtual_landscape process_non_iconized_files item_path_: " + item_path_.toAbsolutePath());
@@ -1402,7 +1402,7 @@ public class Virtual_landscape
                 {
                     if ( ifni.get_button() == null)
                     {
-                        context.log(Stack_trace_getter.get_stack_trace("Item_file_no_icon null button????"));
+                        context.log_with_stack_trace(("Item_file_no_icon null button????"));
                     }
                     else
                     {
@@ -1413,7 +1413,7 @@ public class Virtual_landscape
                 {
                     if ( item_folder.get_button() == null)
                     {
-                        context.log(Stack_trace_getter.get_stack_trace("Item_folder null button????"));
+                        context.log_with_stack_trace(("Item_folder null button????"));
                     }
                     else
                     {
@@ -1622,7 +1622,7 @@ public class Virtual_landscape
             {
                 if (item_folder.get_button() == null)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("PANIC item_folder.get_button() == null"));
+                    context.log_with_stack_trace(("PANIC item_folder.get_button() == null"));
                 }
                 else
                 {
@@ -1898,7 +1898,7 @@ public class Virtual_landscape
                 }
             }
         }
-        // context.log(Stack_trace_getter.get_stack_trace("\n\nnot found:
+        // context.log_with_stack_trace(("\n\nnot found:
         // Virtual_landscape::get_y_offset_of "+target+" (was typically deleted
         // recently)"));
 
@@ -2182,7 +2182,7 @@ public class Virtual_landscape
                     true);
             if ( trash == null)
             {
-                context.logger().log(Stack_trace_getter.get_stack_trace("trash button is null ?"));
+                context.log_with_stack_trace("trash button is null ?");
             }
             else
             {
@@ -2221,7 +2221,7 @@ public class Virtual_landscape
         {
             if ( x == null )
             {
-                context.logger().log(Stack_trace_getter.get_stack_trace("x is null ?"));
+                context.log_with_stack_trace("x is null ?");
             }
             else
             {
@@ -2937,7 +2937,7 @@ BOOKMARK
         Optional<Path> folder_path =  path_list_provider.get_folder_path();
         if ( folder_path.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         Static_backup_paths.set_backup_destination(folder_path.get());
@@ -2954,7 +2954,7 @@ BOOKMARK
         Optional<Path> folder_path =  path_list_provider.get_folder_path();
         if ( folder_path.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         Static_backup_paths.set_backup_source(folder_path.get());
@@ -2971,7 +2971,7 @@ BOOKMARK
         Optional<Path> folder_path =  path_list_provider.get_folder_path();
         if ( folder_path.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         Static_fusk_paths.set_fusk_destination(folder_path.get());
@@ -2988,7 +2988,7 @@ BOOKMARK
         Optional<Path> folder_path =  path_list_provider.get_folder_path();
         if ( folder_path.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace((""));
             return;
         }
         Static_fusk_paths.set_fusk_source(folder_path.get());
@@ -3038,7 +3038,7 @@ BOOKMARK
 
                 } catch (InterruptedException e)
                 {
-                    context.log("redraw_engine interrupted"+e);
+                    context.log_with_stack_trace_from_throwable("redraw_engine interrupted",e);
                     return;
                 }
             }
@@ -3434,7 +3434,7 @@ BOOKMARK
     private Comparator<Path> create_fast_file_comparator()
     //**********************************************************
     {
-        //context.log(Stack_trace_getter.get_stack_trace("create_fast_file_comparator"));
+        //context.log_with_stack_trace(("create_fast_file_comparator"));
         Comparator<Path> local_file_comparator = null;
         switch (Sort_files_by.get_sort_files_by(path_list_provider.get_key(), context)) {
             case ASPECT_RATIO:

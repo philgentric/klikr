@@ -125,7 +125,7 @@ public class Song_playlist
         }
         if (playlist_path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            context.log_with_stack_trace("SHOULD NOT HAPPEN");
             return;
         }
         context.log("Saving playlist as:" + playlist_path.toAbsolutePath().toString());
@@ -143,7 +143,7 @@ public class Song_playlist
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("not saved" + e.toString()));
+            context.log_with_stack_trace("not saved" + e.toString());
         }
     }
 

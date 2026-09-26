@@ -22,7 +22,6 @@ import klikr.look.Look_and_feel_manager;
 import klikr.util.cache.Cache_folder;
 import klikr.util.image.Static_image_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -441,7 +440,7 @@ public class Mouse_handling_for_Image_window
 
         if(image_window.image_display_handler.get_image_context().isEmpty())
         {
-            logger.log(Stack_trace_getter.get_stack_trace("BADBABDBAD drag_and_drop: get_image_context is empty"));
+            logger.log_with_stack_trace("BADBABDBAD drag_and_drop: get_image_context is empty");
             return;
         }
         {
@@ -502,7 +501,7 @@ public class Mouse_handling_for_Image_window
                     image_window.redisplay(true);
                 }
                 else {
-                    logger.log(Stack_trace_getter.get_stack_trace("loading image failed for: "+file));
+                    logger.log_with_stack_trace("loading image failed for: "+file);
                 }
                 image_window.restore_cursor();
                 break;

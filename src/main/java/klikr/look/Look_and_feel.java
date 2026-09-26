@@ -315,7 +315,7 @@ public abstract class Look_and_feel
         try {
             in.close();
         } catch (IOException e) {
-            logger.log(""+e);
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         // the length is a convenience if we would use the font object
         // here, we just load the font in the javafx cache

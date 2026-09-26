@@ -5,7 +5,6 @@ package klikr.machine_learning.similarity;
 //SOURCES ./Similarity_cache_warmer_actor.java
 //SOURCES ./Similarity_cache_warmer_message.java
 
-import javafx.stage.Window;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Kontext;
 import klikr.util.cache.*;
@@ -13,7 +12,6 @@ import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.execute.actor.Job_termination_reporter;
 import klikr.path_lists.Path_list_provider;
@@ -21,7 +19,6 @@ import klikr.machine_learning.feature_vector.Feature_vector_cache;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
@@ -55,8 +52,8 @@ public class Similarity_cache implements Clearable_RAM_cache
     {
         //this.path_list_provider = path_list_provider;
         this.context = context;
-        String cache_name = "similarity";
-        String local = cache_name + path_list_provider.get_folder_path();
+        //String cache_name = "similarity";
+        //String local = cache_name + path_list_provider.get_folder_path();
         //name = UUID.nameUUIDFromBytes(local.getBytes()) + ".similarity_cache";
         folder_path = Static_files_and_paths_utilities.get_absolute_hidden_dir_on_user_home(Cache_folder.similarity_cache.name(), false, context);
         if (folder_path != null)
@@ -96,7 +93,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                     dos.writeDouble(d);
                     return true;
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }
@@ -107,7 +104,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                 try {
                     return dis.readDouble();
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return null;
             }
@@ -125,7 +122,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                     dos.writeUTF(sj);
                     return true;
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }
@@ -142,7 +139,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                     Path pj = Path.of(sj);
                     return Path_pair.build(pi,pj);
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
 
                 return null;
@@ -206,7 +203,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                     dos.writeInt(integer_pair.j());
                     return true;
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
                 return false;
             }
@@ -221,7 +218,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                     int j = dis.readInt();
                     return Integer_pair.build(i,j);
                 } catch (IOException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                 }
 
                 return null;
@@ -258,7 +255,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                         context.log(" fv == null for "+pi);
                         return null;
                     }
-                    context.log(Stack_trace_getter.get_stack_trace("trying twice worked!!!!"));
+                    context.log_with_stack_trace("trying twice worked!!!!");
                 }
                 int j = integer_pair.j();
                 if ( j >= paths.size())
@@ -277,7 +274,7 @@ public class Similarity_cache implements Clearable_RAM_cache
                         context.log(" fv == null for "+pj);
                         return null;
                     }
-                    context.log(Stack_trace_getter.get_stack_trace("trying twice worked!!!!"));
+                    context.log_with_stack_trace("trying twice worked!!!!");
                 }
                 return  fvi.distance(fvj, context.logger());
             }

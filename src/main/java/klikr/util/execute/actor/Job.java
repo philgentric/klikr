@@ -27,15 +27,15 @@ public class Job
         this.logger = logger;
         if ( actor==null)
         {
-            logger.log_stack_trace(Logger.error+" FATAL actor cannot be null");
+            logger.log_with_stack_trace(Logger.error+" FATAL actor cannot be null");
         }
         if ( message==null)
         {
-            logger.log_stack_trace(Logger.error+" FATAL message cannot be null");
+            logger.log_with_stack_trace(Logger.error+" FATAL message cannot be null");
         }
         if ( message.get_aborter()==null)
         {
-            logger.log_stack_trace(Logger.error+" FATAL Aborter cannot be null");
+            logger.log_with_stack_trace(Logger.error+" FATAL Aborter cannot be null");
             System.exit(-1);
         }
         this.actor = actor;

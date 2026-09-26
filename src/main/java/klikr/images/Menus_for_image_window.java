@@ -16,7 +16,6 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Kontext;
 import klikr.util.execute.System_open_actor;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.animated_gifs.Gif_repair;
 import klikr.browsers.browser_core.items.Item_file_with_icon;
 import klikr.change.Redo_same_move_engine;
@@ -35,7 +34,6 @@ import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.change.old_and_new.Status;
 import klikr.util.image.rescaling.Image_rescaling_filter;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Items_with_explanation;
 import klikr.util.ui.Menu_items;
 
@@ -433,7 +431,7 @@ public class Menus_for_image_window
 
             if ( image_window.image_display_handler.get_image_context().isEmpty())
             {
-                logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL no context"));
+                logger.log_with_stack_trace(Logger.error+"FATAL no context");
                 return;
             }
             image_window.image_display_handler.get_image_context().get().open_with_registered_application(image_window.context);

@@ -56,7 +56,6 @@ import javafx.scene.paint.Color;
 import klikr.Window_builder;
 import klikr.browsers.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.util.Kontext;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browsers.browser_core.*;
 import klikr.path_lists.Path_list_provider;
@@ -67,7 +66,6 @@ import klikr.settings.boolean_features.Feature_change_target;
 import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
 
 import java.nio.file.Path;
@@ -91,7 +89,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
 
 
         Optional<Path> op = path_list_provider.get_folder_path();
-        if ( op.isEmpty()) context.log(Stack_trace_getter.get_stack_trace("\n\n\n"+Logger.error+" FATAL)"));
+        if ( op.isEmpty()) context.log_with_stack_trace("\n\n\n"+Logger.error+" FATAL)");
         if ( dbg)
         {
             op.ifPresent(path -> context.log("\n\n\n\n\n\nNEW BROWSER " + path));
@@ -133,22 +131,21 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     {
         if (path_list_provider == null)
         {
-            context.log_with_stack(Logger.error+ "path_list_provider == null");
+            context.log_with_stack_trace(Logger.error+ "path_list_provider == null");
             return;
         }
 
         context.log("VVVVVVV   path_list_provider"+path_list_provider.get_key());
         Feature_cache.register_for(Feature.Monitor_folders,this);
-        boolean monitor_this_folder = false;
 
         // ALWAYS monitor external drives
         Optional<Path> op = path_list_provider.get_folder_path();
         if (op.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace("");
             return;
         }
-        monitor_this_folder = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(op.get(), context.logger());
+        boolean monitor_this_folder = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(op.get(), context.logger());
 
 
         if (!monitor_this_folder)
@@ -244,7 +241,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
             else
             {
                 if (dbg)        context.setTitle(name);// fast temporary
-                context.log(Stack_trace_getter.get_stack_trace("set_status not done as virtual_landscape not ready yet"));
+                context.log_with_stack_trace("set_status not done as virtual_landscape not ready yet");
             }
             Jfx_batch_injector.inject(() ->
             {
@@ -274,7 +271,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
         Optional<Path> op = path_list_provider.get_folder_path();
         if( op.isEmpty() )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace("");
             return;
         }
 

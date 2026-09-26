@@ -106,7 +106,7 @@ public enum Cache_folder
             context.log("one icon deleted from cache:" + icon_path);
 
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace("WARNING: deleting one icon FAILED: " + e));
+            context.log_with_stack_trace("WARNING: deleting one icon FAILED: " + e);
         }
     }
 

@@ -51,7 +51,6 @@ import klikr.look.my_i18n.My_I18n;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.Moving_files;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Folder_size_stage;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
@@ -248,7 +247,7 @@ public abstract class Item implements Icon_destination
         ContextMenu context_menu = new ContextMenu();
         Look_and_feel_manager.set_context_menu_look(context_menu, item_context.context.logger());
         if (item_context.item_path == null) {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace((""));
             return context_menu;
         }
         if (Files.isDirectory(item_context.item_path))
@@ -421,7 +420,7 @@ public abstract class Item implements Icon_destination
                 event -> {
                     if (dbg) item_context.log("copying!");
                     if (item_context.item_path == null) {
-                        item_context.log(Stack_trace_getter.get_stack_trace(""));
+                        item_context.context.log_with_stack_trace((""));
                         return;
                     }
 
@@ -444,7 +443,7 @@ public abstract class Item implements Icon_destination
         Menu_items.add_menu_item_for_context_menu("Show_file_size", true, null,
                 event -> {
                     if (item_context.item_path == null) {
-                        this.item_context.log(Stack_trace_getter.get_stack_trace(""));
+                        this.item_context.context.log_with_stack_trace((""));
                         return;
                     }
                     show_file_size(item_context.item_path, this.item_context.context);
@@ -488,7 +487,7 @@ public abstract class Item implements Icon_destination
         if (selected) {
             Path item_path = get_item_path();
             if (item_path == null) {
-                item_context.log(Stack_trace_getter.get_stack_trace(""));
+                item_context.context.log_with_stack_trace((""));
                 return;
             }
             if (selection_handler.add_to_selected_for_moving(item_path)) {
@@ -505,7 +504,7 @@ public abstract class Item implements Icon_destination
         local_button.setOnContextMenuRequested((ContextMenuEvent event) -> {
             if (dbg) {
                 if (item_context.item_path == null) {
-                    item_context.log(Stack_trace_getter.get_stack_trace(""));
+                    item_context.context.log_with_stack_trace((""));
                     return;
                 }
                 item_context.log("show context menu of button:" + item_context.item_path.toAbsolutePath());
@@ -545,7 +544,7 @@ public abstract class Item implements Icon_destination
     //**********************************************************
     {
         if (!Platform.isFxApplicationThread()) {
-            item_context.log(Stack_trace_getter.get_stack_trace("HAPPENS1 process_is_visible"));
+            item_context.context.log_with_stack_trace(("HAPPENS1 process_is_visible"));
             Platform.runLater(() -> process_is_visible(current_vertical_offset));
             return;
         }
@@ -588,7 +587,7 @@ public abstract class Item implements Icon_destination
                 event -> {
                     if (dbg) item_context.log("Item: Renaming");
                     if (item_context.item_path == null) {
-                        item_context.log(Stack_trace_getter.get_stack_trace(""));
+                        item_context.context.log_with_stack_trace((""));
                         return;
                     }
                     String original_name = item_context.item_path.getFileName().toString();
@@ -604,7 +603,7 @@ public abstract class Item implements Icon_destination
                         String new_item_name = text_edit.getText();
                         actionEvent.consume();
                         if (item_context.item_path == null) {
-                            item_context.log(Stack_trace_getter.get_stack_trace("Should not happen "));
+                            item_context.context.log_with_stack_trace(("Should not happen "));
                             return;
                         }
                         if (item_context.item_path.toFile().isDirectory()) {
@@ -841,7 +840,7 @@ public abstract class Item implements Icon_destination
                 item_context.path_list_provider.get_key(),
                 item_context.top_left,
                 item_context.context);        if (item_context.item_path == null) {
-            item_context.log(Stack_trace_getter.get_stack_trace("should not happen: no path ?"));
+            item_context.context.log_with_stack_trace(("should not happen: no path ?"));
             return;
         }
         My_colors.save_color(item_context.item_path, my_color.color().toString(), item_context.context.logger());

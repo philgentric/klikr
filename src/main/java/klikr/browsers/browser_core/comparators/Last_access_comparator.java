@@ -43,7 +43,7 @@ public record Last_access_comparator(Kontext context) implements Comparator<Path
         }
         catch (IOException e)
         {
-            context().log(Stack_trace_getter.get_stack_trace(""+e));
+            context().log_with_stack_trace_from_throwable("",e);
             return p1.getFileName().compareTo(p2.getFileName());
         }
 
@@ -65,7 +65,7 @@ public record Last_access_comparator(Kontext context) implements Comparator<Path
         try {
             bfav.setTimes(null, ft, null);
         } catch (IOException e) {
-            context.log(""+e);
+            context.log_with_stack_trace_from_throwable("",e);
         }
 
     }

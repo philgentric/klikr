@@ -59,7 +59,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
         Optional<Path> p = window_builder.path_list_provider.get_folder_path();
         if (p.isEmpty())
         {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+            context.log_with_stack_trace("SHOULD NOT HAPPEN");
             return;
         }
 
@@ -345,7 +345,7 @@ public class Browser_for_disk_footprint implements Owner_provider, Selection_man
                 });
             }
         } catch (Exception e) {
-            context.log(""+e);
+            context.log_with_stack_trace_from_throwable("",e);
         }
         finally {
             x.ifPresent(Hourglass::close);

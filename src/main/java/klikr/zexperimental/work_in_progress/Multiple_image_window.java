@@ -66,7 +66,7 @@ public class Multiple_image_window
                 path,
                 k);
         if (option.isEmpty()) {
-            k.log(Stack_trace_getter.get_stack_trace(Logger.error+"Multiple_image_stage PANIC: cannot load image " + path.toAbsolutePath()));
+            k.log_with_stack_trace(Logger.error+"Multiple_image_stage PANIC: cannot load image " + path.toAbsolutePath());
             return Optional.empty();
         }
         k.log("Multiple_image_stage OK: image loaded" + path.toAbsolutePath());
@@ -127,7 +127,7 @@ public class Multiple_image_window
         this.path_list_provider = path_list_provider;
         ic = local_ic;
         if (ic == null) {
-            logger.log(Stack_trace_getter.get_stack_trace("what ??????"));
+            logger.log_with_stack_trace("what ??????");
         }
         logger.log("Multiple_image_stage !!!");
         Stage the_stage = new Stage();

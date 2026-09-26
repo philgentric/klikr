@@ -3,11 +3,9 @@
 
 package klikr.machine_learning.deduplication;
 
-import javafx.stage.Window;
 import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.util.Kontext;
 import klikr.util.cache.Klikr_cache;
-import klikr.util.execute.actor.Aborter;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.browsers.browser_core.virtual_landscape.Path_comparator_source;
 import klikr.path_lists.Path_list_provider;
@@ -18,7 +16,6 @@ import klikr.machine_learning.similarity.Similarity_file_pair;
 import klikr.util.files_and_paths.File_pair;
 import klikr.util.files_and_paths.File_with_a_few_bytes;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -82,7 +79,7 @@ public class Runnable_for_finding_duplicate_file_pairs_similarity implements Run
 		Feature_vector_cache fv_cache = fv_cache_supplier.get();
 		if ( fv_cache == null)
 		{
-			context.log(Stack_trace_getter.get_stack_trace(Logger.error+" FATAL: fv_cache is null"));
+			context.log_with_stack_trace(Logger.error+" FATAL: fv_cache is null");
 			return;
 		}
 
@@ -123,7 +120,7 @@ public class Runnable_for_finding_duplicate_file_pairs_similarity implements Run
 		}
 
 
-		context.log(Stack_trace_getter.get_stack_trace("found duplicates:  "+deduplication_by_similarity_engine.duplicates_found.doubleValue()));
+		context.log_with_stack_trace("found duplicates:  "+deduplication_by_similarity_engine.duplicates_found.doubleValue());
         deduplication_by_similarity_engine.threads_in_flight.decrement();
         double remaining = deduplication_by_similarity_engine.threads_in_flight.doubleValue();
 		if ( remaining != 0)

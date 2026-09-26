@@ -94,7 +94,7 @@ public class Heavy_embeddings_prototype implements Embeddings_prototype
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            logger.log_with_stack_trace_from_throwable("",e);
             return false;
         }
         return true;

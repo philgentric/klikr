@@ -29,7 +29,6 @@ import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Sizes;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.ui.Popups;
 
@@ -100,7 +99,7 @@ public class Item_folder extends Item implements Icon_destination
         }
         else
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"SHOULD NOT HAPPEN Item_folder path is not a directory ->"+item_context.item_path+"<- text: ->"+text+"<-"));
+            item_context.context.log_with_stack_trace(Logger.error+"SHOULD NOT HAPPEN Item_folder path is not a directory ->"+item_context.item_path+"<- text: ->"+text+"<-");
             button = null;
             return;
         }
@@ -113,7 +112,7 @@ public class Item_folder extends Item implements Icon_destination
         {
             if ( item_context.item_path == null)
             {
-                item_context.log(Stack_trace_getter.get_stack_trace("FATAL"));
+                item_context.context.log_with_stack_trace("FATAL");
                 return;
             }
             if (item_context.item_path.getFileName() != null)
@@ -183,7 +182,7 @@ public class Item_folder extends Item implements Icon_destination
     public void receive_icon(Image_and_properties image_and_rotation)
     //**********************************************************
     {
-        item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+"SHOULD NOT HAPPEN"));
+        item_context.context.log_with_stack_trace(Logger.error+"SHOULD NOT HAPPEN");
     }
 
 
@@ -213,7 +212,7 @@ public class Item_folder extends Item implements Icon_destination
         Path item_path = get_item_path();
         if ( item_path == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return null;
         }
         // for a file the displayed icon is built from the file itself, if supported:
@@ -490,7 +489,7 @@ public class Item_folder extends Item implements Icon_destination
         {
             return button.getWidth();
         }
-        item_context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN "+item_context.item_path));
+        item_context.context.log_with_stack_trace("SHOULD NOT HAPPEN "+item_context.item_path);
         return 0;
     }
 
@@ -521,7 +520,7 @@ public class Item_folder extends Item implements Icon_destination
         Path item_path = get_item_path();
         if ( item_path == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return "Folder has no path ?";
         }
         return "is dir: " + item_path.toAbsolutePath();

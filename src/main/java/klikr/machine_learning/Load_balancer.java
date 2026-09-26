@@ -58,7 +58,7 @@ public class Load_balancer
                 context.log("Servers are starting (no servers are active yet) for: " + server_type.name());
                 return -1;
             }
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL for: " + server_type.name()));
+            context.log_with_stack_trace(Logger.error+"FATAL for: " + server_type.name());
             return -1;
         }
         //context.log(Logger.ok+" Found "+status.available_ports().length()+" active servers for: " + st.name());

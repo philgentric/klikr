@@ -62,7 +62,7 @@ public class Item_context
         }
         //logger.log("Item_context constructor, item_type: " + this.item_type);
         is_trash = isTrash;
-        if ( item_path == null) context.log(Stack_trace_getter.get_stack_trace("WARNING: null item_path" +dump_item_context()));
+        if ( item_path == null) context.log_with_stack_trace("WARNING: null item_path" +dump_item_context());
         shutdown_target = shutdownTarget;
         top_left = topLeft;
 
@@ -105,5 +105,10 @@ public class Item_context
 
     public Logger logger() {
         return context.logger();
+    }
+
+    public void log_with_stack_trace(String s)
+    {
+        context.log_with_stack_trace(s);
     }
 }

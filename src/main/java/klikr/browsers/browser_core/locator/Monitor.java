@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import klikr.backup.Backup_service;
 import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.ui.Jfx_batch_injector;
@@ -60,7 +59,7 @@ public class Monitor
                         String x = input_queue.poll(10, TimeUnit.MINUTES);
                         Jfx_batch_injector.inject(()->textArea.setText(textArea.getText()+"\n"+x),context);
                     } catch (InterruptedException e) {
-                        context.log_exception("",e);
+                        context.log_with_stack_trace_from_throwable("",e);
                         return;
                     }
 

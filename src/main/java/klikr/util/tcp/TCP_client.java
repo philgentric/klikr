@@ -11,7 +11,6 @@ import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.File_logger;
 import klikr.util.log.Logger;
 import klikr.util.log.Simple_logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.List;
 
 
 //**********************************************************
@@ -55,15 +53,15 @@ public class TCP_client
         }
         catch (UnknownHostException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
         }
         catch (ConnectException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(e+" Cannot connect is a server at "+host+":"+port_number+" started?"));
+            if ( dbg) logger.log_with_stack_trace_from_throwable(" Cannot connect is a server at "+host+":"+port_number+" started?",e);
         }
         catch (IOException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
         }
 
     }
@@ -87,19 +85,19 @@ public class TCP_client
         }
         catch (UnknownHostException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
             return new TCP_client_out(false,"",""+e);
 
         }
         catch (ConnectException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(e+" Cannot connect is a server at "+host+":"+port_number+" started?"));
+            if ( dbg) logger.log_with_stack_trace_from_throwable(" Cannot connect is a server at "+host+":"+port_number+" started?",e);
             return new TCP_client_out(false,"","Cannot connect! Is a server at "+host+":"+port_number+" started?");
 
         }
         catch (IOException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
             return new TCP_client_out(false,"",""+e);
 
         }
@@ -129,19 +127,19 @@ public class TCP_client
         }
         catch (UnknownHostException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
             return new TCP_client_out(false,"",""+e);
 
         }
         catch (ConnectException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(e+" Cannot connect is a server at "+host+":"+port_number+" started?"));
+            if ( dbg) logger.log_with_stack_trace(e+" Cannot connect is a server at "+host+":"+port_number+" started?");
             return new TCP_client_out(false,"","Cannot connect! Is a server at "+host+":"+port_number+" started?");
 
         }
         catch (IOException e)
         {
-            if ( dbg) logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            if ( dbg) logger.log_with_stack_trace_from_throwable("",e);
             return new TCP_client_out(false,"",""+e);
 
         }

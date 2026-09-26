@@ -121,7 +121,7 @@ public class Scan_cache
             }
         }
         catch (IOException e) {
-            logger.log(""+e);
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         return count;
     }
@@ -232,7 +232,7 @@ public class Scan_cache
             return Optional.of(node);
         }
         catch (IOException e) {
-            logger.log(""+e);
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         return Optional.empty();
     }

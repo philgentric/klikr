@@ -25,7 +25,7 @@ public abstract class Item_file extends Item
         super(item_context, selection_handler, icon_factory_actor);
         if ( item_context.item_path == null )
         {
-            item_context.log(Stack_trace_getter.get_stack_trace("item_path == null ???"));
+            item_context.log_with_stack_trace("item_path == null ???");
         }
 
         icon_size = Non_booleans_properties.get_icon_size();

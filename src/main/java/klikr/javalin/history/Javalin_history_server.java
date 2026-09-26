@@ -136,7 +136,7 @@ public class Javalin_history_server
         try {
             started.await();
         } catch (InterruptedException e) {
-            context.log("Javalin_history server interrupted"+e);
+            context.log_with_stack_trace_from_throwable("Javalin_history server interrupted",e);
             return;
         }
         context.log("Javalin_history server started on port " + port_number);

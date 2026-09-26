@@ -4,7 +4,6 @@
 package klikr.machine_learning.face_recognition;
 
 import javafx.scene.image.Image;
-import javafx.stage.Window;
 import klikr.machine_learning.Load_balancer;
 import klikr.machine_learning.ML_server_type;
 import klikr.machine_learning.monitoring.UDP_traffic_monitor;
@@ -13,14 +12,12 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Kontext;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.file.Path;
-import java.util.Random;
 
 /*
 this face detector relies on a python server that uses the face detection library
@@ -67,21 +64,21 @@ public class Face_detector
             String encodedPath = URLEncoder.encode(path.toAbsolutePath().toString(), "UTF-8");
             url_string = "http://127.0.0.1:"+port+"/" + encodedPath;
         } catch (UnsupportedEncodingException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         URL url = null;
         try {
             url = new URL(url_string);
         } catch (MalformedURLException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
         if ( dbg)  context.log("Face detection client: connection ready: "+connection.toString());
@@ -90,7 +87,7 @@ public class Face_detector
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(0);// infinite
         } catch (ProtocolException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.server_not_reacheable);
         }
 
@@ -118,7 +115,7 @@ public class Face_detector
         try {
             int response_code = connection.getResponseCode();
         } catch (IOException e) {
-            // context.log(Stack_trace_getter.get_stack_trace(""+e));
+            // context.log_with_stack_trace(""+e));
             // context.log("face detection failed");
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
@@ -127,7 +124,7 @@ public class Face_detector
             String response_message = connection.getResponseMessage();
             // context.log("Response Message: " + responseMessage);
         } catch (IOException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
 
@@ -138,7 +135,7 @@ public class Face_detector
         }
         catch (IOException e)
         {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace_from_throwable("",e);
             return new Face_detection_result(null, Face_recognition_in_image_status.no_face_detected);
         }
         finally

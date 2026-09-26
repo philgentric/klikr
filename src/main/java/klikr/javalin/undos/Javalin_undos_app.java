@@ -282,7 +282,7 @@ public class Javalin_undos_app extends Application {
         try {
             started.await();
         } catch (InterruptedException e) {
-            context.log("Javalin_undos server interrupted"+e);
+            context.log_with_stack_trace_from_throwable("Javalin_undos server interrupted",e);
             return;
         }
         context.log("Javalin_undos server started on port " + port_number);

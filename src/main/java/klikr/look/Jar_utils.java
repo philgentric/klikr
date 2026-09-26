@@ -11,7 +11,6 @@ import klikr.util.execute.Application_jar;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.image.Static_image_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -170,13 +169,13 @@ public class Jar_utils
         Look_and_feel local_instance = Look_and_feel_manager.get_instance(logger);
         if (local_instance == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: cannot get look and feel instance"));
+            logger.log_with_stack_trace(Logger.error+"FATAL: cannot get look and feel instance");
             return null;
         }
         String path = local_instance.get_broken_icon_path();
         if (path == null)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"FATAL: cannot get broken icon path"));
+            logger.log_with_stack_trace(Logger.error+"FATAL: cannot get broken icon path");
             return null;
         }
         broken_icon = load_jfx_image_from_jar(path, icon_size,logger);

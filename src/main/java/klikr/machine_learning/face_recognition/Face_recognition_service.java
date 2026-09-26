@@ -55,7 +55,6 @@ import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -222,7 +221,7 @@ public class Face_recognition_service
                 if ( label == null)
                 {
                     // this is a "pure" recognition task
-                    // context.log(Stack_trace_getter.get_stack_trace("process_file: NO face_recognized, nolabel ?????????"));
+                    // context.log_with_stack_trace("process_file: NO face_recognized, nolabel ?????????"));
                     // no training
                     break;
                 }
@@ -232,7 +231,7 @@ public class Face_recognition_service
 
 
             default:
-                 context.log(Stack_trace_getter.get_stack_trace("detect_face_and_recognize: should not happen"));
+                 context.log_with_stack_trace("detect_face_and_recognize: should not happen");
                 return null;
 
         }
@@ -323,7 +322,7 @@ public class Face_recognition_service
                 if ( label == null)
                 {
                     // this is a "pure" recognition task
-                    // context.log(Stack_trace_getter.get_stack_trace("process_file: NO face_recognized, nolabel ?????????"));
+                    // context.log_with_stack_trace("process_file: NO face_recognized, nolabel ?????????"));
                     // no training
                     break;
                 }
@@ -332,7 +331,7 @@ public class Face_recognition_service
                 add_prototype_to_set(file,label,Face_recognition_results,  local_aborter);
                 break;
             default:
-                 context.log(Stack_trace_getter.get_stack_trace("just_recognize: should not happen"));
+                 context.log_with_stack_trace("just_recognize: should not happen");
                 break;
 
         }
@@ -882,14 +881,14 @@ public class Face_recognition_service
                         Files.delete(p);
                          context.log("deleted: " + p);
                     } catch (IOException ex) {
-                         context.log(Stack_trace_getter.get_stack_trace("" + e));
+                         context.log_with_stack_trace("" + e);
                     }
                     try {
                         Path p = Embeddings_prototype.make_prototype_path(face_recognizer_path, eval_result.tag());
                         Files.delete(p);
                          context.log("deleted: " + p);
                     } catch (IOException ex) {
-                         context.log(Stack_trace_getter.get_stack_trace("" + e));
+                         context.log_with_stack_trace("" + e);
                     }
                     //save_internal();
                     stage.close();
@@ -1071,7 +1070,7 @@ public class Face_recognition_service
                     }
                     catch (NumberFormatException e)
                     {
-                         context.log(Stack_trace_getter.get_stack_trace(f+"   =>  " + e));
+                         context.log_with_stack_trace(f+"   =>  " + e);
                         ok = false;
                         break;
                     }
@@ -1084,9 +1083,9 @@ public class Face_recognition_service
                 //return new Heavy_embeddings_prototype(face, fv, label, tag);
             }
         } catch (FileNotFoundException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace(""+e);
         } catch (IOException e) {
-             context.log(Stack_trace_getter.get_stack_trace(""+e));
+             context.log_with_stack_trace(""+e);
         }
         // the prototype file is corrupted, let us remove it and the image too
         delete_prototype(f);
@@ -1148,7 +1147,7 @@ public class Face_recognition_service
              context.log("deleting corrupted prototype: "+f);
             Files.delete(f.toPath());
         } catch (IOException ex) {
-             context.log(Stack_trace_getter.get_stack_trace("" + ex));
+             context.log_with_stack_trace("" + ex);
         }
     }
 
@@ -1168,9 +1167,9 @@ public class Face_recognition_service
             return label;
 
         } catch (FileNotFoundException e) {
-             context.log(""+e);
+             context.log_with_stack_trace_from_throwable("",e);
         } catch (IOException e) {
-             context.log(""+e);
+             context.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }
@@ -1253,7 +1252,7 @@ public class Face_recognition_service
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                     context.log(""+e);
+                     context.log_with_stack_trace_from_throwable("",e);
                     return;
                 }
 
@@ -1431,7 +1430,7 @@ public class Face_recognition_service
             }
             catch (InterruptedException e)
             {
-                 context.log(Stack_trace_getter.get_stack_trace(""+e));
+                 context.log_with_stack_trace_from_throwable("",e);
                 break;
             }
         }

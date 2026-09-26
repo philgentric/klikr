@@ -181,7 +181,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                         }
                         else
                         {
-                            context.log(Stack_trace_getter.get_stack_trace("RE-loading image failed "+image_context.path));
+                            context.log_with_stack_trace(("RE-loading image failed "+image_context.path));
                         }
                     },context);
                 }
@@ -270,7 +270,7 @@ public class Image_display_handler implements Change_receiver, Slide_show_slave
                         return;
                     }
                     if (image_context.path == null) {
-                        image_context.context.log(Stack_trace_getter.get_stack_trace(Logger.error+"Panic"));
+                        image_context.context.log_with_stack_trace((Logger.error+"Panic"));
                         image_context = null;
                         return;
                     }

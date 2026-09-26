@@ -141,7 +141,7 @@ public class Javalin_for_list
         try {
             started.await();
         } catch (InterruptedException e) {
-            logger.log("Javalin_for_list server interrupted"+e);
+            logger.log_with_stack_trace_from_throwable("Javalin_for_list server interrupted",e);
             return;
         }
         logger.log("Javalin_for_list server started on port " + port_number);

@@ -4,8 +4,6 @@
 package klikr.util.image.decoding;
 
 import klikr.util.Kontext;
-import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,7 +33,7 @@ public class Fast_date_from_filesystem
         {
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
         }
         return FileTime.from(Instant.now());

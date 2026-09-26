@@ -14,7 +14,6 @@ import javafx.util.Duration;
 import klikr.look.Look_and_feel_manager;
 import klikr.look.my_i18n.My_I18n;
 import klikr.util.Kontext;
-import klikr.util.log.Stack_trace_getter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,7 @@ public class Popups
     public static void popup_Exception(Exception e, double icon_size, String title, Kontext context)
     //**********************************************************
     {
-        context.log(Stack_trace_getter.get_stack_trace("Going to popup exception(1): " + e));
+        context.log_with_stack_trace_from_throwable("Going to popup exception(1): " , e);
         Jfx_batch_injector.inject(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.initOwner(context.owner());
@@ -80,7 +79,7 @@ public class Popups
                 }
                 catch(NullPointerException e)
                 {
-                    context.log(Stack_trace_getter.get_stack_trace("Typically this error occurs because you are calling popup_warning(), passing a Window owner that has no scene yet "+e));
+                    context.log_with_stack_trace_from_throwable("Typically this error occurs because you are calling popup_warning(), passing a Window owner that has no scene yet ",e);
                 }
             }
 

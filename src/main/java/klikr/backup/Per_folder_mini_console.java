@@ -219,7 +219,7 @@ public class Per_folder_mini_console
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                    context.log_with_stack_trace(e.toString());
                     return;
                 }
 

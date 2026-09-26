@@ -3,7 +3,6 @@
 
 package klikr.util;
 
-import javafx.stage.Window;
 import klikr.util.cache.RAM_caches;
 import klikr.util.log.Logger;
 import klikr.util.ui.Popups;
@@ -15,7 +14,7 @@ public class Check_remaining_RAM
 //**********************************************************
 {
     private static final boolean dbg = false;
-    public static final long MIN_REMAINING_FREE_MEMORY_MB = 300_000_000;
+    public static final long MIN_REMAINING_FREE_MEMORY_bytes = 300_000_000;
     private static Long last_time_oom_was_shown = null;
 
     public static AtomicBoolean low_memory = new AtomicBoolean(false);
@@ -25,15 +24,16 @@ public class Check_remaining_RAM
     //**********************************************************
     {
         long before = get_remaining_memory(context);
-        if ( before > MIN_REMAINING_FREE_MEMORY_MB) return false;
+        if ( before > MIN_REMAINING_FREE_MEMORY_bytes) return false;
         RAM_caches.clear_all_RAM_caches(context);
         System.gc();
         long after = get_remaining_memory(context);
+        if ( after > MIN_REMAINING_FREE_MEMORY_bytes) return false;
         low_memory.set(true);
 
 
         context.log(message+" Garbage Collector was called, AVAILABLE: "+before/1000_000L + " => "+after/1000_000L);
-        if (after > MIN_REMAINING_FREE_MEMORY_MB) return false;
+        if (after > MIN_REMAINING_FREE_MEMORY_bytes) return false;
 
         context.log(Logger.warning+"Your java VM machine is running out of RAM!\n"+message+"\nIncrease max in Preferences?");
         boolean show_pop_up = false;

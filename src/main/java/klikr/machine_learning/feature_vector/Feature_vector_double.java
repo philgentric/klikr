@@ -102,7 +102,7 @@ public class Feature_vector_double implements Feature_vector
         {
             // this can legitimately happen for song similarity
             // i.e. a short song creates a shorter vector ...
-            if (dbg) logger.log(Stack_trace_getter.get_stack_trace("WARNING.... feature vector size mismatch "+n+" "+this.who_are_you+" vs "+n2+ " "+((Feature_vector_double) other_feature_vector_).who_are_you));
+            if (dbg) logger.log_with_stack_trace("WARNING.... feature vector size mismatch "+n+" "+this.who_are_you+" vs "+n2+ " "+((Feature_vector_double) other_feature_vector_).who_are_you);
             // too bad ... let us try the short way
             if ( n2 < n) n = n2;
         }

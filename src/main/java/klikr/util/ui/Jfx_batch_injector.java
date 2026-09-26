@@ -5,15 +5,11 @@ package klikr.util.ui;
 
 import javafx.application.Platform;
 import klikr.util.Kontext;
-import klikr.util.cache.Cache_folder;
 import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
-import klikr.util.files_and_paths.Static_files_and_paths_utilities;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.log.Logger;
 import klikr.util.mmap.Mmap;
 
-import java.nio.file.Path;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -110,7 +106,7 @@ public class Jfx_batch_injector
                     }
                 }
                 catch (InterruptedException e) {
-                    logger.log(Stack_trace_getter.get_stack_trace("" + e));
+                    logger.log_with_stack_trace_from_throwable("" , e);
                 }
             }
         };

@@ -8,7 +8,6 @@ import klikr.util.cache.Size_;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -267,7 +266,7 @@ public class Mmap
         }
         if (!meta.piece().write_image_as_pixels(meta.offset(),image))
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.error+"PANIC in write_image, PixelReader is null for image: " + tag));
+            context.log_with_stack_trace(Logger.error+"PANIC in write_image, PixelReader is null for image: " + tag);
             return false;
         };
         record_index(tag, meta, meta.piece());
@@ -293,7 +292,7 @@ public class Mmap
         }
         if (!( meta_from_index instanceof Image_as_pixel_metadata ))
         {
-            context.log(Stack_trace_getter.get_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag+" got: "+meta_from_index.getClass().getName()));
+            context.log_with_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag+" got: "+meta_from_index.getClass().getName());
             return Optional.empty();
         }
         Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta_from_index;
@@ -432,11 +431,11 @@ public class Mmap
         }
         catch (FileNotFoundException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         catch (IOException e)
         {
-            logger.log(Stack_trace_getter.get_stack_trace(""+e));
+            logger.log_with_stack_trace_from_throwable("",e);
         }
     }
 
@@ -487,7 +486,7 @@ public class Mmap
         }
         catch (FileNotFoundException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         catch (IOException e)
         {
@@ -500,7 +499,7 @@ public class Mmap
             } catch (IOException ee) {
                 context.log("Could not delete index file: " + ee);
             }
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         // we can init only after everything is reloaded
         for (Piece piece : pieces.values())
@@ -535,7 +534,7 @@ public class Mmap
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                context.log(""+e);
+                context.log_with_stack_trace_from_throwable("",e);
             }
         }
     }
@@ -625,7 +624,7 @@ public class Mmap
         {
             return new Room(piece, offset);
         }
-        context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN Room not found for piece: " + piece));
+        context.log_with_stack_trace("SHOULD NOT HAPPEN Room not found for piece: " + piece);
         return null;
     }
 

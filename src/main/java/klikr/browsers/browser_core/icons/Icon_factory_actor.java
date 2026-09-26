@@ -33,7 +33,6 @@ import klikr.util.image.Static_image_utilities;
 import klikr.util.image.decoding.Exif_metadata_extractor;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.mmap.Mmap;
 
 import java.io.*;
@@ -122,7 +121,7 @@ public class Icon_factory_actor implements Actor
 
         Icon_destination destination = icon_factory_request.destination;
         if (destination == null) {
-            context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory : cancel! destination==null"));
+            context.log_with_stack_trace("SHOULD NOT HAPPEN icon factory : cancel! destination==null");
             return "should not happen";
         }
 
@@ -134,7 +133,7 @@ public class Icon_factory_actor implements Actor
             {
                 // happens for example for 'rotten' files i.e an empty file with a .jpg extension
                 // = no retry
-                //context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties==null"));
+                //context.log_with_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties==null"));
                 return "icon failed 1";
 
 //                context.log("WARNING: returning BROKEN for: "+icon_factory_request.destination.get_item_path());
@@ -144,7 +143,7 @@ public class Icon_factory_actor implements Actor
             if ( image_and_properties.properties() == null)
             {
                 // = no retry
-                context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties.properties()==null"));
+                context.log_with_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties.properties()==null");
                 return "icon failed 2";
 
 //                context.log("WARNING: returning BROKEN for: "+icon_factory_request.destination.get_item_path());
@@ -154,7 +153,7 @@ public class Icon_factory_actor implements Actor
             if ( image_and_properties.properties().rotation() == null)
             {
                 // = no retry
-                context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties.properties().rotation()==null"));
+                context.log_with_stack_trace("SHOULD NOT HAPPEN icon factory :image_and_properties.properties().rotation()==null");
                 return "icon failed 3";
 
 //                context.log("WARNING: returning BROKEN for: "+icon_factory_request.destination.get_item_path());
@@ -198,7 +197,7 @@ public class Icon_factory_actor implements Actor
             Path p = destination.get_item_path();
             if ( p == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace(""));
+                context.log_with_stack_trace("");
             }
             image_properties_cache.inject(p,image_properties,false);
         }
@@ -213,22 +212,22 @@ public class Icon_factory_actor implements Actor
     {
         if ( image_and_properties == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Icon caching, image_and_properties == null"));
+            context.log_with_stack_trace(Logger.warning+" Icon caching, image_and_properties == null");
             return;
         }
         if ( image_and_properties.image() == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Icon caching, image_and_properties.image() == null"));
+            context.log_with_stack_trace(Logger.warning+" Icon caching, image_and_properties.image() == null");
             return;
         }
         if ( image_and_properties.properties() == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Icon caching, image_and_properties.properties() == null"));
+            context.log_with_stack_trace(Logger.warning+" Icon caching, image_and_properties.properties() == null");
             return;
         }
         if ( image_and_properties.properties().rotation() == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(Logger.warning+" Icon caching, image_and_properties.properties().rotation() == null"));
+            context.log_with_stack_trace(Logger.warning+" Icon caching, image_and_properties.properties().rotation() == null");
         }
     }
 
@@ -306,7 +305,7 @@ TODO:
     {
         if ( original_path == null )
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace("");
             return null;
         }
         String icon_filename_adder = "";
@@ -428,7 +427,7 @@ TODO:
         Path item_path = destination.get_item_path();
         if (item_path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""));
+            context.log_with_stack_trace("");
             return null;
         }
         switch ( item_type )
@@ -660,7 +659,7 @@ TODO:
                             Path item_path = destination.get_item_path();
                             if (item_path == null)
                             {
-                                context.log(Stack_trace_getter.get_stack_trace(""));
+                                context.log_with_stack_trace("");
                                 return;
                             }
                             File file_in = item_path.toFile();
@@ -761,7 +760,7 @@ TODO:
         {
             // this happens quite a lot, for example
             // for empty folder (option: show folder with icons)
-            //context.log(Stack_trace_getter.get_stack_trace(""));
+            //context.log_with_stack_trace(""));
             return null;
         }
 
@@ -772,7 +771,7 @@ TODO:
         if (verbose_dbg) context.log("icon_path= "+icon_path);
         if( icon_path == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("icon_path == null ???"));
+            context.log_with_stack_trace("icon_path == null ???");
             return null;
         }
 
@@ -789,7 +788,7 @@ TODO:
         {
             if (iap_from_cache.properties() == null)
             {
-                context.log(Stack_trace_getter.get_stack_trace(Logger.error+" FATAL iap_from_cache.properties() == null ???"));
+                context.log_with_stack_trace(Logger.error+" FATAL iap_from_cache.properties() == null ???");
                 return null;
             }
             if (dbg) context.log(Logger.ok+" Icon caching, READ icon from cache(): " + destination.get_item_path()+ " w="+iap_from_cache.image().getWidth()+" h="+iap_from_cache.image().getHeight());
@@ -809,12 +808,12 @@ TODO:
         }
         if (iap_from_cache.properties() == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("FATAL iap_from_cache.properties() == null ???"));
+            context.log_with_stack_trace("FATAL iap_from_cache.properties() == null ???");
             return null;
         }
         if (iap_from_cache.properties().rotation() == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("FATAL iap_from_cache.properties().rotation() == null ???"));
+            context.log_with_stack_trace("FATAL iap_from_cache.properties().rotation() == null ???");
             return null;
         }
         if ((iap_from_cache.image().getHeight() == 0) && (iap_from_cache.image().getWidth() == 0)) {

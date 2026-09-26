@@ -53,7 +53,7 @@ public class Pin_code_getter_stage
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {
-                        context.log(""+e);
+                        context.log_with_stack_trace_from_throwable("",e);
                         return;
                     }
                     if ( get_pin_code() != null)

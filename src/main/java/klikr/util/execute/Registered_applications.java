@@ -73,7 +73,7 @@ public class Registered_applications
             if (res.equals(USER_CANCELLED)) return null;
             return res;
         } catch (InterruptedException e) {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         //Popups.popup_warning(owner,"Do not know how to open files with the extension "+extension,"To REGISTER what application to use, browse with klikr and use the right-click menu with register_application",false,logger);
         return null;

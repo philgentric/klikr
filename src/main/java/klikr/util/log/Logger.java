@@ -26,17 +26,19 @@ public interface Logger
 	}
 
 	//*******************************************************
-	default void log_stack_trace(String s) {log(Stack_trace_getter.get_stack_trace(s));}
+	default void log_with_stack_trace(String s)
 	//*******************************************************
-
-	//**********************************************************
-	default void log_exception(String header, Exception e)
-	//**********************************************************
 	{
-		String err = header;
-		StringWriter sw = new StringWriter();
-		e.printStackTrace(new PrintWriter(sw));
-		err += "\n"+sw.toString();
-		log(true, err);
+		log(Stack_trace_getter.get_stack_trace(s));
 	}
+
+
+
+	//*******************************************************
+	default void log_with_stack_trace_from_throwable(String header, Throwable e)
+	//*******************************************************
+	{
+		log(header+Stack_trace_getter.get_stack_trace_for_throwable(e));
+	}
+
 }

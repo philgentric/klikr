@@ -14,17 +14,14 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import klikr.machine_learning.*;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.look.Look_and_feel_manager;
 import klikr.util.Simple_json_parser;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -225,7 +222,7 @@ public class ML_servers_monitor //implements AutoCloseable
             }
             catch (InterruptedException e)
             {
-                context.log("for_ever_ask_servers_using_http_health "+e);
+                context.log_with_stack_trace_from_throwable("for_ever_ask_servers_using_http_health ",e);
             }
         }
     }
@@ -272,21 +269,21 @@ public class ML_servers_monitor //implements AutoCloseable
         try {
             url = new URL(url_string);
         } catch (MalformedURLException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#1) "+e));
+            context.log_with_stack_trace_from_throwable(url_string+" ML server alive check, (Error#1) ",e);
             return false;
         }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#2)"+e));
+            context.log_with_stack_trace_from_throwable(url_string+" ML server alive check, (Error#2)",e);
             return false;
         }
         try {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(0); // infinite
         } catch (ProtocolException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+" ML server alive check, (Error#3) "+e));
+            context.log_with_stack_trace_from_throwable(url_string+" ML server alive check, (Error#3) ",e);
             return false;
         }
 
@@ -295,7 +292,7 @@ public class ML_servers_monitor //implements AutoCloseable
         } catch (IOException e) {
             //logger.log(Stack_trace_getter.get_stack_trace(""+e));
             if ( sb_out != null) sb_out.append("Connection failed !");
-            context.log((url_string+" ML server alive check, (Error#4) "+e));
+            context.log_with_stack_trace_from_throwable(url_string+" ML server alive check, (Error#4) ",e);
             return false;
         }
         try {
@@ -303,15 +300,15 @@ public class ML_servers_monitor //implements AutoCloseable
             if ( sb_out != null) sb_out.append("response code=").append(response_code).append("\n");
             //context.log("response code="+response_code);
         } catch (IOException e) {
-            //context.log(Stack_trace_getter.get_stack_trace(""+e));
-            context.log((url_string+" ML server alive check, (Error#5):"+e));
+            //context.log_with_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable(url_string+" ML server alive check, (Error#5):",e);
             return false;
         }
         try {
             String response_message = connection.getResponseMessage();
             //context.log("response message="+response_message);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(url_string+"ML server alive check, (Error#6) "+e));
+            context.log_with_stack_trace_from_throwable(url_string+"ML server alive check, (Error#6) ",e);
             return false;
         }
 
@@ -330,7 +327,7 @@ public class ML_servers_monitor //implements AutoCloseable
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace("ML server alive check, (Error#7) "+e));
+            context.log_with_stack_trace_from_throwable("ML server alive check, (Error#7) ",e);
             return false;
         }
         finally {
@@ -483,7 +480,7 @@ public class ML_servers_monitor //implements AutoCloseable
         HBox hb = uuid_to_small_hbox.get(server_uuid);
         if ( hb == null )
         {
-            context.log(Stack_trace_getter.get_stack_trace("Getting record for UNREGISTERED server UUID: " + server_uuid));
+            context.log_with_stack_trace("Getting record for UNREGISTERED server UUID: " + server_uuid);
             return;
         }
 

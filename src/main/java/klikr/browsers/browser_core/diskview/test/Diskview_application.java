@@ -256,7 +256,7 @@ public class Diskview_application extends Application {
                     });
                 }
             } catch (Exception e) {
-                context.log(""+e);
+                context.log_with_stack_trace_from_throwable("",e);
             }
         },"diskview scan", context.logger());
     }
@@ -275,7 +275,7 @@ public class Diskview_application extends Application {
                 List<Draw_command> commands = buildDrawCommands(root, w, h);
                 Platform.runLater(() -> applyDrawCommands(commands));
             } catch (Throwable e) {
-                context.log(""+e);
+                context.log_with_stack_trace_from_throwable("",e);
             }
         },"diskview refresh", context.logger());
     }

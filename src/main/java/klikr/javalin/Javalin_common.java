@@ -2,7 +2,6 @@ package klikr.javalin;
 
 import javafx.application.Application;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -53,7 +52,7 @@ public class Javalin_common
                             encoded_title + "&isReadOnly="+read_only
             );
 
-            if (dbg) logger.log(Stack_trace_getter.get_stack_trace("Javalin_common opening browser: "+uri));
+            if (dbg) logger.log_with_stack_trace("Javalin_common opening browser: "+uri);
             application.getHostServices().showDocument(uri.toString());
 
             /*
@@ -69,7 +68,7 @@ public class Javalin_common
             );*/
 
         } catch (Exception e) {
-            logger.log(""+e);
+            logger.log_with_stack_trace_from_throwable("",e);
         }
     }
 

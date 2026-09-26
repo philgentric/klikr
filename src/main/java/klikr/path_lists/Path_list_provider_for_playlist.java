@@ -21,7 +21,6 @@ import klikr.util.files_and_paths.Guess_file_type;
 import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.change.old_and_new.Status;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.io.IOException;
@@ -235,7 +234,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             }
         }
         catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace(e.toString());
         }
 
     }
@@ -485,7 +484,7 @@ public class Path_list_provider_for_playlist implements Path_list_provider
             context.log("No such file: "+ the_playlist_file_path);
         }
         catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace(e.toString());
         }
         change_broadcaster.call_all_change_subscribers();
     }

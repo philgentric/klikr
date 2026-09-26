@@ -108,7 +108,7 @@ public class Importer
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    context.log(""+e);
+                    context.log_with_stack_trace_from_throwable("",e);
                     return;
                 }
                 if ( done.get()) return;

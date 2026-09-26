@@ -36,7 +36,7 @@ public class General_navigator implements Navigator
         this.path_consumer_ie_player = path_consumer_ie_player;
         if ( path_list_provider == null)
         {
-            context.log(Stack_trace_getter.get_stack_trace("FATAL: no path provider"));
+            context.log_with_stack_trace("FATAL: no path provider");
         }
     }
 

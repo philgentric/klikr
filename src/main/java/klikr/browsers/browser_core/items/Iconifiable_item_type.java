@@ -34,12 +34,12 @@ public enum Iconifiable_item_type
     {
         if ( path == null )
         {
-            context.log(Stack_trace_getter.get_stack_trace("WARNING: path_ is null"));
+            context.log_with_stack_trace(("WARNING: path_ is null"));
             return no_path;
         }
         if ( path.getFileName() == null )
         {
-            System.out.println(Stack_trace_getter.get_stack_trace("path.getFileName() is null"));
+            context.log_with_stack_trace("path.getFileName() is null");
             return no_path;
         }
 

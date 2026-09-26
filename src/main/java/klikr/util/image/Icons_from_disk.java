@@ -7,13 +7,11 @@
 
 package klikr.util.image;
 
-import javafx.stage.Window;
 import klikr.browsers.browser_core.Image_and_properties;
 import klikr.browsers.browser_core.icons.image_properties_cache.Image_properties;
 import klikr.browsers.browser_core.icons.image_properties_cache.Rotation;
 import klikr.util.External_application;
 import klikr.util.Kontext;
-import klikr.util.execute.actor.Aborter;
 import klikr.browsers.browser_core.items.Iconifiable_item_type;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel_manager;
@@ -27,7 +25,6 @@ import klikr.util.execute.Execute_command;
 import klikr.util.image.decoding.Fast_rotation_from_exif_metadata_extractor;
 import klikr.util.image.icon_cache.Icon_caching;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 //import javax.imageio.ImageIO;
 //import java.awt.*;
@@ -92,7 +89,7 @@ public class Icons_from_disk
         try (InputStream input_stream = Full_image_from_disk.get_image_InputStream(original_image_file,
                 Feature_cache.get(Feature.Fusk_is_on), report_if_not_found, context)) {
             if (input_stream == null) {
-                context.log(Stack_trace_getter.get_stack_trace("input_stream == null for" + original_image_file));
+                context.log_with_stack_trace("input_stream == null for" + original_image_file);
                 return null;
             }
             if (context.should_abort()) {
@@ -104,7 +101,7 @@ public class Icons_from_disk
             byte[] bytes = input_stream.readAllBytes();
             return use_javafx_Image(bytes, original_image_file,icon_size, context);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
         }
 
         // long now = System.currentTimeMillis();
@@ -137,7 +134,7 @@ public class Icons_from_disk
             // use the javafx Image constructor that resizes while loading
             return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
             // GraphicsMagick failed, let us try the same with imageMagick
             return use_ImageMagick_for_icon(original_image_file, icon_size, context);
         }
@@ -165,7 +162,7 @@ public class Icons_from_disk
             // use the javafx Image constructor that resizes while loading
             return new Image(is, icon_size, icon_size, true, true);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }
@@ -200,7 +197,7 @@ public class Icons_from_disk
      * try {
      * cdl.await();
      * } catch (InterruptedException e) {
-     * logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+     * logger.log_with_stack_trace(e.toString()));
      * return null;
      * }
      * return Optional.of(x.get());
@@ -220,7 +217,7 @@ public class Icons_from_disk
             // the image format is not supported WITH RESIZE
             // but it may be supported WITHOUT rise e.g. TIF
             // if ( dbg)
-            // logger.log(Stack_trace_getter.get_stack_trace("Icons_from_disk WARNING: an
+            // logger.log_with_stack_trace("Icons_from_disk WARNING: an
             // error occurred when reading AND resizing:
             // "+original_image_file.toAbsolutePath()));
             // image =
@@ -233,7 +230,7 @@ public class Icons_from_disk
         Rotation rot = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(is2,path_for_dbg,context);
         if ( rot == null )
         {
-            //context.log(Stack_trace_getter.get_stack_trace(" WARNING rotation not found for "+path_for_dbg));
+            //context.log_with_stack_trace(" WARNING rotation not found for "+path_for_dbg));
             rot = Rotation.normal;
         }
         return new Image_and_properties(image,new Image_properties(image.getWidth(),image.getHeight(),rot,false));
@@ -319,15 +316,15 @@ public class Icons_from_disk
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg_local)
-                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log_with_stack_trace(e.toString());
         } catch (NoSuchFileException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg_local)
-                context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                context.log_with_stack_trace_from_throwable("",e);
         } catch (IOException e) {
-            context.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            context.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }
@@ -345,15 +342,15 @@ public class Icons_from_disk
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                logger.log_with_stack_trace_from_throwable("",e);
         } catch (NoSuchFileException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                logger.log_with_stack_trace_from_throwable("",e);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }
@@ -373,15 +370,15 @@ public class Icons_from_disk
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                logger.log_with_stack_trace_from_throwable("",e);
         } catch (NoSuchFileException e) {
             // this happens the first time one visits a directory...
             // or when the icon cache dir content has been erased etc.
             // so quite a lot, so it is logged only in debug
             if (dbg)
-                logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+                logger.log_with_stack_trace_from_throwable("",e);
         } catch (IOException e) {
-            logger.log(Stack_trace_getter.get_stack_trace(e.toString()));
+            logger.log_with_stack_trace_from_throwable("",e);
         }
         return null;
     }

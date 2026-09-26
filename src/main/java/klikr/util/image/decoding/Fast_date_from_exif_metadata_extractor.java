@@ -13,7 +13,6 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,7 +75,7 @@ public class Fast_date_from_exif_metadata_extractor
         }
         catch (ImageProcessingException e)
         {
-            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             if ( e.toString().contains("File format could not be determined"))
             {
                 return LocalDateTime.now();
@@ -84,12 +83,12 @@ public class Fast_date_from_exif_metadata_extractor
         }
         catch (IOException e)
         {
-            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             return LocalDateTime.now();
         }
         catch (Exception e)
         {
-            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
+            if ( dbg) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             return LocalDateTime.now();
         }
 
@@ -110,7 +109,7 @@ public class Fast_date_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
         }
         return LocalDateTime.now();

@@ -191,7 +191,7 @@ public class Deduplication_engine implements Againor, Abortable
                 p = file_pairs_queue.poll(300, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e) {
-                context.log(Stack_trace_getter.get_stack_trace("" + e));
+                context.log_with_stack_trace("" + e);
                 return;
             }
             if (p == null)

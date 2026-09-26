@@ -1,18 +1,12 @@
 package klikr.util.cache;
 
-import javafx.stage.Window;
 import klikr.util.Kontext;
-import klikr.util.execute.actor.Aborter;
-import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-
-import static klikr.util.Shared_services.aborter;
 
 //**********************************************************
 public class Binary_file_engine<V> implements Disk_engine<V>
@@ -69,7 +63,7 @@ public class Binary_file_engine<V> implements Disk_engine<V>
                 V value = value_deserializer.apply(dis);
                 if ( value == null)
                 {
-                    if (dbg) context.log(Stack_trace_getter.get_stack_trace("FATAL"));
+                    if (dbg) context.log_with_stack_trace("FATAL");
                     return reloaded;
                 }
                 if (ultra_dbg) context.log("value "+value);
@@ -82,11 +76,11 @@ public class Binary_file_engine<V> implements Disk_engine<V>
         }
         catch (FileNotFoundException e)
         {
-            if (dbg) context.log("first time in this folder: "+e);
+            if (dbg) context.log_with_stack_trace_from_throwable("first time in this folder: ",e);
         }
         catch (IOException e)
         {
-            if (dbg) context.log(Stack_trace_getter.get_stack_trace(""+e));
+            if (dbg) context.log_with_stack_trace_from_throwable("",e);
         }
         context.log("reloading "+reloaded+" similarities from disk took "+(System.currentTimeMillis()-start)+" ms");
 
@@ -109,7 +103,7 @@ public class Binary_file_engine<V> implements Disk_engine<V>
                 dos.writeUTF(key);
                 if ( !value_serializer.test(e.getValue(),dos))
                 {
-                    context.log(Stack_trace_getter.get_stack_trace(" Panic"));
+                    context.log_with_stack_trace(" Panic");
                     break;
                 }
                 saved++;
@@ -118,7 +112,7 @@ public class Binary_file_engine<V> implements Disk_engine<V>
         }
         catch (IOException e)
         {
-            context.log(Stack_trace_getter.get_stack_trace(""+e));
+            context.log_with_stack_trace_from_throwable("",e);
         }
 
         if (dbg) context.log(saved +" items from cache saved to file");

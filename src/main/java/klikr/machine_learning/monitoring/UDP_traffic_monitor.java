@@ -74,7 +74,7 @@ public class UDP_traffic_monitor implements AutoCloseable
             //port_tmp = socket.getLocalPort();
             context.log("Servers monitor started on UDP port: "+port);
         } catch (SocketException e) {
-            context.log("WARNING: UDP socket failed"+e);
+            context.log_with_stack_trace_from_throwable("WARNING: UDP socket failed",e);
             running = false;
             return;
         }
@@ -105,7 +105,7 @@ public class UDP_traffic_monitor implements AutoCloseable
                 if ( dbg) context.log("UDP packet received: "+message);
                 process_message(message);
             } catch (Exception e) {
-                context.log(""+e);
+                context.log_with_stack_trace_from_throwable("",e);
             }
         }
     }

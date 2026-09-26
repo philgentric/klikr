@@ -19,7 +19,6 @@ import klikr.settings.boolean_features.Feature_change_target;
 import klikr.util.Kontext;
 import klikr.util.P2S;
 import klikr.util.cache.Klikr_cache;
-import klikr.util.execute.actor.Aborter;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browsers.browser_core.Drag_and_drop;
 import klikr.browsers.browser_core.Image_and_properties;
@@ -37,7 +36,6 @@ import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.Guess_file_type;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Jfx_batch_injector;
 import klikr.util.ui.Popups;
 import klikr.util.ui.Text_frame;
@@ -86,7 +84,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         this.image_properties_cache = image_properties_cache;
         text = text_;
         if (item_context.item_path == null) {
-            item_context.log(Stack_trace_getter.get_stack_trace(Logger.error+" FATAL: path is null"+item_context.path_list_provider.get_key()));
+            item_context.context.log_with_stack_trace(Logger.error+" FATAL: path is null"+item_context.path_list_provider.get_key());
             return;
         }
 
@@ -154,7 +152,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     public void receive_icon(Image_and_properties image_and_rotation)
     //**********************************************************
     {
-        item_context.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN"));
+        item_context.context.log_with_stack_trace("SHOULD NOT HAPPEN");
     }
 
 
@@ -319,7 +317,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
     {
 
         if (item_context.item_path == null) {
-            item_context.log(Stack_trace_getter.get_stack_trace("item_path == nul for "+text));
+            item_context.context.log_with_stack_trace("item_path == nul for "+text);
             return;
         }
 
@@ -339,7 +337,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                     sb.append(Logger.warning+" Not Writable!                 ");
                 }
             } catch (IOException e) {
-                item_context.context.log_exception("",e);
+                item_context.context.log_with_stack_trace_from_throwable("",e);
             }
             details = new Label(sb.toString());
             //Font_size.set_preferred_font_size(label,logger);
@@ -482,7 +480,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
         Path p = get_item_path();
         if ( p == null)
         {
-            item_context.log(Stack_trace_getter.get_stack_trace(""));
+            item_context.context.log_with_stack_trace("");
             return "Item_file_no_icon no path ?" ;
         }
         return "Item_file_no_icon, file: " + p.toAbsolutePath();

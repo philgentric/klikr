@@ -18,7 +18,6 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.files_and_paths.Extensions;
 import klikr.util.image.Full_image_from_disk;
-import klikr.util.log.Stack_trace_getter;
 import klikr.fusk.Fusk_static_core;
 import klikr.fusk.Fusk_strings;
 
@@ -56,7 +55,7 @@ public class Exif_metadata_extractor
     //**********************************************************
     {
         if ( exif_metadata != null ) return rotation;
-        context.log(Stack_trace_getter.get_stack_trace("WARNING"));
+        context.log_with_stack_trace("WARNING");
         rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation(path, report_if_not_found, context);
         if ( rotation == null) rotation = Rotation.normal;
         return rotation;
@@ -144,7 +143,7 @@ public class Exif_metadata_extractor
         {
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
             return exif_metadata;
         }
@@ -214,21 +213,21 @@ public class Exif_metadata_extractor
             }
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath(),e);
            }
         }
         catch (IOException e)
         {
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (4)->"+e+"<- for:"+ path.toAbsolutePath(),e);
            }
         }
         catch (Exception e)
         {
             if ( dbg)
             {
-                context.log(Stack_trace_getter.get_stack_trace("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath()));
+                context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (5)->"+e+"<- for:"+ path.toAbsolutePath(),e);
             }
         }
 

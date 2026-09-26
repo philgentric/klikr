@@ -7,7 +7,6 @@ import javafx.scene.image.Image;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.util.files_and_paths.Extensions;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -66,7 +65,7 @@ public interface Embeddings_prototype
             }
             catch (Exception e)
             {
-                logger.log(Stack_trace_getter.get_stack_trace("should not happen "+e));
+                logger.log_with_stack_trace_from_throwable("should not happen ",e);
                 return null;
             }
         }

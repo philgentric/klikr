@@ -60,12 +60,12 @@ public class Filesystem_item_signature
             file_signature_array = hash_and_status.hash();
             if ( file_signature_array ==null)
             {
-                logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"SHOULD NOT HAPPEN: Filesystem_item_signature file_signature_array == null for "+path));
+                logger.log_with_stack_trace(Logger.error+"SHOULD NOT HAPPEN: Filesystem_item_signature file_signature_array == null for "+path);
                 return File_status.EXCEPTION;
             }
             if ( file_signature_array.length == 0)
             {
-                logger.log(Stack_trace_getter.get_stack_trace(Logger.error+"SHOULD NOT HAPPEN: Filesystem_item_signature file_signature_array is empty for "+path));
+                logger.log_with_stack_trace(Logger.error+"SHOULD NOT HAPPEN: Filesystem_item_signature file_signature_array is empty for "+path);
                 return File_status.EXCEPTION;
             }
         }
