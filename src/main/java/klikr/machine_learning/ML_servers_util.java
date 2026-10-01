@@ -31,11 +31,12 @@ public class ML_servers_util
     private static final String WINDOWS_PYTHON = "python.exe";
 
     static final String macOS_commands_to_install_python = "brew install python@3.10";
-    static final String macOS_commands_to_create_venv = MACOS_PYTHON+" -m venv " + venv();
-    static final String macOS_commands_to_activate_venv ="source " + venv() + "/bin/activate";
-    static final String macOS_commands_to_pip ="pip install -U pip";
-    static final String macOS_commands_to_install_tensorflow = "pip install tensorflow-macos tensorflow-metal";
-    static final String macOS_commands_to_install_requirements = "pip install -r requirements.txt";
+    // uv venv is faster than python -m venv; optional: create once outside klikr process
+    static final String macOS_commands_to_create_venv = "uv venv ~/.klikr/klikr_venv";
+    static final String macOS_commands_to_activate_venv = "source ~/.klikr/klikr_venv/bin/activate";
+    static final String macOS_commands_to_pip = "uv pip install --upgrade pip";
+    static final String macOS_commands_to_install_tensorflow = "uv pip install tensorflow-macos tensorflow-metal";
+    static final String macOS_commands_to_install_requirements = "uv pip install -r requirements.txt";
 
     //**********************************************************
     public static void install_python_libs_for_ML(Kontext context)
@@ -113,9 +114,8 @@ public class ML_servers_util
 
             switch(os) {
                 case MacOS, Linux -> {
-                    cmds.add(macOS_commands_to_activate_venv);
-                    // execute the script directly using python3
-                    cmds.add("nohup python3 " + scriptName + " " + argsStr+" &");
+                    // Use uv run instead of python3 for isolated, reproducible execution
+                    cmds.add("nohup uv run " + scriptName + " " + argsStr+" &");
                     Script_executor.execute(cmds,  dbg, context);
                 }
                 case Windows -> {

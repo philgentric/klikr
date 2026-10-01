@@ -67,13 +67,6 @@ public class Browser_for_search_results extends Abstract_browser implements Resu
         return "Browser_for_search_results" ;
     }
 
-    //**********************************************************    @Override
-    protected String get_path_for_history()
-    //**********************************************************
-    {
-        return get_Path_list_provider().get_key();
-    }
-
 
     //*******************************************************
     @Override // File_comparator_provider

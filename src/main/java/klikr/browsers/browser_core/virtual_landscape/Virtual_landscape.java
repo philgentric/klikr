@@ -201,7 +201,7 @@ public class Virtual_landscape
             Change_receiver change_receiver,
             Title_target title_target,
             Full_screen_handler full_screen_handler,
-            Kontext context)
+            Kontext k)
     //**********************************************************
     {
         this.background_color = background_color;
@@ -213,7 +213,7 @@ public class Virtual_landscape
         this.path_list_provider = path_list_provider;
 
         error_type = Error_type.OK;
-        this.context = context;
+        this.context = k;
 
         Feature_cache.register_for_all_booleans(this);
         Feature_cache.string_register_for(String_constants.LANGUAGE_KEY, this);
@@ -3031,7 +3031,7 @@ BOOKMARK
                     Redraw_command rc = redraw_request_queue.poll(3, TimeUnit.SECONDS);
                     if (context.should_abort())
                     {
-                        context.log("redraw_engine aborted");
+                        context.log("redraw_engine aborted "+context.abort_reason());
                         return;
                     }
                     if (rc != null) redraw_all_internal(rc);

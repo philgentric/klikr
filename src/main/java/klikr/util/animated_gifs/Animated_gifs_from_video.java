@@ -226,9 +226,15 @@ public class Animated_gifs_from_video
 
             choose_folder_button.setOnAction(actionEvent ->
             {
-                if ( gif_saving_dir == null) gif_saving_dir = video_path.getParent().toFile();//new File(System.getProperty("user.home"));
-                gif_saving_dir = Folder_chooser.show_dialog_for_folder_selection("Choose folder to save animated gifs", gif_saving_dir.toPath(), context).toFile();
-                if ( gif_saving_dir == null) return;
+                if ( gif_saving_dir == null)
+                {
+                    gif_saving_dir = video_path.getParent().toFile();//new File(System.getProperty("user.home"));
+                    gif_saving_dir = Folder_chooser.show_dialog_for_folder_selection("Choose folder to save animated gifs", gif_saving_dir.toPath(), context).toFile();
+                    if (gif_saving_dir == null) {
+                        context.log("no GIF animated generation: dir no saving");
+                        return;
+                    }
+                }
                 save_button.setDisable(false);
                 save_button.setText("Save in "+gif_saving_dir.getAbsolutePath());
                 save_now(icon_height[0],fps[0]);

@@ -14,10 +14,14 @@ public class Exceptions_in_threads_catcher
 	//**********************************************************
 	{
 
-		Thread.setDefaultUncaughtExceptionHandler((thread, e) -> {
+		Thread.setDefaultUncaughtExceptionHandler((thread, e) ->
+		{
+			oops++;
+			String thread_name = (thread == null) ? "<null thread, should not happen>" : thread.getName();
 
-            String trace = Stack_trace_getter.get_stack_trace_for_throwable(e);
-            logger.log(Logger.error+Logger.error+Logger.error+" THREAD PANIC:"+trace);
+			String trace = Logger.error+Logger.error+Logger.error+" THREAD PANIC:"+thread_name;
+
+			logger.log_with_stack_trace_from_throwable(trace,e);
 			if ( thread == null)
 			{
 				logger.log(" thread == null, Should not happen");
@@ -45,7 +49,7 @@ public class Exceptions_in_threads_catcher
 		try {
 			Thread.sleep(10);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			l.log_with_stack_trace_from_throwable("unit test",e);
 		}
 		
 		overrun();

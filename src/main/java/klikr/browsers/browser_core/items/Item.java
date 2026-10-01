@@ -208,9 +208,13 @@ public abstract class Item implements Icon_destination
     //**********************************************************
     {
         if (dbg) item_context.log(("request_icon_to_factory for:" + get_item_path()));
+
+        Aborter a = new Aborter("Icon creation for " + get_item_path(), item_context.context.logger());
+        Kontext k = new Kontext(item_context.owner(), a, item_context.logger());
         Icon_factory_request icon_factory_request = new Icon_factory_request(
-                this, target_icon_size, item_context.context);
-                new Aborter("Icon creation for " + get_item_path(), item_context.context.logger());
+                this, target_icon_size, k);
+
+
 
 
         if (icon_fabrication_requested.get()) {
@@ -528,7 +532,7 @@ public abstract class Item implements Icon_destination
     public void you_are_visible()
     //**********************************************************
     {
-        //logger.log("Visible: "+path.getFileName());
+        if ( layout_dbg) item_context.log("Visible: "+get_item_path().getFileName());
         //if( !Platform.isFxApplicationThread())  logger.log(Stack_trace_getter.get_stack_trace("PANIC not on Fx thread"));
 
         you_are_visible_specific();
@@ -544,7 +548,7 @@ public abstract class Item implements Icon_destination
     //**********************************************************
     {
         if (!Platform.isFxApplicationThread()) {
-            item_context.context.log_with_stack_trace(("HAPPENS1 process_is_visible"));
+            item_context.context.log_with_stack_trace((" process_is_visible not on javafx thread"));
             Platform.runLater(() -> process_is_visible(current_vertical_offset));
             return;
         }

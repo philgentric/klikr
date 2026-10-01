@@ -80,56 +80,6 @@ public class Keyboard_handling_for_Image_window
             return;
         }
 
-        /*
-        if(
-                (key_event.isShiftDown() )
-                        &&
-                        (key_event.getCode().equals(KeyCode.D)||(key_event.getCode() == KeyCode.BACK_SPACE))
-        )
-        {
-            key_event.consume();
-            if (Booleans.get_boolean_defaults_to_false(Feature.Shift_d_is_sure_delete.name()))
-            {
-                // shift d is "sure delete"
-                if ( image_window.image_display_handler.get_image_context().isEmpty()) return;
-                Path path = image_window.image_display_handler.get_image_context().get().path;
-                try {
-                    Files.delete(path);
-                } catch (NoSuchFileException x) {
-                    logger.log("no such file or directory:" + path);
-                    return;
-                } catch (IOException e) {
-                    logger.log("cannot delete ? " + e);
-                    return;
-                }
-                image_window.image_display_handler.change_image_relative(1, image_window.ultim_mode);
-            }
-            else {
-                Popups.popup_warning(Logger.warning+" Warning","Using Shift-D for sure-deleting a file requires to enable it in the preferences", false,owner,logger);
-            }
-            return;ßß
-        }
-*/
-        switch (key_event.getText())
-        {
-
-
-            /*
-            case "t","T" -> {
-                if (keyboard_dbg) logger.log("t like tag");
-
-                if( Booleans.get_boolean(Feature.Enable_tags.name(), image_window.stage)) {
-
-                    if (image_window.image_display_handler.get_image_context().isEmpty()) return;
-                    Tag_stage.open_tag_stage(image_window.image_display_handler.get_image_context().get().path, true, image_window.stage, image_window.aborter,logger);
-                }
-                key_event.consume();
-                return;
-            }*/
-
-
-
-        }
 
         if (keyboard_dbg) logger.log("keyboard : KeyEvent="+key_event.getCode());
 

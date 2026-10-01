@@ -1045,12 +1045,12 @@ public class Static_files_and_paths_utilities
         }
         catch (AccessDeniedException e2)
         {
-             context.log(Stack_trace_getter.get_stack_trace(Logger.error+"ACCESS DENIED EXCEPTION" + e2));
+             context.log(Stack_trace_getter.get_stack_trace(Logger.error+"explain_error, ACCESS DENIED EXCEPTION" + e2));
             return Error_type.DENIED;
         }
         catch (NoSuchFileException e2)
         {
-             context.log(Stack_trace_getter.get_stack_trace(Logger.error+"NoSuchFileException" + e2));
+             context.log(Stack_trace_getter.get_stack_trace(Logger.error+"explain_error, NoSuchFileException" + e2));
             // the DIR is gone !!
             return Error_type.NOT_FOUND;
         }

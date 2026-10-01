@@ -44,14 +44,6 @@ public class Browser_for_image_playlist extends Abstract_browser
 
 
 
-    //**********************************************************
-    @Override
-    protected String get_path_for_history()
-    //**********************************************************
-    {
-
-        return path_list_provider.the_playlist_file_path.toAbsolutePath().toString();
-    }
 
     //**********************************************************
     @Override

@@ -49,10 +49,13 @@ public class Window_builder
     }
 
     //**********************************************************
-    private String to_string()
+    public String to_string()
     //**********************************************************
     {
-        return "Window builder for shutdown_target="+shutdown_target;
+        return "Window builder for shutdown_target="+shutdown_target
+                +"\nwindow_type="+window_type
+                +"\npath_list_provider="+path_list_provider
+                +"\npath_list_provider key ="+path_list_provider.get_key();
     }
 
 

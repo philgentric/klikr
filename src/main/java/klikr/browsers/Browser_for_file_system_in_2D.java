@@ -56,6 +56,8 @@ import javafx.scene.paint.Color;
 import klikr.Window_builder;
 import klikr.browsers.browser_core.virtual_landscape.Scroll_position_cache;
 import klikr.util.Kontext;
+import klikr.util.execute.Guess_OS;
+import klikr.util.execute.Operating_system;
 import klikr.util.execute.actor.Actor_engine;
 import klikr.browsers.browser_core.*;
 import klikr.path_lists.Path_list_provider;
@@ -65,10 +67,18 @@ import klikr.settings.boolean_features.Feature_cache;
 import klikr.settings.boolean_features.Feature_change_target;
 import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.change.old_and_new.Old_and_new_Path;
+import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 import klikr.util.log.Logger;
 import klikr.util.ui.Jfx_batch_injector;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -85,9 +95,13 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     {
         super(window_builder, "klikr","Browser_for_file_system_in_2D",
                 Color.WHITE, k);
+        k.log("window_builder"+window_builder.to_string());
         path_list_provider = window_builder.path_list_provider;
 
-
+        if( Feature_cache.get(Feature.Monitor_folders))
+        {
+            monitor_current_path_list_source();
+        }
         Optional<Path> op = path_list_provider.get_folder_path();
         if ( op.isEmpty()) context.log_with_stack_trace("\n\n\n"+Logger.error+" FATAL)");
         if ( dbg)
@@ -125,6 +139,92 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
     }
 
     //**********************************************************
+    private class Volume
+    //**********************************************************
+    {
+        public String id;
+        public String name;
+        public String node;
+        public String total;
+        public String free;
+        public Path path;
+
+        public Volume(String line) {
+            id = line;
+        }
+
+        public String to_string() {
+            return path+" "+ node +" "+name +" "+total+" "+free;
+        }
+    }
+
+    //**********************************************************
+    private void call_disk_util()
+    //**********************************************************
+    {
+        // call diskutil
+        ProcessBuilder pb = new ProcessBuilder("diskutil", "info", "-all");
+        pb.redirectErrorStream(true);
+        try {
+            List<Volume> volumes = new ArrayList<>();
+            Process p = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            //StringBuilder output = new StringBuilder();
+            String line;
+            String DEVICE_IDENTIFIER = "Device Identifier:";
+            String VOLUME_NAME = "Volume Name:";
+            String DEVICE_NODE = "Device Node:";
+            String OS_ONLY = "Media OS Use Only:";
+            String FREE_SPACE = "Container Free Space:";
+            String TOTAL_SPACE = "Container Total Space:";
+            String PATH = "Mount Point:";
+            Volume vol = null;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(DEVICE_IDENTIFIER)) {
+                    String local = line.substring(line.indexOf(DEVICE_IDENTIFIER) + DEVICE_IDENTIFIER.length());
+                    vol = new Volume(local);
+                }
+                if (line.contains(OS_ONLY)) {
+                    vol = null;
+                }
+                if (vol == null) continue;
+                if (line.contains(DEVICE_NODE)) {
+                    vol.node = line.substring(line.indexOf(DEVICE_NODE) + DEVICE_NODE.length());
+                }
+
+                if (line.contains(FREE_SPACE)) {
+                    vol.free = line.substring(line.indexOf(FREE_SPACE) + FREE_SPACE.length());
+                }
+
+                if (line.contains(TOTAL_SPACE)) {
+                    vol.total = line.substring(line.indexOf(TOTAL_SPACE) + TOTAL_SPACE.length());
+                }
+
+                if (line.contains(PATH)) {
+                    String local = line.substring(line.indexOf(PATH) + PATH.length());
+                    vol.path = Path.of(local);
+                }
+
+
+                if (line.contains(VOLUME_NAME)) {
+                    String local = line.substring(line.indexOf(VOLUME_NAME) + VOLUME_NAME.length());
+                    if (!local.contains("Not applicable (no file system)")) {
+                        //output.append(local).append("\n");
+                        vol.name = local;
+                        volumes.add(vol);
+                    }
+                }
+            }
+            p.waitFor();
+            context.log("diskutil result: ");
+            for (Volume v : volumes) {
+                context.log(v.to_string());
+            }
+        } catch (IOException | InterruptedException e) {
+            context.log_with_stack_trace_from_throwable(Logger.error, e);
+        }
+    }
+    //**********************************************************
     @Override // Abstract_browser
     public void monitor_current_path_list_source()
     //**********************************************************
@@ -142,11 +242,39 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
         Optional<Path> op = path_list_provider.get_folder_path();
         if (op.isEmpty())
         {
-            context.log_with_stack_trace("");
+            context.log_with_stack_trace("no folders ?");
             return;
         }
-        boolean monitor_this_folder = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(op.get(), context.logger());
+        boolean monitor_this_folder = false;
+        boolean is_volumes = Filesystem_item_modification_watcher.is_this_folder_showing_external_drives(op.get(), context.logger());
+        if ( is_volumes) {
+            context.log("is volumes");
+            monitor_this_folder = true;
+            Iterable<FileStore> stores = FileSystems.getDefault().getFileStores();
+            for (FileStore d : stores) {
+                try {
+                    long size = d.getUsableSpace();
+                    String s = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(size, context);
 
+                    context.log(d.name() + " UsableSpace: " + s);
+                } catch (IOException e) {
+                    context.log_with_stack_trace_from_throwable(Logger.error, e);
+                }
+
+                Operating_system os = Guess_OS.guess(context.logger());
+                switch (os) {
+                    case Linux -> {
+                        context.log("Linux");
+                    }
+                    case MacOS -> {
+                        context.log("MacOS");
+                    }
+                    case Windows -> {
+                        context.log("Windows");
+                    }
+                }
+            }
+        }
 
         if (!monitor_this_folder)
         {
@@ -182,6 +310,9 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
         }
     }
 
+
+
+
     //**********************************************************
     @Override
     public Path_list_provider get_Path_list_provider()
@@ -190,16 +321,25 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
         return path_list_provider;
     }
 
+    /*
     //**********************************************************
     @Override // Abstract_browser
     public String get_path_for_history()
     //**********************************************************
     {
-        if ( path_list_provider == null) return null;
-        if (path_list_provider.get_folder_path().isEmpty()) return null;
+        if ( path_list_provider == null)
+        {
+            context.log_with_stack_trace(Logger.error+ "path_list_provider == null in get_path_for_history");
+            return null;
+        }
+        if (path_list_provider.get_folder_path().isEmpty())
+        {
+            context.log_with_stack_trace(Logger.error+ "path_list_provider.get_folder_path().isEmpty() in get_path_for_history");
+            return null;
+        }
         return path_list_provider.get_folder_path().get().toString();
     }
-
+*/
     //**********************************************************
     @Override // Abstract_browser
     public String get_name()

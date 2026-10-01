@@ -32,8 +32,10 @@ import klikr.settings.Non_booleans_properties;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.change.file_system_monitoring.Filesystem_item_modification_watcher;
 import klikr.util.http.Klikr_communicator;
+import klikr.util.log.Logger;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 //**********************************************************
@@ -66,7 +68,6 @@ public abstract class Abstract_browser implements
     protected Kontext context; // init in 2 steps
     protected boolean ignore_escape_as_the_stage_is_full_screen = false;
 
-    protected abstract String get_path_for_history();
     protected abstract String get_name();
     protected abstract Path_list_provider get_Path_list_provider();
     protected abstract String signature();
@@ -162,8 +163,16 @@ public abstract class Abstract_browser implements
         if ( window_builder.window_type != Window_type.Search_results)
         {
             //record in history
-            String path_for_history = get_path_for_history();
-            if (path_for_history != null) History_engine.get(context).record(path_for_history);
+            Optional<Path> op = window_builder.path_list_provider.get_folder_path();
+            if (op.isEmpty())
+            {
+                context.log(Logger.warning+"weird: no path to record in history");
+            }
+            else {
+                String path_for_history = op.get().toString();
+                History_engine.get(context).record(path_for_history);
+            }
+
         }
 
         set_title();

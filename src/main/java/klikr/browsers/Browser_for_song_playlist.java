@@ -56,12 +56,6 @@ public class Browser_for_song_playlist extends Abstract_browser
         return "Browser_for_song_playlist" ;
     }
 
-    //**********************************************************    @Override
-    protected String get_path_for_history()
-    //**********************************************************
-    {
-        return get_Path_list_provider().get_key();
-    }
 
 
     //*******************************************************
