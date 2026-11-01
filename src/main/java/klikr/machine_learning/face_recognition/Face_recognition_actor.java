@@ -11,13 +11,10 @@
 
 package klikr.machine_learning.face_recognition;
 
-import klikr.machine_learning.python_via_html_ML.Python_HTML_Face_recognition_service;
+import klikr.machine_learning.old_python_via_html_ML.Python_HTML_Face_recognition_service;
 import klikr.util.execute.actor.*;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 //**********************************************************

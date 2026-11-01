@@ -3,11 +3,11 @@
 
 package klikr.machine_learning.face_recognition;
 
-import klikr.machine_learning.python_via_html_ML.Load_balancer;
-import klikr.machine_learning.python_via_html_ML.ML_server_type;
+import klikr.machine_learning.old_python_via_html_ML.Load_balancer;
+import klikr.machine_learning.old_python_via_html_ML.ML_server_type;
 import klikr.machine_learning.feature_vector.Feature_vector_double;
 import klikr.util.Kontext;
-import klikr.machine_learning.python_via_html_ML.Feature_vector_source_server;
+import klikr.machine_learning.feature_vector.Feature_vector_source_server;
 
 import java.nio.file.Path;
 import java.util.Optional;

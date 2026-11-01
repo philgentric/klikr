@@ -86,7 +86,6 @@ public class Item_file_with_icon extends Item_file
                 selection_handler,
                 icon_factory_actor);
         this.aspect_ratio = aspect_ratio;
-        //this.image_properties_RAM_cache = image_properties_RAM_cache;
         this.fv_cache_supplier = fv_cache_supplier;
         double actual_icon_size = icon_size / 3.0;
         if ( default_icon == null)
@@ -551,7 +550,7 @@ public class Item_file_with_icon extends Item_file
             }
         }
         // the above operation can take some time...
-        // and in the mean time the situation can change
+        // and in the meantime the situation can change
         if (!visible_in_scene.get())
         {
             you_are_invisible();

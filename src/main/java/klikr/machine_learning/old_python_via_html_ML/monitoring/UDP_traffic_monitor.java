@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.machine_learning.python_via_html_ML.monitoring;
+package klikr.machine_learning.old_python_via_html_ML.monitoring;
 
 import klikr.util.Kontext;
 import klikr.util.execute.actor.Actor_engine;

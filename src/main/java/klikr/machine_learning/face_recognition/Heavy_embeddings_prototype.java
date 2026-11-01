@@ -6,7 +6,7 @@ package klikr.machine_learning.face_recognition;
 import javafx.scene.image.Image;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_double;
-import klikr.machine_learning.python_via_html_ML.Python_HTML_Face_recognition_service;
+import klikr.machine_learning.old_python_via_html_ML.Python_HTML_Face_recognition_service;
 import klikr.util.log.Logger;
 
 import java.io.FileWriter;

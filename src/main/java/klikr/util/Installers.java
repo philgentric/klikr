@@ -6,8 +6,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import klikr.Klikr_application;
 import klikr.look.Look_and_feel;
-import klikr.machine_learning.python_via_html_ML.ML_server_type;
-import klikr.machine_learning.python_via_html_ML.ML_servers_util;
+import klikr.machine_learning.old_python_via_html_ML.ML_server_type;
+import klikr.machine_learning.old_python_via_html_ML.ML_servers_util;
 import klikr.settings.Non_booleans_properties;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
@@ -172,12 +172,14 @@ public class Installers
         for (External_application app : External_application.values())
         {
             if ( app==External_application.Ffprobe) continue; // installs with ffmpeg
-            String cmd = app.get_command_string_to_install(context);
-            if (cmd == null) continue;
+            List<String> cmds = app.get_command_strings_to_install(context);
+            if (cmds.isEmpty()) continue;
             boolean dbg = Feature_cache.get(Feature.Enable_install_debug);
             // must exec in trash
-
-            Script_executor.execute(List.of(cmd), dbg, context);
+            for (String cmd : cmds)
+            {
+                Script_executor.execute(List.of(cmd), dbg, context);
+            }
         }
     }
 

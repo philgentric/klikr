@@ -17,9 +17,8 @@ public class Executor
     public static final boolean use_virtual_threads = true;
 
 
-    // make this true ONLY if you have problems tracing an exception
-    // in a thread, because there is a compute-expensive operation involved
-    // see below
+    // make this true if you have problems tracing an exception in a thread
+    // Note there is a compute-expensive operation involved
     public static final boolean full_thread_stack_dbg = true;
     private static boolean warning_issued  = false;
 

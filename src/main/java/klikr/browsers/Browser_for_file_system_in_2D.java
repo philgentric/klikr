@@ -279,6 +279,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
             }
             case MacOS -> {
                 context.log("MacOS");
+                /*
                 My_Runnable r = new My_Runnable() {
                     @Override
                     public void run() throws Exception {
@@ -286,6 +287,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
                     }
                 };
                 Executor.execute(r,"disk util", context.logger());
+               */
             }
             case Windows -> {
                 context.log("Windows");

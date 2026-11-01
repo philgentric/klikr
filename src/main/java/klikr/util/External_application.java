@@ -43,13 +43,16 @@ public enum External_application
         EventHandler<ActionEvent> handler =  e ->
         {
             boolean enable_install_debug = Feature_cache.get(Feature.Enable_install_debug);
-            String line = get_command_string_to_install(context);
-            if ( line == null)
+            List<String> lines = get_command_strings_to_install(context);
+            if ( lines.isEmpty())
             {
-                context.log("FATAL get_command_string_to_install() returns null for "+name());
+                context.log("FATAL get_command_string_to_install() returns empty for "+name());
                 return;
             }
-            Script_executor.execute(List.of(line),enable_install_debug,context);
+            for (String line : lines)
+            {
+                Script_executor.execute(List.of(line), enable_install_debug, context);
+            }
         };
 
         return Items_with_explanation.make_hbox_with_button_and_explanation(
@@ -64,17 +67,17 @@ public enum External_application
 
 
     //**********************************************************
-    public String get_command_string_to_install(Kontext context)
+    public List<String> get_command_strings_to_install(Kontext context)
     //**********************************************************
     {
         switch(Guess_OS.guess(context.logger()))
         {
-            case MacOS -> {return get_macOS_install_command();}
-            case Linux -> {return get_Linux_install_command(context);}
-            case Windows -> {return get_Windows_install_command();}
-            case Unknown -> {return "";}
+            case MacOS -> {return get_macOS_install_commands();}
+            case Linux -> {return get_Linux_install_commands(context);}
+            case Windows -> {return get_Windows_install_commands();}
+            case Unknown -> {return List.of();}
         }
-        return null;
+        return List.of();
     }
 
 
@@ -97,59 +100,59 @@ public enum External_application
     }
 
     //**********************************************************
-    public String get_macOS_install_command()
+    public List<String> get_macOS_install_commands()
     //**********************************************************
     {
         // this is NOT for display: this MUST be th exact required string in:
         // brew install <REQUIRED_STRING>
         return switch (this) {
-            case Ytdlp -> "brew install yt-dlp";
-            case AcousticID_chromaprint_fpcalc -> "brew install chromaprint";
-            case ImageMagick -> "brew install imagemagick";
-            case Ffmpeg, Ffprobe -> "brew install ffmpeg";
-            case Vips -> "brew install vips";
-            case GraphicsMagick -> "brew install graphicsmagick";
-            case MediaInfo -> "brew install mediainfo";
+            case Ytdlp -> List.of("brew install yt-dlp");
+            case AcousticID_chromaprint_fpcalc -> List.of("brew install chromaprint");
+            case ImageMagick -> List.of("brew install imagemagick");
+            case Ffmpeg, Ffprobe -> List.of("brew install ffmpeg");
+            case Vips -> List.of("brew install vips");
+            case GraphicsMagick -> List.of("brew install gs","brew install graphicsmagick");
+            case MediaInfo -> List.of("brew install mediainfo");
         };
     }
 
     //**********************************************************
-    public String get_Windows_install_command()
+    public List<String> get_Windows_install_commands()
     //**********************************************************
     {
         // this is NOT for display: this MUST be th exact required string in:
         // brew install <REQUIRED_STRING>
         return switch (this) {
-            case Ytdlp -> "choco install yt-dlp -y";
-            case AcousticID_chromaprint_fpcalc -> "choco install chromaprint -y";
-            case ImageMagick -> "choco install imagemagick -y";
-            case Ffmpeg, Ffprobe -> "choco install ffmpeg -y";
-            case Vips -> "choco install vips -y";
-            case GraphicsMagick -> "choco install graphicsmagick -y";
-            case MediaInfo -> "choco install mediainfo -y";
+            case Ytdlp -> List.of("choco install yt-dlp -y");
+            case AcousticID_chromaprint_fpcalc -> List.of("choco install chromaprint -y");
+            case ImageMagick -> List.of("choco install imagemagick -y");
+            case Ffmpeg, Ffprobe -> List.of("choco install ffmpeg -y");
+            case Vips -> List.of("choco install vips -y");
+            case GraphicsMagick -> List.of("choco install graphicsmagick -y");
+            case MediaInfo -> List.of("choco install mediainfo -y");
         };
     }
 
 
     //**********************************************************
-    public String get_Linux_install_command(Kontext context)
+    public List<String> get_Linux_install_commands(Kontext context)
     //**********************************************************
     {
         // this is NOT for display: this MUST be the exact required string
         return switch (this)
         {
-            case Ytdlp -> "brew install yt-dlp";
-            case AcousticID_chromaprint_fpcalc -> "brew install chromaprint";
-            case ImageMagick -> "brew install imagemagick";
-            case Vips -> "brew install vips";
-            case GraphicsMagick -> "brew install graphicsmagick";
-            case MediaInfo -> "brew install mediainfo";
+            case Ytdlp -> List.of("brew install yt-dlp");
+            case AcousticID_chromaprint_fpcalc -> List.of("brew install chromaprint");
+            case ImageMagick -> List.of("brew install imagemagick");
+            case Vips -> List.of("brew install vips");
+            case GraphicsMagick -> List.of("brew install gs","brew install graphicsmagick");
+            case MediaInfo -> List.of("brew install mediainfo");
             case Ffmpeg, Ffprobe -> special(context);
         };
     }
 
     //**********************************************************
-    private String special(Kontext context)
+    private List<String> special(Kontext context)
     //**********************************************************
     {
         {
@@ -172,7 +175,7 @@ public enum External_application
             dialog.showAndWait();
             dialog.close();
         }
-        return null;
+        return List.of();
     }
 
     //**********************************************************

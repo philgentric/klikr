@@ -39,7 +39,7 @@ import klikr.machine_learning.face_recognition.*;
 import klikr.machine_learning.feature_vector.Feature_vector;
 import klikr.machine_learning.feature_vector.Feature_vector_double;
 import klikr.machine_learning.feature_vector.Feature_vector_source;
-import klikr.machine_learning.python_via_html_ML.ML_server_type;
+import klikr.machine_learning.old_python_via_html_ML.ML_server_type;
 import klikr.path_lists.Path_list_provider_for_file_system;
 import klikr.util.Kontext;
 import klikr.util.cache.Cache_folder;

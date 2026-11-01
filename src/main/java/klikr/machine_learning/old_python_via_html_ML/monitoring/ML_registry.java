@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Philippe Gentric
 // SPDX-License-Identifier: MIT
 
-package klikr.machine_learning.python_via_html_ML.monitoring;
+package klikr.machine_learning.old_python_via_html_ML.monitoring;
 
-import klikr.machine_learning.python_via_html_ML.ML_server;
-import klikr.machine_learning.python_via_html_ML.ML_server_type;
+import klikr.machine_learning.old_python_via_html_ML.ML_server;
+import klikr.machine_learning.old_python_via_html_ML.ML_server_type;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Kontext;

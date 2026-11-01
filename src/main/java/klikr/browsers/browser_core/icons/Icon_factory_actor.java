@@ -79,7 +79,7 @@ public class Icon_factory_actor implements Actor
     private static final boolean make_icon_dbg = false;
 
     private static final boolean verbose_dbg = false;
-    private static final boolean pdf_dbg = false;
+    private static final boolean pdf_dbg = true;
     private static final boolean aborting_dbg = false;
 
     Icon_writer_actor writer;

@@ -1,8 +1,8 @@
-package klikr.machine_learning.python_via_html_ML;
+package klikr.machine_learning.old_python_via_html_ML;
 
-import klikr.machine_learning.python_via_html_ML.monitoring.ML_registry;
-import klikr.machine_learning.python_via_html_ML.monitoring.ML_server_launch_status;
-import klikr.machine_learning.python_via_html_ML.monitoring.ML_servers_monitor;
+import klikr.machine_learning.old_python_via_html_ML.monitoring.ML_registry;
+import klikr.machine_learning.old_python_via_html_ML.monitoring.ML_server_launch_status;
+import klikr.machine_learning.old_python_via_html_ML.monitoring.ML_servers_monitor;
 import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Kontext;
