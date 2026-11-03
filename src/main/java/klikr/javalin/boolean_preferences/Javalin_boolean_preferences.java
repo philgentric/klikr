@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class Javalin_boolean_preferences {
-    private static final boolean dbg = true;
+    private static final boolean dbg = false;
     private static Javalin_boolean_preferences instance = null;
     private final Application application;
     private final Kontext context;

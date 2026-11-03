@@ -4,10 +4,10 @@
 package klikr.change.file_system_monitoring;
 
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -34,7 +34,7 @@ public class Filesystem_item_signature
     public File_status init(Path path)
     //**********************************************************
     {
-        if ( path.toFile().isDirectory())
+        if ( Files.isDirectory(path))
         {
             file_signature_array = null;
             folder_signature_array = path.toFile().list();

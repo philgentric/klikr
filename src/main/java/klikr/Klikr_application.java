@@ -125,6 +125,7 @@ import klikr.util.log.Exceptions_in_threads_catcher;
 import klikr.util.log.Logger;
 import klikr.util.perf.Perf;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -215,7 +216,7 @@ public class Klikr_application extends Application
                         if (hi != null)
                         {
                             path = Path.of(hi.value);
-                            if ( path.toFile().isFile()) path = path.getParent();
+                            if ( !Files.isDirectory(path)) path = path.getParent();
                             logger.log("reloading folder from history:" + path);
                             break;
                         }

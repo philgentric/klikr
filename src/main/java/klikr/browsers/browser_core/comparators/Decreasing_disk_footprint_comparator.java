@@ -11,6 +11,8 @@ import klikr.util.cache.Clearable_RAM_cache;
 import klikr.util.files_and_paths.Sizes;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 
@@ -63,7 +65,7 @@ public class Decreasing_disk_footprint_comparator implements Comparator<Path>, C
         {
             return s;
         }
-        if ( p.toFile().isDirectory())
+        if ( Files.isDirectory(p))
         {
             Sizes sizes = Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(p,context);
             s = sizes.bytes();
@@ -71,7 +73,11 @@ public class Decreasing_disk_footprint_comparator implements Comparator<Path>, C
         }
         else
         {
-            s = p.toFile().length();
+            try {
+                s = Files.size(p);
+            } catch (IOException e) {
+                return  0;
+            }
             //logger.log("get_disk_footprint_in_bytes file = "+p+" "+s);
         }
         RAM_caches.folder_total_size_cache.put(P2S.p2s(p),s);

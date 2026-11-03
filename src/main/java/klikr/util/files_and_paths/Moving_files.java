@@ -20,7 +20,6 @@ import klikr.change.old_and_new.Command;
 import klikr.change.old_and_new.Old_and_new_Path;
 import klikr.change.old_and_new.Status;
 import klikr.util.log.Logger;
-import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 import klikr.util.ui.Popups;
@@ -234,14 +233,18 @@ public class Moving_files
         else
         {
             Old_and_new_Path oand = the_list.get(0);
-            if ( oand.old_Path.toFile().isDirectory())
+            if ( Files.isDirectory(oand.old_Path))
             {
                 Sizes sizes =   Static_files_and_paths_utilities.get_sizes_on_disk_deep_concurrent(oand.old_Path, move_context);
                 if ( sizes.bytes() > 10_000_000) show_progress_window = true;
             }
             else
             {
-                if (oand.old_Path.toFile().length() > 10_000_000) show_progress_window = true;
+                try {
+                    if (Files.size(oand.old_Path) > 10_000_000) show_progress_window = true;
+                } catch (IOException e) {
+                    move_context.log_with_stack_trace_from_throwable("", e);
+                }
             }
         }
         if ( show_progress_window)
@@ -262,7 +265,7 @@ public class Moving_files
     public static boolean move_file(Path old_path, Path new_path, Kontext move_context)
     //**********************************************************
     {
-        if (! old_path.toFile().exists())
+        if (! Files.exists(old_path))
         {
             move_context.log("cannot move, file does not exists: "+old_path);
             return false;
@@ -270,9 +273,11 @@ public class Moving_files
         // move a file, if the destination path contains folders that do not exist yet, create them
 
         Path parent = new_path.getParent();
-        if ( parent != null && !parent.toFile().exists())
+        if ( parent != null && !Files.exists(parent))
         {
-            if ( !parent.toFile().mkdirs())
+            try {
+                Files.createDirectory(parent);
+            } catch (IOException e)
             {
                 move_context.log("cannot create folders for new path "+new_path.toAbsolutePath());
                 return  false;
@@ -473,12 +478,11 @@ public class Moving_files
     private static boolean destination_exists(Path path, Logger logger)
     //**********************************************************
     {
-        File destination = path.toFile();
-        if ( destination.isDirectory())
+        if ( Files.isDirectory(path))
         {
-            return destination.exists();
+            return Files.exists(path);
         }
-        return check_file_really_exists(destination,logger);
+        return check_file_really_exists(path,logger);
     }
 
     //**********************************************************
@@ -495,10 +499,10 @@ public class Moving_files
     }
 
     //**********************************************************
-    private static boolean check_file_really_exists(File f, Logger logger)
+    private static boolean check_file_really_exists(Path p, Logger logger)
     //**********************************************************
     {
-        if (f.isDirectory()) {
+        if (Files.isDirectory(p)) {
             logger.log_with_stack_trace("WARNING: dont use check_file_really_exists on a folder");
             return true;
         }
@@ -518,12 +522,12 @@ public class Moving_files
 
         try {
             byte[] buffer = new byte[1];
-            InputStream is = new FileInputStream(f);
+            InputStream is = new FileInputStream(p.toFile());
             if (is.read(buffer) != buffer.length) {
                 if (moving_files_dbg) logger.log("Warning: the file exists but is empty");
                 return true;
             }
-            if (moving_files_dbg) logger.log("can read 1 byte, this is file " + f.getAbsolutePath());
+            if (moving_files_dbg) logger.log("can read 1 byte, this is file " + p.toAbsolutePath().toString());
             is.close();
             return true;
         } catch (java.io.FileNotFoundException e) {
@@ -531,7 +535,7 @@ public class Moving_files
             return false;
         }
         catch (java.io.IOException e) {
-            if (moving_files_dbg) logger.log("cannot read 1 byte, it seems this: " + f.getAbsolutePath()+" is NOT file, exists()="+f.exists()+", isDirectory()="+f.isDirectory());
+            if (moving_files_dbg) logger.log("cannot read 1 byte, it seems this: " + p.toAbsolutePath()+" is NOT file, exists()="+Files.exists(p)+", isDirectory()="+Files.isDirectory(p));
             return false;
         }
     }
@@ -573,17 +577,19 @@ public class Moving_files
                     return new Old_and_new_Path(oandn.old_Path, oandn.new_Path, oandn.cmd, Status.same_path,false);
                 }
                 long start = System.currentTimeMillis();
-                if (oandn.old_Path.toFile().isFile())
+                if (Files.isDirectory(oandn.old_Path))
+                {
+                    context.log("move FOLDER command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
+                    FileUtils.moveDirectory(oandn.old_Path.toFile(), oandn.new_Path.toFile());
+                }
+                else
                 {
                     context.log("move FILE command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
                     // preserves attributes by default:
                     FileUtils.moveFile(oandn.old_Path.toFile(), oandn.new_Path.toFile());
                 }
-                else
-                {
-                    context.log("move FOLDER command issued : " + oandn.old_Path + "=>" + oandn.new_Path);
-                    FileUtils.moveDirectory(oandn.old_Path.toFile(), oandn.new_Path.toFile());
-                }
+
+
 
                 if ( System.currentTimeMillis()-start > 5_000)
                 {
@@ -608,7 +614,7 @@ public class Moving_files
         }
         catch (DirectoryNotEmptyException x)
         {
-            if (oandn.old_Path.toFile().isDirectory())
+            if (Files.isDirectory(oandn.old_Path))
             {
                 // (on Macos for sure; other OS I dont know) when moving a directory across file systems
                 // e.g. from main drive to external USB drive
@@ -669,12 +675,10 @@ public class Moving_files
             // that is: move works for individual files, but nt for folders...
             // for reasons that are a bit mysterious to me?
             try {
-                if (oandn.old_Path.toFile().isFile()) {
-                    Files.copy(oandn.old_Path, oandn.new_Path);
-
-                } else {
-                    //Static_files_and_paths_utilities.copy_dir(oandn.old_Path, oandn.new_Path,logger);
+                if (Files.isDirectory(oandn.old_Path)) {
                     FileUtils.copyDirectory(oandn.old_Path.toFile(), oandn.new_Path.toFile());
+                } else {
+                    Files.copy(oandn.old_Path, oandn.new_Path);
                 }
 
 
@@ -878,7 +882,7 @@ public class Moving_files
             String new_name = Extensions.add(prefix+base_name.substring(0, base_name.length() - lenght_of_trailing_numbers) + new_integer_with_leading_zeroes,extension);
             if (moving_files_dbg) logger.log("candidate new_name? ->" + new_name+"<-");
             Path local = Paths.get(path.getParent().toString(), new_name);
-            if ( !local.toFile().exists())
+            if ( !Files.exists(local))
             {
                 logger.log("NEW NAME ->"+local.toAbsolutePath()+"<-");
                 return local;

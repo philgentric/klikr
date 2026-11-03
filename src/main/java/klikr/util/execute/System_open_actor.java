@@ -22,6 +22,7 @@ import klikr.util.ui.Popups;
 import klikr.util.log.Stack_trace_getter;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +151,7 @@ public class System_open_actor implements Actor
     private String with_registered_application(System_open_message som)
     //**********************************************************
     {
-        String extension = Extensions.get_extension(som.path.toFile().getName());
+        String extension = Extensions.get_extension(som.path.getFileName().toString());
         String app = Registered_applications.get_registered_application(extension, som.context);
 
         if ( app == null)
@@ -177,7 +178,7 @@ public class System_open_actor implements Actor
             return false;
         }
 
-        if ( !som.path.toFile().exists() )
+        if ( !Files.exists(som.path) )
         {
             som.context.log("call_os_specific_open failed, path does not exist: "+som.path);
             return false;
@@ -203,11 +204,11 @@ public class System_open_actor implements Actor
                     list.add("gtk-launch");
                     list.add(app);
                 }
-                list.add(som.path.toFile().getAbsolutePath());
+                list.add(som.path.toAbsolutePath().toString());
                 break;
             case MacOS :
                 list.add("open");
-                list.add(som.path.toFile().getAbsolutePath());
+                list.add(som.path.toAbsolutePath().toString());
                 if ( app != null)
                 {
                     list.add("-a");
@@ -226,7 +227,7 @@ public class System_open_actor implements Actor
                     // app must be the full path i.e. c:\Program Files\AppName\app.exe
                     list.add(app);
                 }
-                list.add(som.path.toFile().getAbsolutePath());
+                list.add(som.path.toAbsolutePath().toString());
                 break;
             default:
                 return false;
@@ -239,7 +240,7 @@ public class System_open_actor implements Actor
             som.context.log("open with os-specific aborted");
             return false;
         }
-        File wd = som.path.toFile().getParentFile();
+        File wd = som.path.getParent().toFile();
 
         if (os == Operating_system.MacOS) {
             // on macOS the app 'does not show' because the JVM puts kikr back on top TOO FAST

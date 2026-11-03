@@ -61,6 +61,8 @@ import klikr.util.log.Logger;
 import klikr.util.log.Stack_trace_getter;
 import klikr.util.ui.Popups;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -77,7 +79,7 @@ public class Image_window
     private static final boolean use_linkedhashmap_for_cache = false;
     public static final String IMAGE_WINDOW = "IMAGE_WINDOW";
     double progress;
-    static final boolean dbg = true;
+    static final boolean dbg = false;
     public final Scene the_Scene;
     public final Stage stage;
     public final Pane the_image_Pane;
@@ -866,18 +868,26 @@ public class Image_window
             }
 
 
-
-
-            if (ic.path.toFile().length() == 0)
-            {
-                context.log("\n\n empty file ???? ic.path = "+ic.path);
-                local_title.append(" empty file:->").append(ic.path.toAbsolutePath().toString()).append("<-");
-            }
-            else if (ic.image_is_damaged)
-            {
-                local_title.append(" damaged or invalid (wrong extension?) ->").append(ic.path.toAbsolutePath().toString()).append("<- length = ").append(ic.path.toFile().length()).append(" Bytes");
-            } else {
-                local_title.append(" ").append(ic.image.getWidth()).append("x").append(ic.image.getHeight());
+            try {
+                if (Files.size(ic.path) == 0)
+                {
+                    context.log("\n\n empty file ???? ic.path = "+ic.path);
+                    local_title.append(" empty file:->").append(ic.path.toAbsolutePath().toString()).append("<-");
+                }
+                else if (ic.image_is_damaged)
+                {
+                    long ll = 0;
+                    try {
+                        ll = Files.size(ic.path);
+                    } catch (IOException e) {
+                        context.log_with_stack_trace_from_throwable("",e);
+                    }
+                    local_title.append(" damaged or invalid (wrong extension?) ->").append(ic.path.toAbsolutePath().toString()).append("<- length = ").append(ll).append(" Bytes");
+                } else {
+                    local_title.append(" ").append(ic.image.getWidth()).append("x").append(ic.image.getHeight());
+                }
+            } catch (IOException e) {
+                context.log_with_stack_trace_from_throwable("",e);
             }
 
             local_title.append(" ").append(ic.creation_time);
@@ -959,7 +969,7 @@ public class Image_window
     {
         try(Perf p = new Perf("set_image_internal"))
         {
-            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("set_image: "+local_image_context.path));
+            if ( dbg) context.log(Stack_trace_getter.get_stack_trace("JUST A DEBUG CRUMB set_image: "+local_image_context.path));
 
             if (local_image_context == null) {
                 context.log_stack_trace(Logger.error+"FATAL: Image_context is null, should not happen");
@@ -1033,7 +1043,7 @@ public class Image_window
         if ( image_display_handler.get_image_context().isEmpty()) return Optional.empty();
 
         // check if there is a ALREADY a file with the new name
-        if (new_path.toFile().exists())
+        if (Files.exists(new_path))
         {
             context.log("name change aborted: there is already a file with that name!");
             Popups.popup_warning(Logger.warning+" Not done","You cannot use this name:"+new_path.getFileName()+", because there is already a file with that name in the folder",false, context);

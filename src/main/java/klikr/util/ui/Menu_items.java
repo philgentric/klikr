@@ -25,6 +25,7 @@ import klikr.util.Kontext;
 import klikr.util.execute.System_open_actor;
 import klikr.util.files_and_paths.Static_files_and_paths_utilities;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 //**********************************************************
@@ -59,7 +60,7 @@ public class Menu_items
                 e -> {
                     //context.log("Browse_in_new_window");
                     Path local = path;
-                    if (!local.toFile().isDirectory()) local = local.getParent();
+                    if (!Files.isDirectory(local)) local = local.getParent();
                     Window_builder.additional_no_past(application, Window_type.File_system_2D, new Path_list_provider_for_file_system(local, context), context);
                 }, context_menu, context);
     }

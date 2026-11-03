@@ -443,7 +443,7 @@ public class Mmap
     public void load_index()
     //**********************************************************
     {
-        if ( !main_index_file.toFile().exists()) return;
+        if ( !Files.exists(main_index_file)) return;
         try (DataInputStream dis = new DataInputStream(new FileInputStream(main_index_file.toFile())))
         {
             int size = dis.readInt();
@@ -556,7 +556,16 @@ public class Mmap
     private Image_as_file_metadata find_room_for_image_as_file(Path path)
     //**********************************************************
     {
-        long length = path.toFile().length();
+        long length = 0;
+        try
+        {
+            length = Files.size(path);
+        }
+        catch (IOException e)
+        {
+            context.log_with_stack_trace_from_throwable("",e);
+            return null;
+        }
         Room room = find_room(length);
         if ( room == null) return null;
         return new Image_as_file_metadata(room.piece(), path.toAbsolutePath().toString(), room.offset(), length);
@@ -581,7 +590,15 @@ public class Mmap
     private Simple_metadata find_room_for_file(Path path)
     //**********************************************************
     {
-        long size = path.toFile().length();
+        long size = 0;
+        try {
+            size = Files.size(path);
+        }
+        catch (IOException e)
+        {
+            context.log_with_stack_trace_from_throwable("",e);
+            return null;
+        }
         Room room = find_room(size);
         String tag = path.toAbsolutePath().toString();
         if ( room == null)

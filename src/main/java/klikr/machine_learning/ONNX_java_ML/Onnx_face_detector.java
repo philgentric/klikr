@@ -19,6 +19,7 @@ import org.bytedeco.opencv.opencv_core.Size;
 import org.bytedeco.opencv.opencv_objdetect.FaceDetectorYN;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 //**********************************************************
@@ -53,7 +54,7 @@ public final class Onnx_face_detector
             context.log("aborting Onnx_face_detector.detect_face, reason: " + context.abort_reason());
             return new Face_detection_result(null, Face_recognition_in_image_status.error);
         }
-        if (path == null || !path.toFile().exists())
+        if (path == null || !Files.exists(path))
         {
             context.log("Onnx_face_detector: file does not exist: " + path);
             return new Face_detection_result(null, Face_recognition_in_image_status.error);

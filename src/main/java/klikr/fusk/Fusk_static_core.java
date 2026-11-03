@@ -121,7 +121,7 @@ public class Fusk_static_core
     {
         Path out = get_defusk_path(in, destination_folder, context.logger());
         int k = 0;
-        while ( out.toFile().exists())
+        while ( Files.exists(out))
         {
             context.log(" "+out.toAbsolutePath()+" exists");
             String parent = out.getParent().toAbsolutePath().toString();

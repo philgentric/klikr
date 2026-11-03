@@ -79,7 +79,7 @@ public class Icon_factory_actor implements Actor
     private static final boolean make_icon_dbg = false;
 
     private static final boolean verbose_dbg = false;
-    private static final boolean pdf_dbg = true;
+    private static final boolean pdf_dbg = false;
     private static final boolean aborting_dbg = false;
 
     Icon_writer_actor writer;
@@ -469,8 +469,13 @@ TODO:
                         length,
                         skip,
                         0, k);
-                if (icon_path.toFile().length() == 0) {
-                    context.log(Logger.warning+"Icon caching, icon file empty " + icon_path.toAbsolutePath());
+                try {
+                    if (Files.size(icon_path) == 0) {
+                        context.log(Logger.warning+"Icon caching, icon file empty " + icon_path.toAbsolutePath());
+                        return null;
+                    }
+                } catch (IOException e) {
+                    context.log(Logger.warning+"Icon caching, icon file failed " + icon_path.toAbsolutePath()+ e);
                     return null;
                 }
 
@@ -521,10 +526,14 @@ TODO:
                         return null;
                     }
                     if ( pdf_dbg) context.log(sb.toString());
-                    if (icon_path.toFile().length() == 0) {
-                        context.log(Logger.warning+" icon file empty " + icon_path.toAbsolutePath());
-                        return null;
-                    }
+                    try {
+                        if (Files.size(icon_path) == 0) {
+                            context.log(Logger.warning+" icon file empty " + icon_path.toAbsolutePath());
+                            return null;
+                        }
+                    } catch (IOException e) {
+                        context.log_with_stack_trace_from_throwable("",e);
+                        return null;                    }
                 }
 
                 Image icon_from_cache = Icons_from_disk.load_icon(icon_path, context.logger());
@@ -678,8 +687,13 @@ TODO:
                                 return;
                             }
                             if (pdf_dbg) context.log(sb.toString());
-                            if (icon_path.toFile().length() == 0) {
-                                context.log(Logger.warning+" GIF icon resize failed " + icon_path.toAbsolutePath());
+                            try {
+                                if (Files.size(icon_path) == 0) {
+                                    context.log(Logger.warning+" GIF icon resize failed " + icon_path.toAbsolutePath());
+                                    return;
+                                }
+                            } catch (IOException e) {
+                                context.log_with_stack_trace_from_throwable("",e);
                                 return;
                             }
                             Mmap.instance.write_image_as_file(icon_path, true, delete_on_end);

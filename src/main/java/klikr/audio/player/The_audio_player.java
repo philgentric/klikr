@@ -55,6 +55,7 @@ import klikr.util.ui.progress.Hourglass;
 import klikr.util.ui.progress.Progress_window;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,7 +148,7 @@ public class The_audio_player implements Media_callbacks
         else
         {
             path = Path.of(song_s);
-            if (!path.toFile().exists())
+            if (!Files.exists(path))
             {
                 String_constants.save_current_song("");
                 return;

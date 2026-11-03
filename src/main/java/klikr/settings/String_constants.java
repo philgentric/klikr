@@ -5,6 +5,7 @@ import klikr.util.Shared_services;
 import klikr.util.files_and_paths.Guess_file_type;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -70,7 +71,7 @@ public class String_constants
             Path p = Path.of(playlist_file_name);
             if (p.isAbsolute())
             {
-                if (p.toFile().exists())
+                if (Files.exists(p))
                 {
                     return p; // OK, loading recorded playlist after checking
                 }

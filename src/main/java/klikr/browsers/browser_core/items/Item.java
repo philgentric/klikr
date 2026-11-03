@@ -277,7 +277,17 @@ public abstract class Item implements Icon_destination
             {
 
                 {
-                    Path folder_path = item_context.item_path.getParent();
+                    Path folder_path;
+                    if ( Files.isDirectory(item_context.item_path))
+                    {
+                        // if the user is clicking on a folder, we browse that folder of course
+                        folder_path = item_context.item_path;
+                    }
+                    else
+                    {
+                        // if the user is clicking on a file, we browse the containing folder
+                        folder_path = item_context.item_path.getParent();
+                    }
 
                     Menu_items.add_menu_item_for_context_menu(
                             "Browse_in_new_window", true,
@@ -620,7 +630,7 @@ public abstract class Item implements Icon_destination
                             item_context.context.log_with_stack_trace(("Should not happen "));
                             return;
                         }
-                        if (item_context.item_path.toFile().isDirectory()) {
+                        if (Files.isDirectory(item_context.item_path)) {
                             Path new_path = Moving_files.change_dir_name(item_context.item_path, new_item_name, item_context.context);
                             if (new_path == null) {
                                 if (dbg) item_context.log("rename failed");
@@ -656,7 +666,13 @@ public abstract class Item implements Icon_destination
                                 local_button.setText(new_item_name);
                                 local_button.setGraphic(restored);
                             } else {
-                                String size = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(item_context.item_path.toFile().length(), item_context.context);
+                                long l = 0;
+                                try {
+                                    l = Files.size(item_context.item_path);
+                                } catch (IOException e) {
+                                    item_context.context.log_with_stack_trace_from_throwable("",e);
+                                }
+                                String size = Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(l, item_context.context);
                                 local_button.setText(size);
                                 local_label.setText(new_item_name);
                                 //Font_size.set_preferred_font_size(label,logger);

@@ -179,17 +179,25 @@ public class Mouse_handling_for_Image_window
 
         image_window.the_image_view.setViewport(view_port);
 
-        Image cropped_image = new
-                WritableImage(
-                image_window.the_image_view.getImage().getPixelReader(),
-                (int)view_port.getMinX(),
-                (int)view_port.getMinY(),
-                (int)view_port.getWidth(),
-                (int)view_port.getHeight());
+        Image_and_properties iap = null;
+        try {
+            Image cropped_image = new
+                    WritableImage(
+                    image_window.the_image_view.getImage().getPixelReader(),
+                    (int) view_port.getMinX(),
+                    (int) view_port.getMinY(),
+                    (int) view_port.getWidth(),
+                    (int) view_port.getHeight());
+             iap = Image_and_properties.build(cropped_image,false);
+        }
+        catch (ArrayIndexOutOfBoundsException ex)
+        {
+            logger.log_with_stack_trace_from_throwable("cropped image",ex);
+            return;
+        }
         Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache, image_window.context);
 
         cropped_image_path = icon_cache_dir.resolve("cropped_image.png");
-        Image_and_properties iap = Image_and_properties.build(cropped_image,false);
         Static_image_utilities.write_png_to_disk(iap,cropped_image_path,logger);
 
     }
@@ -444,7 +452,7 @@ public class Mouse_handling_for_Image_window
             ClipboardContent content = new ClipboardContent();
             List<File> possibly_moved = new ArrayList<>();
 
-            if (Drag_and_drop.drag_and_drop_dbg) logger.log("going to drag and drop: "+ Objects.requireNonNull(image_window.image_display_handler.get_image_context().get().path).toFile().getAbsolutePath());
+            if (Drag_and_drop.drag_and_drop_dbg) logger.log("going to drag and drop: "+ Objects.requireNonNull(image_window.image_display_handler.get_image_context().get().path).toAbsolutePath());
             Path p = image_window.image_display_handler.get_image_context().get().path;
             if ( p !=null)
             {

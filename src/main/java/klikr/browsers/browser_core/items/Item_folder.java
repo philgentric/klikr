@@ -215,7 +215,7 @@ public class Item_folder extends Item implements Icon_destination
             return null;
         }
         // for a file the displayed icon is built from the file itself, if supported:
-        if ( !item_path.toFile().isDirectory())
+        if ( !Files.isDirectory(item_path))
         {
             return get_item_path();
         }

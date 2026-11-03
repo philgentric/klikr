@@ -8,6 +8,8 @@ import klikr.util.cache.Clearable_RAM_cache;
 import klikr.util.cache.RAM_caches;
 import klikr.util.cache.Size_;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 
@@ -44,8 +46,8 @@ public class File_size_comparator implements Comparator<Path>, Clearable_RAM_cac
 
         }
 
-        if ( p1.toFile().isDirectory() ) return -1;
-        if ( p2.toFile().isDirectory() ) return -1;
+        if (Files.isDirectory(p1) ) return -1;
+        if (Files.isDirectory(p2) ) return -1;
 
         long s1 = from_cache(p1);
         long s2 = from_cache(p2);
@@ -61,7 +63,11 @@ public class File_size_comparator implements Comparator<Path>, Clearable_RAM_cac
     {
         Long r = RAM_caches.file_size_cache.get(P2S.p2s(p));
         if (r != null) return r;
-        r = p.toFile().length();
+        try {
+            r = Files.size(p);
+        } catch (IOException e) {
+            return 0;
+        }
         RAM_caches.file_size_cache.put(P2S.p2s(p),r);
         return r;
     }

@@ -58,7 +58,7 @@ public class Static_files_and_paths_utilities
     private static boolean copy_directory(Path old_path, Path new_path, Kontext context)
     //**********************************************************
     {
-        if (! old_path.toFile().exists())
+        if (! Files.exists(old_path))
         {
              context.log("cannot move, file does not exists: "+old_path);
             return false;
@@ -67,17 +67,16 @@ public class Static_files_and_paths_utilities
 
         Path parent = new_path.getParent();
          context.log("copy_directory parent = "+parent.toAbsolutePath());
-        if ( parent != null && !parent.toFile().exists())
+        if ( parent != null && !Files.exists(parent))
         {
-            if ( !parent.toFile().mkdirs())
-            {
-                 context.log("could not create folders for new path "+new_path.toAbsolutePath());
+            try {
+                Files.createDirectory(parent);
+            } catch (IOException e) {
+                context.log("could not create folders for new path "+new_path.toAbsolutePath());
                 return  false;
             }
-            else
-            {
-                 context.log("created folders for new path "+new_path.toAbsolutePath());
-            }
+            context.log("created folders for new path "+new_path.toAbsolutePath());
+
         }
 
         try
@@ -401,7 +400,7 @@ public class Static_files_and_paths_utilities
     public static Sizes get_sizes_on_disk_deep_concurrent(Path folder_path, Kontext context)
     //**********************************************************
     {
-        if ( !folder_path.toFile().isDirectory())
+        if ( !Files.isDirectory(folder_path))
         {
              context.log(Stack_trace_getter.get_stack_trace("Stupid2: not a folder: "+folder_path));
             return null;
@@ -444,7 +443,7 @@ public class Static_files_and_paths_utilities
     public static long get_size_on_disk_concurrent(Path path, Kontext context)
     //**********************************************************
     {
-        if ( !path.toFile().isDirectory())
+        if ( !Files.isDirectory(path))
         {
             if(dbg)  context.log(("skipping get_size_on_disk_concurrent: not a folder: "+path));
             return 0L;
@@ -477,7 +476,7 @@ public class Static_files_and_paths_utilities
     private static long get_how_many_files_deep_concurrent(Path path, Aborter aborter, Kontext context)
     //**********************************************************
     {
-        if ( !path.toFile().isDirectory())
+        if ( !Files.isDirectory(path))
         {
              context.log(Stack_trace_getter.get_stack_trace("Stupid4: not a folder: "+path));
             return 0L;
@@ -553,7 +552,12 @@ public class Static_files_and_paths_utilities
     public static String get_1_line_string_with_size(Path path, Kontext context)
     //**********************************************************
     {
-        long BYTES = path.toFile().length();
+        long BYTES = 0;
+        try {
+            BYTES = Files.size(path);
+        } catch (IOException e) {
+            context.log_with_stack_trace_from_throwable("",e);
+        }
         StringBuilder sb = new StringBuilder();
         if (BYTES > 1000_000_000)
         {
@@ -1136,7 +1140,7 @@ public class Static_files_and_paths_utilities
     {
         Path conf_dir1 = Paths.get(top_folder, String_constants.CONF_DIR);
         if (dbg)  context.log("conf_dir1 =" + conf_dir1);
-        if (!conf_dir1.toFile().exists())
+        if (!Files.exists(conf_dir1))
         {
             try {
                 Files.createDirectory(conf_dir1);
@@ -1158,7 +1162,7 @@ public class Static_files_and_paths_utilities
         Path conf_dir2 = Paths.get(conf_dir1.toString(), String_constants.PRIVACY_SCREEN );
         if (dbg)  context.log("conf_dir2 =" + conf_dir2);
 
-        if (!conf_dir2.toFile().exists())
+        if (!Files.exists(conf_dir2))
         {
             try {
                 Files.createDirectory(conf_dir2);

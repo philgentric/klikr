@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 
 public class Javalin_history_app extends Application {
 
-    private static final boolean ultra_dbg = true;
+    private static final boolean ultra_dbg = false;
     private TextArea the_TextArea;
     private Label statusLabel;
     private Javalin javalin;

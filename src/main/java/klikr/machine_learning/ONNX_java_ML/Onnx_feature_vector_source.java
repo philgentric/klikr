@@ -8,6 +8,7 @@ import klikr.machine_learning.feature_vector.Feature_vector_source;
 import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -68,7 +69,7 @@ public final class Onnx_feature_vector_source implements Feature_vector_source
             context.log_stack_trace("Onnx_feature_vector_source.get_feature_vector called with null path");
             return Optional.empty();
         }
-        if (!path.toFile().exists())
+        if (!Files.exists(path))
         {
             context.log("Onnx_feature_vector_source: file does not exist: " + path);
             return Optional.empty();

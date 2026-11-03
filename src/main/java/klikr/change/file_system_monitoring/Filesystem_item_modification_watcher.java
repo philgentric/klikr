@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class Filesystem_item_modification_watcher
 //**********************************************************
 {
-    private final static boolean dbg = true;
+    private final static boolean dbg = false;
     private ScheduledFuture<?> t = null;
     private Kontext context;
 

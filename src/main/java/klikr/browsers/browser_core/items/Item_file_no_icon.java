@@ -185,7 +185,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
             return null;
         }
         // for a file the displayed icon is built from the file itself, if supported:
-        if ( !item_path.toFile().isDirectory())
+        if ( Files.isDirectory(item_path))
         {
             return get_item_path();
         }
@@ -330,9 +330,11 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
                 LocalDateTime ldt = x.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                 sb.append(ldt.format(date_time_formatter));
                 sb.append("                 ");
-                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(item_context.item_path.toFile().length(), item_context.context));
+                long l;
+                l = Files.size(item_context.item_path);
+                sb.append(Static_files_and_paths_utilities.get_1_line_string_for_byte_data_size(l, item_context.context));
                 sb.append("                 ");
-                if (!item_context.item_path.toFile().canWrite())
+                if (!Files.isWritable(item_context.item_path))
                 {
                     sb.append(Logger.warning+" Not Writable!                 ");
                 }
@@ -359,7 +361,7 @@ public class Item_file_no_icon extends Item_file implements Icon_destination
 
         button.setOnAction(event -> {
 
-            if ( !item_context.item_path.toFile().exists())
+            if ( !Files.exists(item_context.item_path))
             {
                 Jfx_batch_injector.inject(() -> Popups.popup_warning( Logger.error+" impossible, this path does not exist: " + item_context.item_path.toAbsolutePath(), "Sorry", false, item_context.context), item_context.context);
 

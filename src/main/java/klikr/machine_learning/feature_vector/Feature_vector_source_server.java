@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -85,7 +86,7 @@ public abstract class Feature_vector_source_server implements Feature_vector_sou
 
         if ( op.isEmpty())
         {
-            if ( path.toFile().exists())
+            if ( Files.exists(path))
             {
                 // The server failed to return a vector. the file may be corrupted?
                 context.log(Logger.warning+" WARNING: File MAY BE CORRUPTED: "+path);

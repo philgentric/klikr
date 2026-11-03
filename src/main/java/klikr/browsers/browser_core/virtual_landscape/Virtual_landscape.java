@@ -123,8 +123,8 @@ public class Virtual_landscape
     public static final boolean dbg = false;
     public static final boolean crumbs_dbg = false;
     public static final boolean ultra_dbg = false;
-    public static final boolean invisible_dbg = false;
-    public static final boolean visible_dbg = false;
+    public static final boolean invisible_dbg = true;
+    public static final boolean visible_dbg = true;
     public static final boolean scroll_dbg = false;
     public static final boolean kbd_dbg = false;
 
@@ -1314,7 +1314,12 @@ public class Virtual_landscape
                 }
                 if (ultra_dbg) context.log(Logger.ok+" Virtual_landscape process_non_iconized_files item_path_: " + item_path_.toAbsolutePath());
                 String text = item_path_.getFileName().toString();
-                long size = item_path_.toFile().length() / 1000_000L;
+                long size = 0;
+                try {
+                    size = Files.size(item_path_) / 1000_000L;
+                } catch (IOException e) {
+                    context.log_with_stack_trace_from_throwable("",e);
+                }
                 if (Guess_file_type.is_this_path_extension_a_video(item_path_, context.logger()))
                 {
                     text = size + "MB VIDEO: " + text;

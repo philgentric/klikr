@@ -57,7 +57,7 @@ import java.util.function.Function;
 public class Image_context
 //**********************************************************
 {
-    public static final boolean dbg = true;
+    public static final boolean dbg = false;
     public static final String DELAY = "Delay: ";
 
     public final Kontext context;

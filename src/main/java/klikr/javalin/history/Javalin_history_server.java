@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Javalin_history_server
 {
 
-    private static final boolean ultra_dbg = true;
+    private static final boolean ultra_dbg = false;
     private Javalin javalin;
     private final int port_number;
     private final Kontext context;

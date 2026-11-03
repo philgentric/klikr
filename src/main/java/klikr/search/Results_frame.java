@@ -177,7 +177,7 @@ public class Results_frame implements Results
 
 			Menu_items.create_browse_in_new_window_menu_item(application, context_menu,path,context);
 
-			if (! path.toFile().isDirectory())
+			if (! Files.isDirectory(path))
 			{
 				Menu_items.create_open_with_registered_application_menu_item(context_menu,path,context);
 

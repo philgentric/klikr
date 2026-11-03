@@ -250,7 +250,7 @@ public class Full_image_from_disk
         Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache, context);
         Path png_path = icon_cache_dir.resolve(original_image_file.getFileName().toString()+"_full.png");
 
-        if ( !png_path.toFile().exists())
+        if ( !Files.exists(png_path))
         {
             context.log("png (converted image) does not exist, creating "+png_path);
             // use GraphicsMagick to convert to png
@@ -287,7 +287,7 @@ public class Full_image_from_disk
         Path icon_cache_dir = Cache_folder.get_cache_dir(Cache_folder.icon_cache, context);
         Path png_path = icon_cache_dir.resolve(original_image_file.getFileName().toString()+"_full.png");
 
-        if ( !png_path.toFile().exists())
+        if ( !Files.exists(png_path))
         {
             context.log("png (converted image) does not exist, creating "+png_path);
             // use ImageMagick to convert to png

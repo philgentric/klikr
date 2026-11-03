@@ -17,7 +17,7 @@ public class Actor_engine_with_virtual_threads implements Actor_engine_interface
     (so we can have as many actors that sleep as you want, we never risk deadlock!)
      */
     private final Logger logger;
-    private final static boolean fullstack_dbg = true;
+
     //**********************************************************
     public Actor_engine_with_virtual_threads(Logger logger_)
     //**********************************************************

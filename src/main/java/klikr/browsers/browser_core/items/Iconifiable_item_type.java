@@ -51,7 +51,7 @@ public enum Iconifiable_item_type
             return no_path;
         }*/
 
-        if ( path.toFile().isDirectory())
+        if ( Files.isDirectory(path))
         {
             if (Files.isSymbolicLink(path)) return symbolic_link_on_folder;
             else return folder;
