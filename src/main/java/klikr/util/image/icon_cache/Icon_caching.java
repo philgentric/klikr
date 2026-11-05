@@ -32,7 +32,7 @@ public class Icon_caching
     {
         if ( original_image_file == null)
         {
-            context.log_with_stack_trace(Logger.error+"");
+            context.log_with_stack_trace(Logger.error+" should not happen");
             return null;
         }
 
@@ -41,6 +41,22 @@ public class Icon_caching
         //String tag = String.valueOf(icon_size);
         return icon_cache_dir.resolve(make_cache_name(original_image_file.toAbsolutePath().toString(), tag, extension));
     }
+
+    //**********************************************************
+    public static String ID_for_icon_caching(
+            Path original_image_file,
+            String tag,
+            Kontext context)
+    //**********************************************************
+    {
+        if ( original_image_file == null)
+        {
+            context.log_with_stack_trace(Logger.error+" should not happen");
+            return null;
+        }
+        return original_image_file.toAbsolutePath().toString()+tag;
+    }
+
 
     //**********************************************************
     private static File file_for_icon_caching(
@@ -97,7 +113,10 @@ public class Icon_caching
         }
         else
         {
-            sb.append(UUID.nameUUIDFromBytes(tag.getBytes())); // the name is always the same length and is obfuscated
+            // doing this brings 2 advantages
+            // 1. original name is obfuscated
+            // 2. all names have the same "reasonable" length
+            sb.append(UUID.nameUUIDFromBytes(tag.getBytes()));
         }
         return sb.toString();
 //		return clean_name(full_name) + "_"+tag + "."+extension;

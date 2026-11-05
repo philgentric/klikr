@@ -180,24 +180,24 @@ public class Mmap
     }
 
     //**********************************************************
-    public byte[] read_bytes(String tag)
+    public byte[] read_bytes(String full_path_as_string_tag)
     //**********************************************************
     {
-        Simple_metadata sm = (Simple_metadata) main_index.get(tag);
+        Simple_metadata sm = (Simple_metadata) main_index.get(full_path_as_string_tag);
         if ( sm == null)
         {
-            if ( dbg) context.log("Mmap read_file failed: no metadata found for "+tag);
+            if ( dbg) context.log("Mmap read_file failed: no metadata found for "+full_path_as_string_tag);
             return null;
         }
         Piece piece = sm.piece();
         if ( piece == null)
         {
-            context.log(Logger.error+"PANIC Mmap read_file failed: no piece for "+tag);
+            context.log(Logger.error+"PANIC Mmap read_file failed: no piece for "+full_path_as_string_tag);
             return null;
         }
         if ( stats_dbg)
         {
-            usage.merge(tag, 1, Integer::sum);;
+            usage.merge(full_path_as_string_tag, 1, Integer::sum);;
         }
         return piece.read_bytes(sm);
     }
@@ -255,22 +255,22 @@ public class Mmap
 
     // takes more file space but faster to reload
     //**********************************************************
-    public boolean write_image_as_pixels(String tag, Image_and_properties image, boolean and_save, Runnable on_end)
+    public boolean write_image_as_pixels(String full_path_as_string_tag, Image_and_properties image, boolean and_save, Runnable on_end)
     //**********************************************************
     {
-        Image_as_pixel_metadata meta = find_room_for_image_as_pixel(image.image(), tag);
+        Image_as_pixel_metadata meta = find_room_for_image_as_pixel(image.image(), full_path_as_string_tag);
         if ( meta == null )
         {
-            context.log("Mmap no room found for "+tag);
+            context.log("Mmap no room found for "+full_path_as_string_tag);
             return false;
         }
         if (!meta.piece().write_image_as_pixels(meta.offset(),image))
         {
-            context.log_with_stack_trace(Logger.error+"PANIC in write_image, PixelReader is null for image: " + tag);
+            context.log_with_stack_trace(Logger.error+"PANIC in write_image, PixelReader is null for image: " + full_path_as_string_tag);
             return false;
         };
-        record_index(tag, meta, meta.piece());
-        if (ultra_dbg) context.log("Mmap image as pixel: "+tag);
+        record_index(full_path_as_string_tag, meta, meta.piece());
+        if (ultra_dbg) context.log("Mmap image as pixel: "+full_path_as_string_tag);
         consider_saving(and_save);
 
         if ( on_end != null ) on_end.run();
@@ -280,19 +280,19 @@ public class Mmap
     private static final ConcurrentLinkedQueue<Long> elapseds = new ConcurrentLinkedQueue<>();
     private static int counter = 0;
     //**********************************************************
-    public Optional<Image_and_properties> read_image_as_pixels(String tag)
+    public Optional<Image_and_properties> read_image_as_pixels(String full_path_as_string_tag)
     //**********************************************************
     {
         Speed speed = new Speed();
-        Meta meta_from_index  = main_index.get(tag);
+        Meta meta_from_index  = main_index.get(full_path_as_string_tag);
         if ( meta_from_index == null )
         {
-            if (dbg) context.log("Mmap tag found for "+tag);
+            if (dbg) context.log("Mmap full_path_as_string_tag found for "+full_path_as_string_tag);
             return Optional.empty();
         }
         if (!( meta_from_index instanceof Image_as_pixel_metadata ))
         {
-            context.log_with_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+tag+" got: "+meta_from_index.getClass().getName());
+            context.log_with_stack_trace("Wrong type for meta, expecting Image_as_pixel_metadata for: "+full_path_as_string_tag+" got: "+meta_from_index.getClass().getName());
             return Optional.empty();
         }
         Image_as_pixel_metadata meta = (Image_as_pixel_metadata)meta_from_index;
@@ -300,7 +300,7 @@ public class Mmap
         if (p == null) return Optional.empty();
         if ( stats_dbg)
         {
-            usage.merge(tag, 1, Integer::sum);;
+            usage.merge(full_path_as_string_tag, 1, Integer::sum);;
         }
         Optional<Image_and_properties> returned = p.read_image_as_pixels(meta);
 
@@ -339,25 +339,30 @@ public class Mmap
         }
     }
     //**********************************************************
-    public Optional<Image_and_properties> read_image_as_file(Path path)
+    public Optional<Image_and_properties> read_image_as_file(
+            String full_path_as_string_tag
+            )
     //**********************************************************
     {
+        // context.log("Mmap full_path_as_string_tag = "+full_path_as_string_tag);
+        // this is NOT a real path in the filesystem
+
         Speed speed = new Speed();
-        String tag = path.toAbsolutePath().toString();
-        Image_as_file_metadata meta = (Image_as_file_metadata) main_index.get(tag);
+        //String full_path_as_string_tag = path.toAbsolutePath().toString();
+        Image_as_file_metadata meta = (Image_as_file_metadata) main_index.get(full_path_as_string_tag);
         if ( meta == null )
         {
-            if ( dbg) context.log("Mmap path found for "+path);
+            if ( dbg) context.log("Mmap path found for "+full_path_as_string_tag);
             return Optional.empty();
         }
-        if (ultra_dbg) context.log("mmap reading image: "+tag+" is pixels=no");
+        if (ultra_dbg) context.log("mmap reading image: "+full_path_as_string_tag+" is pixels=no");
         Piece p = meta.piece();
         if (p == null) return Optional.empty();
         if ( stats_dbg)
         {
-            usage.merge(tag, 1, Integer::sum);;
+            usage.merge(full_path_as_string_tag, 1, Integer::sum);;
         }
-        Image_and_properties iap =  p.read_image_as_file(tag, meta);
+        Image_and_properties iap =  p.read_image_as_file(full_path_as_string_tag, meta);
 
         if ( stats_dbg) speed.print(context.logger());
         if (iap == null) return Optional.empty();
@@ -543,13 +548,13 @@ public class Mmap
     record Room(Piece piece, long offset){}
 
     //**********************************************************
-    private Image_as_pixel_metadata find_room_for_image_as_pixel(Image image, String tag)
+    private Image_as_pixel_metadata find_room_for_image_as_pixel(Image image, String full_path_as_string_tag)
     //**********************************************************
     {
         long size= (long) (image.getWidth() * image.getHeight() * 4);
         Room room = find_room(size);
         if ( room == null) return null;
-        return new Image_as_pixel_metadata(room.piece(), tag, room.offset(), (int) image.getWidth(), (int) image.getHeight());
+        return new Image_as_pixel_metadata(room.piece(), full_path_as_string_tag, room.offset(), (int) image.getWidth(), (int) image.getHeight());
     }
 
     //**********************************************************
@@ -572,17 +577,17 @@ public class Mmap
     }
 
     //**********************************************************
-    private Simple_metadata find_room_for_bytes(String tag, byte[] bytes)
+    private Simple_metadata find_room_for_bytes(String full_path_as_string_tag, byte[] bytes)
     //**********************************************************
     {
         long size = bytes.length;
         Room room = find_room(size);
         if ( room == null)
         {
-            context.log("find_room_for_file failed for "+tag+ " length="+size);
+            context.log("find_room_for_file failed for "+full_path_as_string_tag+ " length="+size);
             return null;
         }
-        return new Simple_metadata(room.piece(), tag, room.offset(), size);
+        return new Simple_metadata(room.piece(), full_path_as_string_tag, room.offset(), size);
     }
 
 
@@ -600,13 +605,13 @@ public class Mmap
             return null;
         }
         Room room = find_room(size);
-        String tag = path.toAbsolutePath().toString();
+        String full_path_as_string_tag = path.toAbsolutePath().toString();
         if ( room == null)
         {
-            context.log("find_room_for_file failed for "+tag+ " length="+size);
+            context.log("find_room_for_file failed for "+full_path_as_string_tag+ " length="+size);
             return null;
         }
-        return new Simple_metadata(room.piece(), tag, room.offset(), size);
+        return new Simple_metadata(room.piece(), full_path_as_string_tag, room.offset(), size);
     }
 
 

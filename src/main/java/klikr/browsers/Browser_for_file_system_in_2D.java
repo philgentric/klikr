@@ -242,8 +242,7 @@ public class Browser_for_file_system_in_2D extends Abstract_browser implements F
             context.log_with_stack_trace(Logger.error+ "path_list_provider == null");
             return;
         }
-
-        context.log("VVVVVVV   path_list_provider"+path_list_provider.get_key());
+        context.log("monitor_current_path_list_source   path_list_provider"+path_list_provider.get_key());
         Feature_cache.register_for(Feature.Monitor_folders,this);
 
         // ALWAYS monitor external drives

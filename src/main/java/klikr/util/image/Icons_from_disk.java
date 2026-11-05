@@ -227,7 +227,7 @@ public class Icons_from_disk
 
         // find out if the image is rotated
         InputStream is2 = new ByteArrayInputStream(bytes);
-        Rotation rot = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(is2,path_for_dbg,context);
+        Rotation rot = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(is2, path_for_dbg.toAbsolutePath().toString(), context);
         if ( rot == null )
         {
             //context.log_with_stack_trace(" WARNING rotation not found for "+path_for_dbg));

@@ -6,7 +6,6 @@ package klikr.browsers.browser_core.items;
 import klikr.browsers.browser_core.icons.Icon_factory_actor;
 import klikr.browsers.browser_core.virtual_landscape.Selection_handler;
 import klikr.settings.Non_booleans_properties;
-import klikr.util.log.Stack_trace_getter;
 
 //**********************************************************
 public abstract class Item_file extends Item

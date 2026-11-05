@@ -14,6 +14,7 @@ import klikr.settings.boolean_features.Feature;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.Check_remaining_RAM;
 import klikr.util.image.Full_image_from_disk;
+import klikr.util.log.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,11 @@ public class Fast_rotation_from_exif_metadata_extractor
     //**********************************************************
     {
 
+        if ( path == null )
+        {
+            context.log_with_stack_trace(Logger.error+"path is null");
+            return null;
+        }
         if (Check_remaining_RAM.RAM_running_low("Image rotation extraction", context)) {
             context.log("get_rotation NOT DONE because running low on memory ! ");
             return null;
@@ -41,13 +47,21 @@ public class Fast_rotation_from_exif_metadata_extractor
             return null;
         }
 
-        return get_rotation_from_InputStream(is,path,context);
+        return get_rotation_from_InputStream(is, path.toAbsolutePath().toString(), context);
     }
 
     //**********************************************************
-    public static Rotation get_rotation_from_InputStream(InputStream is, Path path, Kontext context)
+    public static Rotation get_rotation_from_InputStream(InputStream is,
+                                                         //Path path, // maybe null when reading from mmap
+                                                         String description,
+                                                         Kontext context)
     //**********************************************************
     {
+        if ( description == null )
+        {
+            context.log_with_stack_trace(Logger.error+"Fast_rotation_from_exif_metadata_extractor, description is null");
+            return null;
+        }
         try
         {
             Metadata metadata = ImageMetadataReader.readMetadata(is);
@@ -89,12 +103,12 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1) for:"+ path.toAbsolutePath(),e);
+                if ( description != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1) for:"+ description,e);
                 else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (1)->",e);
             }
             if ( e.toString().contains("File format could not be determined"))
             {
-                context.log_with_stack_trace_from_throwable("Warning:",e);
+                context.log_with_stack_trace_from_throwable(Logger.warning+ "Warning: "+description+" ",e);
                 return null;
             }
         }
@@ -102,7 +116,7 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ path.toAbsolutePath(),e);
+                if ( description != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (2)->"+e+"<- for:"+ description,e);
                 else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (2)->",e);
             }
         }
@@ -110,7 +124,7 @@ public class Fast_rotation_from_exif_metadata_extractor
         {
             if ( dbg)
             {
-                if ( path != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ path.toAbsolutePath(),e);
+                if ( description != null) context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->"+e+"<- for:"+ description,e);
                 else context.log_with_stack_trace_from_throwable("extract_exif_metadata() Managed exception (3)->",e);
             }
         }

@@ -84,6 +84,8 @@ public abstract class Item implements Icon_destination
     // vertical scroll is managed by subtracting the y_offset
     private double javafx_x;
     private double javafx_y;
+
+    private volatile double pending_column_width = -1;
     // this is the (top-left) position of the image
     // in the possibly hugely tall virtual landscape
     // that contains all icons
@@ -109,6 +111,21 @@ public abstract class Item implements Icon_destination
 
     }
 
+    public void set_pending_column_width(double w)
+    {
+        this.pending_column_width = w;
+    }
+    // must be called on the javafx thread
+    public void apply_pending_column_width()
+    {
+        double w = this.pending_column_width;
+        if ( w < 0) return;
+        if ( get_Node() instanceof javafx.scene.layout.Region r )
+        {
+            r.setPrefWidth(w);
+            r.setMinWidth(w);
+        }
+    }
     // path for display takes different form depending on the item type
     // it can be null, a PNG icon, or an animated gif
     abstract public Path get_path_for_display(boolean try_deep);

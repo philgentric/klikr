@@ -67,7 +67,7 @@ public class Mmap_test extends Application
         {
             String tag3 = "src/main/resources/icons/Korean.png";
             mmap.write_image_as_file(Path.of(tag3), true, null);
-            Optional<Image_and_properties> iap3 = mmap.read_image_as_file(Path.of(tag3));
+            Optional<Image_and_properties> iap3 = mmap.read_image_as_file(tag3);
             if (iap3.isEmpty())
             {
                 logger.log("Image not found "+tag3);

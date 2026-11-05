@@ -104,7 +104,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -123,8 +125,8 @@ public class Virtual_landscape
     public static final boolean dbg = false;
     public static final boolean crumbs_dbg = false;
     public static final boolean ultra_dbg = false;
-    public static final boolean invisible_dbg = true;
-    public static final boolean visible_dbg = true;
+    public static final boolean invisible_dbg = false;
+    public static final boolean visible_dbg = false;
     public static final boolean scroll_dbg = false;
     public static final boolean kbd_dbg = false;
 
@@ -168,7 +170,9 @@ public class Virtual_landscape
     final Path_list_provider path_list_provider;
 
 
-    private final List<Item> future_pane_content = new ArrayList<>();
+    //private final List<Item> future_pane_content = new ArrayList<>();
+    private final ReentrantLock geometry_lock = new ReentrantLock();
+    private final AtomicLong geometry_generation = new AtomicLong();
     public Vertical_slider vertical_slider;
     public double slider_width;
     public final Scene the_Scene;
@@ -1359,8 +1363,10 @@ public class Virtual_landscape
                         column_increment,
                         row_increment_for_files, scene_width, single_column);
 
-                if (item instanceof Item_file_no_icon ifni)
+                if (item instanceof Item_file_no_icon || item instanceof Item_folder )
                 {
+                    item.set_pending_column_width(column_increment);
+                    /*
                     if ( ifni.get_button() == null)
                     {
                         context.log_with_stack_trace(("Item_file_no_icon null button????"));
@@ -1369,7 +1375,10 @@ public class Virtual_landscape
                     {
                     ifni.get_button().setPrefWidth(column_increment);
                     ifni.get_button().setMinWidth(column_increment);
-                }}
+                    }
+                    */
+                }
+                /*
                 if (item instanceof Item_folder item_folder)
                 {
                     if ( item_folder.get_button() == null)
@@ -1382,10 +1391,14 @@ public class Virtual_landscape
                         item_folder.get_button().setMinWidth(column_increment);
                     }
                 }
+
+
                 if (item instanceof Item_folder_with_icon ini) {
                     ini.get_button().setPrefWidth(column_increment);
                     ini.get_button().setMinWidth(column_increment);
                 }
+
+                 */
             }
             if (!paths_holder.non_iconized.isEmpty()) {
                 if (p.getX() != 0) {
@@ -3304,6 +3317,8 @@ BOOKMARK
                 return;
             }
 
+            items_are_ready.set(false);
+            final long my_generation = geometry_generation.incrementAndGet();
             the_Pane.getChildren().clear();
 
             // now we can be in a thread
@@ -3311,10 +3326,16 @@ BOOKMARK
             int final_column_increment_for_folders = column_increment_for_folders;
             int final_column_increment_for_icons = column_increment_for_icons;
             Runnable r = () -> {
-                try (Perf p2 = new Perf("compute_geometry THREADED part")) {
+                geometry_lock.lock();
+                try (Perf p2 = new Perf("compute_geometry THREADED part"))
+                {
+                    if ( my_generation != geometry_generation.get())
+                    {
+                        if ( dbg) context.log(Logger.ok+" SKIPPING obsolete geometry computing");
+                        Jfx_batch_injector.inject(()->exit_redraw(progress_window,is_redrawing),context);
+                        return;
+                    }
 
-                    items_are_ready.set(false);
-                    future_pane_content.clear();
                     how_many_rows = 0;
 
                     if (dbg)
@@ -3344,12 +3365,21 @@ BOOKMARK
 
                     if (dbg)
                         context.log(Logger.ok+" Going to remap all items");
-                    future_pane_content.addAll(all_items_map.values());
+                    final List<Item> future_pane_content = new ArrayList<>(all_items_map.values());
 
-                    items_are_ready.set(true);
+                    //items_are_ready.set(true);
                     Jfx_batch_injector.inject(() ->
                     {
-
+                        if ( my_generation != geometry_generation.get())
+                        {
+                            exit_redraw(progress_window, is_redrawing);
+                            return;
+                        }
+                        for (Item item : future_pane_content)
+                        {
+                            item.apply_pending_column_width();
+                        }
+                        items_are_ready.set(true);
                         for (Item item : future_pane_content)
                         {
                             if (item.visible_in_scene.get())
@@ -3366,6 +3396,15 @@ BOOKMARK
                         exit_redraw(progress_window, is_redrawing);
 
                     }, context);
+                }
+                finally {
+                    try {
+                            geometry_lock.unlock();
+                    }
+                    catch(IllegalMonitorStateException imse)
+                    {
+                        context.log_with_stack_trace_from_throwable("geometry_lock.unlock(), isFxApplicationThread="+Platform.isFxApplicationThread(),imse);
+                    }
                 }
             };
             Actor_engine.execute(r, "compute_geometry, threaded part", context.logger());

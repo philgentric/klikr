@@ -294,7 +294,7 @@ public class Piece
             if ( dbg) context.log("Mmap retrieved image 'AS FILE', w= " + i.getWidth() + " h= " + i.getHeight());
             if ( !i.isError())
             {
-                Rotation rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(bais,null,context);
+                Rotation rotation = Fast_rotation_from_exif_metadata_extractor.get_rotation_from_InputStream(bais,tag, context);
                 if ( rotation == null ) rotation = Rotation.normal;
                 return new Image_and_properties(i,new Image_properties(i.getWidth(),i.getHeight(),rotation,false));
             }
