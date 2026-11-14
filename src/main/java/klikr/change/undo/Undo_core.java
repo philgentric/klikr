@@ -24,7 +24,7 @@ import java.util.*;
 public class Undo_core implements Datetime_to_signature_source
 //**********************************************************
 {
-    private final static boolean dbg = false;
+    private final static boolean dbg = true;
     private final Kontext context;
     static final boolean ultra_dbg = false;
     private static final String key_base = "undo_item_"; // name of items about this in properties file
@@ -221,52 +221,61 @@ public class Undo_core implements Datetime_to_signature_source
         Status stt = Status.move_done;
 
         List<Undo_item> returned = new ArrayList<>();
-        List<String> set = properties.get_all_keys();
-        for ( String k : set)
+        List<String> all_keys = properties.get_all_keys();
+        context.log("undo properties has "+all_keys.size()+" keys");
+
+        for ( String k : all_keys)
         {
-            if ( !k.startsWith(key_base)) continue;
-            if (k.endsWith(HOW_MANY))
+            if ( !k.startsWith(key_base))
             {
-                UUID index = extract_index(k,context);
-                int number_of_oan = Integer.parseInt(properties.get(k));
-                if ( dbg) context.log("      undo item, index = "+index+" has "+number_of_oan+ " oans");
-                String datetime_string = properties.get(generate_key_for_datetime(index));
-                if ( datetime_string == null)
+                if ( ultra_dbg) context.log("undo properties skipping1 "+k);
+                continue;
+            }
+            if (!k.endsWith(HOW_MANY))
+            {
+                if ( ultra_dbg) context.log("undo properties skipping2 "+k);
+                continue;
+            }
+            UUID index = extract_index(k,context);
+            int number_of_oan = Integer.parseInt(properties.get(k));
+            if ( dbg) context.log("      undo item, index = "+index+" has "+number_of_oan+ " oans");
+            String datetime_string = properties.get(generate_key_for_datetime(index));
+            if ( datetime_string == null)
+            {
+                context.log(Logger.error+"WEIRD: datetime_string=null for: "+k);
+                continue;
+            }
+            if ( dbg) context.log("date: "+datetime_string);
+            List<Old_and_new_Path> l = new ArrayList<>();
+            for (int j = 0 ;j < number_of_oan; j++)
+            {
+                String old_path_string = properties.get(generate_key_for_old_path(index,j));
+                if ( old_path_string == null)
                 {
-                    context.log("WEIRD: datetime_string=null for: "+k);
+                    context.log(Logger.error+"WEIRD: old_path_string=null with "+j);
                     continue;
                 }
-
-                List<Old_and_new_Path> l = new ArrayList<>();
-                for (int j = 0 ;j < number_of_oan; j++)
+                String new_path_string = properties.get(generate_key_for_new_path(index,j));
+                if ( new_path_string == null)
                 {
-                    String old_path_string = properties.get(generate_key_for_old_path(index,j));
-                    if ( old_path_string == null)
-                    {
-                        context.log("WEIRD: old_path_string=null with "+j);
-                        continue;
-                    }
-                    String new_path_string = properties.get(generate_key_for_new_path(index,j));
-                    if ( new_path_string == null)
-                    {
-                        //l.add(new Old_and_new_Path(Path.of(old_path_string),null,cmd,stt,false));
-                    }
-                    else
-                    {
-                        l.add(new Old_and_new_Path(Path.of(old_path_string), Path.of(new_path_string), cmd, stt,false));
-                    }
+                    //l.add(new Old_and_new_Path(Path.of(old_path_string),null,cmd,stt,false));
                 }
-                Undo_item undo_item = new Undo_item(l,LocalDateTime.parse(datetime_string),index,context);
-                if ( dbg) context.log("undo item:"+undo_item.to_string());
-                returned.add(undo_item);
+                else
+                {
+                    l.add(new Old_and_new_Path(Path.of(old_path_string), Path.of(new_path_string), cmd, stt,false));
+                }
             }
+            Undo_item undo_item = new Undo_item(l,LocalDateTime.parse(datetime_string),index,context);
+            if ( dbg) context.log("Got from disk: undo item:"+undo_item.to_string());
+            returned.add(undo_item);
         }
         // sort most recent first
         returned.sort(Undo_item.comparator_by_date);
-
-
+        if (!returned.isEmpty()) context.log("oldest undo date "+returned.getLast().time_stamp);
+        if ( dbg) context.log("undo items found on disk: "+returned.size());
         if ( returned.size() > 1000)
         {
+            // cleanup?
             int target_remaining = 100;
 
             boolean erase = Popups.popup_ask_for_confirmation(
@@ -275,6 +284,8 @@ public class Undo_core implements Datetime_to_signature_source
                     context);
             if ( erase)
             {
+                context.log("going to erase old undo items");
+                long start = System.currentTimeMillis();
                 List<Undo_item> to_be_removed = new  ArrayList<>();
                 int[] days_list = {365, 120, 30, 15};
                 for ( int days : days_list)
@@ -304,8 +315,8 @@ public class Undo_core implements Datetime_to_signature_source
                     remove_undo_item(undo_item,false);
                 }
 
-
                 properties.save_to_disk();
+                context.log("removed old undo items: "+(System.currentTimeMillis()-start)+ " ms");
             }
         }
         return returned;
@@ -423,5 +434,12 @@ public class Undo_core implements Datetime_to_signature_source
     //**********************************************************
     {
         properties.save_to_disk();
+    }
+
+    //**********************************************************
+    public long size()
+    //**********************************************************
+    {
+        return properties.get_all_keys().size();
     }
 }

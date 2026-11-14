@@ -1440,7 +1440,7 @@ public class Virtual_landscape_menus
 
             if ( ok) Undo_for_moves.perform_undo(item, context);
         };
-        String title = My_I18n.get_I18n_string("Whole_Undo_History",context);
+        String title = My_I18n.get_I18n_string("Whole_Undo_History",context);// + Undo_for_moves.size(context);
         Undo_for_moves.undo_stages.add(Active_list_stage.show_active_list_stage(title, Undo_for_moves.get_instance(context), action, context));
     }
 

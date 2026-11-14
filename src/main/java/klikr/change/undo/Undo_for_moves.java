@@ -27,7 +27,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
 {
     private static final boolean dbg = false;
     private static Undo_for_moves instance =  null;
-    private static Logger logger = null;
+    private final Kontext context;
     public static List<Active_list_stage> undo_stages = new ArrayList<>();
     private final Undo_core core;
     public static final String UNDO_FILENAME = "undo_for_moves";
@@ -64,11 +64,11 @@ public class Undo_for_moves implements Datetime_to_signature_source
     public static boolean add(List<Old_and_new_Path> l, Kontext context)
     //**********************************************************
     {
-        if (dbg) logger.log("Undo_for_moves::add"+l);
+        if (dbg) context.log("Undo_for_moves::add"+l);
         if (l.isEmpty())
         {
             return false;
-            // logger_.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: Undo_for_moves::add, empty list"));
+            // context_.log(Stack_trace_getter.get_stack_trace("SHOULD NOT HAPPEN: Undo_for_moves::add, empty list"));
         }
         return get_instance(context).add_internal(l, context);
     }
@@ -93,6 +93,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
         return get_instance(context).core.check_validity_internal(undo_item);
     }
 
+    /*
     //**********************************************************
     public static void erase_if_too_old(int max_count, int max_days, Kontext context)
     //**********************************************************
@@ -114,17 +115,24 @@ public class Undo_for_moves implements Datetime_to_signature_source
         {
             Undo_item ui = get_instance(context).get_undo_item_from_signature(signature, context);
             get_instance(context).core.remove_undo_item(ui,false);
-            if ( dbg) logger.log("out of age undo item removed: "+ui.signature());
+            if ( dbg) context.log("out of age undo item removed: "+ui.signature());
         }
         get_instance(context).core.save_to_disk();
 
     }
-
+*/
     //**********************************************************
     public static void remove_invalid_undo_item(Undo_item item,Kontext context)
     //**********************************************************
     {
         get_instance(context).core.remove_undo_item(item, true);
+    }
+
+    //**********************************************************
+    public static long size(Kontext context)
+    //**********************************************************
+    {
+        return get_instance(context).core.size();
     }
 
 
@@ -173,7 +181,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
     private Undo_for_moves(Kontext context)
     //**********************************************************
     {
-        if (this.logger == null) this.logger = logger;
+        this.context = context;
         core = new Undo_core(UNDO_FILENAME,context);
     }
     //**********************************************************
@@ -190,7 +198,7 @@ public class Undo_for_moves implements Datetime_to_signature_source
     {
         Undo_item most_recent_undo_item = core.get_most_recent();
         if (most_recent_undo_item == null) {
-            logger.log(Logger.warning+" nothing to undo");
+            context.log(Logger.warning+" nothing to undo");
             Popups.popup_warning( Logger.warning+" Nothing to undo", "The undo list is empty!", true, context);
             return false;
         }
@@ -202,23 +210,23 @@ public class Undo_for_moves implements Datetime_to_signature_source
     boolean undo(Undo_item undo_item, Kontext context)
     //**********************************************************
     {
-        if (dbg) logger.log("Undo_for_moves performing: UNDO of "+undo_item.to_string());
+        if (dbg) context.log("Undo_for_moves performing: UNDO of "+undo_item.to_string());
         List<Old_and_new_Path> reverse_last_move = new ArrayList<>();
         for (Old_and_new_Path e : undo_item.oans)
         {
             Old_and_new_Path r = e.reverse_for_restore();
             if ( !Files.exists(r.old_Path))
             {
-                logger.log("\n\n\n❗ IGNORED: this undo item is now invalid, as the source file is not where mentioned in the record... it was probably moved since?\n\n\n");
+                context.log("\n\n\n❗ IGNORED: this undo item is now invalid, as the source file is not where mentioned in the record... it was probably moved since?\n\n\n");
                 Popups.popup_warning( Logger.warning+" Invalid undo item", "The file was probably moved since?", true, context);
             }
             else {
                 reverse_last_move.add(r);
-                logger.log("reversed action =" + r.to_string());
+                context.log("reversed action =" + r.to_string());
             }
         }
 
-        Kontext k = new Kontext(context.owner(), Shared_services.aborter(), logger);
+        Kontext k = new Kontext(context.owner(), Shared_services.aborter(), context.logger());
         Moving_files.perform_safe_moves_in_a_thread(reverse_last_move, false, k);
 
         core.remove_undo_item(undo_item,true);
@@ -235,18 +243,18 @@ public class Undo_for_moves implements Datetime_to_signature_source
         {
             if ( oan.is_a_restore )
             {
-                if ( dbg) logger.log("not recording restore event: "+oan.to_string());
+                if ( dbg) context.log("not recording restore event: "+oan.to_string());
                 return false;
             }
             else
             {
-                if ( dbg)  logger.log("Adding event: "+oan.to_string());
+                if ( dbg)  context.log("Adding event: "+oan.to_string());
 
             }
         }
 
         Undo_item ui = new Undo_item(l, LocalDateTime.now(), UUID.randomUUID(), context);
-        if (dbg) logger.log("Undo_for_moves add:"+ui.to_string());
+        if (dbg) context.log("Undo_for_moves add:"+ui.to_string());
         core.add(ui);
         refresh_UI(context);
         return true;

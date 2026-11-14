@@ -4,6 +4,7 @@
 package klikr.util.ui;
 
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -18,6 +19,9 @@ import klikr.util.Kontext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //**********************************************************
 public class Popups
@@ -105,6 +109,30 @@ public class Popups
     public static boolean popup_ask_for_confirmation(String header, String content, Kontext context)
     //**********************************************************
     {
+        if (Platform.isFxApplicationThread())
+        {
+            return popup_ask_for_confirmation2(header, content, context);
+        }
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean  result = new AtomicBoolean(false);
+        Runnable r = () -> {
+            result.set(popup_ask_for_confirmation2(header, content, context));
+            latch.countDown();
+        };
+        Platform.runLater(r);
+        try {
+            latch.await(2, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            context.log_with_stack_trace("Interrupted while waiting for confirmation"+e);
+        }
+        return result.get();
+    }
+
+    //**********************************************************
+    private static boolean popup_ask_for_confirmation2(String header, String content, Kontext context)
+    //**********************************************************
+    {
+
         context.log("confirm: "+header+" "+content);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         Look_and_feel_manager.set_dialog_look(alert, context.logger());
