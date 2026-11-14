@@ -2391,12 +2391,12 @@ BOOKMARK
     {
         String files = My_I18n.get_I18n_string("Files", context);
         Button files_button = new Button(files);
+        Image icon = Look_and_feel_manager.get_folder_icon(height, context.logger());
+        Look_and_feel_manager.set_button_and_image_look(files_button, icon, height, null, false, context.logger());
         files_button.setOnAction(e -> button_files(e));
         top_pane.getChildren().add(files_button);
         top_buttons.add(files_button);
-        Image icon = Look_and_feel_manager.get_folder_icon(height, context.logger());
-        Look_and_feel_manager.set_button_and_image_look(files_button, icon, height, null, false, context.logger());
-    }
+        }
 
     //**********************************************************
     private void show_BACK_menubar_item(Pane top_pane, double height)
@@ -2404,11 +2404,11 @@ BOOKMARK
     {
         String back_text = My_I18n.get_I18n_string("Back", context);
         Button back_button = new Button(back_text);
+        Image icon = Look_and_feel_manager.get_back_icon(height, context.logger());
+        Look_and_feel_manager.set_button_and_image_look(back_button, icon, height, null, false, context.logger());
         back_button.setOnAction(e -> back());
         top_pane.getChildren().add(back_button);
         top_buttons.add(back_button);
-        Image icon = Look_and_feel_manager.get_back_icon(height, context.logger());
-        Look_and_feel_manager.set_button_and_image_look(back_button, icon, height, null, false, context.logger());
     }
 
     //**********************************************************
@@ -2417,12 +2417,12 @@ BOOKMARK
     {
         String preferences = My_I18n.get_I18n_string("Preferences", context);
         Button preferences_button = new Button(preferences);
+        Image icon = Look_and_feel_manager.get_preferences_icon(height, context.logger());
+        Look_and_feel_manager.set_button_and_image_look(preferences_button, icon, height, null, false, context.logger());
         preferences_button.setOnAction(e -> button_preferences(e));
         top_pane.getChildren().add(preferences_button);
         top_buttons.add(preferences_button);
-        Image icon = Look_and_feel_manager.get_preferences_icon(height, context.logger());
-        Look_and_feel_manager.set_button_and_image_look(preferences_button, icon, height, null, false, context.logger());
-    }
+            }
 
     //**********************************************************
     private void show_VIEW_menubar_item(Pane top_pane, double height)
@@ -2430,11 +2430,11 @@ BOOKMARK
     {
         String view = My_I18n.get_I18n_string("View", context);
         Button view_button = new Button(view);
+        Image icon = Look_and_feel_manager.get_view_icon(height, context.logger());
+        Look_and_feel_manager.set_button_and_image_look(view_button, icon, height, null, false, context.logger());
         view_button.setOnAction(e -> button_view(e));
         top_pane.getChildren().add(view_button);
         top_buttons.add(view_button);
-        Image icon = Look_and_feel_manager.get_view_icon(height, context.logger());
-        Look_and_feel_manager.set_button_and_image_look(view_button, icon, height, null, false, context.logger());
     }
 
     //**********************************************************
@@ -2504,11 +2504,6 @@ BOOKMARK
         Button b = (Button) e.getSource();
         files.show(b, Side.TOP, 0, 0);
 
-        /*
-         * List<MenuItem> mis = files.getItems();
-         * Visually_impaired_menus vim = new Visually_impaired_menus(mis,1400, logger);
-         * vim.show_under(b);
-         */
     }
 
     //**********************************************************
@@ -2611,9 +2606,8 @@ BOOKMARK
     {
         String history = My_I18n.get_I18n_string("History", context);
         MenuButton mb = new MenuButton(history);
+        Look_and_feel_manager.set_menubutton_and_image_look(mb, null, height, null, false, context.logger());
         Virtual_landscape_menus.populate_history_menubutton(mb,application,the_whole_history,path_list_provider,top_left,shutdown_target,Window_type.File_system_2D,context);
-        Image icon = null;
-        Look_and_feel_manager.set_menubutton_and_image_look(mb, icon, height, null, false, context.logger());
         return mb;
     }
 
@@ -3518,9 +3512,8 @@ BOOKMARK
             String undo = My_I18n.get_I18n_string("Undo", context);
 
             MenuButton mb = new MenuButton(undo);
+            Look_and_feel_manager.set_menubutton_and_image_look(mb, null, height, null, false, context.logger());
             Virtual_landscape_menus.populate_undo_menubutton(mb,context);
-            Image icon = Look_and_feel_manager.get_bookmarks_icon(height, context.logger());
-            Look_and_feel_manager.set_menubutton_and_image_look(mb, icon, height, null, false, context.logger());
             return mb;
         }
 

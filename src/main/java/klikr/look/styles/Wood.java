@@ -12,12 +12,12 @@ import klikr.util.log.Logger;
 import java.net.URL;
 
 //**********************************************************
-public class Look_and_feel_wood extends Look_and_feel
+public class Wood extends Look_and_feel
 //**********************************************************
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.wood;}
 
-    public Look_and_feel_wood(Logger logger) {
+    public Wood(Logger logger) {
         super("Wood",logger);
     }
 

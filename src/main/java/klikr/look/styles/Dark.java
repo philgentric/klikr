@@ -4,22 +4,20 @@
 package klikr.look.styles;
 
 import javafx.scene.paint.Color;
-import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
-import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.net.URL;
 
 //**********************************************************
-public class Look_and_feel_dark extends Look_and_feel
+public class Dark extends Look_and_feel
 //**********************************************************
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.dark;}
 
-    public Look_and_feel_dark(Logger logger) {
+    public Dark(Logger logger) {
         super("Dark",logger);
     }
 

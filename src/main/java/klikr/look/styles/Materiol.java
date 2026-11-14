@@ -4,23 +4,21 @@
 package klikr.look.styles;
 
 import javafx.scene.paint.Color;
-import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
-import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.net.URL;
 
 //**********************************************************
-public class Look_and_feel_materiol extends Look_and_feel
+public class Materiol extends Look_and_feel
 //**********************************************************
 {
     public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.materiol;}
 
     //**********************************************************
-    public Look_and_feel_materiol(Logger logger)
+    public Materiol(Logger logger)
     //**********************************************************
     {
         super("Material",logger);

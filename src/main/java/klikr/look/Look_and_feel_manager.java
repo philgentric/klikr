@@ -19,14 +19,12 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
+import klikr.look.styles.*;
 import klikr.zexperimental.Launcher;
 import klikr.settings.String_constants;
 import klikr.util.Kontext;
 import klikr.util.Shared_services;
 import klikr.browsers.browser_core.Drag_and_drop;
-import klikr.look.styles.Look_and_feel_materiol;
-import klikr.look.styles.Look_and_feel_light;
-import klikr.look.styles.Look_and_feel_modena;
 import klikr.settings.boolean_features.Feature_cache;
 import klikr.util.log.Logger;
 
@@ -111,11 +109,11 @@ public class Look_and_feel_manager
         if (dbg) logger.log("read_look_and_feel_from_properties_file: using style " + look_and_feel_style.name());
         return  switch (look_and_feel_style)
         {
-            default -> new Look_and_feel_light(logger);
-            case dark -> new klikr.look.styles.Look_and_feel_dark(logger);
-            case wood ->new klikr.look.styles.Look_and_feel_wood(logger);
-            case materiol -> new Look_and_feel_materiol(logger);
-            case modena -> new Look_and_feel_modena(logger);
+            default -> new Light(logger);
+            case dark -> new Dark(logger);
+            case wood ->new Wood(logger);
+            case materiol -> new Materiol(logger);
+            case modena -> new Modena(logger);
         };
     }
 

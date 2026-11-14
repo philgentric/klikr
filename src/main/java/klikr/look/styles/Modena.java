@@ -3,25 +3,24 @@
 
 package klikr.look.styles;
 
+import javafx.application.Application;
 import javafx.scene.paint.Color;
-import javafx.stage.Window;
 import klikr.look.Jar_utils;
 import klikr.look.Look_and_feel;
 import klikr.look.Look_and_feel_style;
-import klikr.util.Kontext;
 import klikr.util.log.Logger;
 
 import java.net.URL;
 
 //**********************************************************
-public class Look_and_feel_light extends Look_and_feel
+public class Modena extends Look_and_feel
 //**********************************************************
 {
-    public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.light;}
+    public Look_and_feel_style get_look_and_feel_style(){return Look_and_feel_style.modena;}
 
-    public Look_and_feel_light(Logger logger)
+    public Modena(Logger logger)
     {
-        super("Light",logger);
+        super("Modena (default JavaFX look and feel)",logger);
     }
 
     @Override
@@ -29,9 +28,13 @@ public class Look_and_feel_light extends Look_and_feel
         return "icons/lazy.png";
     }
 
+    //**********************************************************
     @Override
-    public URL get_CSS_URL() {
-        return Jar_utils.get_URL_by_name("css/light.css");
+    public URL get_CSS_URL()
+    //**********************************************************
+    {
+        Application.setUserAgentStylesheet(Application.STYLESHEET_MODENA);
+        return Jar_utils.get_URL_by_name("css/modena.css");
     }
 
     @Override
@@ -39,7 +42,7 @@ public class Look_and_feel_light extends Look_and_feel
         return "icons/light/view.png";
     }
 
-    @Override
+       @Override
     public String get_bookmarks_icon_path() {
         return "icons/light/bookmarks.png";
     }
@@ -50,36 +53,42 @@ public class Look_and_feel_light extends Look_and_feel
     }
 
     @Override
-    public String get_broken_icon_path()
-    {
-        return "icons/light/broken_image.png";
-    }
-
-
-    @Override
-    public String get_back_icon_path() {return "icons/light/back.png";}
-
-
-    @Override
     public String get_trash_icon_path()
     {
         return "icons/light/trash.png";
     }
-
     @Override
     public String get_up_icon_path()
     {
         return "icons/light/up.png";
     }
 
-    @Override
-    public String get_klik_icon_path() {return "icons/klikr.png";}
 
     @Override
-    public String get_default_icon_path() {return "icons/light/image.png";}
+    public String get_back_icon_path() {return "icons/light/back.png";}
 
     @Override
-    public String get_music_icon_path() {return "icons/light/music.png";}
+    public String get_klik_icon_path() {
+        return "icons/light/camera.png";
+    }
+
+    @Override
+    public String get_broken_icon_path()
+    {
+        return "icons/light/broken_image.png";
+    }
+
+    @Override
+    public String get_default_icon_path()
+    {
+        return "icons/light/camera.png";
+    }
+
+    @Override
+    public String get_music_icon_path()
+    {
+        return "icons/light/music.png";
+    }
 
 
     @Override
@@ -89,16 +98,14 @@ public class Look_and_feel_light extends Look_and_feel
     }
 
     @Override
-    public String get_folder_icon_path()
-    {
-        return "icons/light/folder.png";
-    }
+    public String get_folder_icon_path() {return "icons/light/folder.png";}
 
     @Override
-    public String get_text_color() {return "-fx-text-fill: #000000;";}
+    public String get_text_color() {return "-fx-text-fill: #b8d4fe;";}
 
     @Override
     public String get_selected_text_color() {return "-fx-text-fill: #0000FF;";}
+
 
     @Override
     public Color get_selection_box_color() {return Color.RED;}
@@ -111,7 +118,7 @@ public class Look_and_feel_light extends Look_and_feel
 
     @Override
     public Color get_foreground_color() {
-        return Color.BLACK;
+        return Color.valueOf("#b8d4fe");
     }
 
 }

@@ -24,7 +24,7 @@ import java.util.*;
 public class Undo_core implements Datetime_to_signature_source
 //**********************************************************
 {
-    private final static boolean dbg = true;
+    private final static boolean dbg = false;
     private final Kontext context;
     static final boolean ultra_dbg = false;
     private static final String key_base = "undo_item_"; // name of items about this in properties file
